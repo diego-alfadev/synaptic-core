@@ -1,0 +1,13 @@
+# Dependencies
+node_modules/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Agent-specific (not part of the standard)
+.gemini/

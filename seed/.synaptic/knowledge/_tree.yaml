@@ -1,0 +1,39 @@
+# Knowledge Tree Index
+# Auto-generated — do not edit manually
+# Rebuild: agent reads all .md files in knowledge/ and regenerates this file
+# Convention: files prefixed with _ are auto-generated
+
+version: 0.1.0
+generated: "{{GENERATED_DATE}}"
+
+tree:
+  areas: []
+    # Example entry:
+    # - id: customer-feedback
+    #   title: "Customer Feedback"
+    #   summary: "Tools and processes for managing customer feedback systems"
+    #   path: areas/customer-feedback/_overview.md
+    #   children:
+    #     - id: tool-setup
+    #       title: "Tool Setup"
+    #       summary: "Configuration and setup of the feedback tool"
+    #       path: areas/customer-feedback/tool-setup.md
+
+  domains: []
+    # Example entry:
+    # - id: architecture
+    #   title: "Architecture"
+    #   summary: "Architectural decisions and patterns"
+    #   path: domains/architecture/_overview.md
+    #   children:
+    #     - id: auth-strategy
+    #       title: "Authentication Strategy"
+    #       summary: "Session-based auth chosen over JWT for easier revocation"
+    #       path: domains/architecture/auth-strategy.md
+
+  lessons: []
+    # Example entry:
+    # - id: 2026-02-perf-issues
+    #   title: "Performance Issues Feb 2026"
+    #   summary: "N+1 queries caused 10x slowdown in dashboard API"
+    #   path: lessons/2026-02-perf-issues.md
