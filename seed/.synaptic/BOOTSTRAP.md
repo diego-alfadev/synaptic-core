@@ -123,6 +123,7 @@ These are the top 3 anti-patterns. Do not fall into them:
 | `/init` | `skills/init/SKILL.md` | Set up or extend the brain |
 | `/consolidate` | `skills/consolidate/SKILL.md` | Move working memory into structured knowledge |
 | `/ingest [file]` | `skills/ingest/SKILL.md` | Ingest a document into the brain |
+| `/discover` | `skills/discover/SKILL.md` | Suggest relevant skills/tools for your context |
 | `/help` | `skills/help/SKILL.md` | List available commands and brain status |
 
 ---

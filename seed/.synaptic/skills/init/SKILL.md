@@ -1,6 +1,6 @@
 ---
 name: init
-description: Initialize or extend a Synaptic brain. Handles fresh setup, existing project detection, and brain extension.
+description: Initialize or extend a Synaptic brain. Handles fresh setup, existing project detection, and brain extension. Uses Socratic interview patterns to surface non-obvious context.
 ---
 
 # /init — Brain Setup
@@ -27,28 +27,11 @@ Check: does .synaptic/ exist in the current workspace?
 
 ### Step 2A: Fresh Brain + Fresh Project
 
-Ask these questions (skip any the user proactively answers):
-
-**Q1: Role** — "What's your role and context? (e.g. 'Backend engineer managing feedback tools at a bank')"
-→ Write `identity/ROLE.md`
-
-**Q2: Areas** — "What are the main areas, products, or tools you work on?"
-→ Create `knowledge/areas/[name]/_overview.md` for each
-
-**Q3: Principles** — "Any hard rules or constraints? (e.g. 'Always use TypeScript', 'No external API calls without review')"
-→ Write `identity/PRINCIPLES.md`
-
-**Q4: Contacts** — "Key people you work with? (can be minimal or empty)"
-→ Write `identity/CONTACTS.md`
-
-**Q5: References** — "Any existing documents, schemas, or specs to ingest?"
-→ Run `/ingest` for each → `references/` + knowledge nodes
-
-Then generate: `MANIFEST.md`, `BOOTSTRAP.md` (standard copy), `_tree.yaml`, `INDEX.md`, `journal/_current.md`
+Run the **Dialogic Interview** below.
 
 ### Step 2B: Fresh Brain + Existing Project
 
-**Workspace Scan** (before asking questions):
+**Workspace Scan** (validated by GSD's `map-codebase` pattern):
 
 1. List top-level directory structure
 2. Look for key files:
@@ -60,15 +43,11 @@ Then generate: `MANIFEST.md`, `BOOTSTRAP.md` (standard copy), `_tree.yaml`, `IND
    - `*.yaml` / `*.json` (API specs) → API definitions
 
 3. Present findings to user:
-   "I found: [Node.js project, Postgres schema, existing .agent/ config]. Want me to incorporate this?"
+   "I found: [description]. Want me to incorporate this?"
 
-4. If yes:
-   - `/ingest` README → knowledge domain node
-   - `/ingest` schemas → `references/` + knowledge node
-   - Read `.agent/` rules → incorporate into `PRINCIPLES.md`
-   - Note existing skills in `MANIFEST.md`
+4. If yes: queue files for ingestion after brain creation
 
-5. Then: Ask Q1-Q5 from Scenario A, **skipping** anything already auto-detected
+5. Then: Run the **Dialogic Interview** below, **skipping** anything already auto-detected
 
 ### Step 2C: Extend Existing Brain
 
@@ -87,29 +66,124 @@ What would you like to do?
 
 Execute the chosen option, then update `MANIFEST.md` and rebuild `_tree.yaml`.
 
-### Step 3: Completion Checklist
+---
 
-After init, verify ALL of these exist:
+## Dialogic Interview
 
-- [ ] `MANIFEST.md` (with version, timestamp, areas list)
-- [ ] `BOOTSTRAP.md` (standard, not customized)
-- [ ] `identity/ROLE.md` (at minimum role + expertise)
-- [ ] `identity/PRINCIPLES.md` (can be minimal)
-- [ ] `identity/CONTACTS.md` (can be empty)
-- [ ] `knowledge/INDEX.md` (reflects created areas/domains)
-- [ ] `knowledge/_tree.yaml` (auto-generated from created content)
-- [ ] At least one area or domain with `_overview.md`
-- [ ] `journal/_current.md` (fresh, ready for session)
-- [ ] `inventory/projects.md` (can be empty template)
-- [ ] `references/_index.md` (lists any ingested files)
-- [ ] `skills/` with init, consolidate, ingest, help
+### Interview Style (from think-through + feature-interview patterns)
 
-Report to user: "Brain initialized. [summary of what was created]"
+- Ask **1-2 focused questions** at a time, never a barrage
+- Reference previous answers — build on what the user said
+- Push back gently: "Have you considered..." / "What about..."
+- Be **concrete**, not abstract: "So when a new team member joins..." not "How about onboarding?"
+- If the user seems uncertain, offer options: "We could A, B, or C — what resonates?"
+- **Go beyond the obvious** — ask questions the user wouldn't think to mention
+- Validate productive insights: "That's a good point about..."
+- Be comfortable with "I don't know" answers — they're data too
 
-## Rules
+### Question Flow
 
-- Ask questions ONE AT A TIME — don't dump all 5 at once
-- If the user gives a long answer, extract multiple items (areas, principles, etc.)
-- Be fast: 3-5 questions max, ~5 minutes total
-- Scan first, ask second (Scenario B)
-- Always generate `_tree.yaml` at the end
+**Round 1: Role & Context** (always ask)
+
+> Q1: "What's your role and work context?"
+> (e.g. 'Backend engineer managing feedback tools at a bank')
+
+Then probe deeper with **one** non-obvious follow-up:
+- "What's the hardest part of your day-to-day that better context would help with?"
+- "If a new colleague inherited your work tomorrow, what would be hardest to transfer?"
+- "What information do you find yourself explaining repeatedly?"
+
+→ Write `identity/ROLE.md`
+
+**Round 2: Work Areas** (always ask)
+
+> Q2: "What are the main areas, products, or tools you work on?"
+
+Then probe:
+- "Which of these areas has the most 'tribal knowledge' — stuff that's in your head but not written down?"
+- "Are there areas where you depend on specific people's knowledge?"
+
+→ Create `knowledge/areas/[name]/_overview.md` for each
+
+**Round 3: Principles & Work Operatives** (always ask)
+
+> Q3a: "Any hard rules or constraints in your work?"
+> (e.g. 'Always TypeScript', 'GDPR compliant', 'No direct prod access')
+
+> Q3b: "Are there work processes or rituals I should know about?"
+> (e.g. 'Sprint planning Mondays', 'PRs need 2 approvals', 'No deploys on Fridays')
+
+> Q3c: "Is there anything that should NEVER be done?"
+> (e.g. 'Never modify the auth module without Thomas', 'Never use ORM for batch operations')
+
+→ Write `identity/PRINCIPLES.md`
+
+**Round 4: Contacts & Routing** (optional but valuable)
+
+> Q4: "Who are the key people for specific topics?"
+> (e.g. 'Thomas Jensen for CI/CD', 'Anna for database questions')
+
+If the user gives names, ask:
+- "For each person — what's their role, and how should I reach them?"
+- "Anyone I should loop in before making certain decisions?"
+
+→ Write `identity/CONTACTS.md` (YAML format with Quick Lookup)
+
+**Round 5: References & Assets** (optional)
+
+> Q5: "Any existing documents, schemas, or specs to bring in?"
+> (e.g. 'Our database DDL', 'The API spec', 'Team wiki export')
+
+→ Run `/ingest` for each → `references/` + knowledge nodes
+
+### When to Stop
+
+Stop when:
+- The user has provided enough context for a useful brain (~3-5 rounds)
+- Further questions feel repetitive or speculative
+- The user signals they want to move forward
+- You have at least: role, 1+ areas, and some principles
+
+Don't stop too early — a thorough init takes **3-5 minutes**, not 30 seconds.
+
+---
+
+### Step 3: Generate Files
+
+After the interview, generate all brain files:
+
+1. `MANIFEST.md` — with real data (no placeholders)
+2. `BOOTSTRAP.md` — standard copy
+3. `identity/ROLE.md`, `PRINCIPLES.md`, `CONTACTS.md` — from interview
+4. `knowledge/INDEX.md`, `_tree.yaml` — from areas/domains
+5. `knowledge/areas/[name]/_overview.md` — per area
+6. `inventory/` templates
+7. `references/_index.md`
+8. `journal/_current.md` — fresh
+9. `skills/` — all 4 standard skills + discover
+
+### Step 4: Ingest Queued References
+
+If user provided files in Q5 or workspace scan found schemas/docs:
+- `/ingest` each file
+- Update `_tree.yaml`
+
+### Step 5: Report
+
+```
+🧠 Brain initialized!
+
+Created .synaptic/ with:
+  - Role: [summary]
+  - Areas: [list]
+  - Principles: [count] defined
+  - Contacts: [count] people
+  - References: [count] ingested
+
+Next steps:
+  - Start working — I'll capture decisions in journal/_current.md
+  - /consolidate to organize captured knowledge
+  - /ingest FILE to add documents
+  - /discover to find useful skills for your context
+  - /help for quick reference
+```
