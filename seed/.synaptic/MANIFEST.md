@@ -29,4 +29,23 @@
 - init
 - consolidate
 - ingest
+- discover
 - help
+
+## Skill Triggers
+
+<!-- Semantic mapping: when the agent detects this context, suggest or use this tool.
+     Populated by /discover or manually. -->
+
+```yaml
+triggers: []
+  # - context: "SQL queries or database operations"
+  #   tool: postgres-skill
+  #   type: skill
+  # - context: "Excel or CSV file operations"
+  #   tool: excel-mcp
+  #   type: mcp
+  # - context: "CI/CD pipeline configuration"
+  #   tool: deployment-skill
+  #   type: skill
+```
