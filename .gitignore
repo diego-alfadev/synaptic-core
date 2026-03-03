@@ -11,3 +11,6 @@ Thumbs.db
 
 # Agent-specific (not part of the standard)
 .gemini/
+
+# Release artifacts
+synaptic-seed.zip
