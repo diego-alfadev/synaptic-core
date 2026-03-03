@@ -70,6 +70,51 @@ It scans your workspace, asks 3-5 questions, and generates a complete personaliz
 
 ---
 
+## Use Cases
+
+### 🏗️ Per-project brain vs. global brain
+
+You can use SYNAPTIC-CORE in two ways, depending on your workflow:
+
+| Approach | How | Best for |
+|----------|-----|----------|
+| **Per-project** | Drop `.synaptic/` in each project folder | Deep context for a specific codebase, client, or product. More focused, less noise. |
+| **Global** | Place `.synaptic/` in a parent folder that contains all your projects | Broader context across projects. The agent always has your full knowledge, regardless of which project you're working on. |
+
+Both work. Per-project brains are more focused and efficient (smaller context = faster reasoning). Global brains give you cross-project knowledge at the cost of a larger context window. Start per-project and graduate to global once you see what works for you.
+
+### 🔒 Security & Transparency
+
+There are no hidden scripts, no network calls, no opaque binaries. Every file in `.synaptic/` is Markdown or YAML — you can read every line, audit every instruction, and know exactly what your agent sees.
+
+This matters for enterprise environments:
+- **No data leaves your machine** — CORE is pure files, no APIs
+- **Fully auditable** — print it out, hand it to compliance, they can read it
+- **Your agent, your rules** — Synaptic tells the agent *what you know*, not *what to do with external services*
+
+With a Copilot license and a Synaptic brain, a team can build perfect onboarding documentation, role templates, and project playbooks that make every team member more productive — and yes, more replaceable. That's a feature for organizations, not a bug.
+
+### 📦 Portability & Inheritance
+
+Your `.synaptic/` brain is a folder. It copies, zips, emails, and version-controls like any other folder.
+
+- **Switch tools?** Copy `.synaptic/` to your new agent's workspace. Done.
+- **New team member?** Hand them your brain. They get 2 years of context in 30 seconds.
+- **Going on leave?** Your replacement reads `BOOTSTRAP.md` and knows who does what, where things are, and what the rules are.
+- **Want to read it yourself?** Print it. It's Markdown. It's structured. It makes sense without an AI.
+
+### 📝 Documentation generation
+
+One of the most powerful (and least obvious) use cases: **Synaptic as a documentation engine.**
+
+Just work normally — talk to your agent, make decisions, learn things. Your brain captures it all in `journal/_current.md`. Run `/consolidate` and your working memory crystallizes into structured knowledge. Over time, your `.synaptic/` folder becomes a living documentation hub.
+
+Need a formal doc? Ask your agent: *"Write a technical overview of our authentication system based on what's in the brain."* It has all the context. It writes the doc. You review. Done.
+
+This works especially well with voice — dictate to your agent while working, and let Synaptic organize it later.
+
+---
+
 ## The Matrioshka Architecture
 
 SYNAPTIC-CORE follows a layered design where **inner layers never depend on outer ones**:
@@ -117,6 +162,17 @@ SYNAPTIC-CORE follows a layered design where **inner layers never depend on oute
 - **Portable** — Copy `.synaptic/` to another machine, project, or colleague. It just works.
 - **Knowledge-first** — Not a task manager. Not an ops tool. A structured knowledge base.
 - **Progressive enhancement** — CORE always works alone. Add TOOLS for scripts. Add ECOSYSTEM for integrations.
+
+---
+
+## What SYNAPTIC-CORE is NOT
+
+- **Not a task manager** — Use [GSD](https://github.com/gsd-build/get-shit-done), Jira, or Linear for that. Synaptic stores *knowledge*, not *to-do lists*.
+- **Not an agent framework** — It doesn't replace `.agent/`, `AGENTS.md`, or tool configs. Those tell the agent *how to behave*. Synaptic tells it *what you know*.
+- **Not a database** — No queries, no schemas, no server. Just files.
+- **Not domain-specific** — No React patterns, no Kubernetes playbooks, no language-specific rules baked in. SYNAPTIC-CORE is a *structure*, not content. Your brain is yours to fill.
+- **Not opinionated about your agent** — Works with Claude Code, Antigravity, Cursor, Copilot, Windsurf, OpenCode, or any agent that can read files. We don't pick favorites.
+- **Not heavy** — The seed is ~30 files, all Markdown/YAML. No dependencies, no build step, no node_modules.
 
 ---
 

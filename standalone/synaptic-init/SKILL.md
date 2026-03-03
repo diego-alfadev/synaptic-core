@@ -1,19 +1,21 @@
 ---
 name: synaptic-init
-description: Initialize a Synaptic brain from scratch. Standalone skill — generates the entire .synaptic/ structure via dialogic setup. No prior download needed.
+description: Initialize a Synaptic brain from scratch. Standalone skill — generates the entire .synaptic/ structure via Socratic dialogic setup. No prior download needed.
 ---
 
 # /synaptic-init — Standalone Brain Setup
 
-> This is the standalone version of the Synaptic init skill. It can generate
-> a complete `.synaptic/` brain from scratch without needing the seed download.
+> This is the standalone version of the Synaptic init skill. It generates
+> a complete `.synaptic/` brain from scratch without needing any download.
 > Install this single file in your agent's skills directory to get started.
 
 ## Overview
 
 SYNAPTIC-CORE is an open standard for portable AI brains. This skill generates
 the `.synaptic/` file structure in your project, personalized through a brief
-dialogue.
+Socratic dialogue.
+
+Learn more: https://github.com/diego-alfadev/synaptic-core
 
 ## Prerequisites
 
@@ -34,7 +36,7 @@ Does .synaptic/ exist?
 
 ### Step 2: Scan Workspace
 
-Check for existing project files:
+Check for existing project files before asking questions (**scan first, ask second**):
 
 | Look for | What it tells us |
 |----------|-----------------|
@@ -48,17 +50,41 @@ If project files found:
 - Present findings: "I see [description]. Want me to incorporate this?"
 - If yes: queue files for ingestion after brain creation
 
-### Step 3: Dialogic Setup (3-5 questions)
+### Step 3: Socratic Interview
 
-**Q1: Role** — "What's your role? (e.g. 'Backend engineer managing feedback tools at a bank')"
+Use a natural, conversational style. Ask **1-2 questions at a time**, reference
+previous answers, push back gently on assumptions, and be concrete rather than
+abstract. Go beyond the obvious — ask questions the user wouldn't think to mention.
 
-**Q2: Areas** — "What are the main areas, products, or tools you work on?"
+**Round 1: Role & Context**
 
-**Q3: Principles** — "Any hard rules or constraints I should know?"
+> "What's your role and work context?"
 
-**Q4: Contacts** — "Key people you work with?" (can skip)
+Then probe deeper with one non-obvious follow-up:
+- "What's the hardest part of your day-to-day that better context would help with?"
+- "If a new colleague inherited your work tomorrow, what would be hardest to transfer?"
 
-**Q5: References** — "Any documents or schemas to ingest now?" (can skip)
+**Round 2: Work Areas**
+
+> "What are the main areas, products, or tools you work on?"
+
+Then: "Which of these has the most 'tribal knowledge' — stuff in your head but not written down?"
+
+**Round 3: Principles & Work Operatives**
+
+> Q3a: "Any hard rules or constraints?"
+> Q3b: "Work processes or rituals I should know about?"
+> Q3c: "Anything that should NEVER be done?"
+
+**Round 4: Contacts & Routing** (optional)
+
+> "Who are the key people for specific topics?"
+
+If names given: "For each — what's their role, and how should I reach them?"
+
+**Round 5: References** (optional)
+
+> "Any existing documents, schemas, or specs to bring in?"
 
 ### Step 4: Generate Brain Structure
 
@@ -71,12 +97,12 @@ Create the following file tree:
 ├── identity/
 │   ├── ROLE.md
 │   ├── PRINCIPLES.md
-│   └── CONTACTS.md
+│   └── CONTACTS.md          ← YAML format with Quick Lookup
 ├── knowledge/
 │   ├── INDEX.md
 │   ├── _tree.yaml
 │   ├── areas/
-│   │   └── [per area from Q2]/
+│   │   └── [per area from Round 2]/
 │   │       └── _overview.md
 │   ├── domains/
 │   └── lessons/
@@ -94,6 +120,7 @@ Create the following file tree:
     ├── init/SKILL.md
     ├── consolidate/SKILL.md
     ├── ingest/SKILL.md
+    ├── discover/SKILL.md
     └── help/SKILL.md
 ```
 
@@ -101,49 +128,46 @@ Create the following file tree:
 
 Fill each file using the user's answers:
 
-**MANIFEST.md:**
-```markdown
-# SYNAPTIC-CORE Brain Manifest
-## Metadata
-- **standard**: synaptic-core
-- **version**: 0.1.0
-- **created**: [today's date]
-- **last_modified**: [today's date]
-## Identity
-- **name**: [from Q1]
-- **role**: [from Q1]
-## Areas
-[from Q2]
-## Capabilities
-- **tools_available**: false
-- **runtime**: none
-## Skills
-- init, consolidate, ingest, help
-```
+**MANIFEST.md** — brain metadata with version, areas, skills list, and Skill Triggers section.
 
-**BOOTSTRAP.md:** Use the standard bootstrap protocol. Key sections:
+**BOOTSTRAP.md** — the standard bootstrap protocol containing:
 - Bootstrap steps (0-4 + Ready)
 - Session rhythm (Orient/Work/Persist)
 - Memory routing decision tree
 - Discovery-first quality gate
 - Conflation warnings (3 anti-patterns)
-- Available commands
+- Available commands (init, consolidate, ingest, discover, help)
 - Size budgets
 - Directory map
 
-See the full BOOTSTRAP.md reference at: https://github.com/synaptic-core/synaptic-core
+See the full BOOTSTRAP.md reference at: https://github.com/diego-alfadev/synaptic-core
 
-**identity/ROLE.md:** Fill from Q1 answers
-**identity/PRINCIPLES.md:** Fill from Q3 answers
-**identity/CONTACTS.md:** Fill from Q4 answers (or empty template)
-**knowledge/areas/[name]/_overview.md:** One per area from Q2
-**_tree.yaml:** Generate from created areas/domains
+**identity/ROLE.md** — role, expertise, communication style from Round 1
+**identity/PRINCIPLES.md** — constraints, processes, prohibitions from Round 3
+**identity/CONTACTS.md** — YAML format with Quick Lookup routing table from Round 4:
 
-**Skills:** Generate the standard skill files (init, consolidate, ingest, help) with the standard protocol. These should follow the SYNAPTIC-CORE skill convention.
+```yaml
+routing:
+  - topic: "Topic area"
+    person: "Name"
+    channel: slack | email | teams | in-person
+
+people:
+  - name: "Name"
+    role: "Role"
+    team: "Team"
+    relation: "Relationship"
+    context: "What they own/know"
+    channel: preferred contact method
+    notes: "Useful context"
+```
+
+**knowledge/** — INDEX.md, _tree.yaml, area overviews from Round 2
+**Skills** — generate the 5 standard skills (init, consolidate, ingest, discover, help)
 
 ### Step 6: Ingest Queued References
 
-If user provided files in Q5 or workspace scan found schemas/docs:
+If user provided files in Round 5 or workspace scan found schemas/docs:
 - Copy to `references/`
 - Extract knowledge nodes
 - Update `_tree.yaml`
@@ -157,20 +181,24 @@ Created .synaptic/ with:
   - Role: [summary]
   - Areas: [list]
   - Principles: [count] defined
+  - Contacts: [count] people
   - References: [count] ingested
-  - Skills: init, consolidate, ingest, help
+  - Skills: init, consolidate, ingest, discover, help
 
 Next steps:
-  - Start working normally — I'll capture decisions in journal/_current.md
-  - Run /consolidate when you want to organize captured knowledge
-  - Run /ingest FILE to add documents to your brain
-  - Run /help for quick reference
+  - Start working — I'll capture decisions in journal/_current.md
+  - /consolidate to organize captured knowledge
+  - /ingest FILE to add documents
+  - /discover to find useful skills for your context
+  - /help for quick reference
 ```
 
 ## Rules
 
-- ONE question at a time
+- ONE or TWO questions at a time, never a barrage
+- Reference previous answers — build on what the user said
 - Be fast: ~5 minutes total
 - Scan first, ask second (if workspace has files)
 - Always generate `_tree.yaml` at the end
-- Include all 4 standard skills in the generated brain
+- Include all 5 standard skills in the generated brain
+- Use YAML format for CONTACTS.md
