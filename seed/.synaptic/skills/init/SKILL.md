@@ -31,7 +31,7 @@ Run the **Dialogic Interview** below.
 
 ### Step 2B: Fresh Brain + Existing Project
 
-**Workspace Scan** (validated by GSD's `map-codebase` pattern):
+**Workspace Scan**:
 
 1. List top-level directory structure
 2. Look for key files:
@@ -70,7 +70,7 @@ Execute the chosen option, then update `MANIFEST.md` and rebuild `_tree.yaml`.
 
 ## Dialogic Interview
 
-### Interview Style (from think-through + feature-interview patterns)
+### Interview Style (Socratic — from think-through + feature-interview)
 
 - Ask **1-2 focused questions** at a time, never a barrage
 - Reference previous answers — build on what the user said
@@ -86,7 +86,6 @@ Execute the chosen option, then update `MANIFEST.md` and rebuild `_tree.yaml`.
 **Round 1: Role & Context** (always ask)
 
 > Q1: "What's your role and work context?"
-> (e.g. 'Backend engineer managing feedback tools at a bank')
 
 Then probe deeper with **one** non-obvious follow-up:
 - "What's the hardest part of your day-to-day that better context would help with?"
@@ -108,20 +107,14 @@ Then probe:
 **Round 3: Principles & Work Operatives** (always ask)
 
 > Q3a: "Any hard rules or constraints in your work?"
-> (e.g. 'Always TypeScript', 'GDPR compliant', 'No direct prod access')
-
 > Q3b: "Are there work processes or rituals I should know about?"
-> (e.g. 'Sprint planning Mondays', 'PRs need 2 approvals', 'No deploys on Fridays')
-
 > Q3c: "Is there anything that should NEVER be done?"
-> (e.g. 'Never modify the auth module without Thomas', 'Never use ORM for batch operations')
 
 → Write `identity/PRINCIPLES.md`
 
 **Round 4: Contacts & Routing** (optional but valuable)
 
 > Q4: "Who are the key people for specific topics?"
-> (e.g. 'Thomas Jensen for CI/CD', 'Anna for database questions')
 
 If the user gives names, ask:
 - "For each person — what's their role, and how should I reach them?"
@@ -132,7 +125,6 @@ If the user gives names, ask:
 **Round 5: References & Assets** (optional)
 
 > Q5: "Any existing documents, schemas, or specs to bring in?"
-> (e.g. 'Our database DDL', 'The API spec', 'Team wiki export')
 
 → Run `/ingest` for each → `references/` + knowledge nodes
 
@@ -144,8 +136,6 @@ Stop when:
 - The user signals they want to move forward
 - You have at least: role, 1+ areas, and some principles
 
-Don't stop too early — a thorough init takes **3-5 minutes**, not 30 seconds.
-
 ---
 
 ### Step 3: Generate Files
@@ -155,20 +145,44 @@ After the interview, generate all brain files:
 1. `MANIFEST.md` — with real data (no placeholders)
 2. `BOOTSTRAP.md` — standard copy
 3. `identity/ROLE.md`, `PRINCIPLES.md`, `CONTACTS.md` — from interview
-4. `knowledge/INDEX.md`, `_tree.yaml` — from areas/domains
-5. `knowledge/areas/[name]/_overview.md` — per area
-6. `inventory/` templates
-7. `references/_index.md`
-8. `journal/_current.md` — fresh
-9. `skills/` — all 4 standard skills + discover
+4. `identity/HEARTBEAT.md` — condensed from ROLE + PRINCIPLES (keep under 20 lines)
+5. `knowledge/INDEX.md`, `_tree.yaml` — from areas/domains
+6. `knowledge/areas/[name]/_overview.md` — per area
+7. `inventory/` templates
+8. `references/_index.md`
+9. `journal/_current.md` — fresh
+10. `skills/` — all 6 standard skills (init, consolidate, ingest, discover, audit, help)
 
-### Step 4: Ingest Queued References
+### Step 4: System Prompt Hook (Agent Bridge)
+
+Detect the agent platform and write a bridge file:
+
+```
+Check: which agent config directory exists?
+├── .agent/     → Write .agent/rules/synaptic.md
+├── .claude/    → Append to .claude/AGENTS.md (or create .claude/rules/synaptic.md)
+├── .cursor/    → Write .cursor/rules/synaptic.mdc
+├── None found  → Skip (tell user they can add it manually)
+```
+
+**Bridge file content** (~4 lines):
+
+```markdown
+# Synaptic Brain
+You have a Synaptic brain at .synaptic/. 
+At session start: read .synaptic/BOOTSTRAP.md and follow the protocol.
+After each major task: re-read .synaptic/identity/HEARTBEAT.md.
+```
+
+Tell the user: "I've added a bridge in [path] so you'll automatically connect to the brain every session."
+
+### Step 5: Ingest Queued References
 
 If user provided files in Q5 or workspace scan found schemas/docs:
 - `/ingest` each file
 - Update `_tree.yaml`
 
-### Step 5: Report
+### Step 6: Report
 
 ```
 🧠 Brain initialized!
@@ -180,10 +194,13 @@ Created .synaptic/ with:
   - Contacts: [count] people
   - References: [count] ingested
 
+Agent bridge: [path] (auto-connects to brain each session)
+
 Next steps:
   - Start working — I'll capture decisions in journal/_current.md
   - /consolidate to organize captured knowledge
   - /ingest FILE to add documents
   - /discover to find useful skills for your context
+  - /audit to review what's missing
   - /help for quick reference
 ```

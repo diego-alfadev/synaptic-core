@@ -27,6 +27,8 @@ Commands:
   /init          Set up or extend the brain
   /consolidate   Move working memory → structured knowledge
   /ingest FILE   Ingest a document into the brain
+  /discover      Suggest relevant skills/tools for your context
+  /audit         Review brain for gaps and missing info
   /help          This help message
 ```
 
@@ -41,7 +43,7 @@ Where does it go?
 
 Session rhythm:
   🔵 Orient  → bootstrap (automatic)
-  🟢 Work    → capture via routing tree
+  🟢 Work    → capture via routing tree + heartbeat after each subtask
   🟠 Persist → /consolidate before ending
 ```
 
@@ -52,3 +54,4 @@ If the user seems to want a health check, also report:
 - `_tree.yaml` existence and age
 - Any `_overview.md` files that are empty
 - Orphan `.md` files not in `_tree.yaml`
+- Whether `identity/HEARTBEAT.md` has real data or still has placeholders
