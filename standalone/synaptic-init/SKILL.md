@@ -29,14 +29,13 @@ Learn more: https://github.com/diego-alfadev/synaptic-core
 ```
 Does .synaptic/ exist?
 ├── YES → "A Synaptic brain already exists. Use /init inside it to extend."
-│         Stop. (The brain's own /init skill handles extension.)
-│
+│         Stop.
 └── NO  → Continue to Step 2
 ```
 
 ### Step 2: Scan Workspace
 
-Check for existing project files before asking questions (**scan first, ask second**):
+Check for existing project files (**scan first, ask second**):
 
 | Look for | What it tells us |
 |----------|-----------------|
@@ -52,43 +51,28 @@ If project files found:
 
 ### Step 3: Socratic Interview
 
-Use a natural, conversational style. Ask **1-2 questions at a time**, reference
-previous answers, push back gently on assumptions, and be concrete rather than
-abstract. Go beyond the obvious — ask questions the user wouldn't think to mention.
+Ask **1-2 questions at a time**, reference previous answers, push back gently, be concrete.
 
 **Round 1: Role & Context**
-
 > "What's your role and work context?"
-
-Then probe deeper with one non-obvious follow-up:
-- "What's the hardest part of your day-to-day that better context would help with?"
-- "If a new colleague inherited your work tomorrow, what would be hardest to transfer?"
+Then a non-obvious follow-up.
 
 **Round 2: Work Areas**
-
 > "What are the main areas, products, or tools you work on?"
+Then: "Which has the most tribal knowledge?"
 
-Then: "Which of these has the most 'tribal knowledge' — stuff in your head but not written down?"
-
-**Round 3: Principles & Work Operatives**
-
+**Round 3: Principles & Operatives**
 > Q3a: "Any hard rules or constraints?"
-> Q3b: "Work processes or rituals I should know about?"
+> Q3b: "Work processes or rituals I should know?"
 > Q3c: "Anything that should NEVER be done?"
 
-**Round 4: Contacts & Routing** (optional)
-
+**Round 4: Contacts** (optional)
 > "Who are the key people for specific topics?"
 
-If names given: "For each — what's their role, and how should I reach them?"
-
 **Round 5: References** (optional)
-
 > "Any existing documents, schemas, or specs to bring in?"
 
 ### Step 4: Generate Brain Structure
-
-Create the following file tree:
 
 ```
 .synaptic/
@@ -97,22 +81,20 @@ Create the following file tree:
 ├── identity/
 │   ├── ROLE.md
 │   ├── PRINCIPLES.md
-│   └── CONTACTS.md          ← YAML format with Quick Lookup
+│   ├── CONTACTS.md          ← YAML format with Quick Lookup
+│   └── HEARTBEAT.md         ← Condensed identity (anti-drift)
 ├── knowledge/
 │   ├── INDEX.md
 │   ├── _tree.yaml
-│   ├── areas/
-│   │   └── [per area from Round 2]/
-│   │       └── _overview.md
+│   ├── areas/[per area]/
+│   │   └── _overview.md
 │   ├── domains/
-│   └── lessons/
-│       └── _overview.md
+│   └── lessons/_overview.md
 ├── inventory/
 │   ├── projects.md
 │   ├── environments.md
 │   └── glossary.md
-├── references/
-│   └── _index.md
+├── references/_index.md
 ├── journal/
 │   ├── _current.md
 │   └── archive/
@@ -121,84 +103,94 @@ Create the following file tree:
     ├── consolidate/SKILL.md
     ├── ingest/SKILL.md
     ├── discover/SKILL.md
+    ├── audit/SKILL.md
     └── help/SKILL.md
 ```
 
 ### Step 5: Populate Files
 
-Fill each file using the user's answers:
-
-**MANIFEST.md** — brain metadata with version, areas, skills list, and Skill Triggers section.
-
-**BOOTSTRAP.md** — the standard bootstrap protocol containing:
+**BOOTSTRAP.md** — standard protocol with:
 - Bootstrap steps (0-4 + Ready)
+- Anti-drift protocol (heartbeat + forced journaling)
 - Session rhythm (Orient/Work/Persist)
 - Memory routing decision tree
-- Discovery-first quality gate
-- Conflation warnings (3 anti-patterns)
-- Available commands (init, consolidate, ingest, discover, help)
-- Size budgets
-- Directory map
+- Available commands (init, consolidate, ingest, discover, audit, help)
 
-See the full BOOTSTRAP.md reference at: https://github.com/diego-alfadev/synaptic-core
+See reference: https://github.com/diego-alfadev/synaptic-core
 
-**identity/ROLE.md** — role, expertise, communication style from Round 1
-**identity/PRINCIPLES.md** — constraints, processes, prohibitions from Round 3
-**identity/CONTACTS.md** — YAML format with Quick Lookup routing table from Round 4:
+**HEARTBEAT.md** — condensed from ROLE + PRINCIPLES (~20 lines max):
+```markdown
+# Heartbeat — Re-read after each major task
+## Who you are
+[2-line role summary]
+## Session rules
+- Update journal/_current.md BEFORE moving to next task
+- Respond in [language], [tone]
+- If context is getting long: suggest /consolidate
+## Active constraints
+[Top 3 constraints from PRINCIPLES]
+```
 
+**CONTACTS.md** — YAML format:
 ```yaml
 routing:
-  - topic: "Topic area"
+  - topic: "Topic"
     person: "Name"
-    channel: slack | email | teams | in-person
-
+    channel: method
 people:
   - name: "Name"
     role: "Role"
     team: "Team"
     relation: "Relationship"
-    context: "What they own/know"
-    channel: preferred contact method
-    notes: "Useful context"
+    context: "What they own"
+    channel: contact method
+    notes: "Context"
 ```
 
-**knowledge/** — INDEX.md, _tree.yaml, area overviews from Round 2
-**Skills** — generate the 5 standard skills (init, consolidate, ingest, discover, help)
+### Step 6: System Prompt Hook
 
-### Step 6: Ingest Queued References
+Detect agent platform and write a bridge file:
 
-If user provided files in Round 5 or workspace scan found schemas/docs:
-- Copy to `references/`
-- Extract knowledge nodes
-- Update `_tree.yaml`
+```
+.agent/     → Write .agent/rules/synaptic.md
+.claude/    → Write .claude/rules/synaptic.md
+.cursor/    → Write .cursor/rules/synaptic.mdc
+None found  → Skip (tell user to add manually)
+```
+
+Content (~4 lines):
+```markdown
+# Synaptic Brain
+You have a Synaptic brain at .synaptic/.
+At session start: read .synaptic/BOOTSTRAP.md and follow the protocol.
+After each major task: re-read .synaptic/identity/HEARTBEAT.md.
+```
 
 ### Step 7: Report
 
 ```
-🧠 Synaptic brain initialized!
-
+🧠 Brain initialized!
 Created .synaptic/ with:
   - Role: [summary]
   - Areas: [list]
   - Principles: [count] defined
   - Contacts: [count] people
   - References: [count] ingested
-  - Skills: init, consolidate, ingest, discover, help
-
+  - Agent bridge: [path]
 Next steps:
-  - Start working — I'll capture decisions in journal/_current.md
-  - /consolidate to organize captured knowledge
-  - /ingest FILE to add documents
-  - /discover to find useful skills for your context
+  - /consolidate to organize knowledge
+  - /audit to review what's missing
+  - /discover to find useful skills
   - /help for quick reference
 ```
 
 ## Rules
 
-- ONE or TWO questions at a time, never a barrage
-- Reference previous answers — build on what the user said
-- Be fast: ~5 minutes total
-- Scan first, ask second (if workspace has files)
-- Always generate `_tree.yaml` at the end
-- Include all 5 standard skills in the generated brain
-- Use YAML format for CONTACTS.md
+- 1-2 questions at a time, never a barrage
+- Reference previous answers
+- ~5 minutes total
+- Scan first, ask second
+- Always generate `_tree.yaml`
+- Include all 6 standard skills
+- Generate HEARTBEAT.md with real data
+- Write system prompt hook if agent config detected

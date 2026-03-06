@@ -54,7 +54,17 @@ For each routed item:
 2. If target file doesn't exist → **create** it with proper template structure
 3. If updating `_overview.md` → add entry for new nodes
 
-### Step 5: Rebuild Tree
+### Step 5: Promote from References
+
+Scan `references/` for concrete data that should live in `inventory/`:
+
+- **IPs, hostnames, SSH paths** → `inventory/environments.md`
+- **Project IDs, API keys references** → `inventory/projects.md`
+- **Domain terms, abbreviations** → `inventory/glossary.md`
+
+Also check: are any `inventory/` files still empty templates? If so, and `references/` has relevant data, extract it now.
+
+### Step 6: Rebuild Tree
 
 Rebuild `knowledge/_tree.yaml`:
 1. Scan all `_overview.md` files in `areas/` and `domains/`
@@ -62,13 +72,13 @@ Rebuild `knowledge/_tree.yaml`:
 3. Generate tree entries with: id, title, summary (one line), path
 4. If `tools/build-tree.js` exists → use it instead (zero tokens)
 
-### Step 6: Archive Session
+### Step 7: Archive Session
 
 1. Create `journal/archive/{{DATE}}.md` with a summary of what was consolidated
 2. Clear `journal/_current.md` — reset to fresh template
 3. Update `knowledge/INDEX.md` to reflect any new areas/domains/lessons
 
-### Step 7: Report
+### Step 8: Report
 
 Tell the user:
 ```

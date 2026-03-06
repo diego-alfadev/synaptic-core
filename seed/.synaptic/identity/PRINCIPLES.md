@@ -1,16 +1,13 @@
 # Principles & Constraints
 
-## Decision-Making Principles
-<!-- Rules the agent should always follow -->
-- {{PRINCIPLE_1}}
-- {{PRINCIPLE_2}}
+## Hard Rules
+<!-- Things that must ALWAYS or NEVER be done -->
+{{HARD_RULES}}
 
-## Constraints
-<!-- Hard limits or restrictions -->
-- {{CONSTRAINT_1}}
-- {{CONSTRAINT_2}}
+## Work Operatives
+<!-- Processes, rituals, deployment procedures, review gates -->
+{{WORK_OPERATIVES}}
 
 ## Preferences
-<!-- Soft preferences that guide behavior -->
-- {{PREFERENCE_1}}
-- {{PREFERENCE_2}}
+<!-- Tech stack, coding style, tooling choices -->
+{{PREFERENCES}}

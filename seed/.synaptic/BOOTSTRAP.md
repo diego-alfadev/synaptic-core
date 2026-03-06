@@ -18,6 +18,7 @@ Load brain metadata: version, name, areas, domains, capabilities.
 Read `identity/ROLE.md` → adopt the role, expertise, and communication style.
 Read `identity/PRINCIPLES.md` → load decision-making constraints.
 Skim `identity/CONTACTS.md` → know who the key people are.
+Read `identity/HEARTBEAT.md` → memorize the condensed identity checkpoint.
 
 ## Step 3: Load Knowledge Map
 
@@ -32,7 +33,31 @@ If empty → fresh session. If populated → resume from last stop point.
 
 ## Ready
 
-You now have structured context (~600 lines loaded). Work normally, following the rules below.
+You now have structured context. Work normally, following the rules below.
+
+---
+
+## ⚠️ Anti-Drift Protocol
+
+**CRITICAL**: In long sessions, you WILL lose your identity. Logs, code, and debug output will crowd out your initial instructions. This is expected LLM behavior — fight it actively.
+
+### Heartbeat
+
+After completing each major subtask:
+1. **Re-read `identity/HEARTBEAT.md`** — it takes 5 seconds, prevents identity loss
+2. **Update `journal/_current.md`** — capture what you just did and what's next
+3. Only then proceed to the next task
+
+If you notice yourself sounding generic, overly formal, or forgetting context: **stop and re-read HEARTBEAT.md immediately**.
+
+### Forced Journaling
+
+When receiving a complex request from the user:
+- **FIRST action**: Write your plan in `journal/_current.md`
+- **Work**: Execute the plan
+- **LAST action**: Update `journal/_current.md` with results and next steps
+
+Do NOT skip journaling. A brain that doesn't write things down is just a chat thread.
 
 ---
 
@@ -44,7 +69,7 @@ Every session follows three phases:
 Bootstrap protocol above. You're oriented.
 
 ### 🟢 Work
-Execute tasks normally. When you produce or discover information that should persist, use the **routing tree** below to decide where it goes.
+Execute tasks. Route information using the **routing tree** below. Apply the **heartbeat** after each major subtask.
 
 ### 🟠 Persist (before session ends)
 1. If `_current.md` has actionable content → run `/consolidate`
@@ -124,6 +149,7 @@ These are the top 3 anti-patterns. Do not fall into them:
 | `/consolidate` | `skills/consolidate/SKILL.md` | Move working memory into structured knowledge |
 | `/ingest [file]` | `skills/ingest/SKILL.md` | Ingest a document into the brain |
 | `/discover` | `skills/discover/SKILL.md` | Suggest relevant skills/tools for your context |
+| `/audit` | `skills/audit/SKILL.md` | Review brain for gaps, stale data, missing info |
 | `/help` | `skills/help/SKILL.md` | List available commands and brain status |
 
 ---
@@ -138,6 +164,7 @@ Keep files within these limits for optimal agent performance:
 | `_overview.md` | ~50 | Summarize more aggressively |
 | Knowledge node `.md` | ~150 | Split into sub-topics |
 | `_current.md` | ~200 | Trigger `/consolidate` |
+| `HEARTBEAT.md` | ~20 | Keep it ultra-condensed |
 
 ---
 
@@ -147,7 +174,8 @@ Keep files within these limits for optimal agent performance:
 .synaptic/
 ├── MANIFEST.md          # Brain metadata
 ├── BOOTSTRAP.md         # This file
-├── identity/            # WHO: role, principles, contacts
+├── identity/            # WHO: role, principles, contacts, heartbeat
+│   └── HEARTBEAT.md     # Anti-drift checkpoint (re-read after each task)
 ├── knowledge/           # WHAT: areas, domains, lessons
 │   ├── _tree.yaml       # Agent-optimized index (auto-generated)
 │   ├── INDEX.md         # Human-readable knowledge map
@@ -159,5 +187,5 @@ Keep files within these limits for optimal agent performance:
 ├── journal/             # WHEN: session working memory
 │   ├── _current.md      # Active session (→ consolidate)
 │   └── archive/         # Past sessions
-└── skills/              # HOW: init, consolidate, ingest, help
+└── skills/              # HOW: init, consolidate, ingest, discover, audit, help
 ```

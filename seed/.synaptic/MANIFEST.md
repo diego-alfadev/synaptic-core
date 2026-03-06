@@ -2,7 +2,7 @@
 
 ## Metadata
 - **standard**: synaptic-core
-- **version**: 0.1.0
+- **version**: 0.2.0
 - **created**: {{CREATED_DATE}}
 - **last_modified**: {{MODIFIED_DATE}}
 
@@ -30,6 +30,7 @@
 - consolidate
 - ingest
 - discover
+- audit
 - help
 
 ## Skill Triggers
