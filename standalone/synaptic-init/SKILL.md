@@ -98,29 +98,37 @@ Then: "Which has the most tribal knowledge?"
 ├── journal/
 │   ├── _current.md
 │   └── archive/
+├── worklines/
+│   ├── _active.yaml
+│   └── archive/
+├── cortex.config.yaml
 └── skills/
     ├── init/SKILL.md
+    ├── plan/SKILL.md
     ├── consolidate/SKILL.md
     ├── ingest/SKILL.md
     ├── discover/SKILL.md
     ├── audit/SKILL.md
+    ├── upgrade/SKILL.md
     └── help/SKILL.md
 ```
 
 ### Step 5: Populate Files
 
 **BOOTSTRAP.md** — standard protocol with:
-- Bootstrap steps (0-4 + Ready)
-- Anti-drift protocol (heartbeat + forced journaling)
+- Bootstrap steps (0-5 + Ready)
+- Anti-drift protocol (heartbeat every 3-5 interactions + drift self-detection)
+- Smart journaling (trivial = skip, complex = journal)
 - Session rhythm (Orient/Work/Persist)
-- Memory routing decision tree
-- Available commands (init, consolidate, ingest, discover, audit, help)
+- Memory routing decision tree (with worklines branch)
+- Work Mode Detection (Fast vs Planning based on worklines)
+- Available commands (init, plan, consolidate, ingest, discover, audit, upgrade, help)
 
 See reference: https://github.com/diego-alfadev/synaptic-core
 
-**HEARTBEAT.md** — condensed from ROLE + PRINCIPLES (~20 lines max):
+**HEARTBEAT.md** — condensed from ROLE + PRINCIPLES (~25 lines max):
 ```markdown
-# Heartbeat — Re-read after each major task
+# Heartbeat — Re-read every 3-5 interactions
 ## Who you are
 [2-line role summary]
 ## Session rules
@@ -129,6 +137,14 @@ See reference: https://github.com/diego-alfadev/synaptic-core
 - If context is getting long: suggest /consolidate
 ## Active constraints
 [Top 3 constraints from PRINCIPLES]
+## Current focus
+- Workline: Check worklines/_active.yaml
+- Last journal: Check journal/_current.md
+## Drift signals — self-check
+If 2+ fail, STOP and re-read this file:
+- [ ] Am I responding in [language]?
+- [ ] Do I remember the user's role and constraints?
+- [ ] Have I referenced the brain in my last 3 responses?
 ```
 
 **CONTACTS.md** — YAML format:
@@ -149,21 +165,51 @@ people:
 
 ### Step 6: System Prompt Hook
 
-Detect agent platform and write a bridge file:
+Detect **all** agent platforms and write bridge files. Be aggressive — create directories if missing.
 
 ```
-.agent/     → Write .agent/rules/synaptic.md
-.claude/    → Write .claude/rules/synaptic.md
-.cursor/    → Write .cursor/rules/synaptic.mdc
-None found  → Skip (tell user to add manually)
+Agent config detection map:
+├── .agents/rules/           → Write synaptic.md             (Antigravity / Gemini)
+├── .agent/rules/            → Write synaptic.md             (Generic agents)
+├── CLAUDE.md                → Append Synaptic section       (Claude Code)
+├── .claude/rules/           → Write synaptic.md             (Claude Code rules dir)
+├── .cursor/rules/           → Write synaptic.mdc            (Cursor)
+├── .windsurf/rules/         → Write synaptic.md             (Windsurf)
+├── .github/                 → Append to copilot-instructions.md (GitHub Copilot)
+├── AGENTS.md                → Append Synaptic section       (Gemini CLI)
+├── CONVENTIONS.md           → Append Synaptic section       (Fallback)
+├── .clinerules/             → Write synaptic.md             (Cline / Roo Code)
+├── .aider/                  → Write synaptic.md             (Aider)
+└── .continue/               → Write synaptic.md             (Continue.dev)
 ```
 
-Content (~4 lines):
+- Check ALL paths. Create directory if missing for dir-based configs.
+- For root files (CLAUDE.md, AGENTS.md): append section only if file exists.
+- For .github/copilot-instructions.md: append only if .github/ exists.
+
+Bridge content (~500 tokens):
 ```markdown
-# Synaptic Brain
-You have a Synaptic brain at .synaptic/.
-At session start: read .synaptic/BOOTSTRAP.md and follow the protocol.
-After each major task: re-read .synaptic/identity/HEARTBEAT.md.
+# Synaptic Brain — Auto-injected by /init
+
+You have a Synaptic brain at `.synaptic/`. This gives you structured, persistent memory.
+
+## At session start
+1. Read [.synaptic/BOOTSTRAP.md](.synaptic/BOOTSTRAP.md) — follow the boot protocol
+2. You'll load identity, knowledge map, and session state automatically
+3. Check for active worklines — offer Planning or Fast mode
+
+## During work
+- Route new information using the [Memory Routing Tree](.synaptic/BOOTSTRAP.md) (in BOOTSTRAP.md)
+- Every 3-5 responses: re-read [.synaptic/identity/HEARTBEAT.md](.synaptic/identity/HEARTBEAT.md)
+- For complex tasks: write plan in [journal/_current.md](.synaptic/journal/_current.md) first
+
+## Before session ends
+- Update [journal/_current.md](.synaptic/journal/_current.md) with where you stopped
+- If in Planning mode: update workline task status
+- If substantial content captured → suggest `/consolidate`
+
+## Available commands
+/init, /plan, /consolidate, /ingest, /discover, /upgrade, /help
 ```
 
 ### Step 7: Report
@@ -176,8 +222,10 @@ Created .synaptic/ with:
   - Principles: [count] defined
   - Contacts: [count] people
   - References: [count] ingested
-  - Agent bridge: [path]
+  - Worklines: ready (empty)
+  - Agent bridges: [list of paths]
 Next steps:
+  - /plan to define your first workline (recommended!)
   - /consolidate to organize knowledge
   - /audit to review what's missing
   - /discover to find useful skills
@@ -191,6 +239,7 @@ Next steps:
 - ~5 minutes total
 - Scan first, ask second
 - Always generate `_tree.yaml`
-- Include all 6 standard skills
-- Generate HEARTBEAT.md with real data
-- Write system prompt hook if agent config detected
+- Include all 8 standard skills (init, plan, consolidate, ingest, discover, audit, upgrade, help)
+- Generate HEARTBEAT.md with real data and drift signals checklist
+- Write system prompt hooks for ALL detected agent platforms
+- Create `worklines/_active.yaml` template and `cortex.config.yaml`

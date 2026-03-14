@@ -144,37 +144,73 @@ After the interview, generate all brain files:
 
 1. `MANIFEST.md` — with real data (no placeholders)
 2. `BOOTSTRAP.md` — standard copy
-3. `identity/ROLE.md`, `PRINCIPLES.md`, `CONTACTS.md` — from interview
-4. `identity/HEARTBEAT.md` — condensed from ROLE + PRINCIPLES (keep under 20 lines)
-5. `knowledge/INDEX.md`, `_tree.yaml` — from areas/domains
-6. `knowledge/areas/[name]/_overview.md` — per area
-7. `inventory/` templates
-8. `references/_index.md`
-9. `journal/_current.md` — fresh
-10. `skills/` — all 6 standard skills (init, consolidate, ingest, discover, audit, help)
+3. `cortex.config.yaml` — default settings
+4. `identity/ROLE.md`, `PRINCIPLES.md`, `CONTACTS.md` — from interview
+5. `identity/HEARTBEAT.md` — condensed from ROLE + PRINCIPLES (keep under 25 lines), including drift signals checklist
+6. `knowledge/INDEX.md`, `_tree.yaml` — from areas/domains
+7. `knowledge/areas/[name]/_overview.md` — per area
+8. `inventory/` templates
+9. `references/_index.md`
+10. `journal/_current.md` — fresh
+11. `worklines/_active.yaml` — empty template
+12. `worklines/archive/` — empty directory
+13. `skills/` — all 8 standard skills (init, plan, consolidate, ingest, discover, audit, upgrade, help)
 
 ### Step 4: System Prompt Hook (Agent Bridge)
 
-Detect the agent platform and write a bridge file:
+Detect **all** agent platforms in the workspace and write bridge files. Be aggressive — if the directory doesn't exist, **create it**.
 
 ```
-Check: which agent config directory exists?
-├── .agent/     → Write .agent/rules/synaptic.md
-├── .claude/    → Append to .claude/AGENTS.md (or create .claude/rules/synaptic.md)
-├── .cursor/    → Write .cursor/rules/synaptic.mdc
-├── None found  → Skip (tell user they can add it manually)
+Agent config detection map:
+├── .agents/rules/           → Write synaptic.md             (Antigravity / Gemini)
+├── .agent/rules/            → Write synaptic.md             (Generic agents)
+├── CLAUDE.md                → Append Synaptic section       (Claude Code, root file)
+├── .claude/rules/           → Write synaptic.md             (Claude Code, rules dir)
+├── .cursor/rules/           → Write synaptic.mdc            (Cursor)
+├── .windsurf/rules/         → Write synaptic.md             (Windsurf)
+├── .github/                 → Append to copilot-instructions.md (GitHub Copilot)
+├── AGENTS.md                → Append Synaptic section       (Gemini CLI / generic)
+├── CONVENTIONS.md           → Append Synaptic section       (Fallback)
+├── .clinerules/             → Write synaptic.md             (Cline / Roo Code)
+├── .aider/                  → Write synaptic.md             (Aider)
+└── .continue/               → Write synaptic.md             (Continue.dev)
 ```
 
-**Bridge file content** (~4 lines):
+**Behavior**:
+- Check ALL paths, not just the first match. A workspace may have multiple agent configs.
+- For directory-based configs (`.agent/rules/`, `.cursor/rules/`, etc.): create the directory if missing, write the bridge file.
+- For root files (`CLAUDE.md`, `AGENTS.md`, `CONVENTIONS.md`): if file exists, append a `## Synaptic Brain` section. If not, don't create the root file (it may confuse the agent platform).
+- For `.github/copilot-instructions.md`: append only if `.github/` exists.
+- Always tell the user which bridges were written.
+
+**Bridge file content** (~500 tokens):
 
 ```markdown
-# Synaptic Brain
-You have a Synaptic brain at .synaptic/. 
-At session start: read .synaptic/BOOTSTRAP.md and follow the protocol.
-After each major task: re-read .synaptic/identity/HEARTBEAT.md.
+# Synaptic Brain — Auto-injected by /init
+
+You have a Synaptic brain at `.synaptic/`. This gives you structured, persistent memory.
+
+## At session start
+1. Read [.synaptic/BOOTSTRAP.md](.synaptic/BOOTSTRAP.md) — follow the boot protocol
+2. You'll load identity, knowledge map, and session state automatically
+3. Check for active worklines — offer Planning or Fast mode
+
+## During work
+- Route new information using the [Memory Routing Tree](.synaptic/BOOTSTRAP.md) (in BOOTSTRAP.md)
+- Every 3-5 responses: re-read [.synaptic/identity/HEARTBEAT.md](.synaptic/identity/HEARTBEAT.md)
+- If you feel like you're drifting: STOP and re-read [HEARTBEAT.md](.synaptic/identity/HEARTBEAT.md)
+- For complex tasks: write plan in [journal/_current.md](.synaptic/journal/_current.md) first
+
+## Before session ends
+- Update [journal/_current.md](.synaptic/journal/_current.md) with where you stopped and what's next
+- If in Planning mode: update workline task status
+- If substantial content captured → suggest `/consolidate`
+
+## Available commands
+/init, /plan, /consolidate, /ingest, /discover, /audit, /upgrade, /help
 ```
 
-Tell the user: "I've added a bridge in [path] so you'll automatically connect to the brain every session."
+Tell the user: "I've added bridges in [paths] so agents will automatically connect to the brain each session."
 
 ### Step 5: Ingest Queued References
 
@@ -193,11 +229,13 @@ Created .synaptic/ with:
   - Principles: [count] defined
   - Contacts: [count] people
   - References: [count] ingested
+  - Worklines: ready (empty)
 
-Agent bridge: [path] (auto-connects to brain each session)
+Agent bridges: [list of paths written]
 
 Next steps:
   - Start working — I'll capture decisions in journal/_current.md
+  - /plan to define your first workline (recommended!)
   - /consolidate to organize captured knowledge
   - /ingest FILE to add documents
   - /discover to find useful skills for your context

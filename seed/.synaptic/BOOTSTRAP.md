@@ -8,6 +8,7 @@
 2. Check: can you execute `python --version`? → Record `tools:python`
 3. If neither → pure file mode (all operations via prompts)
 4. If tools available and `tools/` directory has scripts → use them for mechanical operations
+5. If `cortex.config.yaml` exists → read settings (checkpoint interval, size thresholds)
 
 ## Step 1: Read MANIFEST.md
 
@@ -31,6 +32,28 @@ If `_tree.yaml` is missing, scan `knowledge/` directories and rebuild it.
 Read `journal/_current.md` → understand where the last session left off.
 If empty → fresh session. If populated → resume from last stop point.
 
+## Step 5: Work Mode Detection
+
+Read `worklines/_active.yaml` → check for active work lines.
+
+```
+Has active worklines with recent activity?
+├── YES → Present to user:
+│         "Tienes líneas de trabajo activas:
+│           - [workline]: [summary] (última actividad: [date])
+│         ¿Quieres que revisemos alguna, o prefieres trabajar en modo rápido?"
+│
+│   ├── User chooses a workline → Load _meta.md + tasks/
+│   │   → Enter Planning mode for that workline
+│   │
+│   └── User says "modo rápido" / gives a direct task → Fast mode
+│
+├── NO worklines exist → Fast mode
+│   (If user mentions a project or sustained effort → suggest /plan)
+│
+└── File missing → Fast mode (brain may need /upgrade)
+```
+
 ## Ready
 
 You now have structured context. Work normally, following the rules below.
@@ -43,21 +66,39 @@ You now have structured context. Work normally, following the rules below.
 
 ### Heartbeat
 
-After completing each major subtask:
+**Every 3-5 interactions**, or whenever the topic changes significantly:
 1. **Re-read `identity/HEARTBEAT.md`** — it takes 5 seconds, prevents identity loss
 2. **Update `journal/_current.md`** — capture what you just did and what's next
 3. Only then proceed to the next task
 
-If you notice yourself sounding generic, overly formal, or forgetting context: **stop and re-read HEARTBEAT.md immediately**.
+### Drift Self-Detection
 
-### Forced Journaling
+If ANY of these are true, **STOP immediately** and re-read `HEARTBEAT.md`:
+- You're responding in a different language than configured in ROLE.md
+- Your responses sound generic, overly formal, or could come from any agent
+- You haven't referenced any brain file in your last 3 responses
+- You've forgotten the user's role, constraints, or current project context
+- You're making assumptions instead of checking knowledge/ or inventory/
 
-When receiving a complex request from the user:
-- **FIRST action**: Write your plan in `journal/_current.md`
-- **Work**: Execute the plan
-- **LAST action**: Update `journal/_current.md` with results and next steps
+After re-reading, tell the user: *"Un momento — recalibro contexto."* Then summarize what you remember about the current work.
 
-Do NOT skip journaling. A brain that doesn't write things down is just a chat thread.
+### Smart Journaling
+
+Not everything needs journaling. Use this decision:
+
+```
+When receiving a request:
+├── Trivial? (< 1 min, no decisions, no new knowledge)
+│   └── Just do it. Don't journal.
+├── A question? (no changes, no decisions)
+│   └── Answer it. Don't journal.
+└── Complex? (multiple files, decisions, architecture, production impact)
+    └── FIRST: Write plan in journal/_current.md
+        THEN: Execute
+        LAST: Update journal/_current.md with results
+```
+
+A brain that journals everything wastes tokens. A brain that journals nothing is just a chat thread. **Journal decisions and discoveries, not routine actions.**
 
 ---
 
@@ -69,14 +110,23 @@ Every session follows three phases:
 Bootstrap protocol above. You're oriented.
 
 ### 🟢 Work
-Execute tasks. Route information using the **routing tree** below. Apply the **heartbeat** after each major subtask.
+Execute tasks. Route information using the **routing tree** below.
+
+**Mandatory during work:**
+- **Heartbeat check**: Re-read `HEARTBEAT.md` every 3-5 interactions, or when topic changes
+- **Drift self-check**: If you notice drift signals → STOP → re-read HEARTBEAT.md
+- **Size check**: If `_current.md` exceeds ~150 lines → suggest `/consolidate`
+- **Workline sync** (Planning mode only): Update task progress in `worklines/` when completing steps
 
 ### 🟠 Persist (before session ends)
-1. If `_current.md` has actionable content → run `/consolidate`
-2. If not enough for full consolidation → update `_current.md` with:
+1. Update `journal/_current.md` with:
+   - What was accomplished this session
    - Where you stopped
-   - What's pending
+   - What's pending / next steps
    - Any open decisions
+2. If in Planning mode → update workline task status
+3. If `_current.md` has substantial content → suggest `/consolidate`
+4. If useful content accumulated → suggest archiving to `journal/archive/`
 
 ---
 
@@ -90,14 +140,17 @@ Is this about the brain's identity or methodology?
 │   ├── YES → identity/ (role, principles, contacts)
 │   └── NO → journal/_current.md
 │
-└── NO: Domain/project knowledge?
-    ├── YES: Worth finding in a future session?
-    │   ├── YES → knowledge/ (areas, domains, lessons)
-    │   └── NO → journal/_current.md (may consolidate later)
+└── NO: Work planning? (objectives, tasks, direction, priorities)
+    ├── YES → worklines/ (update _meta.md or task files)
     │
-    └── NO: Concrete data (IDs, URLs, endpoints)?
-        ├── YES → inventory/
-        └── NO → Don't capture. Your own native memory handles it.
+    └── NO: Domain/project knowledge?
+        ├── YES: Worth finding in a future session?
+        │   ├── YES → knowledge/ (areas, domains, lessons)
+        │   └── NO → journal/_current.md (may consolidate later)
+        │
+        └── NO: Concrete data (IDs, URLs, endpoints)?
+            ├── YES → inventory/
+            └── NO → Don't capture. Your own native memory handles it.
 ```
 
 **Quick routing rules:**
@@ -109,6 +162,8 @@ Is this about the brain's identity or methodology?
 | "I learned that X causes Y" | `journal/_current.md` → consolidate to `knowledge/lessons/` |
 | "My role involves X" | `identity/ROLE.md` |
 | "Always do X before Y" | `identity/PRINCIPLES.md` |
+| "The next step for project X is..." | `worklines/{project}/tasks/` |
+| "We need to prioritize A over B" | `worklines/_active.yaml` (update priorities) |
 | Debug output, temp reasoning | Don't capture |
 
 ---
@@ -146,10 +201,12 @@ These are the top 3 anti-patterns. Do not fall into them:
 | Command | Skill | What it does |
 |---------|-------|-------------|
 | `/init` | `skills/init/SKILL.md` | Set up or extend the brain |
+| `/plan` | `skills/plan/SKILL.md` | Create or manage worklines and tasks |
 | `/consolidate` | `skills/consolidate/SKILL.md` | Move working memory into structured knowledge |
 | `/ingest [file]` | `skills/ingest/SKILL.md` | Ingest a document into the brain |
 | `/discover` | `skills/discover/SKILL.md` | Suggest relevant skills/tools for your context |
 | `/audit` | `skills/audit/SKILL.md` | Review brain for gaps, stale data, missing info |
+| `/upgrade` | `skills/upgrade/SKILL.md` | Upgrade brain to latest version |
 | `/help` | `skills/help/SKILL.md` | List available commands and brain status |
 
 ---
@@ -164,7 +221,8 @@ Keep files within these limits for optimal agent performance:
 | `_overview.md` | ~50 | Summarize more aggressively |
 | Knowledge node `.md` | ~150 | Split into sub-topics |
 | `_current.md` | ~200 | Trigger `/consolidate` |
-| `HEARTBEAT.md` | ~20 | Keep it ultra-condensed |
+| `HEARTBEAT.md` | ~25 | Keep it ultra-condensed |
+| `_meta.md` (workline) | ~50 | Keep objectives focused |
 
 ---
 
@@ -174,18 +232,25 @@ Keep files within these limits for optimal agent performance:
 .synaptic/
 ├── MANIFEST.md          # Brain metadata
 ├── BOOTSTRAP.md         # This file
+├── cortex.config.yaml   # Cortex settings (checkpoint interval, thresholds)
 ├── identity/            # WHO: role, principles, contacts, heartbeat
-│   └── HEARTBEAT.md     # Anti-drift checkpoint (re-read after each task)
+│   └── HEARTBEAT.md     # Anti-drift checkpoint (re-read every 3-5 interactions)
 ├── knowledge/           # WHAT: areas, domains, lessons
 │   ├── _tree.yaml       # Agent-optimized index (auto-generated)
 │   ├── INDEX.md         # Human-readable knowledge map
 │   ├── areas/           # Where you work (products, tools)
 │   ├── domains/         # Cross-cutting knowledge (architecture, processes)
 │   └── lessons/         # Post-task learnings
+├── worklines/           # WHERE WE'RE GOING: active work directions
+│   ├── _active.yaml     # Index of active worklines
+│   ├── {workline}/      # Per-workline directory
+│   │   ├── _meta.md     # Objective, context, decisions
+│   │   └── tasks/       # Individual tasks
+│   └── archive/         # Completed worklines
 ├── inventory/           # THINGS: project IDs, endpoints, glossary
 ├── references/          # VERBATIM: schemas, specs, DDLs
 ├── journal/             # WHEN: session working memory
 │   ├── _current.md      # Active session (→ consolidate)
 │   └── archive/         # Past sessions
-└── skills/              # HOW: init, consolidate, ingest, discover, audit, help
+└── skills/              # HOW: init, plan, consolidate, ingest, discover, audit, upgrade, help
 ```

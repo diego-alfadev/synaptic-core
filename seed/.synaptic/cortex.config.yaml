@@ -1,0 +1,38 @@
+# Synaptic Cortex — Configuration
+# The Cortex is the decision-making layer of the brain.
+# In v0.3.0 it configures agent behavior via settings.
+# In future versions it will support scripts and plugins.
+
+version: 0.3.0
+runtime: none  # none | node | python (future)
+
+# Agent behavior settings
+settings:
+  # How often the agent should re-read HEARTBEAT.md (every N interactions)
+  checkpoint_interval: 5
+
+  # Automatically write a handoff in _current.md before session ends
+  auto_sleep_handoff: true
+
+  # File size thresholds (in lines) — triggers warnings when exceeded
+  size_thresholds:
+    _current.md: 200
+    _tree.yaml: 200
+    knowledge_node: 150
+    _meta.md: 50
+
+# Future extensions (v0.4.0+)
+# scripts:
+#   path: tools/scripts/
+#   runtime: node
+#
+# plugins:
+#   gsd:
+#     enabled: false
+#     mapping:
+#       worklines_dir: ".planning"
+#       state_file: "STATE.md"
+#
+# hooks:
+#   post_task: []
+#   pre_persist: []
