@@ -2,7 +2,7 @@
 
 ## Metadata
 - **standard**: synaptic-core
-- **version**: 0.3.0
+- **version**: 0.3.1
 - **created**: {{CREATED_DATE}}
 - **last_modified**: {{MODIFIED_DATE}}
 
