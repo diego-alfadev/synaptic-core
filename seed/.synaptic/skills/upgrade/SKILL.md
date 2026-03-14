@@ -1,126 +1,82 @@
 ---
 name: upgrade
-description: Upgrade a Synaptic brain to the latest version. Handles migration of structure, files, and settings between versions. Invoke with /upgrade.
+description: Upgrade a Synaptic brain to the latest version. Uses Intelligent Seed Sync to merge the current brain with the latest remote release. Preserves all user knowledge. Invoke with /upgrade.
 ---
 
-# /upgrade — Brain Version Upgrade
+# /upgrade — Intelligent Brain Upgrade
 
 ## Overview
 
-Upgrades an existing Synaptic brain to the latest standard version.
-Preserves user data (identity, knowledge, journal, inventory) while adding new structures and updating protocols.
+Upgrades an existing Synaptic brain to any target version (e.g., v0.0.1 to v1.0.0 without intermediate steps).
+It acts as a smart merge engine: it fetches the latest `seed/` from the official repository and strategically merges it with your local `.synaptic/`, ensuring no user data is ever lost.
 
 ## Execution
 
-### Step 1: Detect Current Version
+### Step 1: Locate Target Seed
+
+Determine where the new version will come from:
+1. Ask the user if they want to fetch the latest release from GitHub (`diego-alfadev/synaptic-core`) or use a local directory.
+2. If GitHub: Use your available tools (curl, bash, or direct browser) to download the `seed/` directory from the latest `main` branch or latest release on `github.com/diego-alfadev/synaptic-core`. Extract it to a temporary directory (e.g., `/tmp/synaptic-seed`).
+3. If local: Ask the user for the path to the downloaded `seed/` directory.
+
+### Step 2: Pre-Upgrade Analysis
+
+Compare the target `seed/.synaptic/` against the local `.synaptic/`.
+Present a report to the user summarizing what will happen based on the **3 Golden Rules of Seed Sync**:
+
+1. **Overwrite (Protocol Files)**: System files will be replaced.
+   - `BOOTSTRAP.md`, `MANIFEST.md`, `skills/*`, `cortex.config.yaml`
+2. **Merge Additive (User Data)**: New sections or templates from the target will be appended, but existing user data (Identity, Knowledge, Journal, Inventory) is STRICTLY PRESERVED.
+   - `identity/HEARTBEAT.md`, `identity/ROLE.md`, etc.
+3. **Add (Missing Structures)**: Any directories or files in the target that don't exist locally will be copied over.
 
 ```
-Read MANIFEST.md → extract version
-├── version >= 0.3.0 → "Brain is already up to date (v{version})." Stop.
-├── version < 0.3.0 → Continue to Step 2
-└── No MANIFEST.md → "Can't determine version. Is this a Synaptic brain?" Stop.
-```
+Ready to upgrade brain to [target_version].
 
-### Step 2: Pre-Upgrade Report
-
-Show the user what will change:
-
-```
-Upgrading brain from v{current} to v0.3.0
-
-New additions:
-  + worklines/_active.yaml     — Work direction tracking
-  + worklines/archive/         — Archived worklines
-  + cortex.config.yaml         — Agent behavior settings
-  + skills/plan/SKILL.md       — Workline management skill
-  + skills/upgrade/SKILL.md    — This upgrade skill
-
-Updates:
-  ~ BOOTSTRAP.md               — Anti-drift improvements, smart journaling,
-                                  Work Mode Detection (Step 5), expanded routing tree
-  ~ identity/HEARTBEAT.md      — Drift signals, current focus section
-  ~ MANIFEST.md                — Version bump, new skills
-  ~ skills/init/SKILL.md       — Aggressive agent detection (12 platforms)
-
-Preserved (no changes):
-  ✓ identity/ROLE.md, PRINCIPLES.md, CONTACTS.md
-  ✓ knowledge/ (all areas, domains, lessons)
-  ✓ inventory/ (all data)
-  ✓ references/ (all data)
-  ✓ journal/ (all sessions)
+Impact:
+  - Protocol files will be updated (BOOTSTRAP, skills).
+  - Your knowledge, identity, and journal will be PRESERVED.
+  - [Number] new structures/files will be added.
 
 Proceed? (yes/no)
 ```
 
-### Step 3: Execute Upgrade
+### Step 3: Execute Intelligent Sync
 
-If user confirms:
+If user confirms, execute the merge carefully:
 
-**3a. Create new structures:**
-- Create `worklines/_active.yaml` (empty template)
-- Create `worklines/archive/` directory
-- Create `cortex.config.yaml` with default settings
+**3a. Protocol Update**
+- Copy all files from the target's `skills/` to local `skills/`.
+- Replace local `BOOTSTRAP.md` with the target's version.
+- Replace local `MANIFEST.md` with the target's version, but **retain** the `name`, `role`, `areas`, and `domains` from the original local manifest.
 
-**3b. Update BOOTSTRAP.md:**
-- Replace with v0.3.0 standard BOOTSTRAP.md content
-- Key changes:
-  - Step 0: add Cortex config detection
-  - Step 5: Work Mode Detection (worklines)
-  - Anti-Drift: heartbeat every 3-5 interactions, drift self-detection signals
-  - Smart journaling (trivial = skip, complex = journal)
-  - Session Rhythm: mandatory heartbeat checks, workline sync in Planning mode
-  - Persist phase: structured handoff template
-  - Memory Routing: new worklines branch
-  - Commands: add /plan, /upgrade
-  - Directory Map: add worklines/, cortex.config.yaml
+**3b. Structure Addition**
+- Iterate through all directories in the target seed. If a directory or file (like `worklines/_active.yaml` or `cortex.config.yaml`) is missing locally, create it.
 
-**3c. Update HEARTBEAT.md:**
-- **Preserve** existing user content in "Who you are", "Session rules", "Active constraints"
-- **Add** new sections:
-  - `## Current focus` — link to worklines and journal
-  - `## Drift signals — self-check` — checklist for self-diagnosis
-- If HEARTBEAT.md still has `{{placeholders}}`, leave them (user hasn't personalized yet)
+**3c. Data Merge (Additive)**
+- For `identity/HEARTBEAT.md`: Compare headers. If the target has new headers (e.g., `## Drift signals`), append those new sections to the local file without modifying the user's role or constraints.
+- Do purely additive merges for any other template files that have evolved. **Never delete** user context.
 
-**3d. Add new skills:**
-- Create `skills/plan/SKILL.md` (workline management)
-- Create `skills/upgrade/SKILL.md` (this file — for future upgrades)
-
-**3e. Update MANIFEST.md:**
-- Change version to 0.3.0
-- Add `plan` and `upgrade` to skills list
-- Add `## Worklines` section
-
-**3f. Update agent bridges:**
-- Re-detect all agent config paths (using the expanded 12-platform map)
-- Update bridge files with v0.3.0 content (~500 tokens)
-- Report which bridges were updated
+**3d. Agent Bridges Update**
+- Run the "System Prompt Hook" logic (from `skills/init/SKILL.md`) to re-detect all agent config directories in the workspace and inject the updated bridge files.
 
 ### Step 4: Post-Upgrade Report
 
 ```
-✅ Brain upgraded to v0.3.0!
+✅ Brain upgraded successfully! (Now at v[target_version])
 
-Added:
-  - worklines/ — ready for /plan
-  - cortex.config.yaml — agent behavior settings
-  - skills/plan, skills/upgrade
+Changes applied:
+  - System files and skills updated.
+  - New structures added: [list of notable new files/folders].
+  - Agent bridges updated in: [paths].
 
-Updated:
-  - BOOTSTRAP.md — anti-drift improvements, smart journaling, workline detection
-  - HEARTBEAT.md — drift signals, current focus
-  - MANIFEST.md — version 0.3.0
-  - Agent bridges: [list of updated paths]
-
-Recommended next steps:
-  - Review your HEARTBEAT.md — check the new drift signals section
-  - /plan to create your first workline
-  - /audit to verify brain health after upgrade
+Your identity, knowledge, and journal were safely preserved.
+Check `BOOTSTRAP.md` to see the new protocol features.
 ```
 
 ## Rules
 
-- NEVER delete or overwrite user data in identity/, knowledge/, inventory/, references/, or journal/
-- When updating HEARTBEAT.md, preserve user-written content — only add new sections
-- Always show the pre-upgrade report and wait for confirmation
-- If anything looks wrong during upgrade, stop and tell the user
-- After upgrade, suggest /audit to verify brain health
+- NEVER delete or overwrite user data in `identity/`, `knowledge/`, `inventory/`, `references/`, or `journal/`.
+- The Intelligent Sync must work regardless of what version the user is currently on.
+- Always ask for confirmation before modifying files in Step 3.
+- If anything looks broken or risky during the merge, STOP and warn the user before proceeding.
