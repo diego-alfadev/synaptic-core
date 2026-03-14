@@ -2,7 +2,7 @@
 
 ## Metadata
 - **standard**: synaptic-core
-- **version**: 0.2.0
+- **version**: 0.3.0
 - **created**: {{CREATED_DATE}}
 - **last_modified**: {{MODIFIED_DATE}}
 
@@ -20,6 +20,10 @@
 - {{DOMAIN_1}}
 - {{DOMAIN_2}}
 
+## Worklines
+<!-- Active work directions — see worklines/_active.yaml for details -->
+<!-- Updated by /plan -->
+
 ## Capabilities
 - **tools_available**: false
 - **runtime**: none
@@ -27,10 +31,12 @@
 
 ## Skills
 - init
+- plan
 - consolidate
 - ingest
 - discover
 - audit
+- upgrade
 - help
 
 ## Skill Triggers

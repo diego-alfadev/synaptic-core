@@ -27,12 +27,14 @@ SYNAPTIC-CORE fixes this by defining a **portable, human-readable brain** that a
 .synaptic/                    ← Drop this into any project
 ├── BOOTSTRAP.md              ← Agent reads this first (instruction manual)
 ├── MANIFEST.md               ← Brain metadata & capabilities
+├── cortex.config.yaml        ← Agent behavior settings
 ├── identity/                 ← WHO: role, principles, contacts
 ├── knowledge/                ← WHAT: areas, domains, lessons learned
+├── worklines/                ← WHERE WE'RE GOING: active work directions & tasks
 ├── inventory/                ← THINGS: project IDs, endpoints, glossary
 ├── references/               ← VERBATIM: schemas, specs, DDLs
 ├── journal/                  ← WHEN: session working memory
-└── skills/                   ← HOW: init, consolidate, ingest, discover, help
+└── skills/                   ← HOW: init, plan, consolidate, ingest, discover, help
 ```
 
 When an agent opens your project, it reads `BOOTSTRAP.md` and knows:
@@ -147,9 +149,11 @@ SYNAPTIC-CORE follows a layered design where **inner layers never depend on oute
 | Command | What it does |
 |---------|-------------|
 | `/init` | Set up or extend the brain (with Socratic interview) |
+| `/plan` | Create or manage worklines and tasks |
 | `/consolidate` | Move working memory → structured knowledge |
 | `/ingest [file]` | Ingest a document (DDL, spec, etc.) into the brain |
 | `/discover` | Suggest relevant skills/tools for your context |
+| `/upgrade` | Upgrade brain to latest version |
 | `/help` | Show brain status and quick reference |
 
 ---
@@ -167,12 +171,12 @@ SYNAPTIC-CORE follows a layered design where **inner layers never depend on oute
 
 ## What SYNAPTIC-CORE is NOT
 
-- **Not a task manager** — Use [GSD](https://github.com/gsd-build/get-shit-done), Jira, or Linear for that. Synaptic stores *knowledge*, not *to-do lists*.
-- **Not an agent framework** — It doesn't replace `.agent/`, `AGENTS.md`, or tool configs. Those tell the agent *how to behave*. Synaptic tells it *what you know*.
+- **Not a full task manager** — Use [GSD](https://github.com/gsd-build/get-shit-done), Jira, or Linear for comprehensive project management. Synaptic has *worklines* — lightweight work tracking that gives your brain direction, priorities, and context. It's a compass, not a Gantt chart.
+- **Not an agent framework** — It doesn't replace `.agent/`, `AGENTS.md`, or tool configs. Those tell the agent *how to behave*. Synaptic tells it *what you know* and *where you're going*.
 - **Not a database** — No queries, no schemas, no server. Just files.
 - **Not domain-specific** — No React patterns, no Kubernetes playbooks, no language-specific rules baked in. SYNAPTIC-CORE is a *structure*, not content. Your brain is yours to fill.
 - **Not opinionated about your agent** — Works with Claude Code, Antigravity, Cursor, Copilot, Windsurf, OpenCode, or any agent that can read files. We don't pick favorites.
-- **Not heavy** — The seed is ~30 files, all Markdown/YAML. No dependencies, no build step, no node_modules.
+- **Not heavy** — The seed is ~35 files, all Markdown/YAML. No dependencies, no build step, no node_modules.
 
 ---
 
@@ -195,7 +199,11 @@ This project stands on the shoulders of great ideas from the agent-native knowle
 
 - **[Arscontexta](https://github.com/agenticnotetaking/arscontexta)** — The definitive work on agent-native note-taking methodology. SYNAPTIC-CORE's memory routing decision tree, session rhythm (Orient → Work → Persist), discovery-first quality gate, and conflation warnings are directly inspired by Arscontexta's domain-derived architecture patterns.
 
-- **[Get Shit Done (GSD)](https://github.com/gsd-build/get-shit-done)** — A pragmatic task management framework for agentic workflows. GSD's `map-codebase` pattern validated our "scan first, ask second" approach for workspace detection in `/init`. GSD excels at planning and execution — Synaptic excels at memory and knowledge. They complement each other.
+- **[Get Shit Done (GSD)](https://github.com/gsd-build/get-shit-done)** — A pragmatic task management framework for agentic workflows. GSD's `map-codebase` pattern validated our "scan first, ask second" approach for workspace detection in `/init`. GSD's state hierarchy and planning model influenced our worklines design. GSD excels at planning and execution — Synaptic excels at memory and knowledge. They complement each other, and our worklines structure is designed for future GSD plugin integration.
+
+- **[ClawVault](https://github.com/ClawVault/ClawVault)** — Structured memory system for AI agents. ClawVault's MEMORY.md/vault duality validated our BOOTSTRAP.md + HEARTBEAT.md approach. Their explicit `wake`/`sleep`/`checkpoint` lifecycle influenced our session rhythm improvements. The handoff concept for agent transitions inspired our journal archiving patterns.
+
+- **[Roam-Code](https://github.com/roam-code/roam-code)** — Architectural intelligence layer for AI coding agents. Roam's `describe --write` pattern of aggressively detecting and writing to all agent config files directly shaped our `/init` Step 4 (System Prompt Hook), expanding from 3 platforms to 12.
 
 - **[skills.sh](https://skills.sh/)** — The open agent skills directory. Our `/discover` skill integrates with the skills.sh ecosystem to help users find and install relevant capabilities. The broader skills convention (`.md` files as agent instructions) directly influenced how SYNAPTIC-CORE skills are designed.
 
