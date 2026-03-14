@@ -169,6 +169,25 @@ SYNAPTIC-CORE follows a layered design where **inner layers never depend on oute
 
 ---
 
+## Quick Start
+
+1. **Download the Seed**: Clone this repo or download the [.synaptic/](seed/.synaptic/) folder into your project root.
+2. **Setup**: Run `/init` and follow the Socratic interview to define your brain's identity and areas.
+3. **Connect**: Follow the "Agent Bridge" instructions during setup to link your agent (Claude, Cursor, etc.).
+4. **Work**: Start your session. The agent will read `BOOTSTRAP.md` and initialize automatically.
+
+## Upgrading from v0.0.1 / v0.0.2
+
+To upgrade an existing brain to v0.3.0 ("Cortex Edition"):
+
+1. **Automated**: If you have the `/upgrade` command, just run it.
+2. **Manual Skill Injection**: If your brain is ancient and doesn't have `/upgrade`:
+   - Copy the content of [skills/upgrade/SKILL.md](seed/.synaptic/skills/upgrade/SKILL.md) from this repo.
+   - Paste it into your agent and say: *"Follow this skill to upgrade my brain at .synaptic/ to v0.3.0"*.
+   - The agent will patch your structures and update the protocols while **preserving** your knowledge and identity.
+
+---
+
 ## What SYNAPTIC-CORE is NOT
 
 - **Not a full task manager** — Use [GSD](https://github.com/gsd-build/get-shit-done), Jira, or Linear for comprehensive project management. Synaptic has *worklines* — lightweight work tracking that gives your brain direction, priorities, and context. It's a compass, not a Gantt chart.
