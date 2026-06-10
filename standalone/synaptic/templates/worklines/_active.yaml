@@ -1,0 +1,14 @@
+# Synaptic Worklines — Active Index
+# This file tracks your active lines of work.
+# Updated by /plan or manually.
+
+worklines: []
+  # Example:
+  # - id: proyecto-recredit
+  #   title: "Proyecto Recredit"
+  #   status: active          # active | paused | blocked
+  #   priority: high          # high | medium | low
+  #   started: 2026-03-10
+  #   last_touched: 2026-03-14
+  #   summary: "MVP del módulo Recredit para el CRM"
+  #   open_tasks: 2

@@ -1,0 +1,21 @@
+# Synaptic Cortex — Configuration (v0.4)
+# Boot file is BRAIN.md only. This file holds size budgets and optional tool hints.
+
+version: 0.4.0-alpha
+runtime: none  # none | node | python (future)
+
+settings:
+  # File size budgets (lines) — agent should suggest /consolidate when exceeded
+  size_budgets:
+    journal_current: 200    # journal/_current.md
+    knowledge_page: 150     # any knowledge/ page
+    BRAIN.md: 120           # boot file hard cap
+
+tools:
+  # Optional lint helper — use if present, ignore if absent
+  check: tools/check.js     # run: node tools/check.js
+
+# Future hooks (not active in v0.4)
+# hooks:
+#   post_task: []
+#   pre_persist: []
