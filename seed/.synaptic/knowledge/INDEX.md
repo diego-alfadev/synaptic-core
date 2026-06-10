@@ -1,25 +1,27 @@
 # Knowledge Index
 
-> Human-readable map of all knowledge in this brain. See `_tree.yaml` for the agent-optimized version.
+Read this file when you need knowledge; load only the pages you need.
 
-## Areas (where I work)
-
-<!-- Areas are added by /init or /consolidate. Example:
-### Customer Feedback
-Tools and processes for managing customer feedback systems.
-→ [Overview](areas/customer-feedback/_overview.md)
+<!-- HOW TO USE
+- Each entry is a wiki page. Load only the pages relevant to your task.
+- Pages use [[wikilink]] syntax. Resolve a link by reading the .md file with that name in knowledge/.
+- Discovery rule: a page not listed here doesn't exist. Add every new page with a 1-line summary.
 -->
 
-## Domains (what I know)
+<!-- TEMPLATE — replace with real topic groups as pages are created
 
-<!-- Domains are added as cross-cutting knowledge accumulates. Example:
-### Architecture
-Architectural decisions and patterns.
-→ [Overview](domains/architecture/_overview.md)
+## {{Area or Topic Group}}
+
+- [[page-name]] — {{one-line summary}}
+
 -->
 
-## Lessons Learned
+## Lessons
 
-<!-- Lessons extracted from past work. Example:
-- [2026-02 Performance Issues](lessons/2026-02-perf-issues.md)
+<!-- Lessons are pages with type: lesson, listed here as they are created.
+- [[lesson-name]] — {{what was learned and when}}
 -->
+
+---
+
+> Discovery rule: a page not listed here doesn't exist. Add every new page with a 1-line summary.

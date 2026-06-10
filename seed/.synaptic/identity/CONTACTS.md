@@ -1,4 +1,5 @@
 # Contacts & Stakeholders
+<!-- On-demand depth file. Read when coordinating with people or routing a question to a stakeholder. -->
 
 ## Quick Lookup
 
