@@ -1,6 +1,8 @@
 # Current Session
 
 > Working memory for the active session. Consolidate when this exceeds ~200 lines.
+> On consolidation, route durable items to: knowledge pages, lessons, playbooks, worklines,
+> or identity files per BRAIN.md routing rules. Discard transient noise.
 
 ## Session Start
 - **Date**: {{DATE}}

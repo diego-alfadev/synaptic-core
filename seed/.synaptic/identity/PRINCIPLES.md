@@ -1,4 +1,5 @@
 # Principles & Constraints
+<!-- On-demand depth file. Read when evaluating a decision or checking constraints. Top constraints summarised in BRAIN.md Identity Capsule. -->
 
 ## Hard Rules
 <!-- Things that must ALWAYS or NEVER be done -->
