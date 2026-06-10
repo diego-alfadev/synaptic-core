@@ -1,42 +1,43 @@
 ---
 standard: synaptic-core
-version: 0.4.0-alpha
+version: 0.5.0-alpha
 name: {{BRAIN_NAME}}
 scope: {{SCOPE}}  # project | role | org | life
 created: {{CREATED_DATE}}
 updated: {{UPDATED_DATE}}
+budgets:
+  journal: 80
+  page: 150
+  brain: 100
 ---
 
 # {{BRAIN_NAME}} — Synaptic Brain
 
-You are reading a Synaptic brain. This file is the only mandatory read at session start.
+You are reading a Synaptic brain — a portable knowledge graph for this {{scope}}'s work.
+This file is the only mandatory read at session start.
 
 ---
 
-## Identity Capsule
+## Brain Context
 
-**Role:** {{ROLE_SUMMARY}}
+**What this brain covers:** {{WHAT_THIS_BRAIN_COVERS}}
 
-**Language:** {{LANGUAGE}} — **Tone:** {{TONE}}
+**Owner's role in this project:** {{OWNER_ROLE_IN_PROJECT}}
 
-**Top constraints:**
-- {{CONSTRAINT_1}}
-- {{CONSTRAINT_2}}
-- {{CONSTRAINT_3}}
-<!-- Add up to 5 constraints total. Delete unused bullets. -->
+> Persona, tone, language and behavior belong to your harness (AGENTS.md / instructions), never to this brain.
 
 ---
 
 ## Brain Map
 
-| Directory | Purpose | Key file |
-|-----------|---------|----------|
-| `identity/` | Depth on demand: role, principles, stakeholders — read when task needs it | ROLE.md, PRINCIPLES.md, CONTACTS.md |
-| `knowledge/` | Wiki pages; never eager-load — navigate via INDEX only | `knowledge/INDEX.md` ← sole navigation hub |
-| `playbooks/` | Action recipes distilled from successful work — they generate plans, not fixed steps | `playbooks/_index.md` |
-| `worklines/` | Direction, objectives, priorities | `worklines/_active.yaml` |
-| `journal/` | Working memory — temporal, session-scoped | `journal/_current.md` |
-| `skills/` | LOCAL custom skills for this brain only | per skill directory |
+| Directory | Purpose |
+|-----------|---------|
+| `knowledge/` | Wiki pages (kebab-case, unique names); `knowledge/INDEX.md` is the sole navigation hub |
+| `playbooks/` | Action recipes distilled from real work; generates plans, not fixed steps |
+| `playgrounds/` | Per-task workspaces: multi-day, multi-artifact; registered in journal, burnable |
+| `references/` | Large verbatim artifacts; indexed in `references/_index.md`, never eager-loaded |
+| `journal/` | Thin working memory — `_current.md` only, hard budget 80 lines |
+| `templates/` | Page and playbook templates |
 
 **Navigation rule:** a knowledge page not reachable from `knowledge/INDEX.md` does not exist.
 
@@ -44,41 +45,42 @@ You are reading a Synaptic brain. This file is the only mandatory read at sessio
 
 ## Session Start
 
-If resuming work: read `journal/_current.md`, check `worklines/_active.yaml`, and offer to
-continue the active workline. Otherwise just work. Load everything else on demand via
-`knowledge/INDEX.md`.
+If resuming: read `journal/_current.md` (lists active playgrounds and next step). Otherwise just work; load knowledge on demand via `knowledge/INDEX.md`.
 
 ---
 
-## Routing Rules
+## Contribution Protocol
 
-1. Durable knowledge → `knowledge/` page; update `knowledge/INDEX.md` to register it.
-2. Lesson learned → `knowledge/lessons/` page; update `knowledge/INDEX.md`.
-3. Repeatable procedure that worked → `playbooks/` entry; update `playbooks/_index.md`.
-4. Direction, priorities, objectives → `worklines/`; update `worklines/_active.yaml`.
-5. Identity or hard constraints → `identity/` (ROLE.md or PRINCIPLES.md).
-6. Everything temporal (session notes, decisions in progress) → `journal/_current.md`.
+**Routing:**
+1. Durable knowledge → `knowledge/` page + register in `knowledge/INDEX.md`.
+2. Lesson learned → `knowledge/lessons/` + register in `knowledge/INDEX.md`.
+3. Repeatable procedure that worked → `playbooks/` entry + update `playbooks/_index.md`.
+4. Task too big for journal (multi-day, multiple artifacts) → `playgrounds/{{task-id}}/`, note in journal.
+5. Large verbatim artifact (DDL, spec, export) → `references/` + 1-line entry in `references/_index.md`.
+6. Temporal (session notes, decisions in progress) → `journal/_current.md`.
 7. Trivia, debug output, one-off lookups → do not capture.
-8. Discovery rule: before creating any node, confirm it will be reachable from `knowledge/INDEX.md`.
 
----
-
-## Anti-Drift
-
-If your persona, language, or constraints drift, re-read this file.
+**Conventions:**
+- **Naming:** unique kebab-case filenames across `knowledge/` (no duplicates).
+- **Linking:** use `[[wikilinks]]` at capture time — link related pages when writing, not retroactively.
+- **Backlinks:** queried, not stored: `grep -r "[[page-name]]" .synaptic/` (Obsidian computes them live).
+- **Discovery rule:** not reachable from INDEX.md → doesn't exist.
+- **Files are authoritative** — harness-native agent memory is a cache.
 
 ---
 
 ## Commands
 
-Skills below are provided by the `synaptic` skill package (`standalone/synaptic/` in the repo).
-If not installed, the brain still works — follow the routing rules above.
+Provided by the `synaptic` skill installed in the project's skill dirs.
 
 | Command | What it does |
 |---------|-------------|
 | `/init` | Set up or extend the brain structure |
-| `/plan` | Create or manage worklines and tasks |
 | `/consolidate` | Promote working memory into structured knowledge |
 | `/ingest [file]` | Ingest a document into the brain |
 | `/audit` | Review brain for gaps, stale data, missing coverage |
 | `/upgrade` | Upgrade brain to latest synaptic-core version |
+
+---
+
+If you stop following this protocol, re-read this file.
