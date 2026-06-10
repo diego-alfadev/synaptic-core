@@ -28,26 +28,36 @@ Ask for confirmation before any deletion. Phase M is deterministic; Phase C requ
 
 Phase M is pure file operations: no content judgment. Run it in order; tick each item.
 
-### M1 — File deletions by source version
+### M1 — Stage or delete, by source version
+
+**RULE: Phase M never destroys content that Phase C still needs.** Anything Phase C must read is
+MOVED to `_migration-staging/` (created inside the brain), never deleted here. Phase C consumes the
+staging directory and deletes it at the end. Only content-free or fully-superseded files are deleted
+in Phase M.
 
 **From v0.3:**
 
-- [ ] Delete `BOOTSTRAP.md`
-- [ ] Delete `MANIFEST.md`
-- [ ] Delete `identity/HEARTBEAT.md` (after extracting content in Phase C)
-- [ ] Delete `knowledge/_tree.yaml` (after INDEX.md is rebuilt in Phase C)
+- [ ] MOVE to `_migration-staging/`: `BOOTSTRAP.md`, `MANIFEST.md`, `identity/HEARTBEAT.md`,
+  `knowledge/_tree.yaml`
+- [ ] Leave `identity/ROLE.md`, `identity/PRINCIPLES.md`, `identity/CONTACTS.md` in place
+  (Phase C consumes them)
+- [ ] MOVE `worklines/` (whole directory, if present) to `_migration-staging/worklines/`
+  (Phase C triages it — do NOT delete here)
 - [ ] Delete standard skills: `skills/init/`, `skills/plan/`, `skills/consolidate/`, `skills/ingest/`, `skills/discover/`, `skills/audit/`, `skills/upgrade/`, `skills/help/`
-  - Preserve any custom skill directories (not in the list above).
+  - Preserve any custom skill directories or files (anything not in the list above).
 - [ ] Delete v0.3 bridge files (any ≤10-line files in harness paths that point to the brain):
   check `CLAUDE.md` (Synaptic section only), `.github/copilot-instructions`, `.cursor/rules/synaptic.mdc`, `.windsurf/rules/synaptic.md`, `.clinerules/synaptic.md`, `.aider/synaptic.md`, `.continue/synaptic.md`, `.agent(s)/rules/synaptic.md`.
   Remove only the synaptic-bridge fragment or file; leave non-synaptic content untouched.
+- [ ] If bridge-like or context-prompt files exist at the BRAIN ROOT (a common v0.3 pattern:
+  department/shared context prompts living next to BOOTSTRAP.md): leave them in place and
+  list them for Phase C step C1b. Do not delete.
 
 **From v0.4 (in addition to v0.3 items if upgrading from v0.4 directly):**
 
-- [ ] Delete `cortex.config.yaml`
-- [ ] Delete `identity/` directory (after extracting content in Phase C)
-- [ ] Delete `worklines/` directory (after triaging in Phase C)
-- [ ] Delete `skills/` directory (all contents; they are now in project harness skill dirs)
+- [ ] Delete `cortex.config.yaml` (settings superseded by BRAIN.md frontmatter budgets)
+- [ ] Leave `identity/` in place (Phase C consumes it)
+- [ ] MOVE `worklines/` to `_migration-staging/worklines/` (Phase C triages)
+- [ ] Delete `skills/` standard lifecycle skills only; preserve custom ones (Phase C relocates them)
 - [ ] Remove old skill dir references from any surviving files
 
 **Both versions:**
@@ -97,7 +107,10 @@ This project has a Synaptic brain. See AGENTS.md (BEGIN:SYNAPTIC block) for inst
 Read `.synaptic/BRAIN.md` at session start. Commands: /init /consolidate /ingest /audit /upgrade
 ```
 
-### M6 — BRAIN.md frontmatter budgets
+### M6 — BRAIN.md frontmatter budgets (v0.4 source only)
+
+**v0.3 source: SKIP this step** — BRAIN.md does not exist yet; Phase C creates it (C1) with the
+budgets block included.
 
 Open `BRAIN.md`. If the frontmatter does not have a `budgets:` block, add:
 
@@ -135,6 +148,12 @@ Delete any stale v0.4 template files that no longer exist in the v0.5 set:
 Phase C re-routes content from the removed structures into v0.5 locations. Run after Phase M.
 **Present each proposed change to the user before writing; do not bulk-apply silently.**
 
+**Autonomous mode:** if no user is available (batch/rehearsal migration), make the reasonable
+choice, never destroy ambiguous content (prefer staging/moving over deleting), and record every
+judgment in a migration decision log delivered with the result.
+
+Phase C consumes `_migration-staging/` (created in M1) and DELETES it as its final step.
+
 ### C1 — Identity content re-routing
 
 **From `MANIFEST.md` / `BOOTSTRAP.md` / `HEARTBEAT.md` (v0.3) or `identity/ROLE.md` (v0.4):**
@@ -158,14 +177,29 @@ Phase C re-routes content from the removed structures into v0.5 locations. Run a
     global agent instructions (CLAUDE.md etc.). Do NOT place these in the brain.
     If the user declines, discard with explicit consent.
 
-### C2 — Worklines triage (v0.4 only)
+### C1b — Brain-root context/bridge files (v0.3 pattern)
 
-For each item in `worklines/_active.yaml` or `worklines/{slug}/`:
+If Phase M listed context-prompt or bridge-like files at the brain root (e.g. shared department
+context prompts): extract their durable project knowledge (systems, environments, people-routing,
+glossary facts) into knowledge pages registered in INDEX.md; route persona/behavior content per C1;
+then MOVE the original files OUT of the brain (e.g. to a `HARNESS_ORIGINALS/` folder at the project
+root) for the user to re-home in their harness. They are harness material, not brain material.
 
-- Still active → ask: "Move to a playground (`playgrounds/{task-id}/`) or to your task system (Jira/Trello/etc.)?"
-- Stale → confirm discard: "This workline appears stale — delete?" Only delete on explicit consent.
+### C2 — Worklines triage (source: `_migration-staging/worklines/`)
+
+For each item in the staged `worklines/_active.yaml` or `worklines/{slug}/`:
+
+- Still active (specific in-flight work) → ask: "Move to a playground (`playgrounds/{task-id}/`) or to your task system (Jira/Trello/etc.)?"
+- Perpetual/BAU lines (always-on maintenance with no specific in-flight state) → not "stale": distil
+  the operating rhythm into a knowledge page (or a playbook if it is procedural); no playground.
+- Stale → extract any durable lessons first, then confirm discard: "This workline appears stale — delete?" Only delete on explicit consent (autonomous mode: discard + log).
 
 ### C3 — Knowledge page migration (v0.3 especially)
+
+**Common v0.3 reality:** `_tree.yaml`/INDEX list many node files that were never created (phantoms),
+and ALL real content lives in one or two large `_overview.md` files. In that case: split each
+overview into coherent kebab-case topic pages (≤150 lines each) — the overviews ARE the knowledge;
+the phantom list is only a hint for section grouping.
 
 For each `_overview.md` under `knowledge/areas/` or `knowledge/domains/`:
 
@@ -197,7 +231,9 @@ Do **not** register files from `_tree.yaml` that do not actually exist on disk (
 
 For each real `.md` file in `knowledge/` (recursing into `lessons/`):
 - Add a 1-line entry under the most relevant section heading.
-- Delete `knowledge/_tree.yaml` after INDEX.md is verified.
+- Optional: if the old tree listed topics that were never written and still matter, record them in
+  an HTML comment at the bottom of INDEX.md (`<!-- Known gaps: ... -->`) so the gap is visible.
+- Delete the staged `_tree.yaml` (it lives in `_migration-staging/`) when done.
 
 ### C7 — Naming normalization
 
