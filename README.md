@@ -25,65 +25,80 @@ SYNAPTIC-CORE fixes this by defining a **portable, human-readable brain** that a
 
 ```
 .synaptic/                    ← Drop this into any project
-├── BOOTSTRAP.md              ← Agent reads this first (instruction manual)
-├── MANIFEST.md               ← Brain metadata & capabilities
+├── BRAIN.md                  ← Agent reads this ONE file at boot (≤120 lines)
 ├── cortex.config.yaml        ← Agent behavior settings
-├── identity/                 ← WHO: role, principles, contacts
-├── knowledge/                ← WHAT: areas, domains, lessons learned
+├── identity/                 ← WHO: role, principles, contacts (depth-on-demand)
+├── knowledge/                ← WHAT: wiki pages, navigated via INDEX.md
+│   └── INDEX.md              ← The single navigation hub (map of content)
+├── playbooks/                ← HOW: action recipes distilled from successful work
 ├── worklines/                ← WHERE WE'RE GOING: active work directions & tasks
-├── inventory/                ← THINGS: project IDs, endpoints, glossary
-├── references/               ← VERBATIM: schemas, specs, DDLs
 ├── journal/                  ← WHEN: session working memory
-└── skills/                   ← HOW: init, plan, consolidate, ingest, discover, help
+└── skills/                   ← Local custom skills for this brain only
 ```
 
-When an agent opens your project, it reads `BOOTSTRAP.md` and knows:
+When an agent opens your project, it reads `BRAIN.md` — one file, ≤120 lines — and knows:
 - **Who you are** — your role, expertise, and constraints
-- **What you know** — your structured knowledge across areas and domains
-- **What you're working on** — your current session context
-- **How to route new info** — where to store decisions, lessons, and data
+- **Where to look** — a brain map that routes every kind of information to the right place
+- **What you're working on** — a pointer to your active worklines and journal
+- **How to navigate** — `knowledge/INDEX.md` is the sole hub; everything else is on demand
 
 All of it in Markdown. All of it human-readable. No databases, no APIs, no magic.
+
+Boot cost: **~800 tokens** (vs ~5.5–6.4k tokens in v0.3) — roughly 10× cheaper session start.
 
 ---
 
 ## Quick Start
 
-### Option A: Download the seed 📦
+### Option A: Install the `synaptic` skill 🤖
 
-1. Go to [Releases](https://github.com/diego-alfadev/synaptic-core/releases)
-2. Download `synaptic-seed.zip`
-3. Extract `.synaptic/` into your project root
-4. Open your project with any AI agent — it reads `BOOTSTRAP.md` and onboards itself
-5. Run `/init` to personalize your brain through a brief dialogue
-
-### Option B: Install the standalone skill 🤖
-
-Copy [`standalone/synaptic-init/SKILL.md`](standalone/synaptic-init/SKILL.md) to your agent's skills directory:
+Copy [`standalone/synaptic/SKILL.md`](standalone/synaptic/SKILL.md) to your agent's skills directory:
 
 ```bash
 # Example for agents that support .agent/skills/
-cp standalone/synaptic-init/SKILL.md .agent/skills/synaptic-init/SKILL.md
+cp standalone/synaptic/SKILL.md .agent/skills/synaptic/SKILL.md
 ```
 
-Then just tell your agent: `/synaptic-init`
+Then tell your agent: `/init`
 
-It scans your workspace, asks 3-5 questions, and generates a complete personalized brain. No download needed beyond that single file.
+The skill runs a Socratic interview (3–5 rounds, scope-aware), generates a complete personalized brain, and writes harness bridges for every agent platform it detects. No download needed beyond that single file.
+
+### Option B: Drop the seed brain 📦
+
+1. Copy [`seed/.synaptic/`](seed/.synaptic/) into your project root
+2. Open `BRAIN.md` and fill in the identity capsule (role, constraints, scope)
+3. Open your project with any AI agent — it reads `BRAIN.md` and onboards itself
+
+---
+
+## Playbooks
+
+A playbook is an agent-followable recipe distilled from successful work. Its purpose is to teach the agent to **generate a plan** — assess the current state, identify gaps, produce a prioritised action list — not follow a fixed sequence blindly.
+
+Playbooks are first-class citizens in v0.4. They live in `playbooks/`, are indexed in `playbooks/_index.md`, and follow a lifecycle:
+
+> recon (observe a recurring task) → draft (extract from first real success) → refine (add one Gotcha entry per real failure)
+
+A brain without playbooks is a reference. A brain with playbooks is a trained collaborator.
+
+---
+
+## Scope: one standard from a project to your whole life
+
+`scope:` in `BRAIN.md` frontmatter declares what the brain covers:
+
+| Scope | What it holds |
+|-------|--------------|
+| `project` | Deep context for a specific codebase, client, or product |
+| `role` | Everything a person in a role knows — spans projects; the enterprise handover asset |
+| `org` | Shared team or department knowledge (committed to a shared repo) |
+| `life` | Same structure; areas = life domains (finance, health, home, work) |
+
+The structure does not change across scopes. Start with `project`. Graduate when you see what works for you.
 
 ---
 
 ## Use Cases
-
-### 🏗️ Per-project brain vs. global brain
-
-You can use SYNAPTIC-CORE in two ways, depending on your workflow:
-
-| Approach | How | Best for |
-|----------|-----|----------|
-| **Per-project** | Drop `.synaptic/` in each project folder | Deep context for a specific codebase, client, or product. More focused, less noise. |
-| **Global** | Place `.synaptic/` in a parent folder that contains all your projects | Broader context across projects. The agent always has your full knowledge, regardless of which project you're working on. |
-
-Both work. Per-project brains are more focused and efficient (smaller context = faster reasoning). Global brains give you cross-project knowledge at the cost of a larger context window. Start per-project and graduate to global once you see what works for you.
 
 ### 🔒 Security & Transparency
 
@@ -102,7 +117,7 @@ Your `.synaptic/` brain is a folder. It copies, zips, emails, and version-contro
 
 - **Switch tools?** Copy `.synaptic/` to your new agent's workspace. Done.
 - **New team member?** Hand them your brain. They get 2 years of context in 30 seconds.
-- **Going on leave?** Your replacement reads `BOOTSTRAP.md` and knows who does what, where things are, and what the rules are.
+- **Going on leave?** Your replacement reads `BRAIN.md` and knows who does what, where things are, and what the rules are.
 - **Want to read it yourself?** Print it. It's Markdown. It's structured. It makes sense without an AI.
 
 ### 📝 Documentation generation
@@ -112,8 +127,6 @@ One of the most powerful (and least obvious) use cases: **Synaptic as a document
 Just work normally — talk to your agent, make decisions, learn things. Your brain captures it all in `journal/_current.md`. Run `/consolidate` and your working memory crystallizes into structured knowledge. Over time, your `.synaptic/` folder becomes a living documentation hub.
 
 Need a formal doc? Ask your agent: *"Write a technical overview of our authentication system based on what's in the brain."* It has all the context. It writes the doc. You review. Done.
-
-This works especially well with voice — dictate to your agent while working, and let Synaptic organize it later.
 
 ---
 
@@ -142,19 +155,22 @@ SYNAPTIC-CORE follows a layered design where **inner layers never depend on oute
 
 **CORE** works everywhere, always. Even on an air-gapped corporate laptop with nothing installed. TOOLS and ECOSYSTEM are optional power-ups.
 
+The optional `tools/check.js` (zero-dep Node ≥ 18) is the TOOLS-layer lint: it validates BRAIN.md line budget, knowledge-page frontmatter, INDEX.md coverage, and broken wikilinks without touching any external service.
+
 ---
 
 ## Commands
 
+All commands are provided by the `synaptic` skill package (`standalone/synaptic/`). A brain without the skill installed still works — `BRAIN.md` is self-describing.
+
 | Command | What it does |
 |---------|-------------|
-| `/init` | Set up or extend the brain (with Socratic interview) |
+| `/init` | Set up or extend the brain (Socratic interview, scope-aware) |
 | `/plan` | Create or manage worklines and tasks |
-| `/consolidate` | Move working memory → structured knowledge |
-| `/ingest [file]` | Ingest a document (DDL, spec, etc.) into the brain |
-| `/discover` | Suggest relevant skills/tools for your context |
-| `/upgrade` | Upgrade brain to latest version |
-| `/help` | Show brain status and quick reference |
+| `/consolidate` | Route working memory → structured knowledge; update INDEX.md |
+| `/ingest [file]` | Summarise a document into a knowledge page |
+| `/audit` | Review brain for staleness, orphan pages, budget violations |
+| `/upgrade` | Migrate a v0.3 brain to v0.4 |
 
 ---
 
@@ -164,27 +180,17 @@ SYNAPTIC-CORE follows a layered design where **inner layers never depend on oute
 - **Zero installations** — Works with just files. No runtime, no daemon, no database.
 - **Agent-agnostic** — Claude Code, Antigravity, Cursor, Copilot, Windsurf... any agent that can read files.
 - **Portable** — Copy `.synaptic/` to another machine, project, or colleague. It just works.
-- **Knowledge-first** — Not a task manager. Not an ops tool. A structured knowledge base.
+- **Knowledge-first** — Not a task manager. Not an ops tool. A structured knowledge base with direction and momentum.
 - **Progressive enhancement** — CORE always works alone. Add TOOLS for scripts. Add ECOSYSTEM for integrations.
+- **Single boot file** — One mandatory read at session start. Everything else on demand. Discipline enforced by budget, not ceremony.
 
 ---
 
-## Quick Start
+## Upgrading from v0.3
 
-1. **Download the Seed**: Clone this repo or download the [.synaptic/](seed/.synaptic/) folder into your project root.
-2. **Setup**: Run `/init` and follow the Socratic interview to define your brain's identity and areas.
-3. **Connect**: Follow the "Agent Bridge" instructions during setup to link your agent (Claude, Cursor, etc.).
-4. **Work**: Start your session. The agent will read `BOOTSTRAP.md` and initialize automatically.
+Run `/upgrade` — the skill handles the migration automatically.
 
-## Upgrading from v0.0.1 / v0.0.2
-
-To upgrade an existing brain to v0.3.0 ("Cortex Edition"):
-
-1. **Automated**: If you have the `/upgrade` command, just run it.
-2. **Manual Skill Injection**: If your brain is ancient and doesn't have `/upgrade`:
-   - Copy the content of [skills/upgrade/SKILL.md](seed/.synaptic/skills/upgrade/SKILL.md) from this repo.
-   - Paste it into your agent and say: *"Follow this skill to upgrade my brain at .synaptic/ to v0.3.0"*.
-   - The agent will patch your structures and update the protocols while **preserving** your knowledge and identity.
+For a manual walkthrough, see [`standalone/synaptic/references/upgrade-v03-to-v04.md`](standalone/synaptic/references/upgrade-v03-to-v04.md). It covers the full content-preserving path: merging legacy boot files into BRAIN.md, flattening area/domain folders into wiki pages, rebuilding the index from scratch (with phantom-file pruning), and migrating point-in-time facts and verbatim assets into knowledge pages.
 
 ---
 
@@ -195,7 +201,7 @@ To upgrade an existing brain to v0.3.0 ("Cortex Edition"):
 - **Not a database** — No queries, no schemas, no server. Just files.
 - **Not domain-specific** — No React patterns, no Kubernetes playbooks, no language-specific rules baked in. SYNAPTIC-CORE is a *structure*, not content. Your brain is yours to fill.
 - **Not opinionated about your agent** — Works with Claude Code, Antigravity, Cursor, Copilot, Windsurf, OpenCode, or any agent that can read files. We don't pick favorites.
-- **Not heavy** — The seed is ~35 files, all Markdown/YAML. No dependencies, no build step, no node_modules.
+- **Not heavy** — The seed is a handful of Markdown/YAML files. No dependencies, no build step, no node_modules.
 
 ---
 
@@ -203,11 +209,10 @@ To upgrade an existing brain to v0.3.0 ("Cortex Edition"):
 
 ```
 synaptic-core/
-├── seed/             # 🧠 The reference brain skeleton (released as zip)
-├── standalone/       # 🚀 Standalone skills (install without the full brain)
-├── spec/             # 📐 Formal standard specification
+├── seed/             # 🧠 The reference brain skeleton (.synaptic/ seed)
+├── standalone/       # 🚀 The synaptic skill package (install without the full repo)
 ├── docs/             # 📚 Development docs & architecture decisions
-└── examples/         # 🧪 Example brains for learning
+└── tools/            # 🔧 Optional lint helpers (check.js)
 ```
 
 ---
@@ -218,15 +223,17 @@ This project stands on the shoulders of great ideas from the agent-native knowle
 
 - **[Arscontexta](https://github.com/agenticnotetaking/arscontexta)** — The definitive work on agent-native note-taking methodology. SYNAPTIC-CORE's memory routing decision tree, session rhythm (Orient → Work → Persist), discovery-first quality gate, and conflation warnings are directly inspired by Arscontexta's domain-derived architecture patterns.
 
-- **[Get Shit Done (GSD)](https://github.com/gsd-build/get-shit-done)** — A pragmatic task management framework for agentic workflows. GSD's `map-codebase` pattern validated our "scan first, ask second" approach for workspace detection in `/init`. GSD's state hierarchy and planning model influenced our worklines design. GSD excels at planning and execution — Synaptic excels at memory and knowledge. They complement each other, and our worklines structure is designed for future GSD plugin integration.
+- **[Get Shit Done (GSD)](https://github.com/gsd-build/get-shit-done)** — A pragmatic task management framework for agentic workflows. GSD's `map-codebase` pattern validated our "scan first, ask second" approach for workspace detection in `/init`. GSD's state hierarchy and planning model influenced our worklines design. GSD excels at planning and execution — Synaptic excels at memory and knowledge. They complement each other.
 
-- **[ClawVault](https://github.com/ClawVault/ClawVault)** — Structured memory system for AI agents. ClawVault's MEMORY.md/vault duality validated our BOOTSTRAP.md + HEARTBEAT.md approach. Their explicit `wake`/`sleep`/`checkpoint` lifecycle influenced our session rhythm improvements. The handoff concept for agent transitions inspired our journal archiving patterns.
+- **[ClawVault](https://github.com/ClawVault/ClawVault)** — Structured memory system for AI agents. ClawVault's MEMORY.md/vault duality and explicit `wake`/`sleep`/`checkpoint` lifecycle influenced our session rhythm and journal archiving patterns.
 
-- **[Roam-Code](https://github.com/roam-code/roam-code)** — Architectural intelligence layer for AI coding agents. Roam's `describe --write` pattern of aggressively detecting and writing to all agent config files directly shaped our `/init` Step 4 (System Prompt Hook), expanding from 3 platforms to 12.
+- **[Roam-Code](https://github.com/roam-code/roam-code)** — Architectural intelligence layer for AI coding agents. Roam's aggressive multi-platform config detection directly shaped our `/init` harness bridge step.
 
-- **[skills.sh](https://skills.sh/)** — The open agent skills directory. Our `/discover` skill integrates with the skills.sh ecosystem to help users find and install relevant capabilities. The broader skills convention (`.md` files as agent instructions) directly influenced how SYNAPTIC-CORE skills are designed.
+- **[skills.sh](https://skills.sh/)** — The open agent skills directory. The `.md`-as-skill convention directly influenced how SYNAPTIC-CORE skills are designed, and the `synaptic` skill package follows the Agent Skills progressive-disclosure standard.
 
-We believe in **synergy over competition**. SYNAPTIC-CORE is a knowledge standard, not an everything-toolkit. We'd love to see crossover plugins between these projects.
+- **Zettelkasten / LLM-wiki convergence** — v0.4's wiki-page model follows the Zettelkasten principle (links are the structure, folders are optional organisation) as validated by Karpathy's LLM-wiki work and the emerging LLM-wiki pattern (llmwiki.app): dense, linked, agent-navigable pages over shallow bullet hierarchies.
+
+We believe in **synergy over competition**. SYNAPTIC-CORE is a knowledge standard, not an everything-toolkit.
 
 ---
 
