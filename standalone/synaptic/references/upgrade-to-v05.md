@@ -85,6 +85,7 @@ This project has a Synaptic brain at `.synaptic/` — a portable knowledge graph
 knowledge, playbooks and working memory. Before working: read `.synaptic/BRAIN.md` and follow
 its contribution protocol (route new durable knowledge, lessons, playbooks and task workspaces
 as it specifies; files are authoritative over any agent-native memory).
+Honor the team norms in `.synaptic/knowledge/working-agreements.md` when communicating or working in this project.
 Commands (synaptic skill): /init /consolidate /ingest /audit /upgrade
 <!-- END:SYNAPTIC -->
 ```
@@ -172,7 +173,12 @@ Phase C consumes `_migration-staging/` (created in M1) and DELETES it as its fin
 - Split:
   - Durable project constraints (hard rules about the codebase, architecture, domain) →
     `knowledge/project-constraints.md` knowledge page. Register in `knowledge/INDEX.md`.
-  - Agent behavior rules / tone rules / persona preferences →
+  - **Team/project operating norms** — content that passes the ownership test ("would a teammate
+    inheriting this brain need it?"): communication languages per channel (Jira in English, etc.),
+    ticket conventions, review etiquette, escalation rules → `knowledge/working-agreements.md`
+    (create from the seed template if it does not exist). Register in `knowledge/INDEX.md`.
+    These travel WITH the brain; do NOT extract them to the harness.
+  - Agent behavior rules / tone rules / personal-agent persona preferences →
     **Offer** to place in the project `AGENTS.md` (outside the SYNAPTIC block) or the user's
     global agent instructions (CLAUDE.md etc.). Do NOT place these in the brain.
     If the user declines, discard with explicit consent.

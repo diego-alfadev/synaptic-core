@@ -17,6 +17,10 @@ Read this file when you need knowledge; load only the pages you need.
 
 -->
 
+## Project
+
+- [[working-agreements]] — team/project operating norms (languages, conventions, etiquette)
+
 ## Lessons
 
 <!-- Lessons are pages with type: lesson, listed here as they are created.
