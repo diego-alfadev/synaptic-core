@@ -59,6 +59,7 @@ If resuming: read `journal/_current.md` (lists active playgrounds and next step)
 5. Large verbatim artifact (DDL, spec, export) → `references/` + 1-line entry in `references/_index.md`.
 6. Temporal (session notes, decisions in progress) → `journal/_current.md`.
 7. Trivia, debug output, one-off lookups → do not capture.
+8. Team/project operating norm (language per channel, conventions, etiquette) → `knowledge/working-agreements.md`.
 
 **Conventions:**
 - **Naming:** unique kebab-case filenames across `knowledge/` (no duplicates).
@@ -66,6 +67,7 @@ If resuming: read `journal/_current.md` (lists active playgrounds and next step)
 - **Backlinks:** queried, not stored: `grep -r "[[page-name]]" .synaptic/` (Obsidian computes them live).
 - **Discovery rule:** not reachable from INDEX.md → doesn't exist.
 - **Files are authoritative** — harness-native agent memory is a cache.
+- **Quality bar:** consolidate generalized, professional, verifiable knowledge — no personal opinions, rumors, or application data.
 
 ---
 

@@ -16,6 +16,10 @@ description: >
 Does .synaptic/BRAIN.md exist?
 ├── YES → Boot: read BRAIN.md, follow it.
 │         Check frontmatter version: < 0.5 → offer /upgrade.
+│         Check harness wiring: is BEGIN:SYNAPTIC absent from AGENTS.md AND skill dirs missing?
+│         ├── BOTH missing → Adopted brain detected — wiring this machine's harness.
+│         │                  Run ONLY the Harness Integration section (no interview), then boot.
+│         └── Already wired → normal boot.
 │
 └── NO — Does .synaptic/ exist (no BRAIN.md)?
     ├── YES → v0.3 brain detected.
@@ -53,43 +57,56 @@ place them there instead.
 
 Use the answers to seed `knowledge/INDEX.md` section stubs.
 
-**Round 3 — Constraints worth persisting:**
+**Round 3 — Working agreements:**
+> "Any team norms an inheriting teammate must know — languages per channel (tickets, chat, docs),
+> conventions, etiquette?"
+
+Collect answers into `knowledge/working-agreements.md` (create from the seed template; fill in the
+Communication table, Conventions list, and Never-dos). Register in INDEX.md.
+
+Note: if the user describes personal agent behavior (tone with them, chat language preference,
+output style) — redirect: "That's harness territory — I'll put it in AGENTS.md/CLAUDE.md, not in
+the brain."
+
+**Round 4 — Constraints worth persisting:**
 > "Any hard constraints, rules, or facts that should always be available to an agent working here?"
 
 Route these to a knowledge page (e.g. `project-constraints.md`), **not** an identity file. The brain
 has no identity directory.
 
-**Round 4 — Documents to ingest (optional):**
+**Round 5 — Documents to ingest (optional):**
 > "Any existing schemas, specs, or docs to bring in now?"
 
 Queue for /ingest after setup. Load `references/ingest.md` for each file.
 
-Stop when: scope + at least one area + one constraint page exist. Further rounds are optional.
+Stop when: scope + at least one area + working-agreements page exist. Further rounds are optional.
 
 ---
 
 ## Generate
 
 After the interview, instantiate files from the `templates/` directory bundled with this skill
-package (synced from the seed at release). If `templates/` is missing, generate files directly
-following the v0.5 layout and conventions.
+package — it mirrors the full seed `.synaptic/` layout (so the page/playbook templates are at
+`templates/templates/page.md` and `templates/templates/playbook.md`). If `templates/` is missing,
+generate files directly following the v0.5 layout and conventions, and tell the user you did.
 
 **v0.5 layout to generate:**
 
 ```
 .synaptic/
-├── BRAIN.md                    ← filled from interview (Brain Context, scope, budgets)
+├── BRAIN.md                        ← filled from interview (Brain Context, scope, budgets)
 ├── knowledge/
-│   ├── INDEX.md                ← section stubs from Round 2
-│   └── project-constraints.md ← from Round 3 (if constraints provided)
+│   ├── INDEX.md                    ← section stubs from Round 2
+│   ├── working-agreements.md       ← from Round 3 interview; omit if user had none
+│   └── project-constraints.md     ← from Round 4 (if constraints provided)
 ├── playbooks/
-│   └── _index.md               ← empty
+│   └── _index.md                   ← empty
 ├── playgrounds/
-│   └── README.md               ← standard copy
+│   └── README.md                   ← standard copy
 ├── references/
-│   └── _index.md               ← empty
+│   └── _index.md                   ← empty
 ├── journal/
-│   └── _current.md             ← fresh template
+│   └── _current.md                 ← fresh template
 └── templates/
     ├── page.md
     └── playbook.md
@@ -121,6 +138,7 @@ This project has a Synaptic brain at `.synaptic/` — a portable knowledge graph
 knowledge, playbooks and working memory. Before working: read `.synaptic/BRAIN.md` and follow
 its contribution protocol (route new durable knowledge, lessons, playbooks and task workspaces
 as it specifies; files are authoritative over any agent-native memory).
+Honor the team norms in `.synaptic/knowledge/working-agreements.md` when communicating or working in this project.
 Commands (synaptic skill): /init /consolidate /ingest /audit /upgrade
 <!-- END:SYNAPTIC -->
 ```
@@ -130,14 +148,15 @@ a brain pointer there, do so, but only with their explicit instruction.
 
 ### b. Skill install
 
-Copy this skill package directory into the project at:
+Copy this skill package directory (the directory where THIS SKILL.md lives, with its `references/`;
+`templates/` may be skipped to keep the install light) into the project at:
 
 - `.claude/skills/synaptic/` — discovered by Claude Code, VS Code Copilot, OpenCode
 - `.agents/skills/synaptic/` — discovered by VS Code Copilot, Gemini CLI, OpenCode, Codex
 
 Create the directories if they do not exist. If either target already contains a `SKILL.md` with
-the same `version:` in its frontmatter (or no version field), skip and log "already present".
-Otherwise overwrite.
+the same `version:` in its frontmatter (or no version field), skip it and tell the user "already
+present". Otherwise overwrite.
 
 ### c. Cursor shim (optional)
 
@@ -161,7 +180,7 @@ Load the referenced file when the operation is invoked, not at boot.
 
 | Command | What it does | Reference |
 |---------|-------------|-----------|
-| `/init` | Start setup interview or extend brain structure | this file §Onboarding |
+| `/init` | No brain → interview. Brain present but unwired → adopt: wire harness only. Brain present + wired → extend: offer add topic / working agreements / ingest | this file §Detect, §Onboarding |
 | `/consolidate` | Route working memory → structured knowledge | `references/consolidate.md` |
 | `/ingest [file]` | Ingest a document into the brain | `references/ingest.md` |
 | `/audit` | Staleness, orphans, budget violations, link health | `references/audit.md` |

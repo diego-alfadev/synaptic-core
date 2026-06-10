@@ -45,6 +45,11 @@ Your Jarvis stays Jarvis. Your brain travels.
 A Jarvis-persona agent and a vanilla agent must both be able to work the same brain without
 any identity conflict. That is the guarantee this design makes.
 
+**Team norms travel with the brain.** Operating agreements (communication languages per channel,
+ticket conventions, review etiquette) live in `knowledge/working-agreements.md` — they pass the
+ownership test and are part of the brain. The AGENTS.md fragment references them with a single
+line; it never duplicates them.
+
 ---
 
 ## How it works
@@ -110,6 +115,27 @@ The skill package is the only thing that provides the lifecycle commands. The br
 
 ## Quick Start
 
+### Install in 60 seconds — pick your flow
+
+**Flow 1 — Fresh start (new brain):**
+1. Copy [`standalone/synaptic/SKILL.md`](standalone/synaptic/SKILL.md) to your project's skill dir:
+   ```
+   .claude/skills/synaptic/SKILL.md   # or
+   .agents/skills/synaptic/SKILL.md
+   ```
+2. Tell your agent: `/init` — the skill interviews you, generates the brain, and wires your harness. Done.
+
+**Flow 2 — Adopt a shared brain (clone or handover):**
+1. Copy `.synaptic/` from the shared source into your project root.
+2. Tell your agent: `/init` — the skill detects the existing brain (skips the interview) and re-wires your machine's harness (AGENTS.md fragment + skill dirs). Nothing else travels because the wiring is regenerable from brain + skill. Done.
+
+**Flow 3 — Upgrade from v0.3 or v0.4:**
+1. Tell your agent: `/upgrade` — the skill runs the hybrid migration guide interactively. Done.
+
+**Skill-less fallback (any flow):** paste `"Read .synaptic/BRAIN.md and follow it."` to any agent — no install required.
+
+---
+
 ### Option A: Install the `synaptic` skill
 
 Copy [`standalone/synaptic/SKILL.md`](standalone/synaptic/SKILL.md) to your project's skill
@@ -121,7 +147,7 @@ directory, then tell your agent: `/init`
 .agents/skills/synaptic/SKILL.md
 ```
 
-The skill runs a Socratic interview (3–5 rounds, scope-aware), generates a complete personalized
+The skill runs a Socratic interview (scope-aware), generates a complete personalized
 brain, and wires the harness. No download required beyond that single file.
 
 ### Option B: Drop the seed brain

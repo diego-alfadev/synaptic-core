@@ -63,6 +63,11 @@ Before marking consolidation complete, verify every new or updated page passes:
 - [ ] All `[[wikilinks]]` inside the page resolve to real files
 - [ ] Filenames are unique kebab-case (no spaces, no camelCase, no duplicates in `knowledge/`)
 
+**Quality rules (apply before writing):**
+- [ ] Generalize before persisting — strip incident-specific noise unless it is a transferable lesson
+- [ ] No personal opinions, rumors, or blame — professional and verifiable content only
+- [ ] No application data (credentials, PII, secrets, raw environment-specific values)
+
 If any check fails, fix before proceeding. Do not skip this gate.
 
 ---
