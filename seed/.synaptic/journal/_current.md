@@ -1,25 +1,30 @@
-# Current Session
+# Current Journal
 
-> Working memory for the active session. Consolidate when this exceeds ~200 lines.
-> On consolidation, route durable items to: knowledge pages, lessons, playbooks, worklines,
-> or identity files per BRAIN.md routing rules. Discard transient noise.
+<!-- Hard budget: 80 lines. No archive — history lives in git and in consolidated knowledge.
+     When this file grows crowded, consolidate: durable items → knowledge/playbooks/lessons,
+     then trim to the three sections below. -->
 
-## Session Start
-- **Date**: {{DATE}}
-- **Resumed from**: {{PREVIOUS_SESSION_OR_FRESH}}
+## Resume Anchor
 
-## Decisions
+**Where work stopped:** {{LAST_STOP_POINT}}
 
-<!-- Decisions made during this session -->
+**Next step:** {{NEXT_STEP}}
 
-## Discoveries
+### Active playgrounds
 
-<!-- New information, IDs, URLs, insights found -->
+<!-- List open playgrounds here. Format: `playgrounds/{{task-id}}/` — {{what it is}}
+     Remove entry when a playground is burned or archived. -->
 
-## Open Items
+---
 
-<!-- Things to follow up on or decide later -->
+## Watch List
 
-## Stop Point
+<!-- Open questions and risks that need resolution. One line each.
+     Format: [DATE] {{question or risk}} -->
 
-<!-- Where you left off — for the next session to resume from -->
+---
+
+## Log
+
+<!-- Dated one-liners: decisions taken, consolidation events, key findings.
+     Format: [YYYY-MM-DD] {{what happened}} -->

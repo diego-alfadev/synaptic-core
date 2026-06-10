@@ -9,10 +9,12 @@ thinking scaffold, not a script.
   recon (observe a recurring task) →
   draft (extract from first real success) →
   refine (add one Gotcha entry per real failure)
+
+  Template for new playbooks: `templates/playbook.md`
 -->
 
 ## Index
 
 <!-- Add an entry here for every playbook file in this directory.
-- [[playbook-name]] — {{when to use this playbook}}
+- `[[playbook-name]]` — {{when to use this playbook}}
 -->

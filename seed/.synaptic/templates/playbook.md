@@ -58,7 +58,7 @@ status: active  # active | stale | archived
 
 ## Example run
 
-<!-- Link to a real session log, journal excerpt, or workline entry that used this playbook.
+<!-- Link to a real session log or journal excerpt that used this playbook.
      Example:
-     - [[journal/2026-05-12]] — first successful run; revealed the lock file gotcha above.
+     - `journal/_current.md` entry [2026-05-12] — first successful run; revealed the lock file gotcha above.
 -->

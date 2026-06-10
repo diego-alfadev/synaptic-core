@@ -1,13 +1,12 @@
 # /ingest — Document Ingestion Reference
 
-Summarise an external document into a knowledge page and register it in the brain.
-Usage: `/ingest path/to/file.ext`
+Ingest an external document into the brain. Usage: `/ingest path/to/file.ext`
 
 ---
 
-## Step 1: Read the Source
+## Step 1: Read the Source and Assess Size
 
-Read the target file. Identify its type to guide extraction:
+Read the target file. Identify its type:
 
 | Type | Key things to extract |
 |------|-----------------------|
@@ -17,62 +16,62 @@ Read the target file. Identify its type to guide extraction:
 | Config file | Notable settings and their purposes |
 | Other | Main facts, decisions, constraints |
 
-For files >500 lines: extract only the most important parts. Do not dump verbatim content.
+**Size decision:**
+
+| Source size | Route |
+|-------------|-------|
+| Large (>200 lines) or verbatim artifact worth preserving | → `references/` + distilled knowledge page (see §2a) |
+| Small / already prose | → knowledge page directly (see §2b) |
 
 ---
 
-## Step 2: Create the Knowledge Page
+## §2a: Large Verbatim Artifact → references/ + distilled page
 
-Create a knowledge page in `knowledge/` at the most appropriate path. Use `knowledge/_page_template.md` as the base. Set frontmatter:
-
-```yaml
----
-description: "One-line summary of the source document"
-updated: "YYYY-MM-DD"
-status: active
-type: reference
----
-```
-
-Page content should be a dense summary: key facts, structures, decisions — not a copy of the source. Link related pages with [[wikilinks]]. End with a source reference line:
-
-```
-> Source: see assets/{filename.ext} (or external path if not stored locally)
-```
+1. Copy the source file to `references/{filename.ext}` (keep original filename or a clear slug).
+2. Add a 1-line entry to `references/_index.md`:
+   ```
+   - `{filename.ext}` — {what it is, when it matters}
+   ```
+3. Create a distilled knowledge page in `knowledge/{topic-slug}.md` from `templates/page.md`.
+   Set frontmatter `type: reference`. Populate with distilled facts: key structures, decisions,
+   constraints — **not** a verbatim copy. End with a source pointer:
+   ```
+   > Full artifact: `references/{filename.ext}` (see [[references/_index]])
+   ```
+4. Register the knowledge page in `knowledge/INDEX.md`.
 
 ---
 
-## Step 3: Large Artifacts (Optional)
+## §2b: Small Document → knowledge page directly
 
-If the source file is large (>200 lines) and worth preserving verbatim:
-- Create `knowledge/assets/` next to the knowledge page (or in the same directory).
-- Copy the file to `knowledge/assets/{filename.ext}`.
-- Link from the page: `> Full source: [[assets/{filename.ext}]]`
+Create `knowledge/{topic-slug}.md` from `templates/page.md`. Populate with a dense summary of
+key facts, structures, and decisions. Set frontmatter `type: reference`. Link related pages with
+`[[wikilinks]]`. Register in `knowledge/INDEX.md`.
 
-The knowledge page remains the navigation entry point. The asset is reference-only.
-
----
-
-## Step 4: Register in INDEX.md
-
-Add the new page to `knowledge/INDEX.md` under the most relevant topic group:
-
-```markdown
-## {Topic Group}
-- [[page-name]] — {one-line summary matching page description}
-```
-
-If no suitable group exists, create one.
+No file is added to `references/` for small documents.
 
 ---
 
-## Step 5: Report
+## Step 3: Write-Validation Gate
+
+Before finishing, verify the new page passes:
+
+- [ ] Frontmatter filled (`description:`, `updated:`, `status:`, `type: reference`)
+- [ ] No `{{placeholders}}` in the file
+- [ ] Page ≤150 lines; if longer, split with `[[wikilinks]]`
+- [ ] Registered in `knowledge/INDEX.md`
+- [ ] If artifact was stored in `references/`: a corresponding entry exists in `references/_index.md`
+
+---
+
+## Step 4: Report
 
 ```
 Ingested: {filename}
-  → Knowledge page: knowledge/{path}.md
+  → Knowledge page: knowledge/{topic-slug}.md
   → Registered in: knowledge/INDEX.md
-  → Asset stored: knowledge/assets/{filename} (if applicable)
+  → Artifact stored: references/{filename.ext} (if large artifact)
+  → _index.md entry added (if artifact stored)
 ```
 
 ---
@@ -80,6 +79,7 @@ Ingested: {filename}
 ## Rules
 
 - The knowledge page is a summary, not a replacement for the source.
-- Always register the new page in `knowledge/INDEX.md`. An unregistered page does not exist.
-- Ask the user if placement is unclear — do not guess at sensitive categorisation.
-- Do not create a `references/` directory; in v0.4 ingested artifacts live in `knowledge/assets/`.
+- Always register the new page in `knowledge/INDEX.md` — an unregistered page does not exist.
+- Always add a `references/_index.md` entry for every file stored in `references/`.
+- Never eager-load `references/` files during brain boot — agents read them on demand.
+- Ask the user if placement is unclear; do not guess at sensitive categorisation.
