@@ -1,12 +1,19 @@
 ---
-description: "{{ONE_LINE_DESCRIPTION}}"
+description: "{{ONE_LINE: what outcome this playbook produces — copied into cluster _index.md}}"
+type: playbook
+status: active
 updated: "{{YYYY-MM-DD}}"
-status: active  # active | stale | archived
+tags:
+  - playbook
+  - "{{cluster-tag}}"
+  - "{{topic-tag}}"
 ---
 
-<!-- LIFECYCLE: recon → draft from a real success → refine on each failure (add one Gotcha entry per real failure) -->
+# {{Playbook Title}}
 
-# {{PLAYBOOK TITLE}}
+<!-- A playbook is a typed node (type: playbook) co-located in its knowledge cluster — not a separate silo.
+     It teaches the agent to GENERATE a plan for the current state, not follow a fixed sequence blindly.
+     Lifecycle: recon (observe recurring task) → draft (first real success) → refine (one Gotcha per real failure). -->
 
 ## Intent
 
@@ -17,48 +24,44 @@ status: active  # active | stale | archived
 
 <!-- Trigger conditions: what situation, signal, or request causes you to reach for this playbook? -->
 
+---
+
 ## Preconditions & access
 
-<!-- THE BUREAUCRATIC / GOVERNANCE LANE — these items BLOCK execution milestones.
-     List approvals, accesses, tickets, or environment states that must be in place before
-     the corresponding Method steps can proceed. If any precondition is unmet, surface it
-     immediately and pause rather than proceeding with a plan that will fail at deployment.
+<!-- THE GOVERNANCE LANE — these items BLOCK execution milestones.
+     List approvals, accesses, tickets, or environment states that must be in place.
+     If any precondition is unmet, surface it immediately and pause rather than proceeding.
 
-     Example:
-     - [ ] Production deploy access granted (ticket: {{TICKET_ID}})
-     - [ ] Stakeholder sign-off on approach (contact: {{NAME}})
-     - [ ] Feature flag enabled in staging
+     - [ ] {{Access or approval required}} (contact: {{NAME or ROLE}})
+     - [ ] {{Environment state required}}
+     - [ ] {{Ticket or sign-off required}}
 -->
 
 ## Method
 
 <!-- THE TECHNICAL LANE — how to assess current state, identify gaps, and build the plan.
-     This lane may run in parallel with Preconditions where safe, but execution milestones
-     are gated by the corresponding preconditions above.
+     May run in parallel with Preconditions where safe, but execution milestones are gated above.
+     Structure as: assessment → gap analysis → prioritised plan. Not a fixed step list.
 
-     Structure as assessment → gap analysis → prioritised plan, not as a fixed step list.
-     The agent should read this and produce a plan tailored to the actual current state.
-
-     Example sections:
      ### 1. Assess current state
      ### 2. Identify gaps
      ### 3. Produce prioritised plan
 -->
 
+---
+
 ## Gotchas
 
 <!-- Refined by failure — add one entry per real failure encountered during a run.
-     Format: what went wrong → why → how to avoid or recover.
-
-     Example:
-     - **Stale lock file**: running the migration while a previous lock was held caused
-       a silent rollback. Always check for locks before starting. Recovery: release lock
-       manually via {{COMMAND}}.
+     Format: **{{what went wrong}}**: why → how to avoid or recover.
 -->
 
 ## Example run
 
 <!-- Link to a real session log or journal excerpt that used this playbook.
-     Example:
-     - `journal/_current.md` entry [2026-05-12] — first successful run; revealed the lock file gotcha above.
+     - `journal/_current.md` entry [{{DATE}}] — {{what happened / what the run revealed}}
 -->
+
+---
+
+> Registered in `knowledge/{{cluster}}/_index.md`. A playbook not reachable from a MOC does not exist.

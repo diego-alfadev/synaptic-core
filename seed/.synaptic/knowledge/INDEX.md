@@ -1,32 +1,37 @@
+---
+description: "Hub MOC — map of all knowledge clusters in this brain."
+type: knowledge
+status: active
+updated: "{{YYYY-MM-DD}}"
+tags: [moc, index]
+---
+
 # Knowledge Index
 
-Read this file when you need knowledge; load only the pages you need.
+Hub map of content clusters. Navigate here first; load only the cluster and nodes relevant to your task.
 
-<!-- HOW TO USE
-- Each entry is a wiki page. Load only the pages relevant to your task.
-- Pages use wikilink syntax: `[[page-name]]`. Resolve a link by reading the .md file with that name in knowledge/.
-- Discovery rule: a page not listed here doesn't exist. Add every new page with a 1-line summary.
-- Template for new pages: `templates/page.md`
--->
+**How to use:** each cluster entry links to a sub-MOC (`_index.md`) that lists every node with a 1-line summary. Open only the 1–2 nodes you actually need.
 
-<!-- TEMPLATE — replace with real topic groups as pages are created
+---
 
-## {{Area or Topic Group}}
+## {{Cluster}}
 
-- `[[page-name]]` — {{one-line summary}}
+- [[{{example-cluster}}/_index]] — {{1-line description of what this cluster covers}}
 
--->
-
-## Project
-
-- [[working-agreements]] — team/project operating norms (languages, conventions, etiquette)
-
-## Lessons
-
-<!-- Lessons are pages with type: lesson, listed here as they are created.
-- `[[lesson-name]]` — {{what was learned and when}}
+<!-- Add a new cluster block here each time a new `knowledge/{cluster}/` folder is created.
+     Format:
+     ## {Cluster display name}
+     - [[{cluster}/_index]] — {{1-line scope summary}}
 -->
 
 ---
 
-> Discovery rule: a page not listed here doesn't exist. Add every new page with a 1-line summary.
+## Lessons
+
+- [[lessons/README]] — Dated lesson nodes (`type: lesson`); captures what went wrong / what changed understanding.
+
+<!-- Lessons are nodes co-located in knowledge/lessons/. Register each new lesson here too. -->
+
+---
+
+> Discovery rule: a node not reachable from this index (directly or via a cluster sub-MOC) does not exist. Register every new node in its cluster `_index.md` and ensure the cluster is listed here.
