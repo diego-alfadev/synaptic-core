@@ -1,88 +1,86 @@
 ---
 standard: synaptic-core
-version: 0.5.0-alpha
-name: {{BRAIN_NAME}}
-scope: {{SCOPE}}  # project | role | org | life
-created: {{CREATED_DATE}}
-updated: {{UPDATED_DATE}}
-budgets:
-  journal: 80
-  page: 150
-  brain: 100
+version: 1.0.0
+name: "{{BRAIN_NAME}}"
+scope: "{{project|role|org|life}}"
+created: "{{YYYY-MM-DD}}"
+updated: "{{YYYY-MM-DD}}"
 ---
 
 # {{BRAIN_NAME}} — Synaptic Brain
 
-You are reading a Synaptic brain — a portable knowledge graph for this {{scope}}'s work.
-This file is the only mandatory read at session start.
+> The only mandatory read at session start. Everything else loads on demand.
+
+## Context Capsule
+
+**What this brain covers:** {{What domain, project, or role this brain captures knowledge for.}}
+**Owner's role:** {{Your function in this project — e.g. "Fullstack dev, CI/CD lead, embedded in team X".}}
+
+> Persona, tone, chat-language preference, and agent behavior belong in your harness (AGENTS.md / CLAUDE.md), never here.
 
 ---
 
-## Brain Context
+## Capture Contract
 
-**What this brain covers:** {{WHAT_THIS_BRAIN_COVERS}}
+Six-step consolidation formula — run after every work session before closing:
 
-**Owner's role in this project:** {{OWNER_ROLE_IN_PROJECT}}
+1. **Classify** — durable knowledge · tabular record → registry · lesson · decision · big task → playground · temporal → journal · noise → drop.
+2. **Atomicity test** — one concept per node; promote only when it recurs (2+ instances → pattern) or is a reusable decision/lesson. Incident-specifics stay in playground/journal.
+3. **Generalize** — strip the anecdote, keep the reusable pattern; name = the concept, not the ticket.
+4. **Place & link** — atomic node in the right cluster; fill D1 frontmatter; add `[[wikilinks]]`; register in cluster `_index.md`.
+5. **Dedupe / SSOT** — search first; update, don't duplicate; one source of truth per fact.
+6. **Quality gate** — professional & verifiable only; soft budget ~150 lines or tag `type: reference`; stamp `updated:`; confirm reachable from a MOC.
 
-> Persona, tone, language and behavior belong to your harness (AGENTS.md / instructions), never to this brain.
+---
+
+## Top Guardrails
+
+> Full set in `harness/guardrails.md`. These three to five rules are always on:
+
+- {{GUARDRAIL_1 — e.g. "Never commit secrets or credentials to any repository."}}
+- {{GUARDRAIL_2 — e.g. "Never deploy to production without explicit sign-off."}}
+- {{GUARDRAIL_3 — e.g. "Never merge a PR without at least one review."}}
+- {{GUARDRAIL_4 — optional}}
+- {{GUARDRAIL_5 — optional}}
 
 ---
 
 ## Brain Map
 
-| Directory | Purpose |
-|-----------|---------|
-| `knowledge/` | Wiki pages (kebab-case, unique names); `knowledge/INDEX.md` is the sole navigation hub |
-| `playbooks/` | Action recipes distilled from real work; generates plans, not fixed steps |
-| `playgrounds/` | Per-task workspaces: multi-day, multi-artifact; registered in journal, burnable |
-| `references/` | Large verbatim artifacts; indexed in `references/_index.md`, never eager-loaded |
-| `journal/` | Thin working memory — `_current.md` only, hard budget 80 lines |
-| `templates/` | Page and playbook templates |
+| Directory | Plane | When to load |
+|---|---|---|
+| `knowledge/` | Wiki — what you know | On demand via `knowledge/INDEX.md` |
+| `registries/` | Wiki — tabular SSOTs (resources, repos, glossary) | On demand; never eager-load |
+| `references/` | Wiki — existence index + verbatim artifacts (`raw/`) | On demand |
+| `harness/` | Harness — conventions, guardrails, project skills | On demand; top subset above |
+| `playgrounds/` | Working memory — per-task burnable workspaces | Registered in journal only |
+| `journal/` | Working memory — thin anchor/watch/log | Resume: read `_current.md` |
+| `templates/` | Scaffolding — node, registry, playbook, lesson | When creating a new node |
 
-**Navigation rule:** a knowledge page not reachable from `knowledge/INDEX.md` does not exist.
+**Navigation rule:** `BRAIN.md` → `knowledge/INDEX.md` (hub MOC) → `{cluster}/_index.md` (sub-MOC, 1-line per node) → open only the 1–2 relevant nodes. A node not reachable from a MOC does not exist.
 
 ---
 
 ## Session Start
 
-If resuming: read `journal/_current.md` (lists active playgrounds and next step). Otherwise just work; load knowledge on demand via `knowledge/INDEX.md`.
-
----
-
-## Contribution Protocol
-
-**Routing:**
-1. Durable knowledge → `knowledge/` page + register in `knowledge/INDEX.md`.
-2. Lesson learned → `knowledge/lessons/` + register in `knowledge/INDEX.md`.
-3. Repeatable procedure that worked → `playbooks/` entry + update `playbooks/_index.md`.
-4. Task too big for journal (multi-day, multiple artifacts) → `playgrounds/{{task-id}}/`, note in journal.
-5. Large verbatim artifact (DDL, spec, export) → `references/` + 1-line entry in `references/_index.md`.
-6. Temporal (session notes, decisions in progress) → `journal/_current.md`.
-7. Trivia, debug output, one-off lookups → do not capture.
-8. Team/project operating norm (language per channel, conventions, etiquette) → `knowledge/working-agreements.md`.
-
-**Conventions:**
-- **Naming:** unique kebab-case filenames across `knowledge/` (no duplicates).
-- **Linking:** use `[[wikilinks]]` at capture time — link related pages when writing, not retroactively.
-- **Backlinks:** queried, not stored: `grep -r "[[page-name]]" .synaptic/` (Obsidian computes them live).
-- **Discovery rule:** not reachable from INDEX.md → doesn't exist.
-- **Files are authoritative** — harness-native agent memory is a cache.
-- **Quality bar:** consolidate generalized, professional, verifiable knowledge — no personal opinions, rumors, or application data.
+**Resuming work:** read `journal/_current.md` (active playgrounds + next step), then proceed.
+**Starting fresh:** just work; load knowledge on demand through `knowledge/INDEX.md`.
+**Load trigger examples:** "before CI work → read `harness/guardrails.md`"; "for a domain insight → INDEX → cluster `_index` → 1–2 nodes."
 
 ---
 
 ## Commands
 
-Provided by the `synaptic` skill installed in the project's skill dirs.
+Provided by the `synaptic` skill (installed in `.claude/skills/` or `.agents/skills/`):
 
-| Command | What it does |
-|---------|-------------|
-| `/init` | Set up or extend the brain structure |
-| `/consolidate` | Promote working memory into structured knowledge |
-| `/ingest [file]` | Ingest a document into the brain |
-| `/audit` | Review brain for gaps, stale data, missing coverage |
-| `/upgrade` | Upgrade brain to latest synaptic-core version |
+| Command | Action |
+|---|---|
+| `/init` | Scope-aware setup interview; self-wires harness; can import a context-pack seed |
+| `/consolidate` | Run the 6-step capture contract on current session output |
+| `/ingest [file]` | Distill a document into an atomic node + reference entry |
+| `/audit` | Check for orphans, broken links, stale nodes, MOC coverage, registry integrity |
+| `/upgrade` | Migrate brain to a newer synaptic-core version |
 
 ---
 
-If you stop following this protocol, re-read this file.
+> Anti-drift: if outputs stop following this protocol, re-read this file.
