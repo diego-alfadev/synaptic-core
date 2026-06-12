@@ -6,9 +6,9 @@ updated: "{{YYYY-MM-DD}}"
 tags: [harness, conventions, working-agreements]
 ---
 
-# Conventions
+# Conventions (source — deployed)
 
-Portable operating norms of this team or project. Load on demand (e.g. before writing a commit, ticket, or PR). A teammate inheriting this brain should find everything needed to work here without asking.
+Portable operating norms of this team or project. This file is the **source** — `/init` and `/upgrade` deploy it into the outer harness. At work-time the agent reads the deployed copy, not this file. A teammate inheriting this brain can regenerate the full harness by running `/init`.
 
 > **Scope test:** if a norm governs how the team works together → it belongs here. If it governs how your personal agent behaves toward you (persona, tone, chat language) → it belongs in AGENTS.md / CLAUDE.md, not here.
 
@@ -65,4 +65,4 @@ Portable operating norms of this team or project. Load on demand (e.g. before wr
 
 ---
 
-> Top subset of hard rules is mirrored in `BRAIN.md → Top Guardrails`. Full security/ops rules in `harness/guardrails.md`.
+> This file is the canonical source for working conventions. Hard rules that must never be violated go in `harness/guardrails.md`. Run `/init` or `/upgrade` to (re)deploy both into the outer harness.
