@@ -175,3 +175,65 @@ without reformatting notes. The synaptic-core CORE layer never requires any of t
 
 **No-runtime fallback:** open the parent directory of `.synaptic/` directly in
 Obsidian or Foam — wikilinks and frontmatter work natively with zero config.
+
+---
+
+## graph.js — Visual Brain Graph Renderer
+
+```sh
+node tools/graph.js [path-to-.synaptic] [--out FILE] [--format html|svg] [--title "..."]
+
+# Examples
+node tools/graph.js                                         # reads ./.synaptic, writes synaptic-graph.html
+node tools/graph.js /path/to/.synaptic                      # explicit path
+node tools/graph.js /path/to/.synaptic --out brain.html     # custom output filename
+node tools/graph.js /path/to/.synaptic --format svg         # raw SVG file instead
+node tools/graph.js /path/to/.synaptic --title "Q2 Brain"   # override title in the output
+```
+
+Renders a **visual graph of your Synaptic brain** as a self-contained HTML file (default) or
+raw SVG — no Obsidian, no npm install, no network access required. Open the HTML file in any
+browser and the graph is immediately interactive.
+
+**What it shows:**
+
+| Element | Detail |
+|---|---|
+| **Nodes** | Every knowledge node (coloured by cluster), plus registries and references as their own groups, and a central INDEX hub |
+| **Edges** | Undirected `[[wikilink]]` connections between nodes, extracted and deduplicated |
+| **Node radius** | Scales with edge degree (more connections → larger circle) |
+| **Labels** | Kebab-case basename, shortened for long names; full id in hover tooltip |
+| **Tooltips** | Hover any node: full id, `type`, degree, and `tags` |
+| **Legend** | Cluster name → colour with node counts; harness presence noted |
+| **Title bar** | Brain name (from `BRAIN.md` frontmatter `name:`), node/edge/cluster count, orphan count, most-connected node |
+
+**Deterministic layout — before/after comparable:**
+
+Positions are pure functions of *(sorted cluster index, sorted node index within cluster)* —
+no `Math.random`, no time-based seeding. Two runs on the same brain always produce identical
+coordinates. Comparing a brain before and after `/weave` or `/audit` is meaningful: nodes
+that moved are new or re-clustered, not randomly shuffled.
+
+**HTML output — pan/zoom in any browser:**
+
+The default `html` format embeds the SVG inside a self-contained HTML page with ~30 lines of
+vanilla JavaScript for pan (drag) and zoom (scroll wheel). No CDN, no external resources.
+Opens on a locked-down corporate laptop with nothing installed. Use `--format svg` if you
+only need the raw image file (for slides, email, or a PDF).
+
+**Great for executive show-and-tell:**
+
+Drop `synaptic-graph.html` in an email or a share drive. The recipient opens it in Chrome or
+Edge — no install, no login, no account. The coloured clusters and connection density make the
+brain's structure immediately legible to non-technical stakeholders.
+
+**Robustness:**
+
+- Missing `knowledge/`, empty brain, or nodes without frontmatter: handled gracefully; still
+  emits a valid output file and prints a clear summary.
+- Unresolved wikilinks (cluster-level links like `[[ci-cd-patterns]]`, or links to unknown
+  nodes) are counted and reported in the stdout summary but never crash the script.
+- Very long node names are shortened in the label; the full id is always in the tooltip.
+
+**No-runtime fallback:** ask your agent to describe the brain's cluster structure and
+connection density — the same information `check.js` reports as orphan/link counts.
