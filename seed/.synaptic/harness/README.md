@@ -35,10 +35,25 @@ fresh on a new workstation, run `/init` and your full project setup is restored.
 1. Reads `harness/conventions.md` + `harness/guardrails.md`.
 2. Writes (or replaces) a `<!-- BEGIN:SYNAPTIC-RULES --> … <!-- END:SYNAPTIC-RULES -->` block in
    the project's outer harness file (AGENTS.md, or platform-specific instruction files).
-3. Installs `harness/skills/*` into `.claude/skills/synaptic-rules/` and `.agents/skills/synaptic-rules/`.
+3. Installs `harness/skills/*` into `.claude/skills/{brain-name}-skills/` and `.agents/skills/{brain-name}-skills/` (namespaced by project to avoid collisions across brains).
 4. Idempotent: the marked block is fully replaced on each deploy; unmarked user content is never touched.
 
 The agent at work-time reads the **deployed rules** (outer harness), not this folder.
+
+---
+
+## Skill install path convention
+
+| Skill type | Install path |
+|---|---|
+| **Generic lifecycle skill** (`standalone/synaptic/`) | `.claude/skills/synaptic/` and `.agents/skills/synaptic/` |
+| **Project-local skills** (`harness/skills/*`) | `.claude/skills/{brain-name}-skills/` and `.agents/skills/{brain-name}-skills/` |
+
+The generic synaptic skill is project-agnostic and version-gated — it installs at the fixed
+path `.claude/skills/synaptic/`. Project-local skills are namespaced by brain (e.g.
+`.claude/skills/my-project-skills/`) so multiple brains in the same agent environment never
+collide. Use the brain's root directory name (or the `name:` field from `BRAIN.md` frontmatter
+if set) as `{brain-name}`.
 
 ---
 

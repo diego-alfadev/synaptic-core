@@ -110,15 +110,15 @@ Write to project root `AGENTS.md`. Search for `<!-- BEGIN:SYNAPTIC -->` first:
 - Not found → append.
 - No `AGENTS.md` → create with just this block.
 
+<!-- canonical block — mirror any change in SKILL.md §a -->
 ```
 <!-- BEGIN:SYNAPTIC -->
 ## Synaptic Brain
 This project has a Synaptic brain at `.synaptic/`. Before working: read `.synaptic/BRAIN.md`
 and follow its capture contract (route durable knowledge, lessons, playbooks, and task
 workspaces as specified; files are authoritative over any agent-native memory).
-Honor team conventions in `.synaptic/harness/conventions.md`. Top guardrails in BRAIN.md.
-Full harness (conventions/guardrails/skills) in `.synaptic/harness/` — load on demand.
-Commands (synaptic skill): /init /consolidate /ingest /audit /upgrade
+Operating rules (conventions, guardrails) are in the SYNAPTIC-RULES section below.
+Commands (synaptic skill): /init /consolidate /ingest /audit /weave /upgrade
 <!-- END:SYNAPTIC -->
 ```
 
@@ -137,7 +137,7 @@ If `.cursor/` exists at the project root, write `.cursor/rules/synaptic.mdc`:
 
 ```
 This project has a Synaptic brain. See AGENTS.md (BEGIN:SYNAPTIC block) for instructions.
-Read `.synaptic/BRAIN.md` at session start. Commands: /init /consolidate /ingest /audit /upgrade
+Read `.synaptic/BRAIN.md` at session start. Commands: /init /consolidate /ingest /audit /weave /upgrade
 ```
 
 ### M6 — BRAIN.md frontmatter update

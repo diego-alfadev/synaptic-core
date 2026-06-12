@@ -14,7 +14,7 @@ Synaptic is a folder of plain Markdown files that turns your daily work into a k
 
 **For Projects**
 - An agent reads one file and already knows the scope, conventions, guardrails, and where everything lives — before writing a single line
-- Decisions, patterns, and playbooks accumulate through real work; no manual documentation overhead
+- Decisions, patterns, and playbooks accumulate through real work; you trade ~5–10 min per session of `/consolidate` to erase the re-briefing, onboarding, and handover tax
 - No re-briefing between sessions; no tribal-knowledge dependency on the person who left
 
 **For Companies**
@@ -29,8 +29,8 @@ Synaptic is a folder of plain Markdown files that turns your daily work into a k
 
 ## Tier 2 — Technical foundations (why it is robust)
 
-### MOC-of-MOCs navigation — O(1)-ish retrieval
-`BRAIN.md` (single boot file, ≤110 lines) → `knowledge/INDEX.md` (hub: one-line summary per cluster) → `{cluster}/_index.md` (sub-MOC: one-line summary per node) → open only the 1–2 relevant nodes. The one-line summaries are the mechanism. You never read 10 files to get one insight. A node not reachable from a MOC does not exist.
+### MOC-of-MOCs navigation — bounded retrieval (~3–4 hops)
+`BRAIN.md` (single boot file, ≤110 lines) → `knowledge/INDEX.md` (hub: one-line summary per cluster) → `{cluster}/_index.md` (sub-MOC: one-line summary per node) → open only the 1–2 relevant nodes. The one-line summaries are the mechanism. This depth is constant regardless of brain size — you never read 10 files to get one insight. A node not reachable from a MOC does not exist.
 
 ### The 6-step consolidation formula — the brain grows correctly on its own
 An explicit, agent-agnostic algorithm embedded in every `BRAIN.md` as the **capture contract**: (1) Classify — durable knowledge vs. record vs. lesson vs. task artifact vs. noise; (2) Atomicity test — promote only when a pattern recurs (2+ instances) or the decision/lesson is reusable; (3) Generalize — strip the anecdote, keep the concept; (4) Place & link — atomic node in the right cluster, frontmatter, `[[wikilinks]]`, register in `_index.md`; (5) Dedupe / SSOT — search first, update don't duplicate; (6) Quality gate — professional and verifiable only, soft budget or `type: reference`, `updated:` stamped, reachable from a MOC. Any agent that runs this formula produces a navigable graph, not a pile of notes.

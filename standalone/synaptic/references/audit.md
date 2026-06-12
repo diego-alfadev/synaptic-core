@@ -103,7 +103,34 @@ Tags enable `Ctrl+Shift+F` faceted search and the future FTS/RAG surface — bla
 
 ---
 
-## Step 9 — Report
+## Step 9 — Consolidation Debt
+
+Check whether consolidation has been run recently:
+
+- Count all directories directly under `playgrounds/` that contain at least one `.md` file. These are **open playgrounds** — task workspaces that have not yet been consolidated into the wiki or explicitly closed.
+- Count the total number of non-empty lines (or dated entries) in `journal/_current.md` since the last consolidation marker (a line matching `consolidated:` or `## Consolidated` or similar). If no marker is found, count all lines.
+- **Warn (not error)** if either threshold is exceeded:
+  - Open playgrounds ≥ 3: "Consolidation debt — N open playgrounds. Run `/consolidate` to process and close completed task workspaces."
+  - Journal lines since last consolidation ≥ 60: "Consolidation debt — journal at N lines since last consolidation. Run `/consolidate` before the journal nears 80 lines."
+
+Present as an advisory; the user decides whether to consolidate now or defer.
+
+---
+
+## Step 10 — Deployed Harness Drift
+
+Check whether the deployed harness block in the outer harness file is in sync with the brain's `harness/` source:
+
+- Look for a `<!-- BEGIN:SYNAPTIC-RULES -->` marker in the project's AGENTS.md (or CLAUDE.md, .cursorrules — wherever the harness was self-wired by `/init`).
+- If found: compare the content of that block against the current content of `.synaptic/harness/conventions.md` and `.synaptic/harness/guardrails.md`. If the deployed block contains edits not present in the `harness/` source files, **warn**: "Deployed SYNAPTIC-RULES block appears to have been edited directly. The `harness/` source is authoritative — re-run `/init` (Deploy step) to re-sync. Direct edits to the deployed block are clobbered on the next deploy."
+- If the outer harness file exists but has no `BEGIN:SYNAPTIC-RULES` marker: note that the harness has not been deployed; suggest running `/init`.
+- If no outer harness file is found: skip silently (not all environments use one).
+
+This check closes the silent drift vector where a user edits the deployed block directly and loses those edits on next `/init` or `/upgrade`.
+
+---
+
+## Step 11 — Report
 
 Present findings as a prioritised actionable checklist, grouped by category. Cap at **10 highest-impact findings**; note the total count if more exist.
 
@@ -153,7 +180,7 @@ After the main audit, quick-check `BRAIN.md` itself:
 
 - Is `updated:` current (within the last active sprint/week)?
 - Does the **Context Capsule** still accurately describe what the brain covers?
-- Are the **Top Guardrails** still the right top-5 from `harness/guardrails.md`?
+- Does the **harness pointer** line still point to the correct `harness/` path? (Operating rules live in the deployed harness, not inline in BRAIN.md — per ADR-003.)
 - Is the **Brain Map** table consistent with the actual directory layout?
 
 Flag anything materially out of date. These drifts are low-severity but compound over time.

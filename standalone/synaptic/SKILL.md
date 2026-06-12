@@ -154,19 +154,31 @@ Create directories if absent. If a target already contains a `SKILL.md` with the
 This step materializes `harness/conventions.md` and `harness/guardrails.md` into the outer
 harness so the agent reads them natively — without reaching into the brain at work-time.
 
+**Preferred (Node runtime available):** run `node tools/deploy.js <project-root>` — it backs up
+AGENTS.md before writing, prints a diff preview, and refuses to deploy if `harness/` still
+contains `{{placeholder}}` content. Use `--dry-run` to preview without writing.
+
+**Manual fallback (no Node runtime):**
 1. Read `.synaptic/harness/conventions.md` and `.synaptic/harness/guardrails.md`.
-2. Compose a combined rules block from both files.
-3. Search for `<!-- BEGIN:SYNAPTIC-RULES -->` in the project root `AGENTS.md`:
+2. **STOP** — if either file still contains `{{placeholder}}` values, do NOT deploy. Inform the
+   user: "harness/ contains unfilled placeholders — complete the onboarding interview first."
+3. Show the user a diff of the proposed SYNAPTIC-RULES block change and require confirmation
+   before writing.
+4. Compose a combined rules block from both files.
+5. Search for `<!-- BEGIN:SYNAPTIC-RULES -->` in the project root `AGENTS.md`:
    - **Found:** replace the entire BEGIN:SYNAPTIC-RULES … END:SYNAPTIC-RULES block.
    - **Not found:** append the block after the BEGIN:SYNAPTIC block.
    - Never touch content outside the marked block.
-4. Install `harness/skills/*` into `.claude/skills/` and `.agents/skills/` (same
-   idempotent pattern as the synaptic skill install — skip if same version, otherwise overwrite).
+6. Install `harness/skills/*` into `.claude/skills/{brain-name}-skills/` and
+   `.agents/skills/{brain-name}-skills/` (namespaced by brain to avoid collisions — use the
+   brain's root directory name or the `name:` field from `BRAIN.md` frontmatter if set). Same
+   idempotent pattern as the synaptic skill install: skip if same version, otherwise overwrite.
 
 The block written looks like:
 
 ```
 <!-- BEGIN:SYNAPTIC-RULES -->
+<!-- Auto-generated from .synaptic/harness/ — edit the source there, then re-run deploy; edits here are overwritten. -->
 ## Working Conventions
 {content from harness/conventions.md — stripped of YAML frontmatter}
 

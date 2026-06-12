@@ -32,7 +32,7 @@ A `.synaptic/` brain has exactly **two planes** and one explicit out-of-scope:
 | **Harness** (`harness/`) | How you **work here**: conventions, guardrails, project-local skills (e.g. a Jira CLI) | "Does the agent *obey or execute* it?" | Compressed subset in BRAIN.md; full depth on demand |
 | **OUT — user harness** | Persona, tone, chat-language preference, agent personality | "Is it about how the agent treats *you*?" | Not in the brain at all |
 
-The **only mandatory read** is `BRAIN.md` — one file, target ≤110 lines, ~500 tokens. It carries the context capsule, the capture contract, the top guardrails, the brain map, and the session-start pointer. Everything else loads on demand when the agent has a reason to need it.
+The **only mandatory read** is `BRAIN.md` — one file, target ≤110 lines, ~500 tokens. It carries the context capsule, the capture contract, a 1-line pointer to the deployed harness rules, the brain map, and the session-start pointer. Everything else loads on demand when the agent has a reason to need it.
 
 **Your Jarvis stays Jarvis. The brain travels.**
 
@@ -96,7 +96,7 @@ A Synaptic brain scales from a single project to a role to your whole life. `sco
 
 ## How it works: MOC-of-MOCs navigation
 
-The brain is navigable at O(1) cost — you never read 10 files to get one insight:
+The brain is navigable at bounded cost — ~3–4 hops regardless of brain size; you never read 10 files to get one insight:
 
 ```
 BRAIN.md (boot)
@@ -115,7 +115,7 @@ The 1-line summaries in `_index.md` files are the mechanism. `[[wikilinks]]` giv
 
 ```
 .synaptic/
-├── BRAIN.md                   # The only boot file: context capsule + capture contract + top guardrails + brain map
+├── BRAIN.md                   # The only boot file: context capsule + capture contract + 1-line harness pointer + brain map
 ├── knowledge/                 # WIKI — what you know
 │   ├── INDEX.md               # Hub MOC: lists clusters + 1-line summary each
 │   ├── {cluster}/             # Domain or area (e.g. infrastructure/, customer-feedback/)
@@ -148,11 +148,14 @@ The 1-line summaries in `_index.md` files are the mechanism. `[[wikilinks]]` giv
 
 The skill runs a scope-aware interview (1–2 questions at a time), generates a complete personalized brain, and self-wires your harness: it writes the `<!-- BEGIN:SYNAPTIC -->` fragment into your project `AGENTS.md` (idempotent; created if absent) and installs the skill into both discovery paths. No further steps.
 
-### Flow 2 — Drop the seed
+### Flow 2 — Drop the seed (advanced / fallback)
+
+> Use this only if you cannot install the skill or prefer a manual start. The seed ships with `{{placeholders}}` that **must all be filled in** — the brain will not be useful until you do. `/init` (Flow 1) does this for you interactively and also self-wires the harness.
 
 1. Copy [`seed/.synaptic/`](seed/.synaptic/) into your project root
-2. Fill in the Context Capsule in `BRAIN.md` (what this brain covers; your role)
-3. Tell any agent: "Read `.synaptic/BRAIN.md` and follow it"
+2. Open `BRAIN.md` and fill **every** `{{placeholder}}`: brain name, scope, project description, owner role, and the context capsule
+3. Review and fill `harness/guardrails.md` and `harness/conventions.md` (operating rules)
+4. Tell any agent: "Read `.synaptic/BRAIN.md` and follow it"
 
 ### Flow 3 — Upgrading from v0.3 / v0.4 / v0.5
 
@@ -238,6 +241,26 @@ We chose write-time curation because agents re-read the same context constantly:
 - **Not a database** — no queries, no schemas, no server; just files
 - **Not another platform to roll out** — it is a folder of Markdown files; it works with what you already have
 - **Not domain-specific** — SYNAPTIC-CORE is a structure; your brain is yours to fill
+
+---
+
+## Consolidation discipline is the product
+
+The brain does not grow on its own. Without the capture contract being run, you have a note-dump. With it, you have a compounding brain.
+
+This is the honest trade: **you pay ~5–10 minutes per active session** to run `/consolidate` (classify, generalize, link, gate). In exchange, you erase the re-briefing tax on every future session, the onboarding tax for every new teammate or agent, and the handover tax when the project ends. It is not "zero overhead." It is a deliberate trade of write-time cost for read-time leverage.
+
+The cadence:
+
+| When | Action |
+|---|---|
+| **Every session end** | Run `/consolidate` — apply the 6-step capture contract to what was produced |
+| **Weekly** | Run `/audit` — surface orphans, broken links, stale nodes, MOC gaps |
+| **Monthly** | Run `/weave` — retroactive graph-gardening: missing links, near-duplicates, theme promotion |
+
+Without this cadence the brain drifts. With it, quality compounds.
+
+> **Tip:** see [`recipes/session-end-consolidate.md`](recipes/session-end-consolidate.md) for an optional Claude Code `settings.json` hook that reminds you to consolidate when the session changes `journal/` or `playgrounds/`.
 
 ---
 
