@@ -1,8 +1,8 @@
 # Current Journal
 
 <!-- Hard budget: 80 lines. No archive — history lives in git and in consolidated knowledge.
-     When this file grows crowded, consolidate: durable items → knowledge/playbooks/lessons,
-     then trim to the three sections below. -->
+     When this file grows crowded, consolidate: durable items → knowledge nodes / lessons /
+     typed playbook nodes; then trim to the three sections below. -->
 
 ## Resume Anchor
 
@@ -12,7 +12,8 @@
 
 ### Active playgrounds
 
-<!-- List open playgrounds here. Format: `playgrounds/{{task-id}}/` — {{what it is}}
+<!-- List open playgrounds here.
+     Format: `playgrounds/{{task-id}}/` — {{what it is and current status}}
      Remove entry when a playground is burned or archived. -->
 
 ---
@@ -20,7 +21,7 @@
 ## Watch List
 
 <!-- Open questions and risks that need resolution. One line each.
-     Format: [DATE] {{question or risk}} -->
+     Format: [YYYY-MM-DD] {{question or risk}} -->
 
 ---
 

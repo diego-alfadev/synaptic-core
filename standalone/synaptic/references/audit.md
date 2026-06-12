@@ -1,140 +1,159 @@
 # /audit — Brain Health Audit Reference
 
-Cross-session review for staleness, orphan pages, broken links, budget violations, naming
-violations, and stale playgrounds. Run when: user asks to audit, after several sessions, or
-when the brain feels off.
+Cross-session review for staleness, orphan nodes, broken links, MOC coverage, registry integrity,
+oversized untyped nodes, and tag hygiene. Run when: user invokes `/audit`, after several sessions,
+or when the brain feels off.
+
+**Prefer `node tools/check.js` if a runtime is available** — it automates Steps 2–7. Use this file
+as the manual fallback or to interpret check output.
+
+Do not auto-fix findings. Surface a prioritised list; ask for confirmation before any change.
 
 ---
 
-## Step 1: Staleness Pass
+## Step 1 — Staleness Pass
 
-Scan all pages under `knowledge/` and `playbooks/`:
+Scan all node files under `knowledge/` (recursing into clusters and `lessons/`) and `registries/`:
 
-- Flag any page where `updated:` date is more than 90 days ago.
-- Flag any page with `status: stale`.
+- Flag any node where `updated:` date is more than **90 days ago**.
+- Flag any node with `status: stale`.
 
-For each flagged page: note the staleness age and the likely section to review.
-Do **not** auto-update pages — present findings first and ask before changing anything.
-
----
-
-## Step 2: Orphan Detection
-
-Read `knowledge/INDEX.md` and `playbooks/_index.md`. Then scan all `.md` files in `knowledge/`
-and `playbooks/`:
-
-- Any `.md` file not listed in INDEX.md (or `_index.md`) is an **orphan**.
-- List orphans with their path. Ask: "Register in INDEX.md, move, or delete?"
+For each flagged node: note the staleness age and likely section to review. Present findings; ask before changing.
 
 ---
 
-## Step 3: Broken Wikilinks
+## Step 2 — Orphan Nodes
 
-Scan all pages for `[[wikilink]]` patterns. For each link:
+Read `knowledge/INDEX.md` (hub MOC) and every `knowledge/{cluster}/_index.md` (sub-MOCs). Then scan all `.md` files in `knowledge/`:
 
-- Resolve: does a file with that name exist in `knowledge/`?
-- Flag unresolved links as broken. Note source page and broken target.
+- Any `.md` file **not listed in any `_index.md`** is an orphan.
+- An orphan node is unreachable — it does not effectively exist.
 
-Do not auto-fix — surface the list and let the user decide (create the target, rename, or
-remove the link).
-
----
-
-## Step 4: Budget Violations
-
-Read budgets from `BRAIN.md` frontmatter (`budgets:` block). Defaults if absent: journal 80,
-page 150, brain 100.
-
-- `BRAIN.md` — must be ≤ `budgets.brain` lines. Flag if exceeded.
-- `journal/_current.md` — must be ≤ `budgets.journal` lines (80). Flag if exceeded; suggest `/consolidate`.
-- Any `knowledge/` page — soft limit `budgets.page` lines (150). Flag pages exceeding this; suggest splitting.
+List orphans with their path. Ask: "Register in cluster `_index.md`, move, or delete?"
 
 ---
 
-## Step 5: References Index Accuracy
+## Step 3 — Broken `[[wikilinks]]`
 
-Read `references/_index.md`. For each entry in the index:
+Scan all nodes for `[[wikilink]]` patterns. For each link:
 
-- Does the referenced file actually exist in `references/`?
-- Flag entries pointing to missing files (phantom entries).
+- Resolve: does a file whose kebab-case name matches the link target exist in `knowledge/`?
+- Flag unresolved targets as broken; note source file and broken target name.
 
-Also scan `references/` for files that have **no entry** in `_index.md`:
-
-- Flag unindexed files as orphan references. Ask: "Add to _index.md or remove?"
+Do not auto-fix. Surface the list; options are: create the target, rename, or remove the link.
 
 ---
 
-## Step 6: Stale Playground Nudge
+## Step 4 — MOC Coverage
 
-Read the **Active playgrounds** list in `journal/_current.md`. For each playground:
+Read `knowledge/INDEX.md`. For each cluster entry:
 
-- Check the `playgrounds/{task-id}/` directory. If the most recent file modification is
-  older than ~30 days, flag it.
-- Nudge: "Playground `{task-id}` has been open for 30+ days — consolidate findings and burn, or is it still active?"
+- Does the linked `{cluster}/_index.md` exist?
+- Does every file physically present in `knowledge/{cluster}/` appear in that `_index.md`?
 
-Do not delete automatically.
+Flag: missing `_index.md` files; nodes in a cluster directory not listed in the sub-MOC.
 
----
-
-## Step 7: Naming Convention Check
-
-Scan filenames in `knowledge/`:
-
-- Flag any filename that is not kebab-case (contains spaces, uppercase, or underscores other than `_index`).
-- Flag any duplicate base names (same stem, different extension).
+Also check: is every cluster directory listed in `knowledge/INDEX.md`? Flag unlisted cluster directories.
 
 ---
 
-## Step 8: Brain Context Staleness
+## Step 5 — Registry Integrity
 
-Read the **Brain Context** section in `BRAIN.md` (the 2–4 lines describing what the brain covers
-and the owner's role in this project):
+Read `registries/_index.md`. For each entry:
 
-- Is this description still accurate given the knowledge pages that exist?
-- Flag if the Brain Context appears significantly out of date relative to current knowledge.
+- Does the referenced registry file (`registries/{name}.md`) actually exist?
+- Does its frontmatter include `type: registry`, `status`, `updated`, `tags`?
 
-(There is no identity directory — this check replaces the v0.4 identity-drift check.)
+Flag: entries pointing to missing files (phantom entries); registry files not listed in `_index.md`.
+
+Note: row-level accuracy (whether registry values match reality) is unknowable from inside the brain — surface structure-level issues only. Suggest a staleness review if `updated:` is > 90 days old.
 
 ---
 
-## Step 9: Report
+## Step 6 — References Existence-Index Accuracy
 
-Present findings as an actionable checklist, grouped by category. Maximum 10 findings;
-prioritise by impact.
+Read `references/_index.md`. For each entry:
+
+- Does the referenced file actually exist (in `references/` or `references/raw/`)?
+- Flag phantom entries (indexed but file missing).
+
+Scan `references/raw/` for files with **no entry** in `_index.md`. Flag as unindexed artifacts.
+
+---
+
+## Step 7 — Oversized Untyped Nodes
+
+Scan all nodes in `knowledge/`:
+
+- Flag any node exceeding **~150 lines** that does not have `type: reference` in its frontmatter.
+- Oversized untyped nodes are candidates to split into linked sub-nodes or be re-tagged `type: reference` (deliberately long canonical doc).
+
+Soft limit only — `check` warns, never errors. A 500-line walkthrough tagged `type: reference` is valid.
+
+---
+
+## Step 8 — Tag Hygiene
+
+Scan all nodes for `tags:` in frontmatter:
+
+- Flag nodes with a missing or empty `tags:` field.
+- Flag nodes using inconsistent tag names for the same concept (e.g. `infra` vs `infrastructure` for the same cluster).
+
+Tags enable `Ctrl+Shift+F` faceted search and the future FTS/RAG surface — blank or inconsistent tags degrade discoverability.
+
+---
+
+## Step 9 — Report
+
+Present findings as a prioritised actionable checklist, grouped by category. Cap at **10 highest-impact findings**; note the total count if more exist.
 
 ```
-Brain audit — N findings:
+Brain audit — N findings (showing top N):
 
-## Stale pages (>90 days or status: stale)
-1. knowledge/foo.md — last updated YYYY-MM-DD (NNN days ago)
+## Stale nodes (>90 days or status: stale)
+1. knowledge/api-integration/legacy-auth.md — last updated 2025-11-03 (221 days ago)
+   → Review and update, or set status: stale?
 
-## Orphan pages (not in INDEX.md)
-2. knowledge/bar.md — not registered
+## Orphan nodes (not in any _index.md)
+2. knowledge/infra/old-deploy-notes.md — not registered in any sub-MOC
    → Register, move, or delete?
 
-## Broken wikilinks
-3. knowledge/baz.md [[missing-page]] — target not found
-   → Create target, rename, or remove link?
+## Broken [[wikilinks]]
+3. knowledge/api-integration/retry-policy.md [[rate-limiter]] — target not found
+   → Create rate-limiter.md, rename, or remove link?
 
-## Budget violations
-4. journal/_current.md — 94 lines (limit: 80)
-   → Run /consolidate
+## MOC coverage gaps
+4. knowledge/auth/ cluster — _index.md missing
+   → Create _index.md listing: jwt-decode.md, session-cache.md
+
+## Registry integrity
+5. registries/_index.md lists "environments" — registries/environments.md not found
+   → Remove phantom entry or create the file?
 
 ## References _index.md issues
-5. references/_index.md lists "schema-v2.ddl" — file not found
-   → Remove phantom entry or restore file?
+6. references/_index.md lists "schema-v2.sql" — not found in references/raw/
+   → Remove entry or restore file?
 
-## Stale playgrounds
-6. playgrounds/feat-42-auth/ — last modified 2026-04-10 (>30 days open)
-   → Consolidate and burn, or still active?
+## Oversized untyped nodes
+7. knowledge/architecture/overview.md — 342 lines, type: knowledge
+   → Split into sub-nodes or re-tag type: reference?
 
-## Naming violations
-7. knowledge/MyFeature.md — not kebab-case
-   → Rename to my-feature.md?
-
-## Brain Context staleness
-8. Brain Context describes "analytics platform" but 70% of knowledge pages are about auth
-   → Update Brain Context?
+## Tag hygiene
+8. knowledge/infra/load-balancer.md — tags: [] (empty)
+   → Add tags: [infra, networking] (or relevant cluster/topic tags)
 ```
 
 Ask: "Apply all? Or pick specific items?" — do not make changes without confirmation.
+
+---
+
+## BRAIN.md Sanity Check
+
+After the main audit, quick-check `BRAIN.md` itself:
+
+- Is `updated:` current (within the last active sprint/week)?
+- Does the **Context Capsule** still accurately describe what the brain covers?
+- Are the **Top Guardrails** still the right top-5 from `harness/guardrails.md`?
+- Is the **Brain Map** table consistent with the actual directory layout?
+
+Flag anything materially out of date. These drifts are low-severity but compound over time.

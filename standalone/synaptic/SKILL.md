@@ -1,162 +1,154 @@
 ---
 name: synaptic
-version: 0.5.0-alpha
+version: 1.0.0
 description: >
   Knowledge-graph memory layer for project work — a portable, file-based brain that turns
-  daily work into structured, indexable, agent-usable knowledge. Triggers: `.synaptic/`
-  exists in the workspace, user wants persistent project memory or an AI brain, or user
-  invokes /init /consolidate /ingest /audit /upgrade.
+  daily work into structured, indexable, agent-usable knowledge. Two planes: wiki (what you
+  know) + harness (how you work here). Triggers: `.synaptic/` present in the workspace, user
+  wants persistent project memory or an AI brain, or user invokes /init /consolidate /ingest
+  /audit /upgrade.
 ---
 
-# Synaptic Brain Skill
+# Synaptic Brain Skill — v1.0
 
 ## Detect on Load
 
 ```
 Does .synaptic/BRAIN.md exist?
-├── YES → Boot: read BRAIN.md, follow it.
-│         Check frontmatter version: < 0.5 → offer /upgrade.
-│         Check harness wiring: is BEGIN:SYNAPTIC absent from AGENTS.md AND skill dirs missing?
-│         ├── BOTH missing → Adopted brain detected — wiring this machine's harness.
-│         │                  Run ONLY the Harness Integration section (no interview), then boot.
-│         └── Already wired → normal boot.
+├── YES → Read BRAIN.md frontmatter version.
+│         version ≥ 1.0 → Boot: read BRAIN.md, follow it.
+│           Is harness wired? (BEGIN:SYNAPTIC in AGENTS.md AND skill dir present)
+│           ├── Both present → normal boot.
+│           └── Either missing → wire harness now (Harness Self-Wire; no interview), then boot.
+│         version < 1.0 (0.4, 0.5) → offer /upgrade: "Found a v{X} brain — run /upgrade to migrate."
 │
 └── NO — Does .synaptic/ exist (no BRAIN.md)?
-    ├── YES → v0.3 brain detected.
-    │         Offer /upgrade: "Found a v0.3 brain — run /upgrade to migrate to v0.5."
-    │         Load references/upgrade-to-v05.md when user confirms.
+    ├── YES → v0.3 brain detected (BOOTSTRAP.md pattern).
+    │         Offer /upgrade: "Found a v0.3 brain — run /upgrade to migrate to v1."
+    │         Load references/upgrade-to-v1.md when user confirms.
     └── NO  → No brain found.
               Offer onboarding: "No brain found — start the setup interview? (y/n)"
 ```
 
-When booting: read `BRAIN.md` only. Load all other files on demand via `knowledge/INDEX.md`.
+When booting: read `BRAIN.md` only. Load all other files on demand through `knowledge/INDEX.md`.
 
 ---
 
-## Onboarding Interview v2
+## Onboarding Interview — /init
 
-Ask **1–2 questions at a time**. Build on answers; give examples when helpful.
+Ask **1–2 questions at a time**. Build on answers. Generate files from `templates/` when done.
 
 **Round 0 — Scope:**
 > "Is this brain for a project, a role, an organisation, or your life?"
 
-Tailor subsequent framing to the answer (e.g. "your stack" for project, "your domains" for org).
+Tailor framing to the answer (e.g. "your stack" for project, "your domains" for org).
 
 **Round 1 — Coverage + Owner role:**
-> "What should this brain cover? And what is your role in it — developer, lead, analyst?"
+> "What should this brain cover? What is your role here — developer, lead, analyst?"
 
-The answers become the `Brain Context` block in `BRAIN.md` (2–4 lines: what it covers; the owner's
-role in this project). This is *retrieval framing*, **not persona**.
+These answers become the **Context Capsule** in `BRAIN.md` (2–4 lines: what it covers + owner's role in this project). This is *retrieval framing*, not persona. If the user describes tone, language preferences, or agent behavior: "Those belong in your harness (AGENTS.md / CLAUDE.md), not in the brain — I'll place them there instead."
 
-If the user starts describing tone, language preferences, or agent behaviour: gently note that those
-belong in their harness (AGENTS.md / CLAUDE.md / agent instructions), not in the brain. Offer to
-place them there instead.
-
-**Round 2 — Main topics:**
+**Round 2 — Main clusters:**
 > "What are the main areas, products, or systems this brain will cover?"
 
-Use the answers to seed `knowledge/INDEX.md` section stubs.
+Use the answers to seed `knowledge/INDEX.md` cluster stubs and generate a first `{cluster}/_index.md`.
 
-**Round 3 — Working agreements:**
-> "Any team norms an inheriting teammate must know — languages per channel (tickets, chat, docs),
-> conventions, etiquette?"
+**Round 3 — Working conventions + guardrails:**
+> "Any team norms an inheriting teammate must know — languages per channel, commit style, etiquette? Any hard rules that must never be violated?"
 
-Collect answers into `knowledge/working-agreements.md` (create from the seed template; fill in the
-Communication table, Conventions list, and Never-dos). Register in INDEX.md.
+Collect conventions → `harness/conventions.md` (create from seed template). Collect hard rules → `harness/guardrails.md`. Extract the top 3–5 hard rules and write them into `BRAIN.md → Top Guardrails`.
 
-Note: if the user describes personal agent behavior (tone with them, chat language preference,
-output style) — redirect: "That's harness territory — I'll put it in AGENTS.md/CLAUDE.md, not in
-the brain."
+**Round 4 — Registries:**
+> "Any lookup tables you reference often — infra resources, repo catalog, glossary, environments?"
 
-**Round 4 — Constraints worth persisting:**
-> "Any hard constraints, rules, or facts that should always be available to an agent working here?"
+Yes → create `registries/{name}.md` from `templates/registry.md` per table; register in `registries/_index.md`.
 
-Route these to a knowledge page (e.g. `project-constraints.md`), **not** an identity file. The brain
-has no identity directory.
+**Round 5 — Seed import (optional):**
+> "Got an existing context-pack or onboarding doc to import? I can bootstrap the brain from it."
 
-**Round 5 — Documents to ingest (optional):**
-> "Any existing schemas, specs, or docs to bring in now?"
+Yes → run /ingest on the document now. Queue further documents for post-init.
 
-Queue for /ingest after setup. Load `references/ingest.md` for each file.
+**Stop condition:** scope + at least one cluster + `harness/conventions.md` exist. Further rounds optional.
 
-Stop when: scope + at least one area + working-agreements page exist. Further rounds are optional.
+After the interview, run **Harness Self-Wire**, then report the file list.
 
 ---
 
 ## Generate
 
-After the interview, instantiate files from the `templates/` directory bundled with this skill
-package — it mirrors the full seed `.synaptic/` layout (so the page/playbook templates are at
-`templates/templates/page.md` and `templates/templates/playbook.md`). If `templates/` is missing,
-generate files directly following the v0.5 layout and conventions, and tell the user you did.
+Instantiate files from `templates/` (bundled with this skill package — mirrors the full seed `.synaptic/` layout). If `templates/` is missing, generate directly and notify the user.
 
-**v0.5 layout to generate:**
+**v1 layout to generate:**
 
 ```
 .synaptic/
-├── BRAIN.md                        ← filled from interview (Brain Context, scope, budgets)
+├── BRAIN.md                    ← filled from interview (Context Capsule, Capture Contract, Top Guardrails, Brain Map)
 ├── knowledge/
-│   ├── INDEX.md                    ← section stubs from Round 2
-│   ├── working-agreements.md       ← from Round 3 interview; omit if user had none
-│   └── project-constraints.md     ← from Round 4 (if constraints provided)
-├── playbooks/
-│   └── _index.md                   ← empty
-├── playgrounds/
-│   └── README.md                   ← standard copy
+│   ├── INDEX.md                ← cluster stubs from Round 2
+│   ├── {cluster}/
+│   │   └── _index.md           ← sub-MOC (1-line per node)
+│   └── lessons/
+│       └── README.md
+├── registries/
+│   └── _index.md               ← empty index (+ any tables from Round 4)
 ├── references/
-│   └── _index.md                   ← empty
+│   ├── _index.md               ← empty existence index
+│   └── raw/                    ← verbatim drop-zone
+├── harness/
+│   ├── conventions.md          ← from Round 3
+│   ├── guardrails.md           ← from Round 3
+│   └── skills/
+│       └── README.md
+├── playgrounds/
+│   └── README.md
 ├── journal/
-│   └── _current.md                 ← fresh template
+│   └── _current.md
 └── templates/
-    ├── page.md
-    └── playbook.md
+    ├── node.md
+    ├── registry.md
+    ├── playbook.md
+    └── lesson.md
 ```
 
-Use real data only — no `{{placeholder}}` values in generated files. Report the full file list
-when done.
+Use real data — no `{{placeholder}}` values in generated files. Report the full file list when done.
 
 ---
 
-## Harness Integration
+## Harness Self-Wire
 
-Run this after generating (or on /upgrade). The goal: make every agent in the project aware of
-the brain automatically, without touching user persona config.
+Run after /init or on any boot where wiring is absent. Goal: make every agent in the project aware of the brain automatically, without touching user persona config.
 
-### a. AGENTS.md fragment (idempotent)
+### a. AGENTS.md fragment (idempotent, marker-wrapped)
 
 Search for `<!-- BEGIN:SYNAPTIC -->` in the project root `AGENTS.md`.
 
-- **Found:** replace the entire `BEGIN:SYNAPTIC … END:SYNAPTIC` block with the block below.
-- **Not found:** append the block below to `AGENTS.md` (create the file if it does not exist).
+- **Found:** replace the entire BEGIN:SYNAPTIC … END:SYNAPTIC block with the block below.
+- **Not found:** append the block (create `AGENTS.md` if it does not exist).
 
-Write exactly this block — no additions, no reformatting:
+Write exactly this block — ≤13 lines, no additions:
 
 ```
 <!-- BEGIN:SYNAPTIC -->
 ## Synaptic Brain
-This project has a Synaptic brain at `.synaptic/` — a portable knowledge graph of project
-knowledge, playbooks and working memory. Before working: read `.synaptic/BRAIN.md` and follow
-its contribution protocol (route new durable knowledge, lessons, playbooks and task workspaces
-as it specifies; files are authoritative over any agent-native memory).
-Honor the team norms in `.synaptic/knowledge/working-agreements.md` when communicating or working in this project.
+This project has a Synaptic brain at `.synaptic/`. Before working: read `.synaptic/BRAIN.md`
+and follow its capture contract (route durable knowledge, lessons, playbooks, and task
+workspaces as specified; files are authoritative over any agent-native memory).
+Honor team conventions in `.synaptic/harness/conventions.md`. Top guardrails in BRAIN.md.
+Full harness (conventions/guardrails/skills) in `.synaptic/harness/` — load on demand.
 Commands (synaptic skill): /init /consolidate /ingest /audit /upgrade
 <!-- END:SYNAPTIC -->
 ```
 
-Do **not** touch `CLAUDE.md` — that is user persona territory. If the user explicitly asks to add
-a brain pointer there, do so, but only with their explicit instruction.
+Do **not** touch `CLAUDE.md` (user persona territory). If the user explicitly asks to add a brain pointer there, do so only on their explicit instruction.
 
 ### b. Skill install
 
-Copy this skill package directory (the directory where THIS SKILL.md lives, with its `references/`;
-`templates/` may be skipped to keep the install light) into the project at:
+Copy this skill package directory (where this SKILL.md lives, with its `references/` and `templates/`) into:
 
 - `.claude/skills/synaptic/` — discovered by Claude Code, VS Code Copilot, OpenCode
 - `.agents/skills/synaptic/` — discovered by VS Code Copilot, Gemini CLI, OpenCode, Codex
 
-Create the directories if they do not exist. If either target already contains a `SKILL.md` with
-the same `version:` in its frontmatter (or no version field), skip it and tell the user "already
-present". Otherwise overwrite.
+Create directories if absent. If a target already contains a `SKILL.md` with the same `version:`, skip and report "already present". Otherwise overwrite.
 
 ### c. Cursor shim (optional)
 
@@ -167,21 +159,22 @@ This project has a Synaptic brain. See AGENTS.md (BEGIN:SYNAPTIC block) for inst
 Read `.synaptic/BRAIN.md` at session start. Commands: /init /consolidate /ingest /audit /upgrade
 ```
 
-### d. Cross-agent sync compatibility
+### d. Cross-agent sync
 
-Cross-agent rule sync tools (gentle-ai, ai-rules-sync, block/ai-rules, rulesync) pick up the
-skill directories automatically — nothing else to configure.
+Cross-agent rule-sync tools (gentle-ai, ai-rules-sync, block/ai-rules, rulesync) pick up the skill directories automatically — nothing else to configure.
 
 ---
 
 ## Operations
 
-Load the referenced file when the operation is invoked, not at boot.
+Load the referenced file only when the operation is invoked, not at boot.
 
 | Command | What it does | Reference |
-|---------|-------------|-----------|
-| `/init` | No brain → interview. Brain present but unwired → adopt: wire harness only. Brain present + wired → extend: offer add topic / working agreements / ingest | this file §Detect, §Onboarding |
-| `/consolidate` | Route working memory → structured knowledge | `references/consolidate.md` |
-| `/ingest [file]` | Ingest a document into the brain | `references/ingest.md` |
-| `/audit` | Staleness, orphans, budget violations, link health | `references/audit.md` |
-| `/upgrade` | Migrate v0.3 or v0.4 brain to v0.5 | `references/upgrade-to-v05.md` |
+|---|---|---|
+| `/init` | No brain → interview + generate + wire. Brain present but unwired → wire only. Brain present + wired → extend (add cluster / registries / ingest). | This file |
+| `/consolidate` | Run the 6-step capture contract on session output | `references/consolidate.md` |
+| `/ingest [file]` | Distill a document into an atomic node + reference entry | `references/ingest.md` |
+| `/audit` | Staleness, orphans, broken `[[wikilinks]]`, MOC coverage, registry integrity, oversized untyped nodes, tag hygiene | `references/audit.md` |
+| `/upgrade` | Migrate v0.3 / v0.4 / v0.5 brain to v1 | `references/upgrade-to-v1.md` |
+
+**Tools awareness:** if a runtime is available, prefer `tools/` scripts (check/migrate/export/vault-open) for the mechanical steps. If no runtime, perform the operation manually as described in the reference files.

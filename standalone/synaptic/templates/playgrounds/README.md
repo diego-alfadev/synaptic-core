@@ -8,10 +8,8 @@ imposed — use whatever layout the task needs.
 
 1. **Open** — create `playgrounds/{{task-id}}/` and register it in `journal/_current.md`.
 2. **Work** — artifacts accumulate freely; no required structure.
-3. **Consolidate** — durable findings → `knowledge/` pages or `knowledge/lessons/`; procedures →
-   `playbooks/`; deliverables shipped.
-4. **Burn (default)** — delete the playground after consolidation. Archiving is the exception,
-   not the rule.
+3. **Consolidate** — run the capture contract: durable findings → atomic knowledge nodes in the right cluster; repeatable procedures → `type: playbook` node in its cluster; lessons → `knowledge/lessons/`; deliverables shipped.
+4. **Burn (default)** — delete the playground after consolidation. Archiving is the exception, not the rule.
 
 ## Registry
 
