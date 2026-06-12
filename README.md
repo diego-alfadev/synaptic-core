@@ -193,6 +193,7 @@ All tools are **zero-dependency** (Node ≥ 18 standard library only). CORE neve
 | `migrate` | `node tools/migrate.js <.synaptic> [templates-dir] [--dry-run]` | Automates Phase M of a v0.x → v1 upgrade (deterministic, idempotent, non-destructive) |
 | `export` | `node tools/export.js <.synaptic> [out.md]` | Bundles the entire brain into a single portable Markdown file (or `--split` into 4 sections) |
 | `vault-open` | `node tools/vault-open.js <.synaptic>` | Writes minimal optional config for Obsidian, Foam, and Logseq; produces `OPEN-IN.md` |
+| `graph` | `node tools/graph.js [.synaptic] [--out FILE] [--format html\|svg]` | Render a visual graph image of your brain — executive-friendly, no install; deterministic layout makes before/after states visually comparable |
 
 ---
 
@@ -292,6 +293,7 @@ Each inner layer is independent of the outer ones:
   │  │        TOOLS           │      │
   │  │  check · migrate       │      │
   │  │  export · vault-open   │      │
+  │  │  graph                 │      │
   │  │  (Node ≥ 18, optional) │      │
   │  │  ┌──────────────────┐  │      │
   │  │  │      CORE        │  │      │
