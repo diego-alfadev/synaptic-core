@@ -1,7 +1,7 @@
 #!/usr/bin/env node
-// tools/check.js — Synaptic Brain lint helper (v0.5)
-// Usage: node tools/check.js [path-to-.synaptic]
-// Node >= 18, zero npm dependencies.
+// tools/check.js — Synaptic Brain lint helper (v1.0)
+// Usage: node tools/check.js [path-to-.synaptic]   (default: ./.synaptic)
+// Node >= 18, zero npm dependencies — only node:fs, node:path, node:process.
 
 'use strict';
 
@@ -31,19 +31,22 @@ function readLines(filePath) {
   return readText(filePath).split('\n');
 }
 
-/** Returns true if the file lives under the templates/ directory. */
+/** True if file lives under templates/ (any depth). */
 function isUnderTemplates(filePath) {
   const rel = path.relative(brainRoot, filePath);
   return rel.startsWith('templates' + path.sep) || rel.startsWith('templates/');
 }
 
-/** Returns true for index/readme sentinel files (excluded from content checks). */
-function isIndexOrReadme(filePath) {
+/**
+ * True for MOC/sentinel files excluded from content checks.
+ * INDEX.md, _index.md, README.md are excluded from frontmatter/naming/orphan checks.
+ */
+function isMocFile(filePath) {
   const base = path.basename(filePath).toLowerCase();
   return base === 'index.md' || base === 'readme.md' || base === '_index.md';
 }
 
-/** Returns true for {{...}} placeholder values from the seed state. */
+/** True if value is a {{...}} placeholder. */
 function isPlaceholder(value) {
   return typeof value === 'string' && /^\{\{.+\}\}$/.test(value.trim());
 }
@@ -55,146 +58,175 @@ function isPlaceholder(value) {
 function walkMd(dir) {
   if (!fs.existsSync(dir)) return [];
   const results = [];
-  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    const full = path.join(dir, entry.name);
-    if (entry.isDirectory()) {
-      results.push(...walkMd(full));
-    } else if (entry.isFile() && entry.name.endsWith('.md')) {
-      results.push(full);
+  function walk(current) {
+    for (const entry of fs.readdirSync(current, { withFileTypes: true })) {
+      const full = path.join(current, entry.name);
+      if (entry.isDirectory()) {
+        walk(full);
+      } else if (entry.isFile() && entry.name.endsWith('.md')) {
+        results.push(full);
+      }
     }
   }
+  walk(dir);
   return results;
 }
 
 /**
- * Parse BRAIN.md frontmatter including the nested `budgets:` block.
- * Returns { fields, budgets } where budgets defaults to { journal:80, page:150, brain:100 }.
+ * Walk any dir, returning all file paths (any extension).
+ * Returns [] if the directory does not exist.
  */
-function parseBrainFrontmatter(lines) {
-  const DEFAULT_BUDGETS = { journal: 80, page: 150, brain: 100 };
-  if (lines[0] !== '---') return { fields: {}, budgets: DEFAULT_BUDGETS };
-  const endIdx = lines.indexOf('---', 1);
-  if (endIdx === -1) return { fields: {}, budgets: DEFAULT_BUDGETS };
+function walkAll(dir) {
+  if (!fs.existsSync(dir)) return [];
+  const results = [];
+  function walk(current) {
+    for (const entry of fs.readdirSync(current, { withFileTypes: true })) {
+      const full = path.join(current, entry.name);
+      if (entry.isDirectory()) {
+        walk(full);
+      } else if (entry.isFile()) {
+        results.push(full);
+      }
+    }
+  }
+  walk(dir);
+  return results;
+}
 
-  const fields  = {};
-  const budgets = {};
-  let inBudgets = false;
+/**
+ * Parse YAML frontmatter from an array of lines.
+ * Handles:
+ *   - scalar values:  key: value
+ *   - inline lists:   tags: [a, b]
+ *   - block lists:    tags:\n  - a\n  - b
+ * Returns null if no frontmatter found, else an object where list fields are arrays.
+ */
+function parseFrontmatter(lines) {
+  if (!lines.length || lines[0].trim() !== '---') return null;
+  let endIdx = -1;
+  for (let i = 1; i < lines.length; i++) {
+    if (lines[i].trim() === '---') { endIdx = i; break; }
+  }
+  if (endIdx === -1) return null;
+
+  const fields = {};
+  let currentKey = null;
+  let collectingList = false;
 
   for (let i = 1; i < endIdx; i++) {
     const line = lines[i];
 
-    // Detect start of `budgets:` block (key at column 0, no value on same line)
-    if (/^budgets:\s*$/.test(line)) {
-      inBudgets = true;
+    // Block list item under a previous key
+    if (collectingList && /^\s+-\s+/.test(line)) {
+      const val = line.replace(/^\s+-\s+/, '').replace(/^["']|["']$/g, '').trim();
+      if (!Array.isArray(fields[currentKey])) fields[currentKey] = [];
+      fields[currentKey].push(val);
       continue;
     }
-
-    if (inBudgets) {
-      // Two-space-indented sub-key under budgets
-      const sub = line.match(/^  (\w+):\s*(\d+)/);
-      if (sub) {
-        budgets[sub[1]] = parseInt(sub[2], 10);
-        continue;
-      }
-      // Any non-indented line ends the budgets block
-      if (!/^ /.test(line)) inBudgets = false;
+    // Any non-indented line stops list collection
+    if (collectingList && !/^\s/.test(line)) {
+      collectingList = false;
     }
 
-    if (!inBudgets) {
-      const match = line.match(/^(\w[\w-]*):\s*(.*)/);
-      if (match) fields[match[1]] = match[2].trim();
+    const match = line.match(/^([\w-]+):\s*(.*)/);
+    if (!match) continue;
+    const key = match[1];
+    const raw = match[2].trim();
+    currentKey = key;
+    collectingList = false;
+
+    if (raw === '' || raw === '[]') {
+      // Empty value or empty inline list — may be a block list start or genuinely empty
+      fields[key] = raw === '[]' ? [] : null;
+      if (raw === '') collectingList = true;
+    } else if (raw.startsWith('[') && raw.endsWith(']')) {
+      // Inline list: [a, b, c]
+      const inner = raw.slice(1, -1).trim();
+      fields[key] = inner
+        ? inner.split(',').map(s => s.trim().replace(/^["']|["']$/g, ''))
+        : [];
+    } else {
+      // Scalar value
+      fields[key] = raw.replace(/^["']|["']$/g, '').trim();
     }
   }
 
-  return {
-    fields,
-    budgets: {
-      journal: budgets.journal ?? DEFAULT_BUDGETS.journal,
-      page:    budgets.page    ?? DEFAULT_BUDGETS.page,
-      brain:   budgets.brain   ?? DEFAULT_BUDGETS.brain,
-    },
-  };
-}
-
-/**
- * Parse a simple key:value YAML frontmatter block (no nesting).
- * Returns null if no frontmatter found.
- */
-function parseFrontmatter(lines) {
-  if (lines[0] !== '---') return null;
-  const endIdx = lines.indexOf('---', 1);
-  if (endIdx === -1) return null;
-  const fields = {};
-  for (let i = 1; i < endIdx; i++) {
-    const match = lines[i].match(/^(\w[\w-]*):\s*(.*)/);
-    if (match) fields[match[1]] = match[2].trim();
-  }
   return fields;
 }
 
 /**
- * Extract all [[wikilinks]] from text, skipping:
+ * Extract all [[wikilinks]] from lines, skipping:
  *   - HTML comment blocks (<!-- ... -->)
  *   - inline code spans (`...`)
+ * Returns an array of raw link strings (may contain # or | — strip those for resolution).
  */
 function extractWikilinks(lines) {
   const links = [];
   let inComment = false;
 
   for (const rawLine of lines) {
-    // --- HTML comment state machine ---
     if (inComment) {
       if (rawLine.includes('-->')) inComment = false;
       continue;
     }
+    // Strip inline code spans
+    let line = rawLine.replace(/`[^`]*`/g, m => ' '.repeat(m.length));
 
-    // Strip inline code spans before any analysis
-    // Replace `...` with spaces so wikilinks inside code don't fire
-    let line = rawLine.replace(/`[^`]*`/g, (m) => ' '.repeat(m.length));
-
-    // Handle opening of HTML comment on this line
     if (line.includes('<!--')) {
       if (!line.includes('-->')) {
-        // Multi-line comment starts here — scan before the comment opens
         const before = line.slice(0, line.indexOf('<!--'));
-        const found = [...before.matchAll(/\[\[([^\]]+)\]\]/g)];
-        for (const m of found) links.push(m[1].trim());
+        for (const m of before.matchAll(/\[\[([^\]]+)\]\]/g)) links.push(m[1].trim());
         inComment = true;
         continue;
       }
-      // Single-line comment — strip it and scan the rest
+      // Single-line comment — strip it
       line = line.replace(/<!--.*?-->/g, '');
     }
 
-    const found = [...line.matchAll(/\[\[([^\]]+)\]\]/g)];
-    for (const m of found) links.push(m[1].trim());
+    for (const m of line.matchAll(/\[\[([^\]]+)\]\]/g)) links.push(m[1].trim());
   }
-
   return links;
 }
 
 /**
- * Resolve a wikilink name to an existing .md path, or null.
- * Search order: knowledge/, knowledge/lessons/, playbooks/, brain-root-relative.
+ * Normalise a wikilink target: strip #anchor and |alias, trim.
  */
-function resolveLink(linkName, root) {
-  // linkName may contain a subpath like "references/_index"
-  const withMd = linkName.endsWith('.md') ? linkName : linkName + '.md';
-  const candidates = [
-    path.join(root, 'knowledge',          withMd),
-    path.join(root, 'knowledge', 'lessons', withMd),
-    path.join(root, 'playbooks',          withMd),
-    path.join(root,                        withMd),
-    // also without forcing .md extension (in case linkName already has it)
-    path.join(root, 'knowledge',          linkName),
-    path.join(root, 'knowledge', 'lessons', linkName),
-    path.join(root, 'playbooks',          linkName),
-    path.join(root,                        linkName),
+function normLink(raw) {
+  return raw.split('#')[0].split('|')[0].trim();
+}
+
+/**
+ * Build a lookup set of all resolvable wikilink targets from the brain.
+ * Keys: basenames without extension, and relative paths from brainRoot without extension.
+ */
+function buildLinkIndex(root) {
+  const index = new Set();
+  const dirs = [
+    path.join(root, 'knowledge'),
+    path.join(root, 'registries'),
+    path.join(root, 'references'),
+    path.join(root, 'harness'),
   ];
-  for (const c of candidates) {
-    if (fs.existsSync(c) && fs.statSync(c).isFile()) return c;
+  // Also add any .md directly at brain root
+  for (const entry of (fs.existsSync(root) ? fs.readdirSync(root, { withFileTypes: true }) : [])) {
+    if (entry.isFile() && entry.name.endsWith('.md')) {
+      index.add(path.basename(entry.name, '.md'));
+      index.add(entry.name); // with extension
+    }
   }
-  return null;
+  for (const dir of dirs) {
+    for (const f of walkMd(dir)) {
+      const stem = path.basename(f, '.md');
+      index.add(stem);
+      // Relative from brain root without extension: e.g. "knowledge/example-cluster/_index"
+      const rel = path.relative(root, f).replace(/\\/g, '/').replace(/\.md$/, '');
+      index.add(rel);
+      // Also the filename with extension
+      const relWithExt = path.relative(root, f).replace(/\\/g, '/');
+      index.add(relWithExt);
+    }
+  }
+  return index;
 }
 
 /** Parse a date string; return Date or null. */
@@ -205,6 +237,8 @@ function parseDate(str) {
 }
 
 const NINETY_DAYS_MS = 90 * 24 * 60 * 60 * 1000;
+const KNOWLEDGE_BUDGET = 150;
+const BRAIN_BUDGET = 110;
 
 // ---------------------------------------------------------------------------
 // Findings collector
@@ -222,23 +256,12 @@ function warn(file, message) {
 }
 
 // ---------------------------------------------------------------------------
-// Read budgets from BRAIN.md frontmatter (used by several checks)
-// ---------------------------------------------------------------------------
-
-const brainFile     = path.join(brainRoot, 'BRAIN.md');
-const brainExists   = fs.existsSync(brainFile);
-const brainLines    = brainExists ? readLines(brainFile) : [];
-const { budgets }   = brainExists
-  ? parseBrainFrontmatter(brainLines)
-  : { budgets: { journal: 80, page: 150, brain: 100 } };
-
-// ---------------------------------------------------------------------------
-// Check 1: Required layout files present; v0.4/v0.3 leftovers absent
+// Check 1: Required layout + v0.x leftovers
 // ---------------------------------------------------------------------------
 
 function checkLayout() {
-  // Required files
-  if (!brainExists) {
+  const brainFile = path.join(brainRoot, 'BRAIN.md');
+  if (!fs.existsSync(brainFile)) {
     err(brainFile, 'BRAIN.md is missing');
   }
 
@@ -247,87 +270,60 @@ function checkLayout() {
     err(indexFile, 'knowledge/INDEX.md is missing');
   }
 
-  // v0.4 / v0.3 leftovers — directories
-  const leftoverDirs = ['identity', 'worklines', 'skills'];
-  for (const d of leftoverDirs) {
-    const p = path.join(brainRoot, d);
-    if (fs.existsSync(p) && fs.statSync(p).isDirectory()) {
-      err(p, `v0.4/v0.3 leftover directory: ${d}/`);
-    }
-  }
-
-  // Leftover files (at brainRoot level)
-  const leftoverRootFiles = ['cortex.config.yaml', 'BOOTSTRAP.md', 'MANIFEST.md'];
+  // v0.x leftover files at brain root
+  const leftoverRootFiles = [
+    'BOOTSTRAP.md', 'MANIFEST.md', 'HEARTBEAT.md', 'cortex.config.yaml',
+  ];
   for (const f of leftoverRootFiles) {
-    const p = path.join(brainRoot, f);
-    if (fs.existsSync(p)) {
-      err(p, `v0.4/v0.3 leftover file: ${f}`);
+    if (fs.existsSync(path.join(brainRoot, f))) {
+      err(path.join(brainRoot, f), `v0.x leftover file: ${f}`);
     }
   }
 
-  // Leftover files under knowledge/
-  const leftoverKnowledgeFiles = ['_tree.yaml', '_page_template.md'];
-  for (const f of leftoverKnowledgeFiles) {
-    const p = path.join(brainRoot, 'knowledge', f);
-    if (fs.existsSync(p)) {
-      err(p, `v0.4/v0.3 leftover file: knowledge/${f}`);
-    }
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Check 2: Size budgets (from BRAIN.md frontmatter, with fallback defaults)
-// ---------------------------------------------------------------------------
-
-function checkSizeBudgets() {
-  // BRAIN.md line budget
-  if (brainExists && brainLines.length > budgets.brain) {
-    warn(brainFile, `BRAIN.md is ${brainLines.length} lines (budget: ${budgets.brain})`);
+  // identity/HEARTBEAT.md (v0.3 path)
+  const heartbeatInIdentity = path.join(brainRoot, 'identity', 'HEARTBEAT.md');
+  if (fs.existsSync(heartbeatInIdentity)) {
+    err(heartbeatInIdentity, 'v0.x leftover file: identity/HEARTBEAT.md');
   }
 
-  // journal/_current.md line budget
-  const journalCurrent = path.join(brainRoot, 'journal', '_current.md');
-  if (fs.existsSync(journalCurrent)) {
-    const lines = readLines(journalCurrent);
-    if (lines.length > budgets.journal) {
-      warn(journalCurrent, `journal/_current.md is ${lines.length} lines (budget: ${budgets.journal})`);
-    }
+  // _tree.yaml under knowledge/
+  const treeYaml = path.join(brainRoot, 'knowledge', '_tree.yaml');
+  if (fs.existsSync(treeYaml)) {
+    err(treeYaml, 'v0.x leftover file: knowledge/_tree.yaml');
   }
 
-  // knowledge/ pages and playbooks/ pages — page budget
-  // Exclusions: INDEX.md, README.md, _index.md, files under templates/
-  const knowledgeDir = path.join(brainRoot, 'knowledge');
+  // inventory/ directory (v0.x name for registries/)
+  const inventoryDir = path.join(brainRoot, 'inventory');
+  if (fs.existsSync(inventoryDir) && fs.statSync(inventoryDir).isDirectory()) {
+    err(inventoryDir, 'v0.x leftover directory: inventory/ (should be registries/)');
+  }
+
+  // top-level playbooks/ directory (v0.x silos — now playbooks are typed nodes in knowledge/)
   const playbooksDir = path.join(brainRoot, 'playbooks');
-
-  for (const filePath of [...walkMd(knowledgeDir), ...walkMd(playbooksDir)]) {
-    if (isUnderTemplates(filePath) || isIndexOrReadme(filePath)) continue;
-    const lines = readLines(filePath);
-    if (lines.length > budgets.page) {
-      warn(filePath, `page is ${lines.length} lines (budget: ${budgets.page})`);
-    }
+  if (fs.existsSync(playbooksDir) && fs.statSync(playbooksDir).isDirectory()) {
+    err(playbooksDir, 'v0.x leftover directory: top-level playbooks/ (playbooks are now typed nodes in knowledge/)');
   }
 }
 
 // ---------------------------------------------------------------------------
-// Check 3: Frontmatter required fields
+// Check 2: Frontmatter required fields on knowledge nodes + registries
 // ---------------------------------------------------------------------------
 
-const REQUIRED_FIELDS = ['description', 'updated', 'status'];
+const REQUIRED_FIELDS = ['description', 'type', 'status', 'updated', 'tags'];
 
 function checkFrontmatter() {
-  const knowledgeDir = path.join(brainRoot, 'knowledge');
-  const playbooksDir = path.join(brainRoot, 'playbooks');
-
+  // Candidates: knowledge/**/*.md + registries/**/*.md
+  // Exclude: INDEX.md, _index.md, README.md, templates/
   const candidates = [
-    ...walkMd(knowledgeDir),
-    ...walkMd(playbooksDir),
+    ...walkMd(path.join(brainRoot, 'knowledge')),
+    ...walkMd(path.join(brainRoot, 'registries')),
   ];
 
   for (const filePath of candidates) {
-    if (isUnderTemplates(filePath) || isIndexOrReadme(filePath)) continue;
+    if (isUnderTemplates(filePath) || isMocFile(filePath)) continue;
 
     const lines = readLines(filePath);
-    const fm    = parseFrontmatter(lines);
+    const fm = parseFrontmatter(lines);
 
     if (!fm) {
       err(filePath, 'missing frontmatter (no --- block found)');
@@ -335,15 +331,27 @@ function checkFrontmatter() {
     }
 
     for (const field of REQUIRED_FIELDS) {
-      if (!(field in fm)) {
+      const val = fm[field];
+      if (val === undefined || val === null) {
         err(filePath, `frontmatter missing required field: ${field}`);
+      }
+    }
+
+    // tags: must be a YAML list
+    const tags = fm.tags;
+    if (tags !== undefined && tags !== null) {
+      if (!Array.isArray(tags)) {
+        // scalar value — not a list
+        warn(filePath, `frontmatter "tags" should be a YAML list, got scalar: "${tags}"`);
+      } else if (tags.length === 0) {
+        warn(filePath, 'frontmatter "tags" is an empty list — add at least one tag');
       }
     }
   }
 }
 
 // ---------------------------------------------------------------------------
-// Check 4: Naming — knowledge pages must be kebab-case; no duplicate basenames
+// Check 3: Naming — knowledge node files must be kebab-case; no duplicate basenames
 // ---------------------------------------------------------------------------
 
 const KEBAB_RE = /^[a-z0-9]+(-[a-z0-9]+)*\.md$/;
@@ -352,27 +360,25 @@ function checkNaming() {
   const knowledgeDir = path.join(brainRoot, 'knowledge');
   if (!fs.existsSync(knowledgeDir)) return;
 
-  const seen    = new Map();  // basename (without .md) -> first file path
-  const dupes   = new Set();  // basenames that are duplicated
+  const seen  = new Map(); // stem -> first file path
+  const dupes = new Set(); // stems already reported
 
   for (const filePath of walkMd(knowledgeDir)) {
-    if (isUnderTemplates(filePath) || isIndexOrReadme(filePath)) continue;
+    if (isUnderTemplates(filePath) || isMocFile(filePath)) continue;
 
     const base = path.basename(filePath);
 
-    // kebab-case check
     if (!KEBAB_RE.test(base)) {
       err(filePath, `filename is not kebab-case: "${base}"`);
     }
 
-    // duplicate basename check
     const stem = path.basename(filePath, '.md');
     if (seen.has(stem)) {
       if (!dupes.has(stem)) {
-        err(seen.get(stem), `duplicate basename: "${stem}.md" appears in multiple subdirs`);
+        err(seen.get(stem), `duplicate basename: "${stem}.md" appears in multiple locations`);
         dupes.add(stem);
       }
-      err(filePath, `duplicate basename: "${stem}.md" appears in multiple subdirs`);
+      err(filePath, `duplicate basename: "${stem}.md" appears in multiple locations`);
     } else {
       seen.set(stem, filePath);
     }
@@ -380,59 +386,138 @@ function checkNaming() {
 }
 
 // ---------------------------------------------------------------------------
-// Check 5: Orphan pages (not referenced from their index)
+// Check 4: MOC coverage (orphan nodes)
 // ---------------------------------------------------------------------------
 
-function checkOrphans() {
+function checkMocCoverage() {
   const knowledgeDir   = path.join(brainRoot, 'knowledge');
   const knowledgeIndex = path.join(brainRoot, 'knowledge', 'INDEX.md');
-  const indexText      = fs.existsSync(knowledgeIndex) ? readText(knowledgeIndex) : '';
 
-  for (const filePath of walkMd(knowledgeDir)) {
-    if (isUnderTemplates(filePath) || isIndexOrReadme(filePath)) continue;
-    const name   = path.basename(filePath, '.md');
-    const linked = indexText.includes(`[[${name}]]`);
-    if (!linked) {
-      err(filePath, `knowledge page "${name}" not referenced in knowledge/INDEX.md`);
+  if (!fs.existsSync(knowledgeDir)) return;
+
+  const indexText = fs.existsSync(knowledgeIndex) ? readText(knowledgeIndex) : '';
+
+  // Discover clusters: immediate subdirectories of knowledge/
+  const clusters = [];
+  if (fs.existsSync(knowledgeDir)) {
+    for (const entry of fs.readdirSync(knowledgeDir, { withFileTypes: true })) {
+      if (entry.isDirectory()) clusters.push(entry.name);
     }
   }
 
-  const playbooksDir   = path.join(brainRoot, 'playbooks');
-  const playbooksIndex = path.join(brainRoot, 'playbooks', '_index.md');
-  const pbIndexText    = fs.existsSync(playbooksIndex) ? readText(playbooksIndex) : '';
-
-  for (const filePath of walkMd(playbooksDir)) {
-    if (isUnderTemplates(filePath) || isIndexOrReadme(filePath)) continue;
-    const name   = path.basename(filePath, '.md');
-    const linked = pbIndexText.includes(`[[${name}]]`);
+  // Each cluster _index.md must be reachable from knowledge/INDEX.md
+  for (const cluster of clusters) {
+    const clusterIndex = path.join(knowledgeDir, cluster, '_index.md');
+    if (!fs.existsSync(clusterIndex)) continue; // no _index to check
+    // INDEX.md must link to this cluster somehow: [[cluster/_index]] or [[cluster/_index.md]]
+    const stem = cluster + '/_index';
+    const stemNoSlash = cluster + '_index';
+    const linked =
+      indexText.includes(`[[${stem}]]`) ||
+      indexText.includes(`[[${stem}.md]]`) ||
+      indexText.includes(`[[${stemNoSlash}]]`) ||
+      indexText.includes(cluster + '/'); // path reference
     if (!linked) {
-      err(filePath, `playbook "${name}" not referenced in playbooks/_index.md`);
+      err(clusterIndex, `cluster _index.md not linked from knowledge/INDEX.md: [[${stem}]]`);
+    }
+  }
+
+  // Every knowledge node must be referenced from its cluster _index.md OR from INDEX.md
+  for (const filePath of walkMd(knowledgeDir)) {
+    if (isUnderTemplates(filePath) || isMocFile(filePath)) continue;
+
+    const stem = path.basename(filePath, '.md');
+    const parentDir = path.dirname(filePath);
+    const clusterIndexPath = path.join(parentDir, '_index.md');
+
+    // Check cluster _index.md first
+    let found = false;
+    if (fs.existsSync(clusterIndexPath)) {
+      const clusterText = readText(clusterIndexPath);
+      found = clusterText.includes(`[[${stem}]]`) ||
+              clusterText.includes(`[[${stem}.md]]`);
+    }
+
+    // Fallback: check root INDEX.md
+    if (!found) {
+      found = indexText.includes(`[[${stem}]]`) ||
+              indexText.includes(`[[${stem}.md]]`);
+    }
+
+    if (!found) {
+      err(filePath, `node "${stem}" not referenced from its cluster _index.md or knowledge/INDEX.md`);
     }
   }
 }
 
 // ---------------------------------------------------------------------------
-// Check 6: Broken [[wikilinks]] (skip templates/, skip HTML comments, skip inline code)
+// Check 5: Broken [[wikilinks]]
 // ---------------------------------------------------------------------------
 
 function checkBrokenLinks() {
+  // Build index of all known link targets
+  const linkIndex = buildLinkIndex(brainRoot);
+
+  // Check all .md files in the brain, excluding:
+  //   - templates/ (example/placeholder content)
+  //   - MOC files (_index.md, INDEX.md, README.md): they list nodes that
+  //     should exist; the orphan check (check 4) covers the inverse.
+  //     In a fresh/seed brain MOC files will always have placeholder links.
   for (const filePath of walkMd(brainRoot)) {
-    if (isUnderTemplates(filePath)) continue;
+    if (isUnderTemplates(filePath) || isMocFile(filePath)) continue;
 
     const lines = readLines(filePath);
-    const links = extractWikilinks(lines);
+    const rawLinks = extractWikilinks(lines);
 
-    for (const link of links) {
-      const resolved = resolveLink(link, brainRoot);
-      if (!resolved) {
-        err(filePath, `broken wikilink: [[${link}]]`);
+    for (const rawLink of rawLinks) {
+      const target = normLink(rawLink);
+      if (!target) continue;
+      // Skip placeholder links like [[{{example-cluster}}/_index]]
+      if (target.includes('{{')) continue;
+      if (!linkIndex.has(target)) {
+        err(filePath, `broken wikilink: [[${rawLink}]]`);
       }
     }
   }
 }
 
 // ---------------------------------------------------------------------------
-// Check 7: References — cross-check files vs _index.md entries
+// Check 6: Registries — type: registry frontmatter + listed in registries/_index.md
+// ---------------------------------------------------------------------------
+
+function checkRegistries() {
+  const registriesDir   = path.join(brainRoot, 'registries');
+  const registriesIndex = path.join(brainRoot, 'registries', '_index.md');
+
+  if (!fs.existsSync(registriesDir)) return;
+
+  const indexText = fs.existsSync(registriesIndex) ? readText(registriesIndex) : '';
+
+  for (const filePath of walkMd(registriesDir)) {
+    const base = path.basename(filePath);
+    // Skip the index and template files
+    if (base === '_index.md' || base === '_registry_template.md') continue;
+
+    // Must have type: registry
+    const fm = parseFrontmatter(readLines(filePath));
+    if (!fm || fm.type !== 'registry') {
+      err(filePath, 'registry file missing "type: registry" frontmatter');
+    }
+
+    // Must be listed in registries/_index.md
+    const stem = path.basename(filePath, '.md');
+    const listed =
+      indexText.includes(`[[${stem}]]`) ||
+      indexText.includes(`[[${stem}.md]]`) ||
+      indexText.includes(base); // plain filename mention
+    if (!listed) {
+      err(filePath, `registry "${stem}" not listed in registries/_index.md`);
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Check 7: References — each references/* listed in references/_index.md (WARN only)
 // ---------------------------------------------------------------------------
 
 function checkReferences() {
@@ -443,85 +528,75 @@ function checkReferences() {
 
   const indexText = fs.existsSync(refsIndex) ? readText(refsIndex) : '';
 
-  // Every non-_index file in references/ must be mentioned in _index.md
-  for (const entry of fs.readdirSync(refsDir, { withFileTypes: true })) {
-    if (!entry.isFile()) continue;
-    if (entry.name === '_index.md') continue;
-    if (!indexText.includes(entry.name)) {
-      err(path.join(refsDir, entry.name),
-          `file in references/ not mentioned in references/_index.md: ${entry.name}`);
-    }
-  }
+  for (const filePath of walkAll(refsDir)) {
+    const base = path.basename(filePath);
+    const rel  = path.relative(refsDir, filePath).replace(/\\/g, '/');
+    // Skip the index itself, and anything under raw/ (binary payloads)
+    if (base === '_index.md') continue;
+    if (rel.startsWith('raw/') || rel.startsWith('raw\\')) continue;
+    // .gitkeep placeholders
+    if (base === '.gitkeep') continue;
 
-  // Every filename mentioned in _index.md non-comment lines should exist
-  // Collect lines outside HTML comment blocks
-  const indexLines = indexText.split('\n');
-  let inComment = false;
-  for (const line of indexLines) {
-    if (inComment) {
-      if (line.includes('-->')) inComment = false;
-      continue;
-    }
-    if (line.includes('<!--')) {
-      if (!line.includes('-->')) { inComment = true; }
-      continue;
-    }
-    // Look for a bare filename pattern: word chars + dot + extension
-    const fileMatch = line.match(/`([^`\s]+\.[a-zA-Z0-9]+)`/);
-    if (fileMatch) {
-      const mentioned = fileMatch[1];
-      if (mentioned === '_index.md') continue;
-      const candidate = path.join(refsDir, mentioned);
-      if (!fs.existsSync(candidate)) {
-        warn(refsIndex, `_index.md mentions "${mentioned}" but file does not exist`);
-      }
+    if (!indexText.includes(base) && !indexText.includes(rel)) {
+      warn(filePath, `file in references/ not mentioned in references/_index.md: ${rel}`);
     }
   }
 }
 
 // ---------------------------------------------------------------------------
-// Check 8: Playgrounds — warn if a playground dir is not mentioned in journal
+// Check 8: Soft budget — knowledge nodes >150 lines (not type: reference) → WARN
 // ---------------------------------------------------------------------------
 
-function checkPlaygrounds() {
-  const playgroundsDir = path.join(brainRoot, 'playgrounds');
-  if (!fs.existsSync(playgroundsDir)) return;
+function checkBudgets() {
+  const brainFile = path.join(brainRoot, 'BRAIN.md');
 
-  const journalCurrent = path.join(brainRoot, 'journal', '_current.md');
-  const journalText    = fs.existsSync(journalCurrent) ? readText(journalCurrent) : '';
-
-  for (const entry of fs.readdirSync(playgroundsDir, { withFileTypes: true })) {
-    if (!entry.isDirectory()) continue;
-    const dirName = entry.name;
-    if (!journalText.includes(dirName)) {
-      warn(path.join(playgroundsDir, dirName),
-           `playground "${dirName}" is not mentioned in journal/_current.md`);
+  // BRAIN.md budget
+  if (fs.existsSync(brainFile)) {
+    const lines = readLines(brainFile);
+    if (lines.length > BRAIN_BUDGET) {
+      warn(brainFile, `BRAIN.md is ${lines.length} lines (soft budget: ${BRAIN_BUDGET})`);
     }
+  }
+
+  // knowledge nodes
+  const knowledgeDir = path.join(brainRoot, 'knowledge');
+  for (const filePath of walkMd(knowledgeDir)) {
+    if (isUnderTemplates(filePath) || isMocFile(filePath)) continue;
+
+    const lines = readLines(filePath);
+    if (lines.length <= KNOWLEDGE_BUDGET) continue;
+
+    // Check type — if type: reference, skip (deliberately long canonical doc)
+    const fm = parseFrontmatter(lines);
+    if (fm && fm.type === 'reference') continue;
+
+    warn(filePath, `node is ${lines.length} lines (soft budget: ${KNOWLEDGE_BUDGET}; tag "type: reference" to suppress)`);
   }
 }
 
 // ---------------------------------------------------------------------------
-// Check 9: Staleness — warn on pages with updated: > 90 days ago
+// Check 9: Staleness — updated: > 90d (skip placeholders)
 // ---------------------------------------------------------------------------
 
 function checkStaleness() {
   const now = Date.now();
+  const candidates = [
+    ...walkMd(path.join(brainRoot, 'knowledge')),
+    ...walkMd(path.join(brainRoot, 'registries')),
+  ];
 
-  const knowledgeDir = path.join(brainRoot, 'knowledge');
-  const playbooksDir = path.join(brainRoot, 'playbooks');
-
-  for (const filePath of [...walkMd(knowledgeDir), ...walkMd(playbooksDir)]) {
-    if (isUnderTemplates(filePath) || isIndexOrReadme(filePath)) continue;
+  for (const filePath of candidates) {
+    if (isUnderTemplates(filePath) || isMocFile(filePath)) continue;
 
     const fm = parseFrontmatter(readLines(filePath));
     if (!fm) continue;
 
     const updated = parseDate(fm.updated);
-    if (!updated) continue;  // placeholder or unparseable — skip
+    if (!updated) continue; // placeholder or unparseable
 
     if (now - updated.getTime() > NINETY_DAYS_MS) {
       const daysAgo = Math.floor((now - updated.getTime()) / (24 * 60 * 60 * 1000));
-      warn(filePath, `page is stale: updated ${fm.updated} (${daysAgo} days ago)`);
+      warn(filePath, `stale: updated ${fm.updated} (${daysAgo} days ago)`);
     }
   }
 }
@@ -531,17 +606,17 @@ function checkStaleness() {
 // ---------------------------------------------------------------------------
 
 checkLayout();
-checkSizeBudgets();
 checkFrontmatter();
 checkNaming();
-checkOrphans();
+checkMocCoverage();
 checkBrokenLinks();
+checkRegistries();
 checkReferences();
-checkPlaygrounds();
+checkBudgets();
 checkStaleness();
 
 // ---------------------------------------------------------------------------
-// Report — grouped by file
+// Report — grouped by file, then summary
 // ---------------------------------------------------------------------------
 
 function printFindings(label, list) {
