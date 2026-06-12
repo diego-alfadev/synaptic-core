@@ -3,6 +3,7 @@ description: "Portable working agreements — communication languages per channe
 type: knowledge
 status: active
 updated: "{{YYYY-MM-DD}}"
+deployed: "{{YYYY-MM-DD or never}}"
 tags: [harness, conventions, working-agreements]
 ---
 

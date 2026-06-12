@@ -3,6 +3,7 @@ description: "Hard rules for this project — security, ops, and quality gates t
 type: knowledge
 status: active
 updated: "{{YYYY-MM-DD}}"
+deployed: "{{YYYY-MM-DD or never}}"
 tags: [harness, guardrails, hard-rules]
 ---
 

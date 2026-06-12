@@ -59,6 +59,8 @@ Six-step consolidation formula — run after every work session before closing:
 **Starting fresh:** just work; load knowledge on demand through `knowledge/INDEX.md`.
 **Load trigger examples:** "for a domain insight → INDEX → cluster `_index` → 1–2 nodes"; "for project conventions → read your deployed harness rules (AGENTS.md / instructions)."
 
+**Persist:** run `/consolidate` at session end · `/audit` weekly · `/weave` monthly.
+
 ---
 
 ## Commands

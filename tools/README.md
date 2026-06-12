@@ -21,6 +21,33 @@ Each layer is independently optional; removing the outer layers does not break t
 
 ---
 
+## deploy.js — Harness Deploy
+
+```sh
+node tools/deploy.js <project-root> [--dry-run]
+```
+
+Deploys `.synaptic/harness/conventions.md` and `.synaptic/harness/guardrails.md` into the
+outer harness (`<project-root>/AGENTS.md`) by writing/replacing a marker-bounded
+`<!-- BEGIN:SYNAPTIC-RULES --> … <!-- END:SYNAPTIC-RULES -->` block.
+
+**Safety guarantees:**
+
+| Guarantee | Detail |
+|---|---|
+| Placeholder refusal | Exits 1 with a clear message if `harness/` files still contain `{{placeholder}}` content — never deploys an unfilled template |
+| Backup | Copies `AGENTS.md` → `AGENTS.md.bak` before any write |
+| Diff preview | Prints a before/after diff of the block change before applying |
+| Dry-run | `--dry-run` prints the preview only — no files modified |
+| Idempotent | Replaces only the marked block; never touches unmarked user content in AGENTS.md |
+| Warning comment | Emits an auto-generated comment as the first line inside the block: "edit the source in `harness/`, not here" |
+
+**No-runtime fallback:** follow `SKILL.md` §c Deploy step — show the user a diff of the
+proposed SYNAPTIC-RULES block, require confirmation, and refuse if `harness/` contains
+`{{placeholders}}`.
+
+---
+
 ## check.js — Brain Health Lint
 
 ```sh
