@@ -73,15 +73,20 @@ The v1 file contract (frontmatter + tags + INDEX + `[[wikilinks]]` + registries)
 
 **Dependency:** a runtime (Node or Python) at the brain location; the v1 frontmatter and INDEX contract as the query surface. No schema migration needed.
 
-### Semantic search / RAG
+### Semantic search / RAG + nugget layer
 
-**What:** embeddings over knowledge nodes and registry rows — find the most relevant node for a query even when the exact wikilink is unknown.
+**What:** a two-tier derived layer, both built FROM the authored pages and deletable at any time:
 
-**Why:** the MOC-of-MOCs navigation is efficient when you know *where* to look; semantic search helps when you do not. Candidates: Smart Connections (Obsidian plugin), SQLite-vec sidecar, Engram's embedding layer.
+1. **Embeddings over nodes and registry rows** — find the most relevant node for a query even when the exact wikilink is unknown. Candidates: Smart Connections (Obsidian plugin), SQLite-vec sidecar, Engram's embedding layer.
+2. **Nugget / proposition index** — extract atomic facts and entities from the narrative pages, embed and index them. Enables (a) fine-grained semantic retrieval (RAG over propositions, not whole pages), (b) auto-suggesting `[[links]]` that feed the `/weave` graph-gardening operation, and (c) gap detection (concepts referenced or implied by a cluster but with no authored node).
 
-**Dependency:** an embedding runtime; the v1 `tags` frontmatter and `description` field as the primary embedding surface. The derived index is deletable; files remain authoritative.
+**Why:** the MOC-of-MOCs navigation is efficient when you know *where* to look; semantic search helps when you do not. The nugget layer adds fine-grained recall and drives automated relation discovery without touching the authoritative pages.
 
-**Constraint:** CORE remains 0-install-capable. Semantic search is ECOSYSTEM, never CORE.
+**Relationship to the wiki:** the wiki (narrative pages) stays the authored, authoritative layer. The nugget index is strictly derived — it does not replace pages, and nothing in CORE reads it. Think of it as a computed view over the same content.
+
+**Dependency:** an embedding runtime; the v1 `tags` frontmatter and `description` field as the primary embedding surface. The derived index is deletable; files remain authoritative. The `/weave` skill operation can use this layer when available, but falls back to tag/term overlap when it is not.
+
+**Constraint:** CORE remains 0-install-capable. This entire layer is ECOSYSTEM, never CORE. The authored pages are the substrate; the nugget index is an optional acceleration.
 
 ### Shared / team brain
 
