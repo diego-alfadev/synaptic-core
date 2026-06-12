@@ -110,7 +110,7 @@ Everything persona, behavior, and task-tracking lives in the harness.
 - `worklines/` — active items to `playgrounds/` or the owner's task system; stale items
   discarded with consent.
 - `skills/` (per-brain) — replaced by the skill package installed in project harness skill
-  directories by `/init` / `/upgrade`.
+  directories by `/synaptic-init` / `/synaptic-upgrade`.
 - `cortex.config.yaml` — budgets now in `BRAIN.md` frontmatter (`budgets:` block).
 
 **Added:**
@@ -134,7 +134,7 @@ clutter problem that worklines had in practice.
 loaded at every turn. `references/_index.md` holds exactly one line per artifact (name, what
 it is, when it matters). Knowledge pages link to it; agents read fragments on demand.
 Never eager-loaded; never duplicated into knowledge pages beyond distilled facts.
-The `/audit` command checks that every `_index.md` entry points to a real file.
+The `/synaptic-audit` command checks that every `_index.md` entry points to a real file.
 
 ### Journal: slim to the minimum real use already showed
 
@@ -148,7 +148,7 @@ format. This is a codification of the minimum the evidence brain actually mainta
 
 ### Harness integration: AGENTS.md fragment + skill install
 
-The v0.4 per-agent bridge file approach is replaced. At `/init` or `/upgrade`, the skill:
+The v0.4 per-agent bridge file approach is replaced. At `/synaptic-init` or `/synaptic-upgrade`, the skill:
 
 1. Writes the AGENTS.md fragment (marker-wrapped, idempotent replace-on-upgrade) — ≤12 lines,
    H2 heading, one-line purpose, read instruction, commands list.
@@ -189,7 +189,7 @@ These are implementation hygiene changes; no architectural consequence.
 
 v0.4 stated "zero installations." v0.5 refines: "zero *required* installations — no mandatory
 scripts." Scripts (`tools/check.js`, `tools/obsidian-setup.js`) remain optional TOOLS-layer
-conveniences. The `/upgrade` Phase M checklist is explicitly designed to run as either a cheap
+conveniences. The `/synaptic-upgrade` Phase M checklist is explicitly designed to run as either a cheap
 agent (no runtime required) or an optional script. The CORE guarantee — plain files, any agent,
 zero dependencies — is preserved.
 
@@ -231,10 +231,10 @@ system. This is documented in the README "What SYNAPTIC-CORE is NOT" section.
   pages are lost. The consolidation step is load-bearing; the convention relies on discipline,
   not enforcement.
 - **References can rot.** An entry in `references/_index.md` can point to a file that no
-  longer exists or a file that has changed beyond recognition. The `/audit` command checks
+  longer exists or a file that has changed beyond recognition. The `/synaptic-audit` command checks
   for missing files but cannot validate whether the content description is still accurate.
   This is documented, not solved.
-- **`worklines/` removal breaks v0.4 users with active worklines.** Phase C of `/upgrade`
+- **`worklines/` removal breaks v0.4 users with active worklines.** Phase C of `/synaptic-upgrade`
   triages active worklines to playgrounds or the user's task system, and stale ones with
   consent. For users with dense worklines, this is a meaningful migration step — not
   automatic, requires judgment.

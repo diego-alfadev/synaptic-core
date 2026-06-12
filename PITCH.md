@@ -14,7 +14,7 @@ Synaptic is a folder of plain Markdown files that turns your daily work into a k
 
 **For Projects**
 - An agent reads one file and already knows the scope, conventions, guardrails, and where everything lives — before writing a single line
-- Decisions, patterns, and playbooks accumulate through real work; you trade ~5–10 min per session of `/consolidate` to erase the re-briefing, onboarding, and handover tax
+- Decisions, patterns, and playbooks accumulate through real work; you trade ~5–10 min per session of `/synaptic-consolidate` to erase the re-briefing, onboarding, and handover tax
 - No re-briefing between sessions; no tribal-knowledge dependency on the person who left
 
 **For Companies**
@@ -23,7 +23,7 @@ Synaptic is a folder of plain Markdown files that turns your daily work into a k
 - Auditable by default: compliance can read every file; nothing is opaque
 - Works on-premise, air-gapped, or in any cloud — it is a folder of Markdown files
 
-**Where to start:** read [README.md](README.md) and run `/init` with your agent. See [ROADMAP.md](ROADMAP.md) for what shipped in v1.0 and what is coming next.
+**Where to start:** read [README.md](README.md) and run `/synaptic-init` with your agent. See [ROADMAP.md](ROADMAP.md) for what shipped in v1.0 and what is coming next.
 
 ---
 
@@ -38,7 +38,7 @@ An explicit, agent-agnostic algorithm embedded in every `BRAIN.md` as the **capt
 ### 3-concern separation — knowledge · operating rules · persona
 Three concerns are explicitly separated and never mixed:
 - **Knowledge** lives in the brain (`knowledge/`, `registries/`, `references/`) and is read on demand via MOC.
-- **Operating rules** (commit conventions, guardrails, project skills) live in `harness/` as a **deployable source**: `/init` and `/upgrade` deploy them into the outer harness (AGENTS.md / CLAUDE.md); at work-time the agent reads the outer harness, not the brain's `harness/` folder. The brain keeps the copy so the harness is regenerable on any machine.
+- **Operating rules** (commit conventions, guardrails, project skills) live in `harness/` as a **deployable source**: `/synaptic-init` and `/synaptic-upgrade` deploy them into the outer harness (AGENTS.md / CLAUDE.md); at work-time the agent reads the outer harness, not the brain's `harness/` folder. The brain keeps the copy so the harness is regenerable on any machine.
 - **Persona** (tone, chat language, agent personality) lives in the outer harness only — never in the brain.
 The brain stays knowledge-focused; the harness stays rule-focused; portability is preserved. A Jarvis-persona agent and a vanilla agent share the same brain without conflict.
 

@@ -1,13 +1,13 @@
-# /weave — Graph-Gardening Operation
+# /synaptic-weave — Graph-Gardening Operation
 
 A deliberate re-wiring and connection-quality pass over the brain. Run periodically or on
-demand. Distinct from `/audit` — see the table below.
+demand. Distinct from `/synaptic-audit` — see the table below.
 
 ---
 
-## /audit vs /weave
+## /synaptic-audit vs /synaptic-weave
 
-| | `/audit` | `/weave` |
+| | `/synaptic-audit` | `/synaptic-weave` |
 |---|---|---|
 | **Focus** | Correctness & health | Connection quality & completeness |
 | **Finds** | Broken `[[links]]`, orphans, stale nodes, missing frontmatter, budget violations | Missing edges, thin clusters, implied-but-unwritten concepts, near-duplicates, underused themes |

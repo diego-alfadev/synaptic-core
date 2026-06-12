@@ -1,4 +1,4 @@
-# /upgrade — Migration Guide to v1.0
+# /synaptic-upgrade — Migration Guide to v1.0
 
 ---
 
@@ -16,8 +16,8 @@ The migration is non-destructive, content-preserving, and fully reversible:
 
 1. **Branch:** `git switch -c v1-upgrade` — work on a copy; the original branch is your fallback.
 2. **Phase M (mechanical):** `node tools/migrate.js .synaptic` — deterministic file staging; safe and scriptable. Use `--dry-run` first to preview moves without writing anything.
-3. **Phase C (agent rearrange):** tell your agent `/upgrade` — the capable-agent phase: link conversion, MOC creation, consolidation formula applied retroactively, harness triage. The agent proposes each change; you confirm before it is written.
-4. **Verify:** `node tools/check.js .synaptic` for graph health, then `/audit` in the agent for staleness and coverage. Review the result in Obsidian or Foam before proceeding.
+3. **Phase C (agent rearrange):** tell your agent `/synaptic-upgrade` — the capable-agent phase: link conversion, MOC creation, consolidation formula applied retroactively, harness triage. The agent proposes each change; you confirm before it is written.
+4. **Verify:** `node tools/check.js .synaptic` for graph health, then `/synaptic-audit` in the agent for staleness and coverage. Review the result in Obsidian or Foam before proceeding.
 5. **Merge:** once satisfied, `git switch main && git merge v1-upgrade`. The old branch remains as a rollback point.
 
 > If anything looks wrong after Phase C, do not merge — you have the original branch. Open an issue or re-run Phase C with more conservative settings.
@@ -39,7 +39,7 @@ record every non-obvious judgment in a migration decision log delivered with the
 
 | Old location / structure | v1 destination | Notes |
 |---|---|---|
-| `BRAIN.md` (v0.4/0.5 boot file) | `BRAIN.md` (updated to v1 layout) | Add Context Capsule, Capture Contract, deploy-source pointer, Brain Map. **No guardrails block** — operating rules go to `harness/` as source and are **deployed** by `/init`/`/upgrade`; they are NOT left for runtime load. |
+| `BRAIN.md` (v0.4/0.5 boot file) | `BRAIN.md` (updated to v1 layout) | Add Context Capsule, Capture Contract, deploy-source pointer, Brain Map. **No guardrails block** — operating rules go to `harness/` as source and are **deployed** by `/synaptic-init`/`/synaptic-upgrade`; they are NOT left for runtime load. |
 | `BOOTSTRAP.md` / `MANIFEST.md` / `HEARTBEAT.md` (v0.3) | → `BRAIN.md` Context Capsule (2–4 lines) | Remainder discarded after Phase C |
 | `identity/ROLE.md` (v0.4) | → `BRAIN.md` Context Capsule | Not persona |
 | `identity/CONTACTS.md` (v0.4) | → `knowledge/people-routing.md` (type: knowledge) | Project routing knowledge |
@@ -118,7 +118,7 @@ This project has a Synaptic brain at `.synaptic/`. Before working: read `.synapt
 and follow its capture contract (route durable knowledge, lessons, playbooks, and task
 workspaces as specified; files are authoritative over any agent-native memory).
 Operating rules (conventions, guardrails) are in the SYNAPTIC-RULES section below.
-Commands (synaptic skill): /init /consolidate /ingest /audit /weave /upgrade
+Commands (synaptic skill): /synaptic-init /synaptic-consolidate /synaptic-ingest /synaptic-audit /synaptic-weave /synaptic-upgrade
 <!-- END:SYNAPTIC -->
 ```
 
@@ -137,7 +137,7 @@ If `.cursor/` exists at the project root, write `.cursor/rules/synaptic.mdc`:
 
 ```
 This project has a Synaptic brain. See AGENTS.md (BEGIN:SYNAPTIC block) for instructions.
-Read `.synaptic/BRAIN.md` at session start. Commands: /init /consolidate /ingest /audit /weave /upgrade
+Read `.synaptic/BRAIN.md` at session start. Commands: /synaptic-init /synaptic-consolidate /synaptic-ingest /synaptic-audit /synaptic-weave /synaptic-upgrade
 ```
 
 ### M6 — BRAIN.md frontmatter update
@@ -196,7 +196,7 @@ Phase C consumes `_migration-staging/` and **deletes it as its final step**.
 
 - Extract a 2–4-line summary of what the brain covers + the owner's role. Write as the **Context Capsule** block in `BRAIN.md`.
 - Extract the **Capture Contract** (consolidation formula) block into `BRAIN.md` using the v1 seed format.
-- **Do NOT write a Top Guardrails block in BRAIN.md.** Operating rules (guardrails + conventions) go to `harness/` as the **deployable source** — they are then deployed by the Deploy step in Harness Self-Wire, not left for runtime load from the brain. BRAIN.md carries only the 1-line deploy-source pointer.
+- **Do NOT write a Top Guardrails block in BRAIN.md.** Operating rules (guardrails + conventions) go to `harness/` as the **deployable source** — they are then deployed by the Deploy step in Harness Self-Wire (`/synaptic-init`), not left for runtime load from the brain. BRAIN.md carries only the 1-line deploy-source pointer.
 - Do NOT copy persona, tone, language preferences, or agent behavior rules into BRAIN.md.
 
 **From `identity/CONTACTS.md` (v0.4):**
@@ -256,7 +256,7 @@ For each node in `knowledge/`:
 **From v0.5 `knowledge/working-agreements.md`** (staged in `_migration-staging/`):
 
 - Route team/project norms → `harness/conventions.md` (merge or create from seed template).
-- Route hard rules → `harness/guardrails.md`. Both files are the **deployable source** — after routing, run the Deploy step (Harness Self-Wire §c) to materialize them into the outer harness. Do NOT mirror rules in `BRAIN.md → Top Guardrails` (that block is dropped in v1).
+- Route hard rules → `harness/guardrails.md`. Both files are the **deployable source** — after routing, run the Deploy step (Harness Self-Wire §c via `/synaptic-init`) to materialize them into the outer harness. Do NOT mirror rules in `BRAIN.md → Top Guardrails` (that block is dropped in v1).
 - Persona/agent behavior content → offer to place in AGENTS.md (user harness). Never into the brain.
 - Delete the staged file after routing is confirmed.
 

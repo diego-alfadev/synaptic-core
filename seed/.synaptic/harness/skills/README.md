@@ -16,10 +16,10 @@ This folder holds **project-local executable skills** — small agent programs t
 
 | | Project skills (this folder) | `synaptic` lifecycle skill |
 |---|---|---|
-| **What** | Project-specific executables (Jira, deploy, linting…) | Brain lifecycle: `/init /consolidate /ingest /audit /upgrade` |
+| **What** | Project-specific executables (Jira, deploy, linting…) | Brain lifecycle: `/synaptic-init /synaptic-consolidate /synaptic-ingest /synaptic-audit /synaptic-upgrade` |
 | **Where installed** | `harness/skills/` — travels with the brain | Agent's own skill dirs (`.claude/skills/`, `.agents/skills/`) |
 | **Scope** | This project only | Any brain running synaptic-core |
-| **Installed by** | `/init` (if declared) or manually | `/init` or manual install |
+| **Installed by** | `/synaptic-init` (if declared) or manually | `/synaptic-init` or manual install |
 
 ---
 
@@ -28,7 +28,7 @@ This folder holds **project-local executable skills** — small agent programs t
 1. Create `harness/skills/{skill-name}.md` — document intent, trigger, and usage.
 2. If the skill is executable (a script), place it alongside the `.md` doc.
 3. Register it in the index below.
-4. Declare it during `/init` so it auto-installs on new machines.
+4. Declare it during `/synaptic-init` so it auto-installs on new machines.
 
 ---
 

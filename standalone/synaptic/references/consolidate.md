@@ -1,7 +1,7 @@
-# /consolidate — Knowledge Consolidation Reference
+# /synaptic-consolidate — Knowledge Consolidation Reference
 
 Route working memory from `journal/_current.md` and open playgrounds into the structured
-knowledge store. Run when: user invokes `/consolidate`, journal is approaching 80 lines,
+knowledge store. Run when: user invokes `/synaptic-consolidate`, journal is approaching 80 lines,
 a playground task is complete, or end of a productive session.
 
 **Six-step formula** (the capture contract — same algorithm compressed in `BRAIN.md`):

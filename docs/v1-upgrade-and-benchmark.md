@@ -45,7 +45,7 @@ STEP 2 — Phase C (the rearrange — you do this with judgment)
 
 STEP 3 — Verify
 - Run: `node <SYNAPTIC>/tools/check.js ./synaptic-v1-test/.synaptic` and fix any ERRORs it reports
-  (broken [[links]], orphan nodes, missing frontmatter). Then run /audit and address gaps.
+  (broken [[links]], orphan nodes, missing frontmatter). Then run /synaptic-audit and address gaps.
 - Goal: check.js exits 0.
 
 STEP 4 — Visualize (before & after)

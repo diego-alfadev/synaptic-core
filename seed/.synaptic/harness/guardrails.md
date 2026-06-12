@@ -9,7 +9,7 @@ tags: [harness, guardrails, hard-rules]
 
 # Guardrails (source — deployed)
 
-Non-negotiable rules for working on this project. This file is the **source** — `/init` and `/upgrade` deploy it into the outer harness. At work-time the agent reads the deployed copy. The deployed copy is always up-to-date with what is here; no guardrails block is carried in BRAIN.md.
+Non-negotiable rules for working on this project. This file is the **source** — `/synaptic-init` and `/synaptic-upgrade` deploy it into the outer harness. At work-time the agent reads the deployed copy. The deployed copy is always up-to-date with what is here; no guardrails block is carried in BRAIN.md.
 
 > **Scope test:** rules about how the project/work must run → here. Rules about how the agent behaves toward its owner → AGENTS.md / CLAUDE.md.
 
@@ -55,4 +55,4 @@ Non-negotiable rules for working on this project. This file is the **source** �
 
 ---
 
-> This file is the canonical source. Run `/init` or `/upgrade` to (re)deploy it into the outer harness. BRAIN.md carries no guardrails block — it carries a pointer to this source.
+> This file is the canonical source. Run `/synaptic-init` or `/synaptic-upgrade` to (re)deploy it into the outer harness. BRAIN.md carries no guardrails block — it carries a pointer to this source.

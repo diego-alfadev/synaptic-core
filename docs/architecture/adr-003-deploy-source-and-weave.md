@@ -1,4 +1,4 @@
-# ADR-003 — Deploy-Source Harness (T1) + Graph Gardening via /weave (T2)
+# ADR-003 — Deploy-Source Harness (T1) + Graph Gardening via /synaptic-weave (T2)
 
 **Status:** Accepted  
 **Date:** 2026-06-12  
@@ -38,7 +38,7 @@ the journal never get promoted. Write-time linking only connects a new node to w
 remembers — it cannot connect nodes that predate the author's awareness.
 
 PKM literature calls this "link maintenance / MOC gardening." It requires a retroactive pass,
-distinct from `/audit` (which checks correctness), focused on connection quality.
+distinct from `/synaptic-audit` (which checks correctness), focused on connection quality.
 
 ---
 
@@ -47,7 +47,7 @@ distinct from `/audit` (which checks correctness), focused on connection quality
 ### T1 — Reframe harness/ as a deployable SOURCE (not runtime-loaded)
 
 The brain's `harness/` folder is a **portable source of truth** for operating rules. It is
-deployed — not loaded — by `/init` and `/upgrade`.
+deployed — not loaded — by `/synaptic-init` and `/synaptic-upgrade`.
 
 **The three-concern model:**
 
@@ -57,7 +57,7 @@ deployed — not loaded — by `/init` and `/upgrade`.
 | Operating rules | brain `harness/` = **deployable SOURCE** | outer harness (deployed copy) |
 | Persona | outer harness ONLY | outer harness |
 
-**Mechanism:** `/init` and `/upgrade` run a **Deploy step** that:
+**Mechanism:** `/synaptic-init` and `/synaptic-upgrade` run a **Deploy step** that:
 1. Reads `harness/conventions.md` + `harness/guardrails.md` from the brain.
 2. Writes a `<!-- BEGIN:SYNAPTIC-RULES --> … <!-- END:SYNAPTIC-RULES -->` block in AGENTS.md.
 3. Installs `harness/skills/*` into `.claude/skills/` and `.agents/skills/`.
@@ -65,7 +65,7 @@ deployed — not loaded — by `/init` and `/upgrade`.
    never touched.
 
 **Safety fallback:** BRAIN.md carries a 1-line pointer — *"Operating rules + guardrails are
-deployed to your harness from `harness/` (run `/init` to (re)deploy). If your harness isn't
+deployed to your harness from `harness/` (run `/synaptic-init` to (re)deploy). If your harness isn't
 wired yet, treat `harness/` as the source."* An agent in an unwired environment can read the
 source files; the normal path is the deployed outer copy.
 
@@ -73,9 +73,9 @@ source files; the normal path is the deployed outer copy.
 `harness/guardrails.md` inline) is removed. BRAIN.md carries the deploy-source pointer
 instead. This brings BRAIN.md below 90 lines and removes a double-bookkeeping risk.
 
-### T2 — Add /weave (graph-gardening pass)
+### T2 — Add /synaptic-weave (graph-gardening pass)
 
-`/weave` is a deliberate, periodic re-wiring pass. It proposes; the human or agent confirms —
+`/synaptic-weave` is a deliberate, periodic re-wiring pass. It proposes; the human or agent confirms —
 it never auto-rewrites.
 
 Five passes:
@@ -89,7 +89,7 @@ Five passes:
 5. **Theme promotion** — apply the 2+-instances rule retroactively to journal/playground
    content; propose promoting recurring themes to knowledge nodes.
 
-`/weave` is a review of the wiring — it does not replace the consolidation formula, which
+`/synaptic-weave` is a review of the wiring — it does not replace the consolidation formula, which
 governs write-time linking. The two are complementary.
 
 ---
@@ -106,7 +106,7 @@ Loses portability — a teammate inheriting the brain would not get the operatin
 **T2 — write-time linking only** (no retroactive pass). Rejected. Write-time linking is
 bounded by the author's memory at capture time. A node from 6 months ago cannot know about
 a node written today. The graph under-connects structurally over time regardless of discipline.
-`/weave` is the complementary maintenance layer the consolidation formula cannot provide.
+`/synaptic-weave` is the complementary maintenance layer the consolidation formula cannot provide.
 
 ---
 
@@ -115,8 +115,8 @@ a node written today. The graph under-connects structurally over time regardless
 - BRAIN.md is shorter with no double-bookkeeping guardrails block.
 - Agents read rules from their native harness path (the designed reading location).
 - The brain stays the portable source: full harness regenerable on any machine.
-- `/weave` gives the graph a maintenance loop; quality compounds rather than degrades.
-- Deploy step adds a small obligation to `/init`/`/upgrade`; it is idempotent and safe.
+- `/synaptic-weave` gives the graph a maintenance loop; quality compounds rather than degrades.
+- Deploy step adds a small obligation to `/synaptic-init`/`/synaptic-upgrade`; it is idempotent and safe.
 
 ---
 
@@ -128,5 +128,5 @@ a node written today. The graph under-connects structurally over time regardless
 - `seed/.synaptic/BRAIN.md` — the v1 boot file (deploy-source pointer, no guardrails block)
 - `seed/.synaptic/harness/README.md` — the deployable-source explanation
 - `standalone/synaptic/SKILL.md` — Harness Self-Wire §c (Deploy step), Operations table
-- `standalone/synaptic/references/weave.md` — the full /weave specification
+- `standalone/synaptic/references/weave.md` — the full /synaptic-weave specification
 - `docs/architecture/adr-001-minimal-cortex.md`, `adr-002-llm-wiki-first.md`

@@ -9,7 +9,7 @@ tags: [harness, conventions, working-agreements]
 
 # Conventions (source — deployed)
 
-Portable operating norms of this team or project. This file is the **source** — `/init` and `/upgrade` deploy it into the outer harness. At work-time the agent reads the deployed copy, not this file. A teammate inheriting this brain can regenerate the full harness by running `/init`.
+Portable operating norms of this team or project. This file is the **source** — `/synaptic-init` and `/synaptic-upgrade` deploy it into the outer harness. At work-time the agent reads the deployed copy, not this file. A teammate inheriting this brain can regenerate the full harness by running `/synaptic-init`.
 
 > **Scope test:** if a norm governs how the team works together → it belongs here. If it governs how your personal agent behaves toward you (persona, tone, chat language) → it belongs in AGENTS.md / CLAUDE.md, not here.
 
@@ -66,4 +66,4 @@ Portable operating norms of this team or project. This file is the **source** �
 
 ---
 
-> This file is the canonical source for working conventions. Hard rules that must never be violated go in `harness/guardrails.md`. Run `/init` or `/upgrade` to (re)deploy both into the outer harness.
+> This file is the canonical source for working conventions. Hard rules that must never be violated go in `harness/guardrails.md`. Run `/synaptic-init` or `/synaptic-upgrade` to (re)deploy both into the outer harness.

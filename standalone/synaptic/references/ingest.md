@@ -1,6 +1,6 @@
-# /ingest — Document Ingestion Reference
+# /synaptic-ingest — Document Ingestion Reference
 
-Ingest an external document into the brain. Usage: `/ingest path/to/file.ext`
+Ingest an external document into the brain. Usage: `/synaptic-ingest path/to/file.ext`
 
 Applies the consolidation formula (Steps 2–6 from `references/consolidate.md`) to a single
 external source rather than session output.

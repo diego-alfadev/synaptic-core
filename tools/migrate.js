@@ -370,7 +370,7 @@ console.log(`
 ║  cleanup) requires a capable agent.                          ║
 ║                                                              ║
 ║  1. Open the brain in your agent (read BRAIN.md)             ║
-║  2. Run:  /upgrade  (or follow upgrade-to-v1.md § Phase C)   ║
+║  2. Run:  /synaptic-upgrade  (or follow upgrade-to-v1.md § Phase C)   ║
 ║  3. Inspect _migration-staging/ — those files may have       ║
 ║     content worth promoting before deletion.                 ║
 ║  4. Verify with:  node tools/check.js ${brainRoot.length < 30 ? brainRoot : '<brain-path>'}

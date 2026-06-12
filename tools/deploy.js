@@ -167,12 +167,12 @@ else console.log('Mode: LIVE\n');
 // 1. Verify harness source files exist
 if (!isFile(conventionsPath)) {
   console.error(`ERROR: conventions.md not found at ${conventionsPath}`);
-  console.error('       Run /init to create the harness files first.');
+  console.error('       Run /synaptic-init to create the harness files first.');
   process.exit(1);
 }
 if (!isFile(guardrailsPath)) {
   console.error(`ERROR: guardrails.md not found at ${guardrailsPath}`);
-  console.error('       Run /init to create the harness files first.');
+  console.error('       Run /synaptic-init to create the harness files first.');
   process.exit(1);
 }
 
@@ -192,7 +192,7 @@ if (conventionsHasPlaceholders || guardrailsHasPlaceholders) {
   if (guardrailsHasPlaceholders) {
     console.error(`       guardrails.md has unfilled placeholders: ${guardrailsPath}`);
   }
-  console.error('       Complete the onboarding interview (/init) to fill these before deploying.');
+  console.error('       Complete the onboarding interview (/synaptic-init) to fill these before deploying.');
   process.exit(1);
 }
 

@@ -1,7 +1,7 @@
-# /audit — Brain Health Audit Reference
+# /synaptic-audit — Brain Health Audit Reference
 
 Cross-session review for staleness, orphan nodes, broken links, MOC coverage, registry integrity,
-oversized untyped nodes, and tag hygiene. Run when: user invokes `/audit`, after several sessions,
+oversized untyped nodes, and tag hygiene. Run when: user invokes `/synaptic-audit`, after several sessions,
 or when the brain feels off.
 
 **Prefer `node tools/check.js` if a runtime is available** — it automates Steps 2–7. Use this file
@@ -110,8 +110,8 @@ Check whether consolidation has been run recently:
 - Count all directories directly under `playgrounds/` that contain at least one `.md` file. These are **open playgrounds** — task workspaces that have not yet been consolidated into the wiki or explicitly closed.
 - Count the total number of non-empty lines (or dated entries) in `journal/_current.md` since the last consolidation marker (a line matching `consolidated:` or `## Consolidated` or similar). If no marker is found, count all lines.
 - **Warn (not error)** if either threshold is exceeded:
-  - Open playgrounds ≥ 3: "Consolidation debt — N open playgrounds. Run `/consolidate` to process and close completed task workspaces."
-  - Journal lines since last consolidation ≥ 60: "Consolidation debt — journal at N lines since last consolidation. Run `/consolidate` before the journal nears 80 lines."
+  - Open playgrounds ≥ 3: "Consolidation debt — N open playgrounds. Run `/synaptic-consolidate` to process and close completed task workspaces."
+  - Journal lines since last consolidation ≥ 60: "Consolidation debt — journal at N lines since last consolidation. Run `/synaptic-consolidate` before the journal nears 80 lines."
 
 Present as an advisory; the user decides whether to consolidate now or defer.
 
@@ -121,12 +121,12 @@ Present as an advisory; the user decides whether to consolidate now or defer.
 
 Check whether the deployed harness block in the outer harness file is in sync with the brain's `harness/` source:
 
-- Look for a `<!-- BEGIN:SYNAPTIC-RULES -->` marker in the project's AGENTS.md (or CLAUDE.md, .cursorrules — wherever the harness was self-wired by `/init`).
-- If found: compare the content of that block against the current content of `.synaptic/harness/conventions.md` and `.synaptic/harness/guardrails.md`. If the deployed block contains edits not present in the `harness/` source files, **warn**: "Deployed SYNAPTIC-RULES block appears to have been edited directly. The `harness/` source is authoritative — re-run `/init` (Deploy step) to re-sync. Direct edits to the deployed block are clobbered on the next deploy."
-- If the outer harness file exists but has no `BEGIN:SYNAPTIC-RULES` marker: note that the harness has not been deployed; suggest running `/init`.
+- Look for a `<!-- BEGIN:SYNAPTIC-RULES -->` marker in the project's AGENTS.md (or CLAUDE.md, .cursorrules — wherever the harness was self-wired by `/synaptic-init`).
+- If found: compare the content of that block against the current content of `.synaptic/harness/conventions.md` and `.synaptic/harness/guardrails.md`. If the deployed block contains edits not present in the `harness/` source files, **warn**: "Deployed SYNAPTIC-RULES block appears to have been edited directly. The `harness/` source is authoritative — re-run `/synaptic-init` (Deploy step) to re-sync. Direct edits to the deployed block are clobbered on the next deploy."
+- If the outer harness file exists but has no `BEGIN:SYNAPTIC-RULES` marker: note that the harness has not been deployed; suggest running `/synaptic-init`.
 - If no outer harness file is found: skip silently (not all environments use one).
 
-This check closes the silent drift vector where a user edits the deployed block directly and loses those edits on next `/init` or `/upgrade`.
+This check closes the silent drift vector where a user edits the deployed block directly and loses those edits on next `/synaptic-init` or `/synaptic-upgrade`.
 
 ---
 
