@@ -33,7 +33,7 @@ Six-step consolidation formula — run after every work session before closing:
 
 ---
 
-> Operating rules + guardrails are **deployed to your harness** from `harness/` (run `/init` to (re)deploy). If your harness isn't wired yet, treat `harness/` as the source — do not load it every session.
+> Operating rules + guardrails are **deployed to your harness** from `harness/` (run `/synaptic-init` to (re)deploy). If your harness isn't wired yet, treat `harness/` as the source — do not load it every session.
 
 ---
 
@@ -44,7 +44,7 @@ Six-step consolidation formula — run after every work session before closing:
 | `knowledge/` | Wiki — what you know | On demand via `knowledge/INDEX.md` |
 | `registries/` | Wiki — tabular SSOTs (resources, repos, glossary) | On demand; never eager-load |
 | `references/` | Wiki — existence index + verbatim artifacts (`raw/`) | On demand |
-| `harness/` | Operating-rules SOURCE — deployed to the outer harness by `/init`; not loaded at runtime | Run `/init` to (re)deploy; read source here only if harness unwired |
+| `harness/` | Operating-rules SOURCE — deployed to the outer harness by `/synaptic-init`; not loaded at runtime | Run `/synaptic-init` to (re)deploy; read source here only if harness unwired |
 | `playgrounds/` | Working memory — per-task burnable workspaces | Registered in journal only |
 | `journal/` | Working memory — thin anchor/watch/log | Resume: read `_current.md` |
 | `templates/` | Scaffolding — node, registry, playbook, lesson | When creating a new node |
@@ -59,7 +59,7 @@ Six-step consolidation formula — run after every work session before closing:
 **Starting fresh:** just work; load knowledge on demand through `knowledge/INDEX.md`.
 **Load trigger examples:** "for a domain insight → INDEX → cluster `_index` → 1–2 nodes"; "for project conventions → read your deployed harness rules (AGENTS.md / instructions)."
 
-**Persist:** run `/consolidate` at session end · `/audit` weekly · `/weave` monthly.
+**Persist:** run `/synaptic-consolidate` at session end · `/synaptic-audit` weekly · `/synaptic-weave` monthly.
 
 ---
 
@@ -69,12 +69,12 @@ Provided by the `synaptic` skill (installed in `.claude/skills/` or `.agents/ski
 
 | Command | Action |
 |---|---|
-| `/init` | Scope-aware setup interview; self-wires harness + deploys operating rules |
-| `/consolidate` | Run the 6-step capture contract on current session output |
-| `/ingest [file]` | Distill a document into an atomic node + reference entry |
-| `/audit` | Check for orphans, broken links, stale nodes, MOC coverage, registry integrity |
-| `/weave` | Graph-gardening pass: propose missing links, flag thin nodes, detect gaps, suggest merges |
-| `/upgrade` | Migrate brain to a newer synaptic-core version |
+| `/synaptic-init` | Scope-aware setup interview; self-wires harness + deploys operating rules |
+| `/synaptic-consolidate` | Run the 6-step capture contract on current session output |
+| `/synaptic-ingest [file]` | Distill a document into an atomic node + reference entry |
+| `/synaptic-audit` | Check for orphans, broken links, stale nodes, MOC coverage, registry integrity |
+| `/synaptic-weave` | Graph-gardening pass: propose missing links, flag thin nodes, detect gaps, suggest merges |
+| `/synaptic-upgrade` | Migrate brain to a newer synaptic-core version |
 
 ---
 

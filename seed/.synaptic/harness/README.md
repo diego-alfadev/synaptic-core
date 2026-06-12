@@ -10,11 +10,11 @@ tags: [harness, deploy-source]
 
 This folder is a **portable source of truth** for the outer harness. It is NOT loaded at
 runtime from the brain. The agent reads operating rules from the **deployed outer harness**
-(AGENTS.md marker section, instruction files, `.claude/skills/`) after `/init` has materialized
+(AGENTS.md marker section, instruction files, `.claude/skills/`) after `/synaptic-init` has materialized
 them there.
 
 The brain keeps this copy so the harness is **regenerable on any machine** — if you start
-fresh on a new workstation, run `/init` and your full project setup is restored.
+fresh on a new workstation, run `/synaptic-init` and your full project setup is restored.
 
 ---
 
@@ -30,7 +30,7 @@ fresh on a new workstation, run `/init` and your full project setup is restored.
 
 ## How deployment works
 
-`/init` and `/upgrade` both run the **Deploy step**:
+`/synaptic-init` and `/synaptic-upgrade` both run the **Deploy step**:
 
 1. Reads `harness/conventions.md` + `harness/guardrails.md`.
 2. Writes (or replaces) a `<!-- BEGIN:SYNAPTIC-RULES --> … <!-- END:SYNAPTIC-RULES -->` block in

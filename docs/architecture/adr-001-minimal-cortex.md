@@ -152,10 +152,10 @@ so the schema never forks between modes.
   (the TOOLS-layer lint) validates these deterministically, but it requires Node ≥ 18 and is
   optional. Brains grown without it can silently exceed budgets.
 - **Brains without the skill lose guided lifecycle.** The 0-install CORE promise means a brain
-  works without the skill installed, but `/consolidate`, `/audit`, and `/upgrade` all require
+  works without the skill installed, but `/synaptic-consolidate`, `/synaptic-audit`, and `/synaptic-upgrade` all require
   the skill. Teams that do not install the skill lose the consolidation and staleness-review
   workflow.
-- **v0.3 migration is non-trivial for large brains.** The `/upgrade` procedure covers the
+- **v0.3 migration is non-trivial for large brains.** The `/synaptic-upgrade` procedure covers the
   full path (BOOTSTRAP/MANIFEST/HEARTBEAT → BRAIN.md; areas/domains → flat pages; _tree.yaml
   → INDEX.md with phantom pruning; inventory/references → knowledge pages), but it requires
   reading and re-routing content. The upgrade guide is content-preserving by design, not

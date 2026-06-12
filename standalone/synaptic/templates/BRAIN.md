@@ -75,11 +75,11 @@ Provided by the `synaptic` skill (installed in `.claude/skills/` or `.agents/ski
 
 | Command | Action |
 |---|---|
-| `/init` | Scope-aware setup interview; self-wires harness; can import a context-pack seed |
-| `/consolidate` | Run the 6-step capture contract on current session output |
-| `/ingest [file]` | Distill a document into an atomic node + reference entry |
-| `/audit` | Check for orphans, broken links, stale nodes, MOC coverage, registry integrity |
-| `/upgrade` | Migrate brain to a newer synaptic-core version |
+| `/synaptic-init` | Scope-aware setup interview; self-wires harness; can import a context-pack seed |
+| `/synaptic-consolidate` | Run the 6-step capture contract on current session output |
+| `/synaptic-ingest [file]` | Distill a document into an atomic node + reference entry |
+| `/synaptic-audit` | Check for orphans, broken links, stale nodes, MOC coverage, registry integrity |
+| `/synaptic-upgrade` | Migrate brain to a newer synaptic-core version |
 
 ---
 

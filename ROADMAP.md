@@ -34,7 +34,7 @@ Every knowledge node and registry carries: `description` (1 line, feeds the `_in
 
 ### Self-wiring harness
 
-`/init` writes the `<!-- BEGIN:SYNAPTIC -->` fragment into the project `AGENTS.md` (idempotent; created if absent) and installs the skill package into `.claude/skills/synaptic/` and `.agents/skills/synaptic/`. These are the ecosystem-standard discovery paths adopted across Claude Code, Cursor, VS Code Copilot, Gemini CLI, OpenCode, and Codex. The skill optionally writes a `.cursor/rules/synaptic.mdc` shim when `.cursor/` is detected.
+`/synaptic-init` writes the `<!-- BEGIN:SYNAPTIC -->` fragment into the project `AGENTS.md` (idempotent; created if absent) and installs the skill package into `.claude/skills/synaptic/` and `.agents/skills/synaptic/`. These are the ecosystem-standard discovery paths adopted across Claude Code, Cursor, VS Code Copilot, Gemini CLI, OpenCode, and Codex. The skill optionally writes a `.cursor/rules/synaptic.mdc` shim when `.cursor/` is detected.
 
 ### Four tools (zero-dep, optional)
 
@@ -49,7 +49,7 @@ All zero-dependency (Node ≥ 18 standard library). CORE never requires them. No
 
 ### Two-engine migration from v0.3 / v0.4 / v0.5
 
-`/upgrade` guides the migration in two engines:
+`/synaptic-upgrade` guides the migration in two engines:
 - **Phase M** (deterministic; `tools/migrate.js` or cheap agent): directory renames, staging of removed structures, template copy
 - **Phase C** (mandatory capable agent): link conversion, MOC creation, consolidation formula applied retroactively, harness triage
 
@@ -78,13 +78,13 @@ The v1 file contract (frontmatter + tags + INDEX + `[[wikilinks]]` + registries)
 **What:** a two-tier derived layer, both built FROM the authored pages and deletable at any time:
 
 1. **Embeddings over nodes and registry rows** — find the most relevant node for a query even when the exact wikilink is unknown. Candidates: Smart Connections (Obsidian plugin), SQLite-vec sidecar, Engram's embedding layer.
-2. **Nugget / proposition index** — extract atomic facts and entities from the narrative pages, embed and index them. Enables (a) fine-grained semantic retrieval (RAG over propositions, not whole pages), (b) auto-suggesting `[[links]]` that feed the `/weave` graph-gardening operation, and (c) gap detection (concepts referenced or implied by a cluster but with no authored node).
+2. **Nugget / proposition index** — extract atomic facts and entities from the narrative pages, embed and index them. Enables (a) fine-grained semantic retrieval (RAG over propositions, not whole pages), (b) auto-suggesting `[[links]]` that feed the `/synaptic-weave` graph-gardening operation, and (c) gap detection (concepts referenced or implied by a cluster but with no authored node).
 
 **Why:** the MOC-of-MOCs navigation is efficient when you know *where* to look; semantic search helps when you do not. The nugget layer adds fine-grained recall and drives automated relation discovery without touching the authoritative pages.
 
 **Relationship to the wiki:** the wiki (narrative pages) stays the authored, authoritative layer. The nugget index is strictly derived — it does not replace pages, and nothing in CORE reads it. Think of it as a computed view over the same content.
 
-**Dependency:** an embedding runtime; the v1 `tags` frontmatter and `description` field as the primary embedding surface. The derived index is deletable; files remain authoritative. The `/weave` skill operation can use this layer when available, but falls back to tag/term overlap when it is not.
+**Dependency:** an embedding runtime; the v1 `tags` frontmatter and `description` field as the primary embedding surface. The derived index is deletable; files remain authoritative. The `/synaptic-weave` skill operation can use this layer when available, but falls back to tag/term overlap when it is not.
 
 **Constraint:** CORE remains 0-install-capable. This entire layer is ECOSYSTEM, never CORE. The authored pages are the substrate; the nugget index is an optional acceleration.
 

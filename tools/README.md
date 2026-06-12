@@ -74,7 +74,7 @@ Output is grouped by file.
 | `BRAIN.md` > 110 lines | WARN |
 | `updated:` > 90 days old (skip placeholders) | WARN |
 
-**No-runtime fallback:** run `/audit` — the synaptic skill replicates this checklist
+**No-runtime fallback:** run `/synaptic-audit` — the synaptic skill replicates this checklist
 using agent read/grep operations.
 
 ---
@@ -211,7 +211,7 @@ browser and the graph is immediately interactive.
 
 Positions are pure functions of *(sorted cluster index, sorted node index within cluster)* —
 no `Math.random`, no time-based seeding. Two runs on the same brain always produce identical
-coordinates. Comparing a brain before and after `/weave` or `/audit` is meaningful: nodes
+coordinates. Comparing a brain before and after `/synaptic-weave` or `/synaptic-audit` is meaningful: nodes
 that moved are new or re-clustered, not randomly shuffled.
 
 **HTML output — pan/zoom in any browser:**

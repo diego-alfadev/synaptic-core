@@ -6,7 +6,7 @@ description: >
   daily work into structured, indexable, agent-usable knowledge. Two planes: wiki (what you
   know) + harness (deployable operating-rules source). Triggers: `.synaptic/` present in the
   workspace, user wants persistent project memory or an AI brain, or user invokes
-  /init /consolidate /ingest /audit /weave /upgrade.
+  /synaptic-init /synaptic-consolidate /synaptic-ingest /synaptic-audit /synaptic-weave /synaptic-upgrade.
 ---
 
 # Synaptic Brain Skill — v1.0
@@ -20,11 +20,11 @@ Does .synaptic/BRAIN.md exist?
 │           Is harness wired? (BEGIN:SYNAPTIC in AGENTS.md AND BEGIN:SYNAPTIC-RULES present AND skill dir present)
 │           ├── All present → normal boot.
 │           └── Any missing → run Harness Self-Wire (wire + deploy; no interview), then boot.
-│         version < 1.0 (0.4, 0.5) → offer /upgrade: "Found a v{X} brain — run /upgrade to migrate."
+│         version < 1.0 (0.4, 0.5) → offer /synaptic-upgrade: "Found a v{X} brain — run /synaptic-upgrade to migrate."
 │
 └── NO — Does .synaptic/ exist (no BRAIN.md)?
     ├── YES → v0.3 brain detected (BOOTSTRAP.md pattern).
-    │         Offer /upgrade: "Found a v0.3 brain — run /upgrade to migrate to v1."
+    │         Offer /synaptic-upgrade: "Found a v0.3 brain — run /synaptic-upgrade to migrate to v1."
     │         Load references/upgrade-to-v1.md when user confirms.
     └── NO  → No brain found.
               Offer onboarding: "No brain found — start the setup interview? (y/n)"
@@ -34,7 +34,7 @@ When booting: read `BRAIN.md` only. Load all other files on demand through `know
 
 ---
 
-## Onboarding Interview — /init
+## Onboarding Interview — /synaptic-init
 
 Ask **1–2 questions at a time**. Build on answers. Generate files from `templates/` when done.
 
@@ -66,7 +66,7 @@ Yes → create `registries/{name}.md` from `templates/registry.md` per table; re
 **Round 5 — Seed import (optional):**
 > "Got an existing context-pack or onboarding doc to import? I can bootstrap the brain from it."
 
-Yes → run /ingest on the document now. Queue further documents for post-init.
+Yes → run /synaptic-ingest on the document now. Queue further documents for post-init.
 
 **Stop condition:** scope + at least one cluster + `harness/conventions.md` exist. Further rounds optional.
 
@@ -116,7 +116,7 @@ Use real data — no `{{placeholder}}` values in generated files. Report the ful
 
 ## Harness Self-Wire
 
-Run after /init or on any boot where wiring is absent. Goal: make every agent in the project aware of the brain automatically, without touching user persona config.
+Run after /synaptic-init or on any boot where wiring is absent. Goal: make every agent in the project aware of the brain automatically, without touching user persona config.
 
 ### a. AGENTS.md fragment (idempotent, marker-wrapped)
 
@@ -134,7 +134,7 @@ This project has a Synaptic brain at `.synaptic/`. Before working: read `.synapt
 and follow its capture contract (route durable knowledge, lessons, playbooks, and task
 workspaces as specified; files are authoritative over any agent-native memory).
 Operating rules (conventions, guardrails) are in the SYNAPTIC-RULES section below.
-Commands (synaptic skill): /init /consolidate /ingest /audit /weave /upgrade
+Commands (synaptic skill): /synaptic-init /synaptic-consolidate /synaptic-ingest /synaptic-audit /synaptic-weave /synaptic-upgrade
 <!-- END:SYNAPTIC -->
 ```
 
@@ -161,7 +161,7 @@ contains `{{placeholder}}` content. Use `--dry-run` to preview without writing.
 **Manual fallback (no Node runtime):**
 1. Read `.synaptic/harness/conventions.md` and `.synaptic/harness/guardrails.md`.
 2. **STOP** — if either file still contains `{{placeholder}}` values, do NOT deploy. Inform the
-   user: "harness/ contains unfilled placeholders — complete the onboarding interview first."
+   user: "harness/ contains unfilled placeholders — complete the onboarding interview (/synaptic-init) first."
 3. Show the user a diff of the proposed SYNAPTIC-RULES block change and require confirmation
    before writing.
 4. Compose a combined rules block from both files.
@@ -187,7 +187,7 @@ The block written looks like:
 <!-- END:SYNAPTIC-RULES -->
 ```
 
-**On re-deploy** (any subsequent `/init` or `/upgrade` run): the marked block is fully replaced
+**On re-deploy** (any subsequent `/synaptic-init` or `/synaptic-upgrade` run): the marked block is fully replaced
 with the current source. Unmarked user content in AGENTS.md is never touched.
 
 ### d. Cursor shim (optional)
@@ -196,7 +196,7 @@ If `.cursor/` exists in the project root, write `.cursor/rules/synaptic.mdc`:
 
 ```
 This project has a Synaptic brain. See AGENTS.md (BEGIN:SYNAPTIC block) for instructions.
-Read `.synaptic/BRAIN.md` at session start. Commands: /init /consolidate /ingest /audit /weave /upgrade
+Read `.synaptic/BRAIN.md` at session start. Commands: /synaptic-init /synaptic-consolidate /synaptic-ingest /synaptic-audit /synaptic-weave /synaptic-upgrade
 ```
 
 ### e. Cross-agent sync
@@ -211,11 +211,11 @@ Load the referenced file only when the operation is invoked, not at boot.
 
 | Command | What it does | Reference |
 |---|---|---|
-| `/init` | No brain → interview + generate + wire + deploy operating rules. Brain present but unwired → wire + deploy. Brain present + wired → extend (add cluster / registries / ingest). | This file |
-| `/consolidate` | Run the 6-step capture contract on session output | `references/consolidate.md` |
-| `/ingest [file]` | Distill a document into an atomic node + reference entry | `references/ingest.md` |
-| `/audit` | Staleness, orphans, broken `[[wikilinks]]`, MOC coverage, registry integrity, oversized untyped nodes, tag hygiene | `references/audit.md` |
-| `/weave` | Graph-gardening pass: propose missing `[[links]]`, flag under-connected nodes, detect concept gaps, suggest merges, promote recurring themes | `references/weave.md` |
-| `/upgrade` | Migrate v0.3 / v0.4 / v0.5 brain to v1; redeploys operating rules | `references/upgrade-to-v1.md` |
+| `/synaptic-init` | No brain → interview + generate + wire + deploy operating rules. Brain present but unwired → wire + deploy. Brain present + wired → extend (add cluster / registries / ingest). | This file |
+| `/synaptic-consolidate` | Run the 6-step capture contract on session output | `references/consolidate.md` |
+| `/synaptic-ingest [file]` | Distill a document into an atomic node + reference entry | `references/ingest.md` |
+| `/synaptic-audit` | Staleness, orphans, broken `[[wikilinks]]`, MOC coverage, registry integrity, oversized untyped nodes, tag hygiene | `references/audit.md` |
+| `/synaptic-weave` | Graph-gardening pass: propose missing `[[links]]`, flag under-connected nodes, detect concept gaps, suggest merges, promote recurring themes | `references/weave.md` |
+| `/synaptic-upgrade` | Migrate v0.3 / v0.4 / v0.5 brain to v1; redeploys operating rules | `references/upgrade-to-v1.md` |
 
 **Tools awareness:** if a runtime is available, prefer `tools/` scripts (check/migrate/export/vault-open) for the mechanical steps. If no runtime, perform the operation manually as described in the reference files.

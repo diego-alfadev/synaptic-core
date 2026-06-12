@@ -1,6 +1,6 @@
 # Recipe — Session-End Consolidation Reminder
 
-**Purpose:** remind or automatically trigger `/consolidate` when a session ends with
+**Purpose:** remind or automatically trigger `/synaptic-consolidate` when a session ends with
 uncommitted knowledge (changes to `journal/` or `playgrounds/`).
 
 **Scope:** optional add-on. CORE never requires hooks. The consolidation cadence works
@@ -10,7 +10,7 @@ without this recipe — it just relies on habit rather than automation.
 
 ## The problem this solves
 
-`/consolidate` is voluntary and pull-based. The most common failure mode: a productive
+`/synaptic-consolidate` is voluntary and pull-based. The most common failure mode: a productive
 session ends, the journal has 30 new lines and two open playgrounds, and nothing fires.
 Three sessions later the consolidation debt is high and the brain drifts.
 
@@ -43,8 +43,8 @@ if [ -n "$changed" ]; then
   echo ""
   echo "=== Synaptic: consolidation reminder ==="
   echo "journal/ or playgrounds/ changed this session."
-  echo "Run /consolidate before closing to avoid consolidation debt."
-  echo "Cadence: /consolidate at session end · /audit weekly · /weave monthly"
+  echo "Run /synaptic-consolidate before closing to avoid consolidation debt."
+  echo "Cadence: /synaptic-consolidate at session end · /synaptic-audit weekly · /synaptic-weave monthly"
   echo "========================================"
 fi
 ```
@@ -59,8 +59,8 @@ if ($changed) {
     Write-Output ""
     Write-Output "=== Synaptic: consolidation reminder ==="
     Write-Output "journal/ or playgrounds/ changed this session."
-    Write-Output "Run /consolidate before closing to avoid consolidation debt."
-    Write-Output "Cadence: /consolidate at session end · /audit weekly · /weave monthly"
+    Write-Output "Run /synaptic-consolidate before closing to avoid consolidation debt."
+    Write-Output "Cadence: /synaptic-consolidate at session end · /synaptic-audit weekly · /synaptic-weave monthly"
     Write-Output "========================================"
 }
 ```
@@ -112,7 +112,7 @@ On Windows with PowerShell:
   `playgrounds/` changed — no noise on sessions that did not touch the brain.
 - If the project does not use git, replace the `git diff` check with a simple
   `find .synaptic/journal .synaptic/playgrounds -newer .synaptic/BRAIN.md` heuristic.
-- The reminder is **informational only** — it does not auto-run `/consolidate`. The agent
+- The reminder is **informational only** — it does not auto-run `/synaptic-consolidate`. The agent
   still needs a prompt from the user to execute.
 
 ---
@@ -122,16 +122,16 @@ On Windows with PowerShell:
 No setup required. At the end of every session, simply tell your agent:
 
 ```
-/consolidate
+/synaptic-consolidate
 ```
 
 The cadence to remember:
 
 | Frequency | Command | What it does |
 |---|---|---|
-| Every session end | `/consolidate` | Apply the 6-step capture contract; close playgrounds; update journal |
-| Weekly | `/audit` | Surface orphans, broken links, stale nodes, MOC gaps, consolidation debt |
-| Monthly | `/weave` | Retroactive graph-gardening: missing links, near-duplicates, theme promotion |
+| Every session end | `/synaptic-consolidate` | Apply the 6-step capture contract; close playgrounds; update journal |
+| Weekly | `/synaptic-audit` | Surface orphans, broken links, stale nodes, MOC gaps, consolidation debt |
+| Monthly | `/synaptic-weave` | Retroactive graph-gardening: missing links, near-duplicates, theme promotion |
 
 ---
 
