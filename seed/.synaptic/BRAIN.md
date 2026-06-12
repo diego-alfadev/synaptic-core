@@ -33,15 +33,7 @@ Six-step consolidation formula — run after every work session before closing:
 
 ---
 
-## Top Guardrails
-
-> Full set in `harness/guardrails.md`. These three to five rules are always on:
-
-- {{GUARDRAIL_1 — e.g. "Never commit secrets or credentials to any repository."}}
-- {{GUARDRAIL_2 — e.g. "Never deploy to production without explicit sign-off."}}
-- {{GUARDRAIL_3 — e.g. "Never merge a PR without at least one review."}}
-- {{GUARDRAIL_4 — optional}}
-- {{GUARDRAIL_5 — optional}}
+> Operating rules + guardrails are **deployed to your harness** from `harness/` (run `/init` to (re)deploy). If your harness isn't wired yet, treat `harness/` as the source — do not load it every session.
 
 ---
 
@@ -52,7 +44,7 @@ Six-step consolidation formula — run after every work session before closing:
 | `knowledge/` | Wiki — what you know | On demand via `knowledge/INDEX.md` |
 | `registries/` | Wiki — tabular SSOTs (resources, repos, glossary) | On demand; never eager-load |
 | `references/` | Wiki — existence index + verbatim artifacts (`raw/`) | On demand |
-| `harness/` | Harness — conventions, guardrails, project skills | On demand; top subset above |
+| `harness/` | Operating-rules SOURCE — deployed to the outer harness by `/init`; not loaded at runtime | Run `/init` to (re)deploy; read source here only if harness unwired |
 | `playgrounds/` | Working memory — per-task burnable workspaces | Registered in journal only |
 | `journal/` | Working memory — thin anchor/watch/log | Resume: read `_current.md` |
 | `templates/` | Scaffolding — node, registry, playbook, lesson | When creating a new node |
@@ -65,7 +57,7 @@ Six-step consolidation formula — run after every work session before closing:
 
 **Resuming work:** read `journal/_current.md` (active playgrounds + next step), then proceed.
 **Starting fresh:** just work; load knowledge on demand through `knowledge/INDEX.md`.
-**Load trigger examples:** "before CI work → read `harness/guardrails.md`"; "for a domain insight → INDEX → cluster `_index` → 1–2 nodes."
+**Load trigger examples:** "for a domain insight → INDEX → cluster `_index` → 1–2 nodes"; "for project conventions → read your deployed harness rules (AGENTS.md / instructions)."
 
 ---
 
@@ -75,10 +67,11 @@ Provided by the `synaptic` skill (installed in `.claude/skills/` or `.agents/ski
 
 | Command | Action |
 |---|---|
-| `/init` | Scope-aware setup interview; self-wires harness; can import a context-pack seed |
+| `/init` | Scope-aware setup interview; self-wires harness + deploys operating rules |
 | `/consolidate` | Run the 6-step capture contract on current session output |
 | `/ingest [file]` | Distill a document into an atomic node + reference entry |
 | `/audit` | Check for orphans, broken links, stale nodes, MOC coverage, registry integrity |
+| `/weave` | Graph-gardening pass: propose missing links, flag thin nodes, detect gaps, suggest merges |
 | `/upgrade` | Migrate brain to a newer synaptic-core version |
 
 ---

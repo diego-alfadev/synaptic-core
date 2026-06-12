@@ -4,9 +4,9 @@ version: 1.0.0
 description: >
   Knowledge-graph memory layer for project work — a portable, file-based brain that turns
   daily work into structured, indexable, agent-usable knowledge. Two planes: wiki (what you
-  know) + harness (how you work here). Triggers: `.synaptic/` present in the workspace, user
-  wants persistent project memory or an AI brain, or user invokes /init /consolidate /ingest
-  /audit /upgrade.
+  know) + harness (deployable operating-rules source). Triggers: `.synaptic/` present in the
+  workspace, user wants persistent project memory or an AI brain, or user invokes
+  /init /consolidate /ingest /audit /weave /upgrade.
 ---
 
 # Synaptic Brain Skill — v1.0
@@ -17,9 +17,9 @@ description: >
 Does .synaptic/BRAIN.md exist?
 ├── YES → Read BRAIN.md frontmatter version.
 │         version ≥ 1.0 → Boot: read BRAIN.md, follow it.
-│           Is harness wired? (BEGIN:SYNAPTIC in AGENTS.md AND skill dir present)
-│           ├── Both present → normal boot.
-│           └── Either missing → wire harness now (Harness Self-Wire; no interview), then boot.
+│           Is harness wired? (BEGIN:SYNAPTIC in AGENTS.md AND BEGIN:SYNAPTIC-RULES present AND skill dir present)
+│           ├── All present → normal boot.
+│           └── Any missing → run Harness Self-Wire (wire + deploy; no interview), then boot.
 │         version < 1.0 (0.4, 0.5) → offer /upgrade: "Found a v{X} brain — run /upgrade to migrate."
 │
 └── NO — Does .synaptic/ exist (no BRAIN.md)?
@@ -56,7 +56,7 @@ Use the answers to seed `knowledge/INDEX.md` cluster stubs and generate a first 
 **Round 3 — Working conventions + guardrails:**
 > "Any team norms an inheriting teammate must know — languages per channel, commit style, etiquette? Any hard rules that must never be violated?"
 
-Collect conventions → `harness/conventions.md` (create from seed template). Collect hard rules → `harness/guardrails.md`. Extract the top 3–5 hard rules and write them into `BRAIN.md → Top Guardrails`.
+Collect conventions → `harness/conventions.md` (create from seed template). Collect hard rules → `harness/guardrails.md`. Both files will be deployed to the outer harness by the Deploy step in Harness Self-Wire — do NOT write a guardrails block into BRAIN.md.
 
 **Round 4 — Registries:**
 > "Any lookup tables you reference often — infra resources, repo catalog, glossary, environments?"
@@ -82,7 +82,7 @@ Instantiate files from `templates/` (bundled with this skill package — mirrors
 
 ```
 .synaptic/
-├── BRAIN.md                    ← filled from interview (Context Capsule, Capture Contract, Top Guardrails, Brain Map)
+├── BRAIN.md                    ← filled from interview (Context Capsule, Capture Contract, deploy-source pointer, Brain Map)
 ├── knowledge/
 │   ├── INDEX.md                ← cluster stubs from Round 2
 │   ├── {cluster}/
@@ -133,9 +133,8 @@ Write exactly this block — ≤13 lines, no additions:
 This project has a Synaptic brain at `.synaptic/`. Before working: read `.synaptic/BRAIN.md`
 and follow its capture contract (route durable knowledge, lessons, playbooks, and task
 workspaces as specified; files are authoritative over any agent-native memory).
-Honor team conventions in `.synaptic/harness/conventions.md`. Top guardrails in BRAIN.md.
-Full harness (conventions/guardrails/skills) in `.synaptic/harness/` — load on demand.
-Commands (synaptic skill): /init /consolidate /ingest /audit /upgrade
+Operating rules (conventions, guardrails) are in the SYNAPTIC-RULES section below.
+Commands (synaptic skill): /init /consolidate /ingest /audit /weave /upgrade
 <!-- END:SYNAPTIC -->
 ```
 
@@ -150,16 +149,45 @@ Copy this skill package directory (where this SKILL.md lives, with its `referenc
 
 Create directories if absent. If a target already contains a `SKILL.md` with the same `version:`, skip and report "already present". Otherwise overwrite.
 
-### c. Cursor shim (optional)
+### c. Deploy operating rules (idempotent)
+
+This step materializes `harness/conventions.md` and `harness/guardrails.md` into the outer
+harness so the agent reads them natively — without reaching into the brain at work-time.
+
+1. Read `.synaptic/harness/conventions.md` and `.synaptic/harness/guardrails.md`.
+2. Compose a combined rules block from both files.
+3. Search for `<!-- BEGIN:SYNAPTIC-RULES -->` in the project root `AGENTS.md`:
+   - **Found:** replace the entire BEGIN:SYNAPTIC-RULES … END:SYNAPTIC-RULES block.
+   - **Not found:** append the block after the BEGIN:SYNAPTIC block.
+   - Never touch content outside the marked block.
+4. Install `harness/skills/*` into `.claude/skills/` and `.agents/skills/` (same
+   idempotent pattern as the synaptic skill install — skip if same version, otherwise overwrite).
+
+The block written looks like:
+
+```
+<!-- BEGIN:SYNAPTIC-RULES -->
+## Working Conventions
+{content from harness/conventions.md — stripped of YAML frontmatter}
+
+## Guardrails
+{content from harness/guardrails.md — stripped of YAML frontmatter}
+<!-- END:SYNAPTIC-RULES -->
+```
+
+**On re-deploy** (any subsequent `/init` or `/upgrade` run): the marked block is fully replaced
+with the current source. Unmarked user content in AGENTS.md is never touched.
+
+### d. Cursor shim (optional)
 
 If `.cursor/` exists in the project root, write `.cursor/rules/synaptic.mdc`:
 
 ```
 This project has a Synaptic brain. See AGENTS.md (BEGIN:SYNAPTIC block) for instructions.
-Read `.synaptic/BRAIN.md` at session start. Commands: /init /consolidate /ingest /audit /upgrade
+Read `.synaptic/BRAIN.md` at session start. Commands: /init /consolidate /ingest /audit /weave /upgrade
 ```
 
-### d. Cross-agent sync
+### e. Cross-agent sync
 
 Cross-agent rule-sync tools (gentle-ai, ai-rules-sync, block/ai-rules, rulesync) pick up the skill directories automatically — nothing else to configure.
 
@@ -171,10 +199,11 @@ Load the referenced file only when the operation is invoked, not at boot.
 
 | Command | What it does | Reference |
 |---|---|---|
-| `/init` | No brain → interview + generate + wire. Brain present but unwired → wire only. Brain present + wired → extend (add cluster / registries / ingest). | This file |
+| `/init` | No brain → interview + generate + wire + deploy operating rules. Brain present but unwired → wire + deploy. Brain present + wired → extend (add cluster / registries / ingest). | This file |
 | `/consolidate` | Run the 6-step capture contract on session output | `references/consolidate.md` |
 | `/ingest [file]` | Distill a document into an atomic node + reference entry | `references/ingest.md` |
 | `/audit` | Staleness, orphans, broken `[[wikilinks]]`, MOC coverage, registry integrity, oversized untyped nodes, tag hygiene | `references/audit.md` |
-| `/upgrade` | Migrate v0.3 / v0.4 / v0.5 brain to v1 | `references/upgrade-to-v1.md` |
+| `/weave` | Graph-gardening pass: propose missing `[[links]]`, flag under-connected nodes, detect concept gaps, suggest merges, promote recurring themes | `references/weave.md` |
+| `/upgrade` | Migrate v0.3 / v0.4 / v0.5 brain to v1; redeploys operating rules | `references/upgrade-to-v1.md` |
 
 **Tools awareness:** if a runtime is available, prefer `tools/` scripts (check/migrate/export/vault-open) for the mechanical steps. If no runtime, perform the operation manually as described in the reference files.

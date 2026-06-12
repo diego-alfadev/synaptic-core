@@ -1,5 +1,29 @@
 # /upgrade — Migration Guide to v1.0
 
+---
+
+## Your data is safe — read this first
+
+**You will not lose knowledge. Worst case, you keep your old brain exactly as it was.**
+
+The migration is non-destructive, content-preserving, and fully reversible:
+
+- **Non-destructive:** Phase M *stages* files (moves them to `_migration-staging/` inside the brain) — it never deletes content that Phase C still needs. Your original brain is git-versioned. Phase C runs and you verify the result *before* anything is removed from staging.
+- **Content-preserving:** every node's content is carried through. The agent re-files and re-links nodes into the v1 structure — it does not rewrite your facts, decisions, or knowledge.
+- **Reversible:** run the migration on a branch or a copy of the repo. If you are not happy with the result, you merge nothing and your old brain is intact on the original branch.
+
+### Practical runbook (typical case: Node + Python + an agent)
+
+1. **Branch:** `git switch -c v1-upgrade` — work on a copy; the original branch is your fallback.
+2. **Phase M (mechanical):** `node tools/migrate.js .synaptic` — deterministic file staging; safe and scriptable. Use `--dry-run` first to preview moves without writing anything.
+3. **Phase C (agent rearrange):** tell your agent `/upgrade` — the capable-agent phase: link conversion, MOC creation, consolidation formula applied retroactively, harness triage. The agent proposes each change; you confirm before it is written.
+4. **Verify:** `node tools/check.js .synaptic` for graph health, then `/audit` in the agent for staleness and coverage. Review the result in Obsidian or Foam before proceeding.
+5. **Merge:** once satisfied, `git switch main && git merge v1-upgrade`. The old branch remains as a rollback point.
+
+> If anything looks wrong after Phase C, do not merge — you have the original branch. Open an issue or re-run Phase C with more conservative settings.
+
+---
+
 Content-preserving migration from v0.3, v0.4, or v0.5 to v1.0 "two-plane wiki + harness".
 
 **Read this file fully before making any changes.** Run Phase M first (mechanical, safe),
@@ -15,7 +39,7 @@ record every non-obvious judgment in a migration decision log delivered with the
 
 | Old location / structure | v1 destination | Notes |
 |---|---|---|
-| `BRAIN.md` (v0.4/0.5 boot file) | `BRAIN.md` (updated to v1 layout) | Add Context Capsule, Capture Contract, Top Guardrails, Brain Map |
+| `BRAIN.md` (v0.4/0.5 boot file) | `BRAIN.md` (updated to v1 layout) | Add Context Capsule, Capture Contract, deploy-source pointer, Brain Map. **No guardrails block** — operating rules go to `harness/` as source and are **deployed** by `/init`/`/upgrade`; they are NOT left for runtime load. |
 | `BOOTSTRAP.md` / `MANIFEST.md` / `HEARTBEAT.md` (v0.3) | → `BRAIN.md` Context Capsule (2–4 lines) | Remainder discarded after Phase C |
 | `identity/ROLE.md` (v0.4) | → `BRAIN.md` Context Capsule | Not persona |
 | `identity/CONTACTS.md` (v0.4) | → `knowledge/people-routing.md` (type: knowledge) | Project routing knowledge |
@@ -171,7 +195,8 @@ Phase C consumes `_migration-staging/` and **deletes it as its final step**.
 **From `BOOTSTRAP.md` / `MANIFEST.md` / `HEARTBEAT.md` (v0.3) or `identity/ROLE.md` (v0.4):**
 
 - Extract a 2–4-line summary of what the brain covers + the owner's role. Write as the **Context Capsule** block in `BRAIN.md`.
-- Extract the **Capture Contract** (consolidation formula) and **Top Guardrails** blocks into `BRAIN.md` using the v1 seed format.
+- Extract the **Capture Contract** (consolidation formula) block into `BRAIN.md` using the v1 seed format.
+- **Do NOT write a Top Guardrails block in BRAIN.md.** Operating rules (guardrails + conventions) go to `harness/` as the **deployable source** — they are then deployed by the Deploy step in Harness Self-Wire, not left for runtime load from the brain. BRAIN.md carries only the 1-line deploy-source pointer.
 - Do NOT copy persona, tone, language preferences, or agent behavior rules into BRAIN.md.
 
 **From `identity/CONTACTS.md` (v0.4):**
@@ -181,7 +206,7 @@ Phase C consumes `_migration-staging/` and **deletes it as its final step**.
 **From `identity/PRINCIPLES.md` (v0.4) — ownership test: "would a teammate inheriting this brain need it?":**
 
 - **Yes, team/project norm** (communication languages per channel, commit conventions, ticket etiquette, escalation rules) → `harness/conventions.md`. These travel with the brain.
-- **Yes, hard project rule** (security rules, architecture constraints, deployment gates) → `harness/guardrails.md`; mirror top 3–5 in `BRAIN.md → Top Guardrails`.
+- **Yes, hard project rule** (security rules, architecture constraints, deployment gates) → `harness/guardrails.md`. These will be deployed to the outer harness by the Deploy step — do NOT mirror them in `BRAIN.md → Top Guardrails` (that block no longer exists in v1).
 - **No, personal agent behavior** (tone rules, chat-language with owner, output style) → offer to place in project `AGENTS.md` (outside the SYNAPTIC block) or the user's global harness. Do NOT place in the brain. If the user declines, discard with explicit consent.
 
 ### C1b — Brain-root context/bridge files (v0.3 pattern)
@@ -231,7 +256,7 @@ For each node in `knowledge/`:
 **From v0.5 `knowledge/working-agreements.md`** (staged in `_migration-staging/`):
 
 - Route team/project norms → `harness/conventions.md` (merge or create from seed template).
-- Route hard rules → `harness/guardrails.md`; mirror top 3–5 in `BRAIN.md → Top Guardrails`.
+- Route hard rules → `harness/guardrails.md`. Both files are the **deployable source** — after routing, run the Deploy step (Harness Self-Wire §c) to materialize them into the outer harness. Do NOT mirror rules in `BRAIN.md → Top Guardrails` (that block is dropped in v1).
 - Persona/agent behavior content → offer to place in AGENTS.md (user harness). Never into the brain.
 - Delete the staged file after routing is confirmed.
 
@@ -299,7 +324,7 @@ otherwise use manual greps / inspection.
 - [ ] No `{{placeholders}}`
 - [ ] Context Capsule present (2–4 lines; no persona/tone content)
 - [ ] Capture Contract block present (6-step compressed)
-- [ ] Top Guardrails present (3–5 rules; pointer to `harness/guardrails.md`)
+- [ ] Deploy-source pointer present (1 line pointing to `harness/`; NO Top Guardrails block)
 - [ ] Brain Map table present and consistent with actual layout
 
 **Knowledge:**
@@ -310,10 +335,14 @@ otherwise use manual greps / inspection.
 - [ ] All frontmatter D1 fields filled (`description`, `type`, `status`, `updated`, `tags`) — no empty `tags: []`
 - [ ] All filenames are kebab-case
 
-**Harness:**
-- [ ] `harness/conventions.md` exists with team norms (no persona content)
-- [ ] `harness/guardrails.md` exists with hard rules
+**Harness (source):**
+- [ ] `harness/conventions.md` exists with team norms (no persona content) — header says "(source — deployed)"
+- [ ] `harness/guardrails.md` exists with hard rules — header says "(source — deployed)"
 - [ ] Custom project skills in `harness/skills/` (if any existed)
+
+**Harness (deployed — outer harness):**
+- [ ] `AGENTS.md` contains `<!-- BEGIN:SYNAPTIC-RULES --> … <!-- END:SYNAPTIC-RULES -->` block with deployed conventions + guardrails
+- [ ] Project skills from `harness/skills/` installed in `.claude/skills/` and/or `.agents/skills/`
 
 **Registries:**
 - [ ] `registries/_index.md` lists every registry file; all files exist

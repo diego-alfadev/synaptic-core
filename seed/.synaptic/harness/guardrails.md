@@ -6,9 +6,9 @@ updated: "{{YYYY-MM-DD}}"
 tags: [harness, guardrails, hard-rules]
 ---
 
-# Guardrails
+# Guardrails (source — deployed)
 
-Non-negotiable rules for working on this project. Load on demand before any sensitive operation (deploy, secret rotation, production access, external comms). A compressed subset (3–5 rules) is mirrored in `BRAIN.md → Top Guardrails` for always-on awareness.
+Non-negotiable rules for working on this project. This file is the **source** — `/init` and `/upgrade` deploy it into the outer harness. At work-time the agent reads the deployed copy. The deployed copy is always up-to-date with what is here; no guardrails block is carried in BRAIN.md.
 
 > **Scope test:** rules about how the project/work must run → here. Rules about how the agent behaves toward its owner → AGENTS.md / CLAUDE.md.
 
@@ -54,4 +54,4 @@ Non-negotiable rules for working on this project. Load on demand before any sens
 
 ---
 
-> The top 3–5 rules from this file are mirrored in `BRAIN.md → Top Guardrails`. Update both when the top subset changes.
+> This file is the canonical source. Run `/init` or `/upgrade` to (re)deploy it into the outer harness. BRAIN.md carries no guardrails block — it carries a pointer to this source.
