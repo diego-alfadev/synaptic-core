@@ -174,6 +174,18 @@ The brain does not grow on its own. Without the capture contract being run, you 
 
 This is the honest trade: **you pay ~5–10 minutes per active session** to run `/synaptic-consolidate` (classify, generalize, link, gate). In exchange, you erase the re-briefing tax on every future session, the onboarding tax for every new teammate or agent, and the handover tax when the project ends. Not "zero overhead." A deliberate trade of write-time cost for read-time leverage.
 
+**It adapts to how you work — set `capture_policy` in `BRAIN.md`:**
+
+| Policy | Behaviour | Use when |
+|---|---|---|
+| `curated` | Crown-jewels only — reusable decisions, lessons, and patterns seen 3+ times. The journal/playgrounds absorb the rest. | You want a tight, high-signal wiki. |
+| `balanced` *(default)* | Wiki-first with generous journaling — promote at 2+ instances or clearly-reusable knowledge. | Most projects. |
+| `logbook` | Capture almost everything — durable-ish notes promoted on first sight. | This brain is your **only** memory layer (no Engram, no other store). |
+
+Same 6-step formula, one tunable valve — it changes *how much* gets promoted, never *how* the graph is built. A custom 1-line policy overrides the presets.
+
+And the discipline lives in the harness, not your head: **at session end the agent offers to consolidate** — it proposes what it would capture (per your policy), you approve; it never forces or silently skips. For zero-friction auto-capture, wire the optional hook below.
+
 | When | Action |
 |---|---|
 | **Every session end** | Run `/synaptic-consolidate` — apply the 6-step capture contract to what was produced |

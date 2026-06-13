@@ -6,6 +6,11 @@ a playground task is complete, or end of a productive session.
 
 **Six-step formula** (the capture contract — same algorithm compressed in `BRAIN.md`):
 
+> **Capture policy.** Read `capture_policy:` from `BRAIN.md` frontmatter (`curated` | `balanced` | `logbook`; default `balanced`, or a custom 1-line rule). It tunes the *threshold* of Step 2 (promotion) and Step 6 (quality gate) — not the steps themselves:
+> - `curated` → promote crown-jewels only (reusable decision/lesson, or pattern seen 3+ times); strict gate, small wiki.
+> - `balanced` → promote at 2+ instances or clearly-reusable knowledge; standard gate.
+> - `logbook` → promote durable-ish notes on first sight; lenient gate; prune later via `/synaptic-weave`.
+
 ---
 
 ## Step 1 — Classify
@@ -35,6 +40,7 @@ For each item classified as durable:
 2. **Promotion gate:** create or update a knowledge node *only when* the item:
    - recurs — has appeared 2+ times → promote as a `type: pattern` or `type: knowledge` node, or
    - is a reusable decision or lesson worth carrying forward cold.
+   - **Capture-policy threshold:** `curated` raises the bar (crown-jewels / 3+ instances); `logbook` lowers it (promote durable-ish notes on first sight); `balanced` is the default above.
 3. Incident-specifics that do not pass the promotion gate → stay in the playground or journal; do not create a permanent node.
 
 ---
@@ -80,6 +86,7 @@ Before marking consolidation complete, every new or updated node must pass:
 - [ ] `[[wikilinks]]` resolve to real files; no broken links introduced.
 - [ ] Professional & verifiable only: no opinions, rumors, blame, PII, credentials, or application data.
 - [ ] `updated:` stamped with today's date.
+- [ ] **Capture-policy strictness:** `curated` prunes hard (split/merge aggressively, keep the wiki small); `logbook` keeps more and defers pruning to `/synaptic-weave`; `balanced` applies the budgets as written.
 
 If any check fails, fix before proceeding. Do not skip this gate.
 

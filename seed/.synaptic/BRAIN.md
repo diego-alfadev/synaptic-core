@@ -3,6 +3,7 @@ standard: synaptic-core
 version: 1.0.0
 name: "{{BRAIN_NAME}}"
 scope: "{{project|role|org|life}}"
+capture_policy: balanced   # curated | balanced | logbook — how aggressively work is promoted into the wiki
 created: "{{YYYY-MM-DD}}"
 updated: "{{YYYY-MM-DD}}"
 ---
@@ -30,6 +31,16 @@ Six-step consolidation formula — run after every work session before closing:
 4. **Place & link** — atomic node in the right cluster; fill D1 frontmatter; add `[[wikilinks]]`; register in cluster `_index.md`.
 5. **Dedupe / SSOT** — search first; update, don't duplicate; one source of truth per fact.
 6. **Quality gate** — professional & verifiable only; soft budget ~150 lines or tag `type: reference`; stamp `updated:`; confirm reachable from a MOC.
+
+**Capture policy** (`capture_policy:` frontmatter; default `balanced`) tunes how aggressively steps 2 and 6 fire — same formula, different valve:
+
+| Policy | Step 2 — promote when… | Step 6 — gate |
+|---|---|---|
+| `curated` | crown-jewels only: reusable decision/lesson, or a pattern seen 3+ times | strict — prune hard, keep the wiki small |
+| `balanced` *(default)* | pattern at 2+ instances, or clearly reusable knowledge | standard |
+| `logbook` | liberally — durable-ish notes on first sight (use when this is your only memory layer) | lenient — keep more; prune later via `/synaptic-weave` |
+
+A custom 1-line policy in frontmatter overrides the preset.
 
 ---
 
@@ -59,7 +70,7 @@ Six-step consolidation formula — run after every work session before closing:
 **Starting fresh:** just work; load knowledge on demand through `knowledge/INDEX.md`.
 **Load trigger examples:** "for a domain insight → INDEX → cluster `_index` → 1–2 nodes"; "for project conventions → read your deployed harness rules (AGENTS.md / instructions)."
 
-**Persist:** run `/synaptic-consolidate` at session end · `/synaptic-audit` weekly · `/synaptic-weave` monthly.
+**Persist:** at session end, **offer to consolidate** uncaptured durable work — propose what you'd capture per the capture policy; don't force, don't silently skip — then run `/synaptic-consolidate`. Cadence: `/synaptic-audit` weekly · `/synaptic-weave` monthly. Zero-friction auto-capture: install the session-end hook (see `recipes/`).
 
 ---
 
