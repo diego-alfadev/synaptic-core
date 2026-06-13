@@ -1,245 +1,354 @@
-# 🧠 SYNAPTIC-CORE
+<p align="center">
+  <img src="docs/assets/synaptic-hero.svg" alt="synaptic-core — one brain, any agent, zero install" width="880">
+</p>
 
-**An open standard for portable AI brains.**
+<p align="center">
+  <img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-blue">
+  <img alt="version" src="https://img.shields.io/badge/version-1.0.0-5eead4">
+  <img alt="install" src="https://img.shields.io/badge/install-zero-16a34a">
+  <img alt="agent" src="https://img.shields.io/badge/agent-agnostic-818cf8">
+  <img alt="format" src="https://img.shields.io/badge/format-Markdown%20%2B%20%5B%5Bwikilinks%5D%5D-fbbf24">
+</p>
 
-Your knowledge shouldn't be locked inside a chat thread that expires, scattered across `.md` files without structure, or lost when you switch tools. SYNAPTIC-CORE is a file-based standard that gives AI agents structured memory — and gives *you* a knowledge base you can read, edit, copy, and share.
+<p align="center"><strong>One boot file. Any agent. No required installations.</strong></p>
 
-> **One brain. Any agent. Zero installations.**
-
----
-
-## Why does this exist?
-
-If you work with AI coding agents, you've probably hit these walls:
-
-- 🔁 **Repeating yourself** every new session — "Remember, we use TypeScript here, the database is Postgres, talk to Thomas about CI/CD..."
-- 🧩 **Context scattered everywhere** — some in a Gemini gem, some in `.agent/rules`, some in your head
-- 🔒 **Vendor lock-in** — your Claude config doesn't work in Cursor, your Copilot context doesn't travel to Antigravity
-- 👻 **Tribal knowledge** — your colleague quits and takes 2 years of project context with them
-
-SYNAPTIC-CORE fixes this by defining a **portable, human-readable brain** that any AI agent can assimilate in seconds.
+Synaptic turns daily work into structured, navigable, agent-usable knowledge — a brain any agent can pick up in seconds and that travels with you when the project ends. The differentiator: instead of dumping context somewhere, you curate it once (write-time), so every future agent session reads cheap and deterministic. No re-briefing. No tribal knowledge walking out the door.
 
 ---
 
-## How it works
+## 🚀 Quick start (60 seconds)
+
+**Recommended — install the skill:**
 
 ```
-.synaptic/                    ← Drop this into any project
-├── BOOTSTRAP.md              ← Agent reads this first (instruction manual)
-├── MANIFEST.md               ← Brain metadata & capabilities
-├── cortex.config.yaml        ← Agent behavior settings
-├── identity/                 ← WHO: role, principles, contacts
-├── knowledge/                ← WHAT: areas, domains, lessons learned
-├── worklines/                ← WHERE WE'RE GOING: active work directions & tasks
-├── inventory/                ← THINGS: project IDs, endpoints, glossary
-├── references/               ← VERBATIM: schemas, specs, DDLs
-├── journal/                  ← WHEN: session working memory
-└── skills/                   ← HOW: init, plan, consolidate, ingest, discover, help
+# Claude Code / VS Code Copilot / OpenCode
+.claude/skills/synaptic/SKILL.md
+
+# Gemini CLI / Codex / universal fallback
+.agents/skills/synaptic/SKILL.md
 ```
 
-When an agent opens your project, it reads `BOOTSTRAP.md` and knows:
-- **Who you are** — your role, expertise, and constraints
-- **What you know** — your structured knowledge across areas and domains
-- **What you're working on** — your current session context
-- **How to route new info** — where to store decisions, lessons, and data
+Copy [`standalone/synaptic/SKILL.md`](standalone/synaptic/SKILL.md) into either path above, then tell your agent:
 
-All of it in Markdown. All of it human-readable. No databases, no APIs, no magic.
+```
+/synaptic-init
+```
+
+The skill runs a scope-aware interview, generates a complete personalized brain, and self-wires your harness (writes `AGENTS.md` / `CLAUDE.md` fragment, installs skill in both paths). No further steps.
+
+**Advanced — drop the seed:**
+
+Copy [`seed/.synaptic/`](seed/.synaptic/) into your project root. Fill every `{{placeholder}}` in `BRAIN.md`, then tell your agent: `"Read .synaptic/BRAIN.md and follow it."` See the [seed flow details](#) below.
+
+**Upgrading from v0.3 / v0.4 / v0.5:**
+
+```
+/synaptic-upgrade
+```
+
+Two-engine migration: deterministic file ops (Phase M) + mandatory agent rearrange (Phase C). See [migration details](#) in the collapsible section below.
+
+**Skill-less fallback (any agent, always works):**
+
+> Paste `"Read .synaptic/BRAIN.md and follow it."` — the brain is self-describing. You lose the guided lifecycle commands; the brain works.
 
 ---
 
-## Quick Start
+## 🧠 How it works
 
-### Option A: Download the seed 📦
+<p align="center">
+  <img src="docs/assets/synaptic-architecture.svg" alt="how synaptic works" width="900">
+</p>
 
-1. Go to [Releases](https://github.com/diego-alfadev/synaptic-core/releases)
-2. Download `synaptic-seed.zip`
-3. Extract `.synaptic/` into your project root
-4. Open your project with any AI agent — it reads `BOOTSTRAP.md` and onboards itself
-5. Run `/init` to personalize your brain through a brief dialogue
+One boot file (`BRAIN.md`, ≤110 lines, ~500 tokens) is the only mandatory read. It carries the context capsule, the capture contract, a 1-line pointer to the deployed harness rules, the brain map, and the session-start pointer. Everything else loads on demand.
 
-### Option B: Install the standalone skill 🤖
+Navigation is bounded at ~3–4 hops regardless of brain size — you never read 10 files to get one insight:
 
-Copy [`standalone/synaptic-init/SKILL.md`](standalone/synaptic-init/SKILL.md) to your agent's skills directory:
-
-```bash
-# Example for agents that support .agent/skills/
-cp standalone/synaptic-init/SKILL.md .agent/skills/synaptic-init/SKILL.md
+```
+BRAIN.md (boot)
+  → knowledge/INDEX.md        (hub MOC: 1-line per cluster)
+    → {cluster}/_index.md     (sub-MOC: 1-line per node)
+      → open only the 1–2 relevant nodes
 ```
 
-Then just tell your agent: `/synaptic-init`
-
-It scans your workspace, asks 3-5 questions, and generates a complete personalized brain. No download needed beyond that single file.
+The brain has **two planes** — wiki (what you know) and harness (how you work here) — and one explicit out-of-scope: **persona lives in your agent harness, not the brain**. Your Jarvis stays Jarvis. The brain travels.
 
 ---
 
-## Use Cases
+## ✨ Features
 
-### 🏗️ Per-project brain vs. global brain
+| Feature | What it gives you |
+|---|---|
+| **MOC-of-MOCs navigation** | Bounded ~3–4 hops to any insight, regardless of brain size |
+| **Consolidation formula (6 steps)** | Agent-agnostic algorithm in every `BRAIN.md`; brain grows correctly on its own |
+| **Registries** | Tabular SSOTs for records looked up by attribute (infra, repos, environments, glossary) |
+| **Harness as deploy-source** | `/synaptic-init` and `/synaptic-upgrade` regenerate your harness from the brain on any machine |
+| **Playgrounds** | Per-task workspaces — burnable, registered in journal, never polluting knowledge |
+| **Opens in Obsidian / Foam / Logseq** | `[[wikilinks]]` + YAML frontmatter are native; graph view renders immediately, no conversion |
 
-You can use SYNAPTIC-CORE in two ways, depending on your workflow:
-
-| Approach | How | Best for |
-|----------|-----|----------|
-| **Per-project** | Drop `.synaptic/` in each project folder | Deep context for a specific codebase, client, or product. More focused, less noise. |
-| **Global** | Place `.synaptic/` in a parent folder that contains all your projects | Broader context across projects. The agent always has your full knowledge, regardless of which project you're working on. |
-
-Both work. Per-project brains are more focused and efficient (smaller context = faster reasoning). Global brains give you cross-project knowledge at the cost of a larger context window. Start per-project and graduate to global once you see what works for you.
-
-### 🔒 Security & Transparency
-
-There are no hidden scripts, no network calls, no opaque binaries. Every file in `.synaptic/` is Markdown or YAML — you can read every line, audit every instruction, and know exactly what your agent sees.
-
-This matters for enterprise environments:
-- **No data leaves your machine** — CORE is pure files, no APIs
-- **Fully auditable** — print it out, hand it to compliance, they can read it
-- **Your agent, your rules** — Synaptic tells the agent *what you know*, not *what to do with external services*
-
-With a Copilot license and a Synaptic brain, a team can build structured onboarding documentation, role playbooks, and project context that ensures **knowledge continuity** — no matter who joins, leaves, or switches roles.
-
-### 📦 Portability & Inheritance
-
-Your `.synaptic/` brain is a folder. It copies, zips, emails, and version-controls like any other folder.
-
-- **Switch tools?** Copy `.synaptic/` to your new agent's workspace. Done.
-- **New team member?** Hand them your brain. They get 2 years of context in 30 seconds.
-- **Going on leave?** Your replacement reads `BOOTSTRAP.md` and knows who does what, where things are, and what the rules are.
-- **Want to read it yourself?** Print it. It's Markdown. It's structured. It makes sense without an AI.
-
-### 📝 Documentation generation
-
-One of the most powerful (and least obvious) use cases: **Synaptic as a documentation engine.**
-
-Just work normally — talk to your agent, make decisions, learn things. Your brain captures it all in `journal/_current.md`. Run `/consolidate` and your working memory crystallizes into structured knowledge. Over time, your `.synaptic/` folder becomes a living documentation hub.
-
-Need a formal doc? Ask your agent: *"Write a technical overview of our authentication system based on what's in the brain."* It has all the context. It writes the doc. You review. Done.
-
-This works especially well with voice — dictate to your agent while working, and let Synaptic organize it later.
+> **Internal, single-run benchmark** (real ~60-file brain; efficiency + coverage measurement, not ground-truth accuracy): median ~4 file-reads per question answered; 17/18 questions resolved by the INDEX hierarchy alone without falling back to grep. One data point — shared for orientation, not as a performance claim.
 
 ---
 
-## The Matrioshka Architecture
+## 👤 Value by audience
 
-SYNAPTIC-CORE follows a layered design where **inner layers never depend on outer ones**:
+**For people — your second brain**
 
-```
-     ┌────────────────────────────────────┐
-     │         🌐 ECOSYSTEM              │
-     │   Plugins, MCPs, integrations     │
-     │                                    │
-     │   ┌────────────────────────┐      │
-     │   │      🔧 TOOLS          │      │
-     │   │   Scripts that enhance │      │
-     │   │   (require runtime)    │      │
-     │   │                        │      │
-     │   │   ┌──────────────┐    │      │
-     │   │   │  🧠 CORE     │    │      │
-     │   │   │  Pure files  │    │      │
-     │   │   │  Zero deps   │    │      │
-     │   │   └──────────────┘    │      │
-     │   └────────────────────────┘      │
-     └────────────────────────────────────┘
-```
+Stop re-briefing your agent every session. Your accumulated knowledge is yours: portable, readable without any tool, never locked to a service. Hand over a role with something real — not a dump of meeting notes. Knowledge compounds: every session adds to the graph.
 
-**CORE** works everywhere, always. Even on an air-gapped corporate laptop with nothing installed. TOOLS and ECOSYSTEM are optional power-ups.
+**For projects — an agent that onboards in seconds**
+
+An agent reads one file and already knows the scope, conventions, guardrails, and where everything lives — before writing a single line. Decisions, patterns, and playbooks accumulate through real work. No re-briefing between sessions; no tribal-knowledge dependency.
+
+**For companies — knowledge continuity without a platform rollout**
+
+A contractor finishes; their successor reads `.synaptic/BRAIN.md` and picks up where they left off. No new platform to procure, no rollout project, no vendor dependency. Auditable by default: compliance can read every file. Works on-premise, air-gapped, or in any cloud.
 
 ---
 
-## Commands
+## 🔧 Commands
 
 | Command | What it does |
-|---------|-------------|
-| `/init` | Set up or extend the brain (with Socratic interview) |
-| `/plan` | Create or manage worklines and tasks |
-| `/consolidate` | Move working memory → structured knowledge |
-| `/ingest [file]` | Ingest a document (DDL, spec, etc.) into the brain |
-| `/discover` | Suggest relevant skills/tools for your context |
-| `/upgrade` | Upgrade brain to latest version |
-| `/help` | Show brain status and quick reference |
+|---|---|
+| `/synaptic-init` | Scope-aware interview; generates brain; self-wires harness; can import a context-pack seed |
+| `/synaptic-consolidate` | Run the 6-step capture contract on current session output |
+| `/synaptic-ingest [file]` | Distil a document into an atomic node + reference entry |
+| `/synaptic-audit` | Check for orphans, broken links, stale nodes, MOC coverage, registry/reference integrity, tag hygiene |
+| `/synaptic-upgrade` | Migrate a v0.3 / v0.4 / v0.5 brain to v1 (interactive, two-engine) |
+| `/synaptic-weave` | Retroactive graph-gardening: missing links, near-duplicates, theme promotion |
 
 ---
 
-## Design Philosophy
+## 🤝 Plays well with others
 
-- **Markdown-first** — Human-readable and human-editable. No proprietary formats.
-- **Zero installations** — Works with just files. No runtime, no daemon, no database.
-- **Agent-agnostic** — Claude Code, Antigravity, Cursor, Copilot, Windsurf... any agent that can read files.
-- **Portable** — Copy `.synaptic/` to another machine, project, or colleague. It just works.
-- **Knowledge-first** — Not a task manager. Not an ops tool. A structured knowledge base.
-- **Progressive enhancement** — CORE always works alone. Add TOOLS for scripts. Add ECOSYSTEM for integrations.
-
----
-
-## Quick Start
-
-1. **Download the Seed**: Clone this repo or download the [.synaptic/](seed/.synaptic/) folder into your project root.
-2. **Setup**: Run `/init` and follow the Socratic interview to define your brain's identity and areas.
-3. **Connect**: Follow the "Agent Bridge" instructions during setup to link your agent (Claude, Cursor, etc.).
-4. **Work**: Start your session. The agent will read `BOOTSTRAP.md` and initialize automatically.
-
-## Upgrading from v0.0.1 / v0.0.2
-
-To upgrade an existing brain to v0.3.0 ("Cortex Edition"):
-
-1. **Automated**: If you have the `/upgrade` command, just run it.
-2. **Manual Skill Injection**: If your brain is ancient and doesn't have `/upgrade`:
-   - Copy the content of [skills/upgrade/SKILL.md](seed/.synaptic/skills/upgrade/SKILL.md) from this repo.
-   - Paste it into your agent and say: *"Follow this skill to upgrade my brain at .synaptic/ to v0.3.0"*.
-   - The agent will patch your structures and update the protocols while **preserving** your knowledge and identity.
+| Tool / pattern | Relationship |
+|---|---|
+| **gentle-ai / ai-rules-sync / block/ai-rules / rulesync** | Harness wiring and cross-agent sync — install the skill in standard paths; these tools pick it up automatically |
+| **Engram** | Robust memory horizon: SQLite + FTS5 sidecar over the brain. Files stay authoritative; Engram is a derived cache |
+| **Smart Connections / SQLite-vec / RAG stacks** | Semantic search horizon: the v1 frontmatter + tags + INDEX + wikilinks contract is the indexable surface — attaches without forking the format |
+| **Jira / Trello / MCP task systems** | Tasks live there. The brain documents context and decisions; it does not track tickets |
+| **Agent-native memory** (Claude Code auto-memory, Copilot Memory) | Useful within its harness; treated as cache. Files win when they conflict |
 
 ---
 
-## What SYNAPTIC-CORE is NOT
+## ⚠️ What SYNAPTIC-CORE is NOT
 
-- **Not a full task manager** — Use [GSD](https://github.com/gsd-build/get-shit-done), Jira, or Linear for comprehensive project management. Synaptic has *worklines* — lightweight work tracking that gives your brain direction, priorities, and context. It's a compass, not a Gantt chart.
-- **Not an agent framework** — It doesn't replace `.agent/`, `AGENTS.md`, or tool configs. Those tell the agent *how to behave*. Synaptic tells it *what you know* and *where you're going*.
-- **Not a database** — No queries, no schemas, no server. Just files.
-- **Not domain-specific** — No React patterns, no Kubernetes playbooks, no language-specific rules baked in. SYNAPTIC-CORE is a *structure*, not content. Your brain is yours to fill.
-- **Not opinionated about your agent** — Works with Claude Code, Antigravity, Cursor, Copilot, Windsurf, OpenCode, or any agent that can read files. We don't pick favorites.
-- **Not heavy** — The seed is ~35 files, all Markdown/YAML. No dependencies, no build step, no node_modules.
+- **Not a task manager** — tasks, backlog, and roadmap belong in Jira, Linear, Trello, or your MCP task system
+- **Not an agent framework** — it does not replace AGENTS.md, CLAUDE.md, or tool configs; those configure the agent; Synaptic configures what the agent *knows*
+- **Not a persona configurator** — no identity directory, no per-brain behavior config; persona lives in your harness, not the brain
+- **Not a database** — no queries, no schemas, no server; just files
+- **Not another platform to roll out** — it is a folder of Markdown files; it works with what you already have
+- **Not domain-specific** — SYNAPTIC-CORE is a structure; your brain is yours to fill
 
 ---
 
-## Repository Structure
+## 📏 Consolidation discipline is the product
+
+The brain does not grow on its own. Without the capture contract being run, you have a note-dump. With it, you have a compounding brain.
+
+This is the honest trade: **you pay ~5–10 minutes per active session** to run `/synaptic-consolidate` (classify, generalize, link, gate). In exchange, you erase the re-briefing tax on every future session, the onboarding tax for every new teammate or agent, and the handover tax when the project ends. Not "zero overhead." A deliberate trade of write-time cost for read-time leverage.
+
+| When | Action |
+|---|---|
+| **Every session end** | Run `/synaptic-consolidate` — apply the 6-step capture contract to what was produced |
+| **Weekly** | Run `/synaptic-audit` — surface orphans, broken links, stale nodes, MOC gaps |
+| **Monthly** | Run `/synaptic-weave` — retroactive graph-gardening: missing links, near-duplicates, theme promotion |
+
+Without this cadence the brain drifts. With it, quality compounds.
+
+> **Tip:** see [`recipes/session-end-consolidate.md`](recipes/session-end-consolidate.md) for an optional Claude Code `settings.json` hook that reminds you to consolidate when the session changes `journal/` or `playgrounds/`.
+
+---
+
+<details>
+<summary>The two-plane model (knowledge · operating rules · persona)</summary>
+
+A `.synaptic/` brain has exactly **two planes** and one explicit out-of-scope:
+
+| Plane | Holds | Test | Load |
+|---|---|---|---|
+| **Wiki** (`knowledge/`, `registries/`, `references/`) | What you **know**: patterns, decisions, playbooks, lessons, lookup tables, external references | "Does the agent *reason over* it?" | On demand via MOC |
+| **Harness** (`harness/`) | How you **work here**: conventions, guardrails, project-local skills (e.g. a Jira CLI) | "Does the agent *obey or execute* it?" | Compressed subset in BRAIN.md; full depth on demand |
+| **OUT — user harness** | Persona, tone, chat-language preference, agent personality | "Is it about how the agent treats *you*?" | Not in the brain at all |
+
+The **only mandatory read** is `BRAIN.md` — one file, target ≤110 lines, ~500 tokens. It carries the context capsule, the capture contract, a 1-line pointer to the deployed harness rules, the brain map, and the session-start pointer. Everything else loads on demand when the agent has a reason to need it.
+
+Three concerns are explicitly separated and never mixed:
+
+- **Knowledge** lives in the brain (`knowledge/`, `registries/`, `references/`) and is read on demand via MOC.
+- **Operating rules** (commit conventions, guardrails, project skills) live in `harness/` as a **deployable source**: `/synaptic-init` and `/synaptic-upgrade` deploy them into the outer harness (AGENTS.md / CLAUDE.md); at work-time the agent reads the outer harness, not the brain's `harness/` folder. The brain keeps the copy so the harness is regenerable on any machine.
+- **Persona** (tone, chat language, agent personality) lives in the outer harness only — never in the brain.
+
+The brain stays knowledge-focused; the harness stays rule-focused; portability is preserved. A Jarvis-persona agent and a vanilla agent share the same brain without conflict.
+
+**Your Jarvis stays Jarvis. The brain travels.**
+
+</details>
+
+<details>
+<summary>The consolidation formula (6 steps)</summary>
+
+The **capture contract** (embedded in every `BRAIN.md`) is a six-step agent-agnostic algorithm. Any agent that runs this formula produces a navigable graph — not a pile of notes.
+
+1. **Classify** — durable knowledge · tabular record → registry · lesson · decision · big task → playground · temporal → journal · noise → drop
+2. **Atomicity test** — promote only when it recurs (2+ instances → pattern) or is a reusable decision/lesson; incident-specifics stay in playground/journal
+3. **Generalize** — strip the anecdote, keep the reusable pattern; name = the concept, not the ticket
+4. **Place & link** — atomic node in the right cluster; D1 frontmatter; `[[wikilinks]]`; register in cluster `_index.md`
+5. **Dedupe / SSOT** — search first; update, don't duplicate; one source of truth per fact
+6. **Quality gate** — professional & verifiable only; soft budget ~150 lines or tag `type: reference`; stamp `updated:`; confirm reachable from a MOC
+
+This formula runs after every session via `/synaptic-consolidate`. It is what makes the brain accrete *correctly*.
+
+</details>
+
+<details>
+<summary>Write-time curation vs read-time RAG — and why we curate</summary>
+
+There are two schools of AI knowledge management, split by where the reasoning work happens:
+
+- **Write-time curation (schema-on-write):** raw information is consolidated into curated, linked pages once, on the way in. Retrieval is then cheap and near-deterministic — read the right page, get a coherent answer. Auditable, portable, stable across agents and sessions. The consolidation formula is the cost; you pay it once per insight, not once per query.
+- **Read-time RAG over raw (schema-on-read):** store raw artifacts verbatim, chunk and embed them, then retrieve and reason on every query. Fast to start, loses no raw detail — but reasoning cost is paid on every read, answers are re-derived rather than stable, and the result is not human-navigable or portable.
+
+We chose write-time curation because agents re-read the same context constantly: curate once, read cheap forever. Curated knowledge is also auditable (a teammate or any new agent gets the same coherent page, not a fresh re-derivation) and portable (pure Markdown, no runtime dependency).
+
+We are in practice a **pragmatic hybrid**: the wiki is schema-on-write, and verbatim payloads are kept in `references/raw/` as a schema-on-read fallback for the rare fine-detail query. Best of both: coherent reads by default, raw available when needed.
+
+</details>
+
+<details>
+<summary>Matrioshka architecture (CORE · TOOLS · ECOSYSTEM)</summary>
+
+Each inner layer is independent of the outer ones:
+
+```
+  ┌──────────────────────────────────┐
+  │           ECOSYSTEM              │
+  │  MCP server, RAG, Engram,        │
+  │  semantic search (horizon)       │
+  │  ┌────────────────────────┐      │
+  │  │        TOOLS           │      │
+  │  │  check · migrate       │      │
+  │  │  export · vault-open   │      │
+  │  │  graph                 │      │
+  │  │  (Node ≥ 18, optional) │      │
+  │  │  ┌──────────────────┐  │      │
+  │  │  │      CORE        │  │      │
+  │  │  │  Pure Markdown   │  │      │
+  │  │  │  Zero deps       │  │      │
+  │  │  └──────────────────┘  │      │
+  │  └────────────────────────┘      │
+  └──────────────────────────────────┘
+```
+
+**CORE** works everywhere, always — even on an air-gapped corporate laptop with nothing installed. **TOOLS** and **ECOSYSTEM** are optional power-ups. Removing the outer layers does not break the inner ones.
+
+- **CORE:** Pure Markdown + YAML, zero dependencies, works everywhere including air-gapped corporate environments
+- **TOOLS** (optional, zero-dep, Node ≥ 18): `check`, `migrate`, `export`, `vault-open`, `graph` — the happy path for the ~90% of users who have a runtime
+- **ECOSYSTEM** (horizon): MCP server, semantic search / RAG, shared team brain, Engram-style SQLite/FTS5 sidecar
+
+</details>
+
+<details>
+<summary>Full directory layout</summary>
+
+```
+.synaptic/
+├── BRAIN.md                   # The only boot file: context capsule + capture contract + 1-line harness pointer + brain map
+├── knowledge/                 # WIKI — what you know
+│   ├── INDEX.md               # Hub MOC: lists clusters + 1-line summary each
+│   ├── {cluster}/             # Domain or area (e.g. infrastructure/, customer-feedback/)
+│   │   ├── _index.md          # Sub-MOC: 1-line summary per node
+│   │   └── {node}.md          # Atomic node — type: knowledge|pattern|playbook|decision|lesson|reference
+│   └── lessons/               # type: lesson (dated)
+├── registries/                # Tabular SSOTs: resources, repos, db-servers, environments, glossary
+├── references/                # Existence index (_index.md) + raw/ verbatim drop-zone (DDL, specs, exports)
+├── harness/                   # HARNESS — how you work here (depth-on-demand)
+│   ├── conventions.md         # Working agreements: languages per channel, commit style, etiquette
+│   ├── guardrails.md          # Hard rules: security, never-push-without-confirm, runner discipline
+│   └── skills/                # Project-local executable skills — travel with the brain
+├── playgrounds/               # Per-task workspaces {task-id}/ — fat, burnable; registered in journal
+├── journal/_current.md        # Thin working memory: resume anchor / watch list / consolidation log (≤80 lines)
+└── templates/                 # Node, registry, playbook, lesson templates
+```
+
+Repository structure:
 
 ```
 synaptic-core/
-├── seed/             # 🧠 The reference brain skeleton (released as zip)
-├── standalone/       # 🚀 Standalone skills (install without the full brain)
-├── spec/             # 📐 Formal standard specification
-├── docs/             # 📚 Development docs & architecture decisions
-└── examples/         # 🧪 Example brains for learning
+├── seed/              # Reference brain skeleton — the v1 .synaptic/ seed
+├── standalone/        # The synaptic skill package (installable without the full repo)
+├── docs/              # Architecture decisions (ADR-001, ADR-002, ...) + assets
+└── tools/             # Optional TOOLS layer (check, migrate, export, vault-open, graph)
 ```
+
+</details>
+
+<details>
+<summary>Optional tooling (check · migrate · export · vault-open · graph)</summary>
+
+All tools are **zero-dependency** (Node ≥ 18 standard library only). CORE never requires them. When no runtime is available, the `synaptic` skill instructs the agent to perform the equivalent operation manually.
+
+| Tool | Command | What it does |
+|---|---|---|
+| `check` | `node tools/check.js [.synaptic]` | Graph health: broken `[[wikilinks]]`, MOC coverage, frontmatter, soft budgets (warn), registry/reference integrity, orphan nodes |
+| `migrate` | `node tools/migrate.js <.synaptic> [templates-dir] [--dry-run]` | Automates Phase M of a v0.x → v1 upgrade (deterministic, idempotent, non-destructive) |
+| `export` | `node tools/export.js <.synaptic> [out.md]` | Bundles the entire brain into a single portable Markdown file (or `--split` into 4 sections) |
+| `vault-open` | `node tools/vault-open.js <.synaptic>` | Writes minimal optional config for Obsidian, Foam, and Logseq; produces `OPEN-IN.md` |
+| `graph` | `node tools/graph.js [.synaptic] [--out FILE] [--format html\|svg]` | Render a visual graph image of your brain — executive-friendly, no install; deterministic layout makes before/after states visually comparable |
+
+**Opens in your tools without any conversion:**
+
+| Tool | How to open | Notes |
+|---|---|---|
+| **Obsidian** | Open project folder as a vault | `[[wikilinks]]` and YAML frontmatter are native; graph view renders immediately |
+| **Foam (VS Code)** | Install Foam extension; open workspace | Wikilinks, backlinks, and graph panel work out of the box |
+| **Logseq** | Open project folder as a graph | Switch to Markdown mode; Logseq journals disabled in favour of `journal/_current.md` |
+
+`tools/vault-open.js` (optional, zero-dep) writes minimal config for each tool and produces `OPEN-IN.md` at the brain root. If you prefer to skip it, just open the folder — it works.
+
+</details>
+
+<details>
+<summary>Design philosophy</summary>
+
+The core thesis: a non-invasive pattern that turns daily work into **structured, auditable, transferable, agent-usable knowledge** — reducing the delivery "knowledge tax" (onboarding, handovers, context reconstruction, documentation drift, tribal-knowledge dependency) without requiring a platform, a budget, or a security exception.
+
+The principles:
+
+- **0-install-capable CORE** — tools are optional; the brain works with just files
+- **Files authoritative** — agent-native memory is a cache; the source of truth never moves
+- **Harness-clean** — persona and behavior belong in the harness; the brain travels without them
+- **Single boot file** — one mandatory read at session start; everything else on demand
+- **Human-readable** — every file is Markdown or YAML; auditable, printable, editable without a tool
+- **Agent-agnostic** — any agent that can read files can use a Synaptic brain
+
+</details>
 
 ---
 
-## Acknowledgments & Inspiration
+## 🗺️ Further reading
 
-This project stands on the shoulders of great ideas from the agent-native knowledge management community:
+- [ROADMAP.md](ROADMAP.md) — what shipped in v1.0 and the honest platform-mode horizon (MCP server, semantic search, team brain, Engram-style sidecar)
+- [PITCH.md](PITCH.md) — the two-tier value framing; Tier 2 covers the technical foundations in depth
 
-- **[Arscontexta](https://github.com/agenticnotetaking/arscontexta)** — The definitive work on agent-native note-taking methodology. SYNAPTIC-CORE's memory routing decision tree, session rhythm (Orient → Work → Persist), discovery-first quality gate, and conflation warnings are directly inspired by Arscontexta's domain-derived architecture patterns.
+---
 
-- **[Get Shit Done (GSD)](https://github.com/gsd-build/get-shit-done)** — A pragmatic task management framework for agentic workflows. GSD's `map-codebase` pattern validated our "scan first, ask second" approach for workspace detection in `/init`. GSD's state hierarchy and planning model influenced our worklines design. GSD excels at planning and execution — Synaptic excels at memory and knowledge. They complement each other, and our worklines structure is designed for future GSD plugin integration.
+## Acknowledgments
 
-- **[ClawVault](https://github.com/ClawVault/ClawVault)** — Structured memory system for AI agents. ClawVault's MEMORY.md/vault duality validated our BOOTSTRAP.md + HEARTBEAT.md approach. Their explicit `wake`/`sleep`/`checkpoint` lifecycle influenced our session rhythm improvements. The handoff concept for agent transitions inspired our journal archiving patterns.
+- **[Arscontexta](https://github.com/agenticnotetaking/arscontexta)** — The write-validation gate and discovery-first quality gate are directly inspired by Arscontexta's domain-derived patterns.
+- **[GSD (Get Shit Done)](https://github.com/gsd-build/get-shit-done)** — GSD excels at planning and execution; Synaptic excels at memory and knowledge. They complement each other.
+- **[ClawVault](https://github.com/ClawVault/ClawVault)** — The wake/sleep lifecycle pattern influenced the session rhythm and journal design.
+- **[Roam-Code](https://github.com/roam-code/roam-code)** — Multi-platform config detection shaped the `/synaptic-init` harness self-wire step.
+- **[skills.sh / agentskills.io](https://agentskills.io)** — The `synaptic` skill package follows the Agent Skills progressive-disclosure format.
+- **Zettelkasten / LLM-wiki convergence** — The MOC-of-MOCs navigation and atomic node model follow the Zettelkasten principle (links are the structure; folders are optional organisation) as validated by Karpathy's LLM-wiki work and the llmwiki.app pattern: dense, linked, agent-navigable pages over shallow bullet hierarchies.
 
-- **[Roam-Code](https://github.com/roam-code/roam-code)** — Architectural intelligence layer for AI coding agents. Roam's `describe --write` pattern of aggressively detecting and writing to all agent config files directly shaped our `/init` Step 4 (System Prompt Hook), expanding from 3 platforms to 12.
-
-- **[skills.sh](https://skills.sh/)** — The open agent skills directory. Our `/discover` skill integrates with the skills.sh ecosystem to help users find and install relevant capabilities. The broader skills convention (`.md` files as agent instructions) directly influenced how SYNAPTIC-CORE skills are designed.
-
-We believe in **synergy over competition**. SYNAPTIC-CORE is a knowledge standard, not an everything-toolkit. We'd love to see crossover plugins between these projects.
+We believe in synergy over competition. SYNAPTIC-CORE is a knowledge standard, not an everything-toolkit.
 
 ---
 
 ## Contributing
 
-We'd love your help! Whether it's:
-- 🐛 Bug reports and edge cases
-- 💡 Ideas for new skills or patterns
-- 🧠 Example brains for different domains (design, DevOps, data science...)
-- 📝 Improvements to the spec or documentation
-- 🔌 ECOSYSTEM plugins and integrations
-
-Open an issue or submit a PR. The standard is young and we're actively shaping it.
+Bug reports, edge cases, example brains for different domains, improvements to the spec, ECOSYSTEM plugins — open an issue or submit a PR. The standard is young and actively evolving.
 
 ---
 

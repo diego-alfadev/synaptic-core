@@ -1,25 +1,37 @@
+---
+description: "Hub MOC — map of all knowledge clusters in this brain."
+type: knowledge
+status: active
+updated: "{{YYYY-MM-DD}}"
+tags: [moc, index]
+---
+
 # Knowledge Index
 
-> Human-readable map of all knowledge in this brain. See `_tree.yaml` for the agent-optimized version.
+Hub map of content clusters. Navigate here first; load only the cluster and nodes relevant to your task.
 
-## Areas (where I work)
+**How to use:** each cluster entry links to a sub-MOC (`_index.md`) that lists every node with a 1-line summary. Open only the 1–2 nodes you actually need.
 
-<!-- Areas are added by /init or /consolidate. Example:
-### Customer Feedback
-Tools and processes for managing customer feedback systems.
-→ [Overview](areas/customer-feedback/_overview.md)
+---
+
+## {{Cluster}}
+
+- [[{{example-cluster}}/_index]] — {{1-line description of what this cluster covers}}
+
+<!-- Add a new cluster block here each time a new `knowledge/{cluster}/` folder is created.
+     Format:
+     ## {Cluster display name}
+     - [[{cluster}/_index]] — {{1-line scope summary}}
 -->
 
-## Domains (what I know)
+---
 
-<!-- Domains are added as cross-cutting knowledge accumulates. Example:
-### Architecture
-Architectural decisions and patterns.
-→ [Overview](domains/architecture/_overview.md)
--->
+## Lessons
 
-## Lessons Learned
+- [[lessons/README]] — Dated lesson nodes (`type: lesson`); captures what went wrong / what changed understanding.
 
-<!-- Lessons extracted from past work. Example:
-- [2026-02 Performance Issues](lessons/2026-02-perf-issues.md)
--->
+<!-- Lessons are nodes co-located in knowledge/lessons/. Register each new lesson here too. -->
+
+---
+
+> Discovery rule: a node not reachable from this index (directly or via a cluster sub-MOC) does not exist. Register every new node in its cluster `_index.md` and ensure the cluster is listed here.
