@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/assets/synaptic-hero.svg" alt="synaptic-core — one brain, any agent, zero install" width="880">
+  <img src="https://raw.githubusercontent.com/diego-alfadev/synaptic-core/v1.0.0/docs/assets/synaptic-hero.svg" alt="synaptic-core — one brain, any agent, zero install" width="880">
 </p>
 
 <p align="center">
@@ -57,7 +57,7 @@ Two-engine migration: deterministic file ops (Phase M) + mandatory agent rearran
 ## 🧠 How it works
 
 <p align="center">
-  <img src="docs/assets/synaptic-architecture.svg" alt="how synaptic works" width="900">
+  <img src="https://raw.githubusercontent.com/diego-alfadev/synaptic-core/v1.0.0/docs/assets/synaptic-architecture.svg" alt="how synaptic works" width="900">
 </p>
 
 One boot file (`BRAIN.md`, ≤110 lines, ~500 tokens) is the only mandatory read. It carries the context capsule, the capture contract, a 1-line pointer to the deployed harness rules, the brain map, and the session-start pointer. Everything else loads on demand.
