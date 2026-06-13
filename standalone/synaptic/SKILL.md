@@ -48,6 +48,11 @@ Tailor framing to the answer (e.g. "your stack" for project, "your domains" for 
 
 These answers become the **Context Capsule** in `BRAIN.md` (2–4 lines: what it covers + owner's role in this project). This is *retrieval framing*, not persona. If the user describes tone, language preferences, or agent behavior: "Those belong in your harness (AGENTS.md / CLAUDE.md), not in the brain — I'll place them there instead."
 
+**Round 1b — Capture policy:**
+> "How selective should this brain be — crown-jewels only (`curated`), balanced (default), or capture almost everything as a logbook (`logbook`, good when you have no other memory layer)?"
+
+Write the answer to `capture_policy:` in `BRAIN.md` frontmatter (default `balanced` if unsure). It tunes how aggressively the capture contract promotes work into the wiki — it does **not** change the 6-step formula. Reassurance if they hesitate: "You can change this one word later; `/synaptic-weave` can also prune a logbook back toward curated."
+
 **Round 2 — Main clusters:**
 > "What are the main areas, products, or systems this brain will cover?"
 
@@ -82,7 +87,7 @@ Instantiate files from `templates/` (bundled with this skill package — mirrors
 
 ```
 .synaptic/
-├── BRAIN.md                    ← filled from interview (Context Capsule, Capture Contract, deploy-source pointer, Brain Map)
+├── BRAIN.md                    ← filled from interview (Context Capsule, capture_policy, Capture Contract, deploy-source pointer, Brain Map)
 ├── knowledge/
 │   ├── INDEX.md                ← cluster stubs from Round 2
 │   ├── {cluster}/
