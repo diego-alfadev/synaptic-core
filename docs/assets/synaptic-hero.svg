@@ -1,8 +1,8 @@
-<svg width="1280" height="360" viewBox="0 0 1280 360" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif">
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1280" height="360" viewBox="0 0 1280 360" xmlns="http://www.w3.org/2000/svg" font-family="Arial, Helvetica, sans-serif">
   <rect width="1280" height="360" rx="20" fill="#0b1020"/>
-  <rect x="0" y="0" width="1280" height="360" rx="20" fill="none" stroke="#1e2748" stroke-width="2"/>
+  <rect x="1" y="1" width="1278" height="358" rx="20" fill="none" stroke="#1e2748" stroke-width="2"/>
 
-  <!-- left logo mark: a small knowledge graph -->
   <g stroke="#2b3766" stroke-width="2" fill="none">
     <line x1="120" y1="180" x2="78" y2="120"/>
     <line x1="120" y1="180" x2="170" y2="118"/>
@@ -20,25 +20,22 @@
   <circle cx="66" cy="234" r="8" fill="#f472b6"/>
   <circle cx="58" cy="176" r="7" fill="#60a5fa"/>
 
-  <!-- wordmark -->
-  <text x="248" y="150" font-size="66" font-weight="700" fill="#f8fafc" letter-spacing="-1">synaptic<tspan fill="#5eead4">-core</tspan></text>
-  <text x="252" y="196" font-size="27" font-weight="600" fill="#5eead4">One brain. Any agent. Zero install.</text>
-  <text x="252" y="232" font-size="19" fill="#aeb8da">A portable knowledge-graph brain for project work —</text>
+  <text x="248" y="150" font-size="66" font-weight="700" fill="#f8fafc">synaptic<tspan fill="#5eead4">-core</tspan></text>
+  <text x="252" y="196" font-size="27" font-weight="700" fill="#5eead4">One brain. Any agent. Zero install.</text>
+  <text x="252" y="232" font-size="19" fill="#aeb8da">A portable knowledge-graph brain for project work:</text>
   <text x="252" y="258" font-size="19" fill="#aeb8da">it turns daily work into structured, navigable, agent-usable knowledge.</text>
 
-  <!-- pills -->
-  <g font-size="14" font-weight="600">
-    <rect x="252" y="290" width="150" height="30" rx="15" fill="#141b38" stroke="#2b3766"/>
-    <text x="327" y="310" text-anchor="middle" fill="#cbd5e1">Markdown + [[wikilinks]]</text>
-    <rect x="414" y="290" width="132" height="30" rx="15" fill="#141b38" stroke="#2b3766"/>
-    <text x="480" y="310" text-anchor="middle" fill="#cbd5e1">MOC navigation</text>
-    <rect x="558" y="290" width="150" height="30" rx="15" fill="#141b38" stroke="#2b3766"/>
-    <text x="633" y="310" text-anchor="middle" fill="#cbd5e1">consolidation formula</text>
-    <rect x="720" y="290" width="112" height="30" rx="15" fill="#141b38" stroke="#2b3766"/>
-    <text x="776" y="310" text-anchor="middle" fill="#cbd5e1">harness-clean</text>
+  <g font-size="13" font-weight="700">
+    <rect x="252" y="290" width="178" height="30" rx="15" fill="#141b38" stroke="#2b3766"/>
+    <text x="341" y="310" text-anchor="middle" fill="#cbd5e1">Markdown + [[wikilinks]]</text>
+    <rect x="442" y="290" width="120" height="30" rx="15" fill="#141b38" stroke="#2b3766"/>
+    <text x="502" y="310" text-anchor="middle" fill="#cbd5e1">MOC navigation</text>
+    <rect x="574" y="290" width="168" height="30" rx="15" fill="#141b38" stroke="#2b3766"/>
+    <text x="658" y="310" text-anchor="middle" fill="#cbd5e1">consolidation formula</text>
+    <rect x="754" y="290" width="116" height="30" rx="15" fill="#141b38" stroke="#2b3766"/>
+    <text x="812" y="310" text-anchor="middle" fill="#cbd5e1">harness-clean</text>
   </g>
 
-  <!-- right motif: the brain graph -->
   <g stroke="#243056" stroke-width="1.6" fill="none">
     <line x1="1060" y1="180" x2="960" y2="92"/>
     <line x1="1060" y1="180" x2="1162" y2="92"/>
