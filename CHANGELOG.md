@@ -59,6 +59,10 @@ you keep your old brain.
 - The benchmark caveats above are real; treat the numbers as directional, not a paper.
 
 ### Foundations
-See `PITCH.md` (the two-tier value + technical case), `ROADMAP.md` (platform horizon: MCP, semantic /
+See `PITCH.md` (the two-tier value + technical case, including the "Standing on" section mapping the
+PKM / agent-skills techniques the design draws from), `ROADMAP.md` (platform horizon: MCP, semantic /
 nugget layer, shared brain, robust persistence), and `docs/architecture/` (ADR-001 Minimal Cortex,
-ADR-002 LLM-wiki-first, ADR-003 deploy-source + weave).
+ADR-002 LLM-wiki-first, ADR-003 deploy-source + weave). The full technique-to-mechanism table —
+Zettelkasten atomicity, MOC-of-MOCs, `[[wikilinks]]`, Karpathy LLM-wiki, Agent Skills progressive
+disclosure, frontmatter metadata, consolidation protocol, files-authoritative governance, and the
+GraphRAG / FTS5 horizon items — is documented in the README under "Built on proven ideas (and why)".

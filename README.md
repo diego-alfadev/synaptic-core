@@ -106,6 +106,32 @@ A contractor finishes; their successor reads `.synaptic/BRAIN.md` and picks up w
 
 ---
 
+## 🧬 Built on proven ideas (and why)
+
+Synaptic-core did not invent its substrate — it converged on patterns that the PKM and agent-skills community had already validated, then applied a specific **direction**: purpose-built to accrete a role's knowledge and encode the explicit formula (intention + inertia) that makes it grow correctly. The value-add is that direction, not the format. See also [Acknowledgments](#acknowledgments) for project-level credits.
+
+| Technique / source | How synaptic-core uses it | Why it fits an agent-read brain |
+|---|---|---|
+| **Atomic notes — Zettelkasten / Luhmann** | One concept per node, kebab-case filename (`auth-model.md`), ~150-line soft budget; consolidation formula enforces "promote only when it recurs" | Precise retrieval: the filename IS the concept; composable links work because scope is bounded. Over-atomization is deliberately avoided — agents handle dense pages better than ten micro-files. |
+| **Maps of Content / MOC-of-MOCs — Obsidian / Nick Milo** | Three-level hierarchy: `BRAIN.md` → `knowledge/INDEX.md` (hub MOC, 1-line per cluster) → `{cluster}/_index.md` (sub-MOC, 1-line per node) → open only 1–2 nodes | Bounded navigation: ~3–4 hops to any insight regardless of brain size. The 1-line summaries in `_index.md` are the mechanism — an agent reads the summary, not the full node, to decide whether to open it. |
+| **Bidirectional `[[wikilinks]]` — wiki / Obsidian** | Every node uses `[[page-name]]` links written at capture time; backlinks resolved via `grep -r "[[node]]"` (CORE) or the FTS5 index (horizon ROBUST); opens natively in Obsidian / Foam / Logseq | Emergent link-graph: structure comes from links, not rigid folder hierarchy. A concept can belong to multiple clusters simultaneously. Multi-dimensional without duplication. |
+| **LLM-wiki / "compile knowledge" — Karpathy** | Curated narrative pages an agent reasons over whole (no chunking); `references/raw/` holds verbatim payloads as schema-on-read fallback; consolidation formula = write-time curation discipline | Curate once, read cheap forever. Agents re-read the same context constantly; schema-on-write means retrieval is near-deterministic. Coherent curated context beats reassembled chunks for reliability and auditability. |
+| **Progressive disclosure — Anthropic Agent Skills** | `BRAIN.md` (≤110 lines, ~500 tokens) is the only boot read; skill metadata surfaces in Level 1 (~100 tokens); full skill body loads on trigger; reference files and seed templates load only at brain-init | Token economy: awareness costs ~100 tokens per skill; full depth costs only when needed. The same principle governs the brain: one boot file, everything else on demand. |
+| **Frontmatter + tags — PKM metadata standard** | Every node carries `description`, `type`, `status`, `updated`, `tags` (D1 decision, SPEC §4.3); `description` feeds the `_index.md` 1-liner and any future embedding input | Machine-readable surface for `/synaptic-audit`, `Ctrl+Shift+F` faceted search, and future FTS / semantic search — without forking the format when those layers are added. |
+| **Explicit contribution protocol — spec-driven mindset** | The 6-step consolidation formula (classify → atomicity test → generalize → place & link → dedupe/SSOT → quality gate) is embedded in every `BRAIN.md` as the capture contract | Agent-agnostic, consistent: any agent that runs this formula produces a navigable graph, not a pile of notes. The formula encodes both intention (what belongs) and inertia (how it grows). |
+| **Files-authoritative / local-first — Engram-inspired governance** | Files are the single source of truth; agent-native memory (Claude Code auto-memory, etc.) is treated as a cache; tools (`check`, `migrate`, `export`) are derived readers, never writers of truth | Portable, auditable, git-native. The brain works on a locked-down laptop, air-gapped server, or any future agent platform. No runtime dependency can become a single point of failure. |
+
+**On the horizon — deliberately NOT in CORE:**
+
+| Technique | Why it is a horizon item, not CORE |
+|---|---|
+| **GraphRAG / semantic-nugget retrieval** (Microsoft GraphRAG, LightRAG) | Curated wikilink pages already give coherent retrieval for agent-authored brains; a full LLM-per-chunk indexing pipeline is over-engineering for CORE and cost-justified only for unstructured corpus ingestion. On the ROADMAP as an optional ECOSYSTEM layer. |
+| **SQLite/FTS5 sidecar** (Engram-style) | FTS5 adds O(log n) backlink resolution and conflict detection — genuine value at scale — but it is a derived, deletable index over the files, not a replacement. Incompatible with the zero-install CORE constraint. On the ROADMAP as ROBUST mode. |
+
+> These horizon items are enabled by the v1 file contract (frontmatter + tags + INDEX + `[[wikilinks]]`) — they attach without forking the format.
+
+---
+
 ## 🔧 Commands
 
 | Command | What it does |
