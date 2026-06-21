@@ -19,9 +19,10 @@ file — the user likely fetched only `SKILL.md` by URL into a clean project. Se
 
 1. Set `RAW_BASE = https://raw.githubusercontent.com/diego-alfadev/synaptic-core/main/standalone/synaptic/`
 2. Fetch `${RAW_BASE}MANIFEST.txt`.
-3. For each path listed, fetch `${RAW_BASE}<path>` and WRITE it to **both**
-   `.claude/skills/synaptic/<path>` **and** `.agents/skills/synaptic/<path>` (create directories
-   as needed). This SKILL.md is in the manifest, so both copies get it too.
+3. For each path listed (trim surrounding whitespace and any trailing carriage return first),
+   fetch `${RAW_BASE}<path>` and WRITE it to **both** `.claude/skills/synaptic/<path>` **and**
+   `.agents/skills/synaptic/<path>` (create directories as needed). This SKILL.md is in the
+   manifest, so both copies get it too.
 4. Then run **Harness Self-Wire** (the section below) and offer `/synaptic-init`.
 
 **CORE-purity note.** This uses the agent's OWN fetch + file-write capability — Synaptic ships no
