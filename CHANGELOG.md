@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+- **Audit excludes scaffolding from link checks.** `/synaptic-audit` (and `tools/check.js`) now
+  exclude `templates/` and `references/raw/` from the broken-link (Step 3) and cross-link-coverage
+  (Step 4b) checks. Those directories legitimately hold placeholder example wikilinks
+  (`[[target]]`, `[[related-node]]`, `[[x]]`) and verbatim captured payloads — scaffolding, not
+  authored edges. The first dogfood audit false-flagged ~12 of them as "broken." CORE-safe:
+  skill-guidance + optional-tool change, pure files, no new dependencies. (`references/raw/` was
+  the gap in `check.js`; `templates/` was already excluded there — `audit.md` now states both
+  exclusions explicitly for the no-runtime path.)
+
 ## v1.1.0 — "AI Brain, on a dial" · 2026-06-21
 
 > **The brain you already have — now relational, auditable, and self-improving *as you work*, with nothing new to install.** The biggest release since v1.0: a typed knowledge graph, provenance you can audit, a capture mechanism that keeps up while you work, and a sharper story — all on the same zero-runtime files you already own.

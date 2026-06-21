@@ -23,6 +23,15 @@ Cortex utility; CORE never depends on it — every check here is grep-able by ha
 Do not auto-fix findings. Surface a prioritised list; ask for confirmation before any change — and
 route each finding to the procedure that treats it.
 
+> **Scaffolding exclusion (link checks).** `templates/` and `references/raw/` are **scaffolding,
+> not knowledge** — exclude both from the **broken-link check (Step 3)** and the
+> **cross-link-coverage check (Step 4b)**. `templates/` holds example nodes whose wikilinks are
+> deliberate placeholders (`[[target]]`, `[[related-node]]`, `[[x]]`); `references/raw/` holds
+> verbatim captured payloads whose `[[…]]` text is source content, **not an authored edge**. Their
+> links are not real edges — scanning them false-flags them as broken (the first dogfood audit
+> tripped on ~12 such placeholders). The *other* steps still apply: e.g. `references/raw/` artifacts
+> are existence-indexed in Step 6. `tools/check.js` applies this exclusion automatically.
+
 ---
 
 ## Step 1 — Staleness Pass
@@ -49,10 +58,12 @@ List orphans with their path. Ask: "Register in cluster `_index.md`, move, or de
 
 ## Step 3 — Broken `[[wikilinks]]`
 
-Scan all nodes for `[[wikilink]]` patterns. For each link:
+Scan all nodes for `[[wikilink]]` patterns — **excluding `templates/` and `references/raw/`**
+(scaffolding; see the Scaffolding-exclusion note above). For each link:
 
 - Resolve: does a file whose kebab-case name matches the link target exist in `knowledge/`?
 - Flag unresolved targets as broken; note source file and broken target name.
+- Skip placeholder targets (`[[{{…}}]]`), links inside HTML comments, and inline code spans.
 
 Do not auto-fix. Surface the list; options are: create the target, rename, or remove the link.
 
@@ -89,7 +100,8 @@ retrieval over authored directional edges that embeddings can't infer):
 - **concept ↔ the situations it governs** — a concept node should be reachable from the
   playbooks/lessons that invoke it.
 
-For each node, flag **plausible-but-missing** horizontal links:
+For each node — **excluding `templates/` and `references/raw/`** (scaffolding; see the
+Scaffolding-exclusion note above) — flag **plausible-but-missing** horizontal links:
 
 - A `type: playbook` node with **no** link to any system/component node → flag "playbook with no
   applies-to target."
