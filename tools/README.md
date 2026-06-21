@@ -67,7 +67,7 @@ Output is grouped by file.
 | `tags` must be a YAML list (not scalar, not empty) | WARN |
 | Knowledge node filenames kebab-case; no duplicate basenames across `knowledge/` | ERROR |
 | MOC coverage: every node referenced from its cluster `_index.md` or `INDEX.md`; every cluster `_index.md` linked from `INDEX.md` | ERROR |
-| Broken `[[wikilinks]]` in non-MOC, non-template files; skips HTML comments, inline code, placeholder targets (`{{...}}`) | ERROR |
+| Broken `[[wikilinks]]`; excludes scaffolding (`templates/`, `references/raw/`) and MOC files; skips HTML comments, inline code, placeholder targets (`{{...}}`) | ERROR |
 | Registry files: `type: registry` frontmatter + listed in `registries/_index.md` | ERROR |
 | References files (non-`raw/`): listed in `references/_index.md` | WARN |
 | Knowledge nodes > 150 lines and not `type: reference` | WARN |

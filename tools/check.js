@@ -38,6 +38,16 @@ function isUnderTemplates(filePath) {
 }
 
 /**
+ * True if file lives under references/raw/ (any depth).
+ * references/raw/ holds verbatim captured payloads — any [[...]] inside is source
+ * text, NOT an authored edge — so it is scaffolding excluded from link validation.
+ */
+function isUnderReferencesRaw(filePath) {
+  const rel = path.relative(brainRoot, filePath).replace(/\\/g, '/');
+  return rel === 'references/raw' || rel.startsWith('references/raw/');
+}
+
+/**
  * True for MOC/sentinel files excluded from content checks.
  * INDEX.md, _index.md, README.md are excluded from frontmatter/naming/orphan checks.
  */
@@ -458,13 +468,15 @@ function checkBrokenLinks() {
   // Build index of all known link targets
   const linkIndex = buildLinkIndex(brainRoot);
 
-  // Check all .md files in the brain, excluding:
-  //   - templates/ (example/placeholder content)
+  // Check all .md files in the brain, excluding scaffolding that legitimately
+  // carries placeholder/example wikilinks or verbatim payloads (NOT real edges):
+  //   - templates/      (example/placeholder content: [[target]], [[related-node]], [[x]])
+  //   - references/raw/  (verbatim captured payloads; any [[...]] inside is source text)
   //   - MOC files (_index.md, INDEX.md, README.md): they list nodes that
   //     should exist; the orphan check (check 4) covers the inverse.
   //     In a fresh/seed brain MOC files will always have placeholder links.
   for (const filePath of walkMd(brainRoot)) {
-    if (isUnderTemplates(filePath) || isMocFile(filePath)) continue;
+    if (isUnderTemplates(filePath) || isUnderReferencesRaw(filePath) || isMocFile(filePath)) continue;
 
     const lines = readLines(filePath);
     const rawLinks = extractWikilinks(lines);
