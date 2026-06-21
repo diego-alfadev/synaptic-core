@@ -4,7 +4,7 @@
 
 <p align="center">
   <img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-blue">
-  <img alt="version" src="https://img.shields.io/badge/version-1.1.0-5eead4">
+  <img alt="version" src="https://img.shields.io/badge/version-v1%20%C2%B7%20beta-5eead4">
   <img alt="install" src="https://img.shields.io/badge/install-zero-16a34a">
   <img alt="agent" src="https://img.shields.io/badge/agent-agnostic-818cf8">
   <img alt="format" src="https://img.shields.io/badge/format-Markdown%20%2B%20%5B%5Bwikilinks%5D%5D-fbbf24">
