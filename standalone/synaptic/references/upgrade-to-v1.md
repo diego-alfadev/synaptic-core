@@ -1,5 +1,24 @@
 # /synaptic-upgrade — Migration Guide to v1.0
 
+> **Canonical runbook:** the authoritative, user-facing v0.3-beta → v1-beta migration runbook is
+> **`docs/UPGRADE-v0.3-to-v1.md`**. Point all real migration work there — it is the deliverable the
+> 4 production users run. This reference file is the **skill-side companion** that the agent follows
+> during the supervised **M → C → V** flow; where the two ever diverge, `docs/UPGRADE-v0.3-to-v1.md`
+> wins. Always migrate **on a copy** and **switch only when green** (see below).
+
+---
+
+## The supervised, non-destructive M → C → V flow
+
+The migration is **one-time, supervised, and non-destructive**, run **on a copy**, with three phases:
+
+- **M (mechanical):** deterministic file transforms / staging — no content judgment.
+- **C (content rearrange):** a capable agent re-files and re-links into the v1 structure — each
+  change proposed before it is written.
+- **V (verify):** counts / links / MOC checks pass → **switch only when green; keep the old.**
+
+This file details all three. Run **M** first (safe), then **C** (judgment), then **V**.
+
 ---
 
 ## Your data is safe — read this first
@@ -10,7 +29,7 @@ The migration is non-destructive, content-preserving, and fully reversible:
 
 - **Non-destructive:** Phase M *stages* files (moves them to `_migration-staging/` inside the brain) — it never deletes content that Phase C still needs. Your original brain is git-versioned. Phase C runs and you verify the result *before* anything is removed from staging.
 - **Content-preserving:** every node's content is carried through. The agent re-files and re-links nodes into the v1 structure — it does not rewrite your facts, decisions, or knowledge.
-- **Reversible:** run the migration on a branch or a copy of the repo. If you are not happy with the result, you merge nothing and your old brain is intact on the original branch.
+- **Reversible:** run the migration on a branch or a copy of the repo (**switch only when green; keep the old**). If you are not happy with the result, you merge nothing and your old brain is intact on the original branch.
 
 ### Practical runbook (typical case: Node + Python + an agent)
 
@@ -118,7 +137,7 @@ This project has a Synaptic brain at `.synaptic/`. Before working: read `.synapt
 and follow its capture contract (route durable knowledge, lessons, playbooks, and task
 workspaces as specified; files are authoritative over any agent-native memory).
 Operating rules (conventions, guardrails) are in the SYNAPTIC-RULES section below.
-Commands (synaptic skill): /synaptic-init /synaptic-consolidate /synaptic-ingest /synaptic-audit /synaptic-weave /synaptic-upgrade
+Commands (synaptic skill): /synaptic-init /synaptic-consolidate /synaptic-ingest /synaptic-audit /synaptic-weave /synaptic-synthesize /synaptic-maintain /synaptic-upgrade
 <!-- END:SYNAPTIC -->
 ```
 
@@ -137,7 +156,7 @@ If `.cursor/` exists at the project root, write `.cursor/rules/synaptic.mdc`:
 
 ```
 This project has a Synaptic brain. See AGENTS.md (BEGIN:SYNAPTIC block) for instructions.
-Read `.synaptic/BRAIN.md` at session start. Commands: /synaptic-init /synaptic-consolidate /synaptic-ingest /synaptic-audit /synaptic-weave /synaptic-upgrade
+Read `.synaptic/BRAIN.md` at session start. Commands: /synaptic-init /synaptic-consolidate /synaptic-ingest /synaptic-audit /synaptic-weave /synaptic-synthesize /synaptic-maintain /synaptic-upgrade
 ```
 
 ### M6 — BRAIN.md frontmatter update
@@ -148,11 +167,21 @@ Read `.synaptic/BRAIN.md` at session start. Commands: /synaptic-init /synaptic-c
 
 ```yaml
 standard: synaptic-core
-version: 1.0.0
+schema_version: 1.0      # BRAIN.md = the SCHEMA/FORMAT version (distinct from SKILL.md engine semver)
 ```
+
+> **Two version numbers, one bundle (§5.4).** `BRAIN.md schema_version:` is the **schema/format**
+> version of the brain; `SKILL.md version:` is the **engine semver** of the skill code (with a
+> `supported_schema` range). A skill-code update = reinstall the skill, **no brain migration**; only
+> a schema/format change runs `/synaptic-upgrade`. This migration is exactly such a schema change.
 
 Remove `budgets:` block (budgets are now soft limits documented in the skill, not in BRAIN.md).
 Set `updated:` to today.
+
+**`capture_policy` presets (renamed in v1).** If `BRAIN.md` frontmatter carries a `capture_policy:`
+value from a pre-v1 brain, map it to the v1 names: `curated → selective`, `logbook → capture-all`,
+`balanced → balanced` (unchanged). These are the PROMOTION axis only — orthogonal to the passivity
+dial; do not invent a second policy for breadcrumbs.
 
 ### M7 — Frontmatter scaffolding pass
 
@@ -171,7 +200,7 @@ Delete stale v0.3/0.4/0.5 template files that no longer exist in v1: `page.md`, 
 
 ### M9 — Skeleton files
 
-Create from seed/skill-package templates if absent:
+Create from the skill bundle's `templates/` (the single source of truth — there is no `seed/`) if absent:
 
 - [ ] `references/_index.md`
 - [ ] `registries/_index.md`
@@ -195,7 +224,7 @@ Phase C consumes `_migration-staging/` and **deletes it as its final step**.
 **From `BOOTSTRAP.md` / `MANIFEST.md` / `HEARTBEAT.md` (v0.3) or `identity/ROLE.md` (v0.4):**
 
 - Extract a 2–4-line summary of what the brain covers + the owner's role. Write as the **Context Capsule** block in `BRAIN.md`.
-- Extract the **Capture Contract** (consolidation formula) block into `BRAIN.md` using the v1 seed format.
+- Extract the **Capture Contract** (consolidation formula) block into `BRAIN.md` using the v1 `templates/BRAIN.md` format.
 - **Do NOT write a Top Guardrails block in BRAIN.md.** Operating rules (guardrails + conventions) go to `harness/` as the **deployable source** — they are then deployed by the Deploy step in Harness Self-Wire (`/synaptic-init`), not left for runtime load from the brain. BRAIN.md carries only the 1-line deploy-source pointer.
 - Do NOT copy persona, tone, language preferences, or agent behavior rules into BRAIN.md.
 
@@ -238,7 +267,7 @@ Scan all files in `knowledge/` for Markdown path-style links `[text](../path/fil
 
 **Per-cluster `_index.md`:**
 
-- For each cluster directory, create or rebuild `_index.md` from the seed template.
+- For each cluster directory, create or rebuild `_index.md` from the skill bundle's `templates/` pattern.
 - Add a 1-line entry per node: `[[node-name]] — {description copied from node's frontmatter}`.
 - Migrate content from old `_overview.md` files: split into atomic kebab-case nodes (≤150 lines each); each gets full D1 frontmatter; listed in `_index.md`. After verifying, delete the empty source directory.
 
@@ -255,7 +284,7 @@ For each node in `knowledge/`:
 
 **From v0.5 `knowledge/working-agreements.md`** (staged in `_migration-staging/`):
 
-- Route team/project norms → `harness/conventions.md` (merge or create from seed template).
+- Route team/project norms → `harness/conventions.md` (merge or create from the skill bundle's `templates/harness/conventions.md`).
 - Route hard rules → `harness/guardrails.md`. Both files are the **deployable source** — after routing, run the Deploy step (Harness Self-Wire §c via `/synaptic-init`) to materialize them into the outer harness. Do NOT mirror rules in `BRAIN.md → Top Guardrails` (that block is dropped in v1).
 - Persona/agent behavior content → offer to place in AGENTS.md (user harness). Never into the brain.
 - Delete the staged file after routing is confirmed.
@@ -320,7 +349,7 @@ otherwise use manual greps / inspection.
 - [ ] `BRAIN.md`, `knowledge/INDEX.md`, `registries/_index.md`, `references/_index.md`, `journal/_current.md`, `harness/conventions.md`, `harness/guardrails.md`, `harness/skills/README.md`, `playgrounds/README.md`, `templates/node.md`, `templates/registry.md`, `templates/playbook.md`, `templates/lesson.md`
 
 **BRAIN.md:**
-- [ ] ≤110 lines; `version: 1.0.0` in frontmatter
+- [ ] ≤110 lines; `schema_version: 1.0` in frontmatter (matches `templates/BRAIN.md` + the SKILL.md compat-check `supported_schema`)
 - [ ] No `{{placeholders}}`
 - [ ] Context Capsule present (2–4 lines; no persona/tone content)
 - [ ] Capture Contract block present (6-step compressed)
@@ -366,4 +395,25 @@ otherwise use manual greps / inspection.
 **Journal:**
 - [ ] `journal/_current.md` ≤80 lines, three-section format
 
-Migration complete when all items are checked.
+Migration complete when all items are checked. **Switch only when green; keep the old branch as a
+rollback point.**
+
+---
+
+## Going forward — versioning after v1 (§5.4 / §8)
+
+This one-time v0.3-beta → v1-beta migration is the last *whole-brain* upgrade you should need. From
+here, versioning is **decoupled**, so most updates need **no** migration:
+
+- **Skill-code update** (bug fix, new procedure, better wording) → **reinstall the skill, no brain
+  migration.** The brain's `BRAIN.md version:` is unchanged.
+- **Schema/format change** (a new structural rule in the templates) → compat-check **warns**, and you
+  run a small `/synaptic-upgrade` for that specific change. Only these touch the brain.
+- **Compat-check is warn-not-gate.** At skill load it compares `SKILL.md` `supported_schema` against
+  `BRAIN.md version:`. Missing version metadata → **"assume compatible" + a one-line info notice**,
+  never per-node, and **never a precondition for reading the brain** — a skill-less agent still boots
+  from `BRAIN.md` unchecked (C1 untouched).
+- **Update-awareness without a registry:** **GitHub Releases + repo Watch** (zero infra). An optional
+  Cortex "check-latest" can hit the GitHub Releases API — opt-in, never required at CORE.
+
+> The authoritative end-to-end migration runbook remains **`docs/UPGRADE-v0.3-to-v1.md`**.

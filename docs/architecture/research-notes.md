@@ -1,5 +1,11 @@
 # Research Notes: Adoptable Patterns from GSD & Arscontexta
 
+> **⚠️ HISTORICAL — research input (2026-03-01).** Captured before v0.4. Mappings here reference the old
+> structure (`BOOTSTRAP.md`, `identity/`, `_tree.yaml`, `inventory/`, `areas/`+`domains/`) that v0.4/v0.5/v1
+> replaced; the patterns themselves were adopted into the current design (write-validation gate,
+> consolidation formula, session rhythm). For the current design see ADR-001 → ADR-003, `ROADMAP.md`, and
+> `strategy/v1-final.md`. Kept for provenance only.
+
 > Research date: 2026-03-01. Purpose: Identify patterns we can adopt in SYNAPTIC-CORE without compromising lightweight/portable design.
 
 ---
