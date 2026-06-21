@@ -1,4 +1,4 @@
-# SYNAPTIC-CORE — v1.0 Pitch
+# SYNAPTIC-CORE — v1 Pitch
 
 ---
 
@@ -23,7 +23,7 @@ Synaptic is a folder of plain Markdown files that turns your daily work into a k
 - Auditable by default: compliance can read every file; nothing is opaque
 - Works on-premise, air-gapped, or in any cloud — it is a folder of Markdown files
 
-**Where to start:** read [README.md](README.md) and run `/synaptic-init` with your agent. See [ROADMAP.md](ROADMAP.md) for what shipped in v1.0 and what is coming next.
+**Where to start:** read [README.md](README.md) and run `/synaptic-init` with your agent. See [ROADMAP.md](ROADMAP.md) for what shipped in v1 and what is coming next.
 
 ---
 
@@ -52,10 +52,10 @@ Every node carries `description`, `type`, `status`, `updated`, and `tags`. Tags 
 Upgrading a v0.x brain runs in two distinct engines: **Phase M** (deterministic file operations — safe to run as a script or a cheap agent; stages files, never deletes) and **Phase C** (mandatory capable agent — content judgment for link conversion, MOC creation, consolidation formula applied retroactively, harness triage). The split is deliberate: Phase M is cheap and reversible; Phase C is where the real re-wiring happens and cannot be scripted away.
 
 ### Matrioshka layering — 0-install-capable CORE → optional TOOLS → ECOSYSTEM
-Three concentric layers, each independent of the outer ones. **CORE**: pure Markdown and YAML, zero dependencies, works everywhere including air-gapped corporate environments. **TOOLS** (optional, zero-dep, Node ≥ 18): `check`, `migrate`, `export`, `vault-open` — the happy path for the ~90% of users who have a runtime. **ECOSYSTEM** (horizon): MCP server, semantic search / RAG, shared team brain, Engram-style SQLite/FTS5 sidecar. Removing the outer layers does not break the inner ones. CORE is the non-negotiable foundation.
+Three concentric layers, each independent of the outer ones. **CORE**: pure Markdown and YAML, zero dependencies, works everywhere including air-gapped corporate environments. **TOOLS** (optional, zero-dep, Node ≥ 18): `check`, `migrate`, `export`, `vault-open`, `graph`, `deploy` — the happy path for the majority of users who have a runtime. **ECOSYSTEM** (horizon): MCP server, semantic search / RAG, shared team brain, Engram-style SQLite/FTS5 sidecar. Removing the outer layers does not break the inner ones. CORE is the non-negotiable foundation.
 
 ### Standing on
-Synaptic-core's substrate is assembled from validated PKM and agent-skills patterns: **Zettelkasten atomicity** (one concept per node) · **Obsidian MOCs** (bounded hub → cluster → node navigation) · **Karpathy LLM-wiki** (write-time curation, coherent pages over raw chunks) · **Anthropic Agent Skills progressive disclosure** (metadata → body → references, token-efficient) · **Engram-inspired files-authoritative governance** (files are truth, any index is derived). **GraphRAG semantic-nugget retrieval** and a **SQLite/FTS5 sidecar** are on the horizon (ROADMAP), enabled by the v1 frontmatter contract, not needed in CORE. See README "Built on proven ideas" for the full technique-to-mechanism mapping.
+Synaptic-core's substrate is assembled from validated PKM and agent-skills patterns: **Zettelkasten atomicity** (one concept per node) · **Obsidian MOCs** (bounded hub → cluster → node navigation) · **Karpathy LLM-wiki** (write-time curation, coherent pages over raw chunks) · **Anthropic Agent Skills progressive disclosure** (metadata → body → references, token-efficient) · **Engram-inspired files-authoritative governance** (files are truth, any index is derived). **GraphRAG semantic-nugget retrieval** and a **SQLite/FTS5 sidecar** are on the horizon (ROADMAP), enabled by the v1 frontmatter contract, not needed in CORE. See [`docs/concepts/architecture-matrioshka.md`](docs/concepts/architecture-matrioshka.md) for the full technique-to-mechanism mapping.
 
 ### Roadmap
 The v1 file contract (frontmatter + tags + INDEX + `[[wikilinks]]` + registries) is the deliberate indexable surface so platform-mode additions attach without forking the format. On the horizon: **MCP server** (expose read/search to sandboxed or remote agents); **semantic search / RAG** (embeddings over nodes — find what you need when you don't know the exact wikilink); **shared / team brain** (committed repo + CODEOWNERS + `validated:` flag for peer-reviewed knowledge); **robust persistence** (Engram-style SQLite/FTS5 sidecar — derived, deletable, files stay authoritative). None of these are built in v1; all are enabled by the v1 contract. See [ROADMAP.md](ROADMAP.md).

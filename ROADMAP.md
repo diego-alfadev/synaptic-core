@@ -20,7 +20,7 @@ A six-step agent-agnostic consolidation formula is embedded in every `BRAIN.md` 
 
 ### MOC-of-MOCs navigation
 
-`BRAIN.md` (single boot file, ≤110 lines) → `knowledge/INDEX.md` (hub MOC) → `{cluster}/_index.md` (sub-MOC, 1-line per node) → 1–2 relevant nodes. The 1-line summaries in sub-MOC files are the mechanism that delivers O(1) navigation — you never read 10 files to get one insight. A node not reachable from a MOC does not exist (enforced by `check`).
+`BRAIN.md` (single boot file, ≤110 lines) → `knowledge/INDEX.md` (hub MOC) → `{cluster}/_index.md` (sub-MOC, 1-line per node) → 1–2 relevant nodes. The 1-line summaries in sub-MOC files are the mechanism that delivers bounded, constant-depth navigation (~3–4 hops regardless of brain size) — you never read 10 files to get one insight. A node not reachable from a MOC does not exist (enforced by `check`).
 
 ### D1 frontmatter + tags
 
@@ -38,9 +38,9 @@ Every knowledge node and registry carries: `description` (1 line, feeds the `_in
 
 `/synaptic-init` writes the `<!-- BEGIN:SYNAPTIC -->` fragment into the project `AGENTS.md` (idempotent; created if absent) and installs the skill package into `.claude/skills/synaptic/` and `.agents/skills/synaptic/`. These are the ecosystem-standard discovery paths adopted across Claude Code, Cursor, VS Code Copilot, Gemini CLI, OpenCode, and Codex. The skill optionally writes a `.cursor/rules/synaptic.mdc` shim when `.cursor/` is detected.
 
-### Zero-install agent self-install
+### Zero-install agent self-install (post-v1.1.0, current main / unreleased)
 
-The skill now ships with a bootstrap header in `SKILL.md` plus a `MANIFEST.txt` listing every file in the bundle, so a coding agent can fetch and install the whole skill on a clean machine with **no Node, no clone, no package manager** — reinforcing the 0-install-capable CORE principle from the install side, not just the runtime side. The `npx degit` one-liner and a manual folder-copy fallback round out a three-tier install; all three install the whole skill folder (`references/` + `templates/`), never `SKILL.md` alone.
+The skill now ships with a bootstrap header in `SKILL.md` plus a `MANIFEST.txt` listing every file in the bundle, so a coding agent can fetch and install the whole skill on a clean machine with **no Node, no clone, no package manager** — reinforcing the 0-install-capable CORE principle from the install side, not just the runtime side. The `npx degit` one-liner and a manual folder-copy fallback round out a three-tier install; all three install the whole skill folder (`references/` + `templates/`), never `SKILL.md` alone. (This three-tier install landed after v1.1.0 and is in the current unreleased/main state, not part of the v1.1.0 release proper.)
 
 ### Optional Cortex tools (zero-dep)
 
@@ -50,6 +50,8 @@ The skill now ships with a bootstrap header in `SKILL.md` plus a `MANIFEST.txt` 
 | `migrate` | Phase M automation: deterministic file ops for v0.x → v1 upgrade |
 | `export` | Single-file (or 4-section split) Markdown bundle for sharing, backup, or paste-into-chat |
 | `vault-open` | Minimal optional config for Obsidian, Foam (VS Code), and Logseq; produces `OPEN-IN.md` |
+| `graph` | Renders the authored `[[wikilink]]` edges as a navigable graph view of the brain |
+| `deploy` | Writes the harness `<!-- BEGIN:SYNAPTIC -->` fragment and skill package into the outer harness |
 
 All zero-dependency (Node ≥ 18 standard library). These are **Cortex** — CORE never requires them. No-runtime fallback: the `synaptic` skill performs the equivalent operation manually. (Hooks, by contrast, are CORE: host-run config, not a runtime we ship.)
 

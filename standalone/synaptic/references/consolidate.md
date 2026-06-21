@@ -11,9 +11,9 @@ consolidation/wrap-up algorithm lives; other procedures call it, they do not re-
 > reconciles contradictions, and burns scratch — it does not merely add nodes at the end. If
 > the only effect of a consolidation run is "the wiki got longer," the run did it wrong.
 
-**Seven-step formula** (the capture contract — same algorithm compressed in `BRAIN.md`):
+**Six-step formula** (the capture contract — same algorithm compressed in `BRAIN.md`):
 
-> **Capture policy.** Read `capture_policy:` from `BRAIN.md` frontmatter (`selective` | `balanced` | `capture-all`; default `balanced`, or a custom 1-line rule). It is the **PROMOTION axis** — how aggressively things reach the wiki — and is **orthogonal to the passivity dial** (when capture triggers). It tunes the *threshold* of Step 2 (promotion) and Step 7 (quality gate) — not the steps themselves:
+> **Capture policy.** Read `capture_policy:` from `BRAIN.md` frontmatter (`selective` | `balanced` | `capture-all`; default `balanced`, or a custom 1-line rule). It is the **PROMOTION axis** — how aggressively things reach the wiki — and is **orthogonal to the passivity dial** (when capture triggers). It tunes the *threshold* of Step 2 (promotion) and Step 6 (quality gate) — not the steps themselves:
 > - `selective` → promote crown-jewels only (reusable decision/lesson, or pattern seen 3+ times); strict gate, small wiki.
 > - `balanced` → promote at 2+ instances or clearly-reusable knowledge; standard gate.
 > - `capture-all` → promote durable-ish notes on first sight; lenient gate; prune later via `/synaptic-weave`.
@@ -109,7 +109,7 @@ content_hash: "sha256:{first-12-hex}"   # of references/raw/{filename.ext} at ca
 
 ---
 
-## Step 5 — Dedupe / SSOT
+## Step 5 — Dedupe / SSOT + Contradiction Reconciliation
 
 Before creating any new node:
 
@@ -117,11 +117,9 @@ Before creating any new node:
 2. **Update, don't duplicate** — if a matching node exists, append or update it; bump `updated:`.
 3. One source of truth per fact: if the same fact appears in multiple places, collapse it to one node and add `[[wikilinks]]` from the others.
 
----
+### Step 5a — Contradiction Reconciliation (explicit)
 
-## Step 5.5 — Contradiction Reconciliation (explicit)
-
-Dedupe (Step 5) finds the *same* fact in two places. This step handles the harder case: the new
+Dedupe (above) finds the *same* fact in two places. This sub-step handles the harder case: the new
 source **conflicts with** what an existing node says. Do not silently append both — reconcile.
 
 For each item being consolidated, ask: **does this contradict an existing node?**
@@ -151,7 +149,7 @@ For each item being consolidated, ask: **does this contradict an existing node?*
 
 ---
 
-## Step 7 — Quality Gate
+## Step 6 — Quality Gate
 
 Before marking consolidation complete, every new or updated node must pass:
 
@@ -172,7 +170,7 @@ If any check fails, fix before proceeding. Do not skip this gate.
 Consolidation **scans the artifacts inside playgrounds**, not just the journal's index of them.
 The discipline: **distil the durable conclusion, burn the scratch.** A playground accumulates
 drafts, dead-ends, intermediate analysis, and superseded versions — most of it is working
-material that should never reach the wiki. The **promotion test (Step 2) and quality gate (Step 7)
+material that should never reach the wiki. The **promotion test (Step 2) and quality gate (Step 6)
 are the filter** that keeps unfinished or outdated artifacts out.
 
 > **The "email" lesson.** A playground holding five drafts of an email should contribute, at most,
@@ -183,7 +181,7 @@ are the filter** that keeps unfinished or outdated artifacts out.
 For each playground in the journal's **Active playgrounds** list:
 
 1. Read the playground directory (`playgrounds/{task-id}/`) — **all its artifacts**, not only a summary.
-2. Classify its contents (Steps 1–7 above). Apply the promotion test and quality gate strictly:
+2. Classify its contents (Steps 1–6 above). Apply the promotion test and quality gate strictly:
    unfinished, outdated, or superseded artifacts do **not** pass — distil any durable conclusion and
    discard the rest.
 3. Move durable findings → knowledge cluster nodes; procedures → `type: playbook` nodes in their cluster; lessons → `knowledge/lessons/`; verbatim artifacts worth preserving → `references/raw/` (with a `content_hash`, per Step 4).
@@ -213,7 +211,7 @@ After routing all items:
 ## Tool Check
 
 If `tools/check.js` exists: run `node tools/check.js`. Address any errors before reporting done.
-If not available: the quality gate in Step 7 is the manual equivalent. (`tools/check.js` is an
+If not available: the quality gate in Step 6 is the manual equivalent. (`tools/check.js` is an
 optional Cortex utility; CORE never requires it — the gate stands on its own.)
 
 ---
@@ -270,12 +268,12 @@ BRAIN.md updated: field bumped to {date}.
 
 **Step 5 — Dedupe:** INDEX search shows no prior `auth-token` node → create new.
 
-**Step 5.5 — Reconcile:** an existing `[[auth-token-handling]]` node says "cache per request." The
+**Step 5a — Reconcile:** an existing `[[auth-token-handling]]` node says "cache per request." The
 new finding supersedes it → **rewrite** that node to per-session, add `> Changed {date}: per-session
 caching, because per-request re-auth was the latency cause`, and record the `supersedes` edge.
 (The brain is now *different*, not just bigger.)
 
-**Step 7 — Gate:** frontmatter filled; both nodes < 150 lines; MOC-reachable; no broken links. Pass.
+**Step 6 — Gate:** frontmatter filled; both nodes < 150 lines; MOC-reachable; no broken links. Pass.
 
 **Outcome:** playground scratch burned; one node rewritten + one reconciliation logged; journal
 trimmed to 22 lines; `BRAIN.md` `updated:` stamped.
@@ -293,7 +291,7 @@ is **not** governed by `capture_policy`:
 - Breadcrumbs **live on disk so they survive a crash** — what only lived in the context window dies;
   what reached the journal can still be consolidated later (including by `SessionStart`-rescue on the
   next boot — see `references/audit.md`).
-- Consolidation **consumes** these breadcrumbs: it routes the durable ones into the wiki (Steps 1–7)
+- Consolidation **consumes** these breadcrumbs: it routes the durable ones into the wiki (Steps 1–6)
   and trims the rest in the Journal Trim step. A breadcrumb is a *candidate*, not a promotion.
 - **Do not** add a second policy dial for breadcrumbs. There are exactly two orthogonal dials:
   `capture_policy` (how aggressively things get **promoted**) and the passivity dial (**when** capture
@@ -305,7 +303,7 @@ is **not** governed by `capture_policy`:
 
 - **Do not just append:** consolidation must **rewrite** what a source touches. A run whose only
   effect is a longer wiki violated the rewrite-bias — the brain must be *different*, not just bigger.
-- **Do not leave contradictions side-by-side silently:** reconcile (Step 5.5) — supersede-and-rewrite,
+- **Do not leave contradictions side-by-side silently:** reconcile (Step 5a) — supersede-and-rewrite,
   `contradicts`-link with a `## bias-check` note, or flag for a human. Never two unlinked conflicting nodes.
 - **Do not persist temporal noise:** debug output is not a knowledge node.
 - **Do not promote playground scratch wholesale:** distil the durable conclusion; burn the drafts,

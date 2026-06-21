@@ -2,7 +2,7 @@
 
 The optional **TOOLS** layer of synaptic-core. The CORE layer (plain Markdown files)
 never requires these scripts — everything they do can be performed manually by an agent.
-Use when Node >= 18 is available (the happy path in ~90% of agentic contexts).
+Use when a Node runtime is available (the common case in agentic setups).
 
 ## D3 rule — optional, zero-dep, no-runtime fallback
 

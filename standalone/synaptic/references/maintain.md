@@ -24,7 +24,7 @@ file; maintain calls it, never duplicates it:
 |---|---|---|
 | **Diagnose** | `references/audit.md` | Find broken links, orphans, stale nodes, **cross-link gaps**, **half-done/unconsolidated** work, pending breadcrumbs. Audit DIAGNOSES; it writes nothing. |
 | **Wrap-up / consolidate** | the consolidation/wrap-up prompt in `references/consolidate.md` | Process unconsolidated playgrounds + pending breadcrumbs (rewrite-bias, reconciliation, playground scan, burn scratch). **Maintain INVOKES this prompt — it does not re-implement the algorithm.** |
-| **Reconcile** | `references/consolidate.md` Step 5.5 | Resolve flagged `contradicts`/`supersedes` pairs (supersede-and-rewrite, contradicts-link with `## bias-check`, or flag). |
+| **Reconcile** | `references/consolidate.md` Step 5a | Resolve flagged `contradicts`/`supersedes` pairs (supersede-and-rewrite, contradicts-link with `## bias-check`, or flag). |
 | **Synthesize** | `references/synthesize.md` | Cross-source patterns, concept evolution, orphan **rescue** (new nodes, MOC-registered at write time). |
 | **Repair links/edges** | `references/weave.md` | Treat the cross-link/orphan/missing-edge findings: propose links **+ typed edge type**, near-dup merges. |
 
@@ -52,7 +52,7 @@ findings, already routed to treating procedures. Write nothing. Carry forward, i
 
 For each half-done finding, **invoke the consolidation/wrap-up prompt** from
 `references/consolidate.md` — the same algorithm a session-end consolidation runs (classify →
-promote → generalize → place-with-rewrite-bias → dedupe → **reconcile (5.5)** → quality gate; scan
+promote → generalize → place-with-rewrite-bias → dedupe → **reconcile (5a)** → quality gate; scan
 playground artifacts, distil conclusions, burn scratch; trim the journal). **Do not re-describe or
 re-implement those steps here** — there is one consolidation algorithm and it lives in
 `consolidate.md`. Maintain's job is to *trigger* it against the diagnosed debt and surface its
@@ -60,7 +60,7 @@ proposals for approval.
 
 ### 3 — Reconcile contradictions
 
-For each flagged `contradicts` / `supersedes` pair from the diagnosis, apply Step 5.5 of
+For each flagged `contradicts` / `supersedes` pair from the diagnosis, apply Step 5a of
 `references/consolidate.md`: supersede-and-rewrite the stale page (note *what changed and why*),
 or `contradicts`-link with a `## bias-check` note, or flag for human judgment if genuinely unsure.
 Diff-traced, git-reversible, archive-before-delete.
