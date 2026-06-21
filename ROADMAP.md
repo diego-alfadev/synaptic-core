@@ -8,7 +8,7 @@
 
 ## What shipped (CORE)
 
-**Status:** current branch `audit/improvement-proposal`
+**Status:** shipped in v1.1.0
 
 ### The two-plane model
 
@@ -37,6 +37,10 @@ Every knowledge node and registry carries: `description` (1 line, feeds the `_in
 ### Self-wiring harness
 
 `/synaptic-init` writes the `<!-- BEGIN:SYNAPTIC -->` fragment into the project `AGENTS.md` (idempotent; created if absent) and installs the skill package into `.claude/skills/synaptic/` and `.agents/skills/synaptic/`. These are the ecosystem-standard discovery paths adopted across Claude Code, Cursor, VS Code Copilot, Gemini CLI, OpenCode, and Codex. The skill optionally writes a `.cursor/rules/synaptic.mdc` shim when `.cursor/` is detected.
+
+### Zero-install agent self-install
+
+The skill now ships with a bootstrap header in `SKILL.md` plus a `MANIFEST.txt` listing every file in the bundle, so a coding agent can fetch and install the whole skill on a clean machine with **no Node, no clone, no package manager** — reinforcing the 0-install-capable CORE principle from the install side, not just the runtime side. The `npx degit` one-liner and a manual folder-copy fallback round out a three-tier install; all three install the whole skill folder (`references/` + `templates/`), never `SKILL.md` alone.
 
 ### Optional Cortex tools (zero-dep)
 

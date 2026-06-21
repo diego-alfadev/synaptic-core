@@ -1,6 +1,6 @@
 ---
 name: synaptic
-version: 1.0.0          # engine semver (skill code) — independent of the brain schema/format version stamped in BRAIN.md
+version: 1.1.0          # engine semver (skill code) — independent of the brain schema/format version stamped in BRAIN.md
 supported_schema: ">=1.0 <2.0"   # brain schema/format versions this engine can read. A skill update reinstalls the skill with NO brain migration; only a schema/format change runs /synaptic-upgrade.
 description: >
   Knowledge-graph memory layer for project work — a portable, file-based brain that turns
@@ -10,6 +10,29 @@ description: >
   /synaptic-init /synaptic-consolidate /synaptic-ingest /synaptic-audit /synaptic-weave
   /synaptic-synthesize /synaptic-maintain /synaptic-upgrade.
 ---
+
+## Bootstrap / self-install
+
+**DETECT bootstrap mode.** If you were invoked but the bundle next to this SKILL.md is
+**incomplete** — the sibling `references/` and `templates/` folders are NOT present beside this
+file — the user likely fetched only `SKILL.md` by URL into a clean project. Self-install the rest:
+
+1. Set `RAW_BASE = https://raw.githubusercontent.com/diego-alfadev/synaptic-core/main/standalone/synaptic/`
+2. Fetch `${RAW_BASE}MANIFEST.txt`.
+3. For each path listed, fetch `${RAW_BASE}<path>` and WRITE it to **both**
+   `.claude/skills/synaptic/<path>` **and** `.agents/skills/synaptic/<path>` (create directories
+   as needed). This SKILL.md is in the manifest, so both copies get it too.
+4. Then run **Harness Self-Wire** (the section below) and offer `/synaptic-init`.
+
+**CORE-purity note.** This uses the agent's OWN fetch + file-write capability — Synaptic ships no
+runtime, downloader, or daemon. `MANIFEST.txt` makes the install deterministic (you get exactly
+the listed files); pulling from `main` installs the current stable skill. Append a release tag to
+the path (e.g. `.../synaptic-core/<tag>/standalone/synaptic/`) if you need an exact pinned version.
+
+**HONEST fallback.** If you cannot fetch URLs (no network or no fetch tool), do not improvise —
+tell the user to use the `degit` one-liner or the manual folder-copy from the README, then stop.
+
+If the bundle IS complete beside this file, skip this section entirely and proceed to Detect on Load.
 
 # Synaptic Brain Skill — v1.0
 
@@ -71,6 +94,14 @@ brain's schema/format version against `supported_schema`:
 ## Onboarding Interview — /synaptic-init
 
 Ask **1–2 questions at a time**. Build on answers. Generate files from `templates/` when done.
+
+**First-run orientation (only on a true first run — no existing brain).** Before Round 0, say
+something like: *"A brain is a small set of plain files that turns your daily work into structured,
+searchable, agent-usable memory. I'll ask a few quick questions, then generate everything and wire
+it into this project for you. You can stop anytime, and every choice — especially the capture dial
+(how much we keep) — is changeable later. Want to continue with `/synaptic-init`? Or just start
+working and consolidate later whenever you like."* No tutorial, no slides — just friendly framing,
+then proceed to Round 0. Skip this block entirely if a brain already exists.
 
 **Round 0 — Scope:**
 > "Is this brain for a project, a role, an organisation, or your life?"
