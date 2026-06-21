@@ -2,14 +2,24 @@
 
 Ingest an external document into the brain. Usage: `/synaptic-ingest path/to/file.ext`
 
-Applies the consolidation formula (Steps 2–6 from `references/consolidate.md`) to a single
-external source rather than session output.
+Applies the consolidation formula (the promotion → quality-gate steps of `references/consolidate.md`)
+to a single source rather than full session output.
+
+> **It can also scan task artifacts.** Point `/synaptic-ingest` at a directory and it will scan the
+> artifacts inside — including a `playgrounds/{task}/` workspace or any task/working directory — and
+> distil the **durable conclusions**, applying the same promotion test and quality gate that keep
+> unfinished or superseded scratch out (the "email" lesson: distil the conclusion, discard the
+> drafts). This is the single-target sibling of consolidation's playground-artifact scan; for closing
+> playgrounds and trimming the journal as a session-wide pass, use `/synaptic-consolidate`. Ingest
+> reads and distils — it does **not** burn a playground (consolidate owns the close/burn step).
 
 ---
 
 ## Step 1 — Read the Source and Assess
 
-Read the target file. Identify type and size:
+Read the target. If it is a **directory** (a playground or task workspace), scan its artifacts and
+treat each durable finding as a source below; distil conclusions, leave scratch behind. If it is a
+single file, identify type and size:
 
 | Type | Key things to extract |
 |---|---|
@@ -18,6 +28,7 @@ Read the target file. Identify type and size:
 | Documentation (`.md`, `.txt`) | Key concepts, decisions, processes, constraints |
 | Tabular data (`.csv`, `.xlsx`) | Records → determine if these belong in a registry |
 | Config file | Notable settings and their purposes, non-default values |
+| Task artifacts (a `playgrounds/{task}/` or working dir) | Durable conclusions, decisions, reusable patterns — **not** drafts/dead-ends; distil then discard scratch |
 | Other | Main facts, decisions, constraints, who owns it |
 
 **Size and route decision:**
@@ -39,6 +50,11 @@ Read the target file. Identify type and size:
    ```
 3. Create a distilled knowledge node `knowledge/{cluster}/{topic-slug}.md` from `templates/node.md`. Set `type: reference`. Populate with:
    - Key structures, decisions, and constraints — **not** a verbatim copy.
+   - **Provenance + drift marker in frontmatter** (an authored fact, not an index — see consolidate.md Step 4):
+     ```yaml
+     source: "references/raw/{filename.ext}"
+     content_hash: "sha256:{first-12-hex}"   # of the raw file at capture time; skip if no hashing available
+     ```
    - A source pointer at the bottom:
      ```
      > Full artifact: `references/raw/{filename.ext}` — see [[references/_index]]
@@ -68,9 +84,11 @@ Read the target file. Identify type and size:
 
 ---
 
-## Step 3 — Apply Consolidation Formula (Steps 2–6)
+## Step 3 — Apply Consolidation Formula
 
-Before writing, run the atomicity + promotion test, generalize, place & link, dedupe/SSOT, and quality gate from `references/consolidate.md`. Specifically:
+Before writing, run the atomicity + promotion test, generalize, place & link (with rewrite-bias),
+dedupe/SSOT, contradiction-reconciliation, and quality gate from `references/consolidate.md`
+(Steps 2–7). Specifically:
 
 - [ ] Frontmatter D1: `description`, `type`, `status: active`, `updated: {today}`, `tags: [...]` — filled, no placeholders.
 - [ ] Soft budget: node ≤ ~150 lines, or `type: reference` if deliberately long.

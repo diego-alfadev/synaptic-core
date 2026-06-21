@@ -21,17 +21,47 @@ demand. Distinct from `/synaptic-audit` — see the table below.
 Run all five, in order. After each pass, present proposals to the user (or log them in
 autonomous mode) — **never auto-rewrite** without confirmation.
 
-### Pass 1 — Missing links (shared context)
+### Pass 1 — Missing links (shared context) + proposed typed edge
 
 For each pair of nodes that share 2+ tags, share significant terms in their descriptions,
 or are co-cited from a third node but do not link to each other:
 
 - Propose: add `[[node-b]]` to node-a and/or `[[node-a]]` to node-b.
-- State the reason: "shared tags: `[ci, deployment]`" or "co-cited from `[[deploy-playbook]]`".
-- Present as a diff; do not write until confirmed.
+- **Also propose a typed edge type** from the frozen vocabulary (below) — name the *relationship*,
+  not just the link. State both reason and type: "shared tags `[ci, deployment]` → propose
+  `relates_to`" or "`[[deploy-playbook]]` operates on `[[deploy-service]]` → propose `applies_to`."
+- **Propose, never auto-write.** Weave only *suggests* the type; the human/agent confirms before
+  anything is written. The agent never infers an edge into existence — edges are authored (C5; no
+  auto-discovery claim).
+- Author **one direction only**; the inverse is grep-computed, never stored (e.g. author
+  `depends_on`, do not also write `required_by`).
+
+**Frozen typed-edge vocabulary (single source of truth — author one direction, inverse via grep):**
+
+| Edge (authored) | Inverse (grep-computed) | Use when |
+|---|---|---|
+| `relates_to` (default; absorbs `documented_in`) | `relates_to` | general association; the safe default |
+| `depends_on` | `required_by` | A needs B to function |
+| `supersedes` | `superseded_by` | A replaces/obsoletes B |
+| `contradicts` | `contradicts` | A and B make incompatible claims |
+| `applies_to` | (lateral) | playbook/process → the situation/system it governs |
+| `causes` | `caused_by` | A produces/triggers B |
+| `part_of` | `has_part` | real composition (system→subsystem→component) |
+
+> **`part_of` misuse rule:** `part_of` is for **real composition of entities**, NOT to mirror the
+> folder/cluster a node is filed in (that is what the MOC already does — protects C4). Default to
+> `relates_to` when unsure.
+>
+> **Parser-safe form:** typed edges are authored as block-list `[[wikilinks]]` in frontmatter
+> (`- "[[x]]"`), never inline (`depends_on: [[x]]` mangles the parser). The frontmatter wikilink
+> **is** the edge — never a separate edges file or derived index.
+>
+> **Additive-no-bump:** typed edges are backward-compatible optional frontmatter. Adding them must
+> **NOT** bump `schema_version` (the BRAIN.md schema/format key) or trigger `/synaptic-upgrade`.
 
 *When the semantic layer is available (roadmap):* use embedding similarity to catch
-non-obvious relations that shared tags miss.
+non-obvious relations that shared tags miss. It still only **proposes** — GraphRAG is cited as
+*the direction* (multi-hop relational retrieval), not an auto-discovery claim.
 
 ### Pass 2 — Under-connected nodes (≤1 link)
 
@@ -80,8 +110,9 @@ Present the full proposal as a structured list before writing anything:
 ```
 WEAVE PROPOSALS — {date}
 
-Pass 1 — Missing links (N proposals):
-  - Link [[node-a]] ↔ [[node-b]]: shared tags [x, y]
+Pass 1 — Missing links + typed edge (N proposals):
+  - Link [[node-a]] → [[node-b]]: shared tags [x, y] — propose edge: relates_to
+  - Link [[deploy-playbook]] → [[deploy-service]]: playbook operates on system — propose edge: applies_to
   - ...
 
 Pass 2 — Under-connected (N nodes):
@@ -116,7 +147,7 @@ Brain: a software project brain with clusters `infrastructure/`, `ci-cd/`, `team
 - Journal last week mentions "flaky tests" three times; no node for it.
 
 **Weave output:**
-- Pass 1: propose `[[deploy-checklist]]` ↔ `[[rollback-procedure]]` (shared tags: `[ci, deployment]`).
+- Pass 1: propose `[[deploy-checklist]]` → `[[rollback-procedure]]` (shared tags: `[ci, deployment]`) — propose edge type `relates_to`.
 - Pass 2: `[[deploy-checklist]]` has 0 links — also propose link to `[[ci-pipeline]]`.
 - Pass 3: concept "blue-green" referenced in `[[incident-2024-03]]` but no node — propose `[[blue-green-deploy]]` in `ci-cd/`.
 - Pass 5: "flaky tests" in journal (3x this week) — promote to `[[flaky-test-pattern]]` in `ci-cd/`?

@@ -299,5 +299,6 @@ these. v0.5 keeps the wiki layer and adds the protocol layer on top of it. The Z
 - `docs/architecture/adr-001-minimal-cortex.md` — v0.4 design; decisions this ADR builds on
 - `standalone/synaptic/SKILL.md` — the unified skill package (v0.5 implementation)
 - `standalone/synaptic/references/upgrade-to-v05.md` — v0.3/v0.4 → v0.5 migration guide
-- `seed/.synaptic/BRAIN.md` — the v0.5 boot file template
-- `tools/README.md` — TOOLS layer: check.js, obsidian-setup.js
+- `standalone/synaptic/templates/BRAIN.md` — the boot file template (single source of truth; the
+  former `seed/.synaptic/BRAIN.md` was removed in v1)
+- `tools/README.md` — Cortex utilities: check.js, obsidian-setup.js

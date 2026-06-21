@@ -123,8 +123,7 @@ node tools/export.js <path-to-.synaptic> [out-prefix] --split
 ```
 
 Bundles the entire brain into portable Markdown for sharing, backup, or
-pasting into a chat context. Equivalent to what Diego did manually to export
-the Swedbank brain for email — automated and deterministic.
+pasting into a chat context. Equivalent to exporting a brain by hand for a handoff or backup — automated and deterministic.
 
 **Single-file output:** one `.md` with a table of contents + `## FILE: <relpath>` headers.
 Binary payloads in `references/raw/` are listed as "omitted binary payload (N bytes)"

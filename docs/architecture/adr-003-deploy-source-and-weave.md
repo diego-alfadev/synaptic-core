@@ -125,8 +125,11 @@ a node written today. The graph under-connects structurally over time regardless
 - `synaptic-audit/proposal/07_v1_refinements.md` §T1 and §T2 — the rationale and decisions
   this ADR implements
 - `synaptic-audit/spec/SPEC.md` §2, §4.1, §4.6, §4.8 — the separation model and lifecycle
-- `seed/.synaptic/BRAIN.md` — the v1 boot file (deploy-source pointer, no guardrails block)
-- `seed/.synaptic/harness/README.md` — the deployable-source explanation
+- `standalone/synaptic/templates/BRAIN.md` — the v1 boot file template (deploy-source pointer, no
+  guardrails block). The former `seed/` tree was removed in v1: the skill bundle's `templates/` are
+  the single source of truth and the example brain is assembled on demand.
+- `standalone/synaptic/templates/harness/` (`conventions.md`, `guardrails.md`, `skills/`) — the
+  deployable harness source files
 - `standalone/synaptic/SKILL.md` — Harness Self-Wire §c (Deploy step), Operations table
 - `standalone/synaptic/references/weave.md` — the full /synaptic-weave specification
 - `docs/architecture/adr-001-minimal-cortex.md`, `adr-002-llm-wiki-first.md`

@@ -1,13 +1,27 @@
 # /synaptic-audit — Brain Health Audit Reference
 
-Cross-session review for staleness, orphan nodes, broken links, MOC coverage, registry integrity,
-oversized untyped nodes, and tag hygiene. Run when: user invokes `/synaptic-audit`, after several sessions,
-or when the brain feels off.
+Cross-session review for staleness, orphan nodes, broken links, MOC coverage, **horizontal
+cross-link coverage**, registry integrity, oversized untyped nodes, tag hygiene, and **half-done /
+unconsolidated work** (open playgrounds, unconsolidated conversations, pending breadcrumbs). Run
+when: user invokes `/synaptic-audit`, after several sessions, on a `SessionStart`-rescue sweep, or
+when the brain feels off.
 
-**Prefer `node tools/check.js` if a runtime is available** — it automates Steps 2–7. Use this file
-as the manual fallback or to interpret check output.
+**Prefer `node tools/check.js` if a runtime is available** — it automates the mechanical checks.
+Use this file as the manual fallback or to interpret check output. (`tools/check.js` is an optional
+Cortex utility; CORE never depends on it — every check here is grep-able by hand.)
 
-Do not auto-fix findings. Surface a prioritised list; ask for confirmation before any change.
+> **Audit DIAGNOSES; it does not TREAT.** This procedure only *finds and reports* problems. The
+> fixes live in other procedures:
+> - broken links / orphans / missing edges / near-duplicates → **`/synaptic-weave`**
+> - unconsolidated playgrounds, pending breadcrumbs, half-done work → **`/synaptic-consolidate`**
+> - cross-source synthesis, orphan rescue, concept evolution → **`/synaptic-synthesize`**
+> - the orchestrated diagnose-then-treat sweep → **`/synaptic-maintain`**
+>
+> **`/synaptic-audit` + `SessionStart`-rescue = the abandonment safety sweep:** on next boot, the
+> rescue net runs the half-done check (Step 9) to recover sessions that ended before consolidation.
+
+Do not auto-fix findings. Surface a prioritised list; ask for confirmation before any change — and
+route each finding to the procedure that treats it.
 
 ---
 
@@ -57,6 +71,40 @@ Also check: is every cluster directory listed in `knowledge/INDEX.md`? Flag unli
 
 ---
 
+## Step 4b — Cross-Link Coverage (HORIZONTAL reachability)
+
+MOC coverage (Step 4) guarantees only **vertical** linking — that every node is reachable from a
+hub. It says nothing about whether *related* nodes link to **each other**. This check promotes
+horizontal cross-link coverage from a convention to a first-order audit finding.
+
+The flagship horizontal relations to check (the cross-linking differentiator — multi-hop relational
+retrieval over authored directional edges that embeddings can't infer):
+
+- **playbook ↔ the system it applies to** — a `type: playbook` node should link to the system /
+  component it operates on (and ideally carry an `applies_to` typed edge).
+- **system ↔ its reference / DDL** — a system node should link to the `type: reference` node (and
+  the `references/raw/` artifact) that documents it.
+- **situation/problem ↔ solution/decision** — a lesson or problem node should link to the decision
+  or pattern that resolves it.
+- **concept ↔ the situations it governs** — a concept node should be reachable from the
+  playbooks/lessons that invoke it.
+
+For each node, flag **plausible-but-missing** horizontal links:
+
+- A `type: playbook` node with **no** link to any system/component node → flag "playbook with no
+  applies-to target."
+- A system/architecture node that references a schema/spec/DDL by name but has **no** link to a
+  `type: reference` node or `references/raw/` entry → flag "system with undocumented reference."
+- Two nodes that **share 2+ tags or are co-cited from a third node** but do not link to each other →
+  flag as a missing cross-link candidate.
+
+> **Diagnose only.** Do not add the links here — surface them and route to **`/synaptic-weave`**
+> (Pass 1), which proposes the link **and a typed edge type** for confirmation. Cite GraphRAG only
+> as *the direction* (multi-hop relational retrieval); make **no auto-discovery claim** — edges are
+> authored, never inferred (C5).
+
+---
+
 ## Step 5 — Registry Integrity
 
 Read `registries/_index.md`. For each entry:
@@ -103,17 +151,41 @@ Tags enable `Ctrl+Shift+F` faceted search and the future FTS/RAG surface — bla
 
 ---
 
-## Step 9 — Consolidation Debt
+## Step 9 — Half-Done / Unconsolidated Check (the abandonment sweep)
 
-Check whether consolidation has been run recently:
+Detect **work that was started but never folded into the wiki** — open playgrounds, unconsolidated
+conversations, and pending journal breadcrumbs. This is the check that, paired with
+`SessionStart`-rescue, recovers abandoned sessions: knowledge that reached disk (the journal,
+playground artifacts) but never reached the knowledge store. **Diagnose only — route to
+`/synaptic-consolidate` to treat.**
 
-- Count all directories directly under `playgrounds/` that contain at least one `.md` file. These are **open playgrounds** — task workspaces that have not yet been consolidated into the wiki or explicitly closed.
-- Count the total number of non-empty lines (or dated entries) in `journal/_current.md` since the last consolidation marker (a line matching `consolidated:` or `## Consolidated` or similar). If no marker is found, count all lines.
-- **Warn (not error)** if either threshold is exceeded:
-  - Open playgrounds ≥ 3: "Consolidation debt — N open playgrounds. Run `/synaptic-consolidate` to process and close completed task workspaces."
-  - Journal lines since last consolidation ≥ 60: "Consolidation debt — journal at N lines since last consolidation. Run `/synaptic-consolidate` before the journal nears 80 lines."
+**(a) Open / unconsolidated playgrounds:**
 
-Present as an advisory; the user decides whether to consolidate now or defer.
+- Count all directories directly under `playgrounds/` that contain at least one `.md` file. These are
+  **open playgrounds** — task workspaces not yet consolidated into the wiki or explicitly closed.
+- Cross-check against the journal's **Active playgrounds** list: flag playgrounds **present on disk
+  but missing from the list** (untracked) and entries **listed but with no directory** (stale entry).
+
+**(b) Pending journal breadcrumbs (unconsolidated `Stop` lines):**
+
+- Count non-empty lines / dated entries in `journal/_current.md` since the last consolidation marker
+  (a line matching `consolidated:` or `## Consolidated` or similar). If no marker is found, count all lines.
+- These are per-turn breadcrumbs that survived on disk but have **not yet been promoted or trimmed** —
+  exactly what `SessionStart`-rescue exists to recover after an abandoned session.
+
+**(c) Half-done / protocolary signals:**
+
+- A `## bias-check` or note that records an **unresolved** `contradicts` pair never reconciled.
+- TODO/`{{placeholder}}`/`status: draft` markers left in otherwise-promoted nodes.
+- A `references/raw/` artifact whose distilled node carries a `content_hash` that **no longer matches**
+  the raw file (the artifact drifted; re-distillation is pending — see consolidate.md Step 4).
+
+**Warn (not error)** when a threshold is exceeded; present as advisory — the user decides whether to
+consolidate now or defer:
+
+- Open playgrounds ≥ 3: "Half-done — N open playgrounds. Run `/synaptic-consolidate` to process and close completed task workspaces."
+- Journal lines since last consolidation ≥ 60: "Half-done — journal at N pending breadcrumbs since last consolidation. Run `/synaptic-consolidate` before the journal nears 80 lines."
+- Any untracked playground, stale active-playground entry, drifted `content_hash`, or unresolved `contradicts`: list each as a half-done finding routed to `/synaptic-consolidate` (or `/synaptic-maintain` for the orchestrated sweep).
 
 ---
 
@@ -132,10 +204,10 @@ This check closes the silent drift vector where a user edits the deployed block 
 
 ## Step 11 — Report
 
-Present findings as a prioritised actionable checklist, grouped by category. Cap at **10 highest-impact findings**; note the total count if more exist.
+Present findings as a prioritised actionable checklist, grouped by category. Cap at **10 highest-impact findings**; note the total count if more exist. Each finding names the **procedure that treats it** (audit diagnoses, it does not fix).
 
 ```
-Brain audit — N findings (showing top N):
+Brain audit — N findings (showing top N):  [audit DIAGNOSES; weave/consolidate/synthesize/maintain TREAT]
 
 ## Stale nodes (>90 days or status: stale)
 1. knowledge/api-integration/legacy-auth.md — last updated 2025-11-03 (221 days ago)
@@ -143,34 +215,43 @@ Brain audit — N findings (showing top N):
 
 ## Orphan nodes (not in any _index.md)
 2. knowledge/infra/old-deploy-notes.md — not registered in any sub-MOC
-   → Register, move, or delete?
+   → [/synaptic-weave] Register, move, or delete?
 
 ## Broken [[wikilinks]]
 3. knowledge/api-integration/retry-policy.md [[rate-limiter]] — target not found
-   → Create rate-limiter.md, rename, or remove link?
+   → [/synaptic-weave] Create rate-limiter.md, rename, or remove link?
 
-## MOC coverage gaps
+## MOC coverage gaps (vertical)
 4. knowledge/auth/ cluster — _index.md missing
    → Create _index.md listing: jwt-decode.md, session-cache.md
 
+## Cross-link coverage gaps (horizontal)
+5. knowledge/ci-cd/deploy-playbook.md (type: playbook) — no link to any system it applies to
+   → [/synaptic-weave Pass 1] Propose [[deploy-service]] + applies_to edge?
+
 ## Registry integrity
-5. registries/_index.md lists "environments" — registries/environments.md not found
+6. registries/_index.md lists "environments" — registries/environments.md not found
    → Remove phantom entry or create the file?
 
 ## References _index.md issues
-6. references/_index.md lists "schema-v2.sql" — not found in references/raw/
+7. references/_index.md lists "schema-v2.sql" — not found in references/raw/
    → Remove entry or restore file?
 
 ## Oversized untyped nodes
-7. knowledge/architecture/overview.md — 342 lines, type: knowledge
+8. knowledge/architecture/overview.md — 342 lines, type: knowledge
    → Split into sub-nodes or re-tag type: reference?
 
 ## Tag hygiene
-8. knowledge/infra/load-balancer.md — tags: [] (empty)
+9. knowledge/infra/load-balancer.md — tags: [] (empty)
    → Add tags: [infra, networking] (or relevant cluster/topic tags)
+
+## Half-done / unconsolidated
+10. playgrounds/feat-99-spike/ — open, not in journal Active list; journal at 71 pending breadcrumbs
+   → [/synaptic-consolidate] Process & close; promote durable conclusions, burn scratch.
 ```
 
-Ask: "Apply all? Or pick specific items?" — do not make changes without confirmation.
+Ask: "Apply all? Or pick specific items?" — do not make changes without confirmation. Route each
+finding to its treating procedure; audit itself writes nothing.
 
 ---
 
