@@ -63,7 +63,7 @@ Scan all nodes for `[[wikilink]]` patterns — **excluding `templates/` and `ref
 
 - Resolve: does a file whose kebab-case name matches the link target exist in `knowledge/`?
 - Flag unresolved targets as broken; note source file and broken target name.
-- Skip placeholder targets (`[[{{…}}]]`), links inside HTML comments, and inline code spans.
+- Skip placeholder targets (`[[{{…}}]]`), links inside HTML comments, and inline code spans **and fenced code blocks** (```).
 
 Do not auto-fix. Surface the list; options are: create the target, rename, or remove the link.
 

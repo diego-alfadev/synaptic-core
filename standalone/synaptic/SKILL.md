@@ -14,8 +14,9 @@ description: >
 ## Bootstrap / self-install
 
 **DETECT bootstrap mode.** If you were invoked but the bundle next to this SKILL.md is
-**incomplete** — the sibling `references/` and `templates/` folders are NOT present beside this
-file — the user likely fetched only `SKILL.md` by URL into a clean project. Self-install the rest:
+**incomplete** — not every path listed in `MANIFEST.txt` is present beside this file (a partial
+fetch leaves gaps even when `references/` and `templates/` exist) — the user likely fetched only
+`SKILL.md` by URL into a clean project. Self-install the rest:
 
 1. Set `RAW_BASE = https://raw.githubusercontent.com/diego-alfadev/synaptic-core/main/standalone/synaptic/`
 2. Fetch `${RAW_BASE}MANIFEST.txt`.
@@ -23,7 +24,12 @@ file — the user likely fetched only `SKILL.md` by URL into a clean project. Se
    fetch `${RAW_BASE}<path>` and WRITE it to **both** `.claude/skills/synaptic/<path>` **and**
    `.agents/skills/synaptic/<path>` (create directories as needed). This SKILL.md is in the
    manifest, so both copies get it too.
-4. Then run **Harness Self-Wire** (the section below) and offer `/synaptic-init`.
+4. **Verify the install before proceeding.** Confirm the count of files written equals the number
+   of manifest entries. Confirm each written file is non-empty and does NOT start with `<!DOCTYPE`
+   or `<html` (GitHub raw can return an HTML error page on rate-limit). Re-fetch only the paths that
+   failed either check; if any still fail after a retry, report the failed paths and fall back to
+   the HONEST fallback below.
+5. Then run **Harness Self-Wire** (the section below) and offer `/synaptic-init`.
 
 **CORE-purity note.** This uses the agent's OWN fetch + file-write capability — Synaptic ships no
 runtime, downloader, or daemon. `MANIFEST.txt` makes the install deterministic (you get exactly
@@ -33,9 +39,9 @@ the path (e.g. `.../synaptic-core/<tag>/standalone/synaptic/`) if you need an ex
 **HONEST fallback.** If you cannot fetch URLs (no network or no fetch tool), do not improvise —
 tell the user to use the `degit` one-liner or the manual folder-copy from the README, then stop.
 
-If the bundle IS complete beside this file, skip this section entirely and proceed to Detect on Load.
+If the bundle IS complete beside this file — every path in `MANIFEST.txt` is present — skip this section entirely and proceed to Detect on Load.
 
-# Synaptic Brain Skill — v1.0
+# Synaptic Brain Skill
 
 > **Two version numbers, one bundle (v1-final §5.4 / §8).** `version:` above is the **skill
 > ENGINE semver** (the code in this bundle). The **templates define the SCHEMA**, whose
@@ -119,7 +125,7 @@ These answers become the **Context Capsule** in `BRAIN.md` (2–4 lines: what it
 
 Write the answer to `capture_policy:` in `BRAIN.md` frontmatter (default `balanced` if unsure).
 `capture_policy` is the **PROMOTION axis** — how aggressively the capture contract promotes work
-*into the wiki*. It does **not** change the 6-step formula, and it does **not** govern the
+*into the wiki*. It does **not** change the six-step formula, and it does **not** govern the
 always-on per-turn journal breadcrumbs (those are a fixed-cost floor — see Harness Self-Wire,
 capture mechanism). Reassurance if they hesitate: "You can change this one word later;
 `/synaptic-weave` can also prune a `capture-all` brain back toward `selective`."
@@ -237,11 +243,12 @@ Create directories if absent. If a target already contains a `SKILL.md` with the
 This step materializes `harness/conventions.md` and `harness/guardrails.md` into the outer
 harness so the agent reads them natively — without reaching into the brain at work-time.
 
-**Preferred (Node runtime available):** run `node tools/deploy.js <project-root>` — it backs up
-AGENTS.md before writing, prints a diff preview, and refuses to deploy if `harness/` still
-contains `{{placeholder}}` content. Use `--dry-run` to preview without writing.
+**If you have cloned the full repo and `tools/` is present:** run `node tools/deploy.js <project-root>`
+— it backs up AGENTS.md before writing, prints a diff preview, and refuses to deploy if `harness/`
+still contains `{{placeholder}}` content. Use `--dry-run` to preview without writing. Otherwise
+(`tools/` is not in the skill bundle) use the manual fallback below — it is the default path.
 
-**Manual fallback (no Node runtime):**
+**Manual fallback (default — no `tools/`):**
 1. Read `.synaptic/harness/conventions.md` and `.synaptic/harness/guardrails.md`.
 2. **STOP** — if either file still contains `{{placeholder}}` values, do NOT deploy. Inform the
    user: "harness/ contains unfilled placeholders — complete the onboarding interview (/synaptic-init) first."
@@ -343,7 +350,7 @@ Load the referenced file only when the operation is invoked, not at boot.
 | Command | What it does | Reference |
 |---|---|---|
 | `/synaptic-init` | No brain → interview + generate (from `templates/`) + wire + deploy operating rules + deploy capture hooks. Brain present but unwired → wire + deploy. Brain present + wired → extend (add cluster / registries / ingest). | This file |
-| `/synaptic-consolidate` | Run the 6-step capture contract on session output (journal + playground artifacts); the manual fallback when no capture hooks are wired | `references/consolidate.md` |
+| `/synaptic-consolidate` | Run the six-step capture contract on session output (journal + playground artifacts); the manual fallback when no capture hooks are wired | `references/consolidate.md` |
 | `/synaptic-ingest [file]` | Distill a document into an atomic node + reference entry | `references/ingest.md` |
 | `/synaptic-audit` | DIAGNOSE: staleness, orphans, broken `[[wikilinks]]`, MOC coverage, cross-link coverage, half-done/unconsolidated + pending-breadcrumb check, registry integrity, oversized untyped nodes, tag hygiene | `references/audit.md` |
 | `/synaptic-weave` | Graph-gardening pass: propose missing `[[links]]` (typed-edge proposals, propose-never-write), flag under-connected nodes, detect concept gaps, suggest merges, promote recurring themes | `references/weave.md` |

@@ -167,18 +167,27 @@ function parseFrontmatter(lines) {
 /**
  * Extract all [[wikilinks]] from lines, skipping:
  *   - HTML comment blocks (<!-- ... -->)
+ *   - fenced code blocks (``` ... ``` or ~~~ ... ~~~)
  *   - inline code spans (`...`)
  * Returns an array of raw link strings (may contain # or | — strip those for resolution).
  */
 function extractWikilinks(lines) {
   const links = [];
   let inComment = false;
+  let inFence = false;
 
   for (const rawLine of lines) {
     if (inComment) {
       if (rawLine.includes('-->')) inComment = false;
       continue;
     }
+    // Fenced code block toggle: a line opening or closing ``` / ~~~ flips the flag;
+    // skip wikilink extraction while inside a fence.
+    if (/^\s*(```|~~~)/.test(rawLine)) {
+      inFence = !inFence;
+      continue;
+    }
+    if (inFence) continue;
     // Strip inline code spans
     let line = rawLine.replace(/`[^`]*`/g, m => ' '.repeat(m.length));
 

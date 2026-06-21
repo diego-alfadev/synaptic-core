@@ -31,7 +31,7 @@ Each inner layer is independent of the outer ones. **CORE vs Cortex is one conce
 **CORE** works everywhere, always — even on an air-gapped corporate laptop with nothing installed. **Cortex** and **Ecosystem** are optional power-ups. Removing the outer layers does not break the inner ones.
 
 - **CORE:** Pure Markdown + YAML, zero dependencies, works everywhere including air-gapped corporate environments. **Hooks are CORE** — they are host-run config the agent already executes, not a runtime we ship.
-- **Cortex** (optional, the runtimes we add): the **MCP server** (a tool *over* the files — the brain never depends on it), the zero-dep Node utilities (`check`, `migrate`, `export`, `vault-open`, `graph`), and an optional semantic sidecar. All deletable; all degrade away cleanly.
+- **Cortex** (optional, the runtimes we add): the **MCP server** (a tool *over* the files — the brain never depends on it), the zero-dep Node utilities (`check`, `migrate`, `export`, `vault-open`, `graph`, `deploy`), and an optional semantic sidecar. All deletable; all degrade away cleanly.
 - **Ecosystem** (future ring): shared / team brain and on-the-fly collaboration — separate repos only if ever split.
 
 > The CORE/Cortex boundary is never drawn at "with/without MCP". **MCP is Cortex** — a tool over the files, alongside the other optional utilities. A brain works fully without it, and it degrades away cleanly.
@@ -60,7 +60,7 @@ Synaptic-core did not invent its substrate — it converged on patterns that the
 
 > These horizon items are enabled by the v1 file contract (frontmatter + tags + INDEX + `[[wikilinks]]`) — they attach without forking the format. All are optional Cortex utilities the brain never depends on. See [ROADMAP.md](../../ROADMAP.md) for the full horizon detail.
 
-## Optional tooling (check · migrate · export · vault-open · graph)
+## Optional tooling (check · migrate · export · vault-open · graph · deploy)
 
 These are optional **Cortex** utilities — **zero-dependency** (Node ≥ 18 standard library only). CORE never requires them. When no runtime is available, the `synaptic` skill instructs the agent to perform the equivalent operation manually.
 
@@ -71,6 +71,7 @@ These are optional **Cortex** utilities — **zero-dependency** (Node ≥ 18 sta
 | `export` | `node tools/export.js <.synaptic> [out.md]` | Bundles the entire brain into a single portable Markdown file (or `--split` into 4 sections) |
 | `vault-open` | `node tools/vault-open.js <.synaptic>` | Writes minimal optional config for Obsidian, Foam, and Logseq; produces `OPEN-IN.md` |
 | `graph` | `node tools/graph.js [.synaptic] [--out FILE] [--format html\|svg]` | Render a visual graph image of your brain — executive-friendly, no install; deterministic layout makes before/after states visually comparable |
+| `deploy` | `node tools/deploy.js <project-root> [--dry-run]` | Materializes the `harness/` rules (conventions + guardrails) into the outer harness (`AGENTS.md`) as a marker-bounded block — backed up, diff-previewed, idempotent |
 
 **Opens in your tools without any conversion:**
 
@@ -111,7 +112,7 @@ synaptic-core/
 ├── standalone/        # The synaptic skill package (installable without the full repo)
 │   └── synaptic/templates/   # SINGLE SOURCE OF TRUTH for the .synaptic/ structure
 ├── docs/              # Architecture decisions (ADR-001, ADR-002, ...) + assets + concepts/
-└── tools/             # Optional Cortex utilities (check, migrate, export, vault-open, graph)
+└── tools/             # Optional Cortex utilities (check, migrate, export, vault-open, graph, deploy)
 ```
 
 > There is no `seed/` directory. The skill bundle's `templates/` are the one source of truth; the example brain is assembled on demand by the skill at `/synaptic-init`.

@@ -34,9 +34,9 @@ The migration is non-destructive, content-preserving, and fully reversible:
 ### Practical runbook (typical case: Node + Python + an agent)
 
 1. **Branch:** `git switch -c v1-upgrade` — work on a copy; the original branch is your fallback.
-2. **Phase M (mechanical):** `node tools/migrate.js .synaptic` — deterministic file staging; safe and scriptable. Use `--dry-run` first to preview moves without writing anything.
+2. **Phase M (mechanical):** if `tools/migrate.js` exists, run `node tools/migrate.js .synaptic` (use `--dry-run` first to preview moves without writing anything) — deterministic file staging, safe and scriptable; otherwise do the manual equivalent (stage files to `_migration-staging/` per the M-step checklist below by hand).
 3. **Phase C (agent rearrange):** tell your agent `/synaptic-upgrade` — the capable-agent phase: link conversion, MOC creation, consolidation formula applied retroactively, harness triage. The agent proposes each change; you confirm before it is written.
-4. **Verify:** `node tools/check.js .synaptic` for graph health, then `/synaptic-audit` in the agent for staleness and coverage. Review the result in Obsidian or Foam before proceeding.
+4. **Verify:** if `tools/check.js` exists, run `node tools/check.js .synaptic` for graph health; otherwise do the manual equivalent (the Phase V checklist greps / inspection below). Then `/synaptic-audit` in the agent for staleness and coverage. Review the result in Obsidian or Foam before proceeding.
 5. **Merge:** once satisfied, `git switch main && git merge v1-upgrade`. The old branch remains as a rollback point.
 
 > If anything looks wrong after Phase C, do not merge — you have the original branch. Open an issue or re-run Phase C with more conservative settings.

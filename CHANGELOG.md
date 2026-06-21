@@ -54,7 +54,7 @@
   Two **orthogonal** axes — the **passivity dial** (when capture triggers: manual ↔ event-driven hooks
   ↔ where-supported automation) and **`capture_policy`** (how much reaches the wiki).
 - **`capture_policy` presets renamed:** `curated | balanced | logbook` → **`selective | balanced |
-  capture-all`** (same formula, now seven steps; promotion threshold only).
+  capture-all`** (same formula, six steps; promotion threshold only).
 - **Always-on journal breadcrumb floor:** a terse one-line `Stop` breadcrumb per meaningful turn, fixed
   cost, surviving crashes — **not** governed by `capture_policy`. Honest limit stated: **no agent has
   native idle detection**; "passive" = event-driven on hook-capable hosts + the journal fallback +
@@ -146,4 +146,4 @@ vector/semantic search, shared/team brain, Engram-style searchable journal), and
 ADR-002 LLM-wiki-first, ADR-003 deploy-source + weave). The full technique-to-mechanism table —
 Zettelkasten atomicity, MOC-of-MOCs, `[[wikilinks]]`, Karpathy LLM-wiki, Agent Skills progressive
 disclosure, frontmatter metadata, consolidation protocol, files-authoritative governance, and the
-GraphRAG / FTS5 horizon items — is documented in the README under "Built on proven ideas (and why)".
+GraphRAG / FTS5 horizon items — is documented in [`docs/concepts/architecture-matrioshka.md`](docs/concepts/architecture-matrioshka.md).

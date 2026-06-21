@@ -49,7 +49,7 @@ Download or clone the repo and copy the **whole folder** `standalone/synaptic/` 
 
 > **Copy the whole FOLDER, not one file.** The skill is `SKILL.md` **plus** `references/` and `templates/` — all three are required. (Copying only `SKILL.md` will not work: the templates are the source of your brain, and the references hold the lifecycle commands.)
 
-**Skill-less fallback (any agent, always works):** paste `"Read .synaptic/BRAIN.md and follow it."` — the brain is self-describing. You lose the guided lifecycle commands; the brain still works.
+**Already have a brain (inherited a project)?** Paste `Read .synaptic/BRAIN.md and follow it` — the brain is self-describing (you lose the guided lifecycle commands; the brain still works). Creating a brain from scratch? Use a tier above — Tier 1 bootstraps from nothing.
 
 ---
 
@@ -83,7 +83,7 @@ Every team pays a **knowledge tax**: re-briefing the agent each session, onboard
 | Command | What it does |
 |---|---|
 | `/synaptic-init` | Scope-aware interview; generates the brain from the bundle templates; self-wires harness |
-| `/synaptic-consolidate` | Run the 6-step capture contract on the current session's output |
+| `/synaptic-consolidate` | Run the 6-step capture contract on the current session's output; promotion aggressiveness is a tunable dial (`selective` / `balanced` / `capture-all`) |
 | `/synaptic-ingest [file]` | Distil a document into an atomic node + reference entry |
 | `/synaptic-audit` | **Diagnose only:** orphans, broken links, stale nodes, MOC coverage, cross-link coverage, unconsolidated work, registry integrity, tag hygiene |
 | `/synaptic-weave` | Retroactive graph-gardening: missing links (+ typed-edge proposals), near-duplicates, theme promotion |
@@ -115,7 +115,7 @@ The landing invites; the docs explain. Start at the index, then follow the threa
 - [docs/concepts/typed-edges.md](docs/concepts/typed-edges.md) — the seven typed edges that make the graph *relational*
 - [docs/concepts/epistemic-honesty.md](docs/concepts/epistemic-honesty.md) — source, confidence, and bias-check: knowledge that is traceable and falsifiable
 - [docs/concepts/navigation-and-planes.md](docs/concepts/navigation-and-planes.md) — MOC-of-MOCs bounded navigation and the two-plane (wiki · harness) model
-- [docs/concepts/capture-and-consolidation.md](docs/concepts/capture-and-consolidation.md) — the 6-step formula and the capture dial (passive ↔ manual)
+- [docs/concepts/capture-and-consolidation.md](docs/concepts/capture-and-consolidation.md) — the 6-step formula and the capture dial (`selective` / `balanced` / `capture-all`)
 - [docs/concepts/architecture-matrioshka.md](docs/concepts/architecture-matrioshka.md) — CORE · Cortex · Ecosystem, and why hooks are CORE
 
 And the two longer reads:
