@@ -8,7 +8,7 @@ This is the **first real run** of the v1 migration on a production brain, so do 
 
 ## Before you start
 
-- **You need Node** (for the optional checks). You already have it — `nvm` is installed via ITSM, so `node` is available. If `node --version` fails, the agent will fall back to doing the checks manually; nothing blocks.
+- **Node is optional** (only for the bundled checks). If `node` is available (directly or via `nvm`), the tools run; if not, the agent does the equivalent checks manually — nothing blocks.
 - **Use your normal agent** (Claude Code / Copilot / Cursor — whatever you use on the brain).
 - Know where your brain lives: the `.synaptic/` folder in your project.
 

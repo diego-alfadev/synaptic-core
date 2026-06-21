@@ -544,7 +544,7 @@ Step 7: Write references/ with _index.md
 Step 8: Write journal/ with _current.md template
 Step 9: Write skills/consolidate/SKILL.md
 Step 10: Write skills/ingest/SKILL.md
-Step 11: Populate with real content for your Swedbank DAT context
+Step 11: Populate with real content for your own role/team context
 Step 12: Test bootstrap — restart agent, see if it reads and onboards correctly
 ```
 

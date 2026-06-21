@@ -1,8 +1,10 @@
 # Changelog
 
-## v1 (next) — "AI Brain, on a dial"
+## v1.1.0 — "AI Brain, on a dial" · 2026-06-21
 
-> The v1 line keeps the unchanged CORE floor (pure Markdown/YAML, zero-runtime, files-authoritative,
+> **The brain you already have — now relational, auditable, and self-improving *as you work*, with nothing new to install.** The biggest release since v1.0: a typed knowledge graph, provenance you can audit, a capture mechanism that keeps up while you work, and a sharper story — all on the same zero-runtime files you already own.
+>
+> The v1.1 line keeps the unchanged CORE floor (pure Markdown/YAML, zero-runtime, files-authoritative,
 > persona-out, MOC-of-MOCs, anti-RAG default, MIT) and grows positioning, capture, and the typed
 > knowledge graph on top of it. Every change below is additive and backward-compatible; additive
 > frontmatter does **not** bump the brain schema version.
@@ -25,15 +27,14 @@
 - **Auto-notes objection FAQ** added: this is structure + patterns + curation (capture-with-intention →
   consolidate into linked atomic notes, lessons, playbooks), **not** passive meeting summaries.
 - **Three intents documented as MOC lenses** (personal / the seat / department) over the same nodes —
-  **recommend starting with the seat.** The **public-brain pattern is rejected** for any client-/
-  Swedbank-facing material (private/access-controlled only; generic-with-caveat elsewhere).
+  **recommend starting with the seat.** The **public-brain pattern is rejected** for any client-facing material (private/access-controlled only; generic-with-caveat elsewhere).
 
 ### Capture (the dial)
 - **Capture reframed as a dial:** lead with **passivity-as-a-dial**, then the honest manual trade.
   Two **orthogonal** axes — the **passivity dial** (when capture triggers: manual ↔ event-driven hooks
   ↔ where-supported automation) and **`capture_policy`** (how much reaches the wiki).
 - **`capture_policy` presets renamed:** `curated | balanced | logbook` → **`selective | balanced |
-  capture-all`** (same 6-step formula; promotion threshold only).
+  capture-all`** (same formula, now seven steps; promotion threshold only).
 - **Always-on journal breadcrumb floor:** a terse one-line `Stop` breadcrumb per meaningful turn, fixed
   cost, surviving crashes — **not** governed by `capture_policy`. Honest limit stated: **no agent has
   native idle detection**; "passive" = event-driven on hook-capable hosts + the journal fallback +
@@ -49,6 +50,15 @@
 - **Engram = optional searchable journal layer** (SQLite/FTS5) — never a graph refiner, never rewrites
   pages. **Vector/semantic search = horizon Cortex** ("the direction"; no auto-discovery-of-links claim).
 - **Canvas dropped from v1 entirely** (not even later-polish).
+
+### Upgrading — quick, non-destructive, honestly a pleasure
+
+**Your data is safe on every path** — you work on a copy and switch only when you're happy.
+
+- **From v0.3.x →** run `/synaptic-upgrade`, or follow the supervised runbook [`docs/UPGRADE-v0.3-to-v1.md`](docs/UPGRADE-v0.3-to-v1.md). It restructures **on a copy** (Phase M mechanical → Phase C agent re-file → Phase V verify: counts, links, MOC coverage), and you replace the original only once it is green. Worst case, you keep your old brain.
+- **From v1.0.0 →** just re-copy the skill ([`standalone/synaptic/SKILL.md`](standalone/synaptic/SKILL.md)). Your brain keeps working as-is — the schema is unchanged. One optional, one-word touch: rename your `capture_policy` value (`curated → selective`, `logbook → capture-all`).
+
+Nothing to deploy, no server, no database — the upgrade is files in, files out.
 
 ## v1.0.0 — "LLM-wiki, grounded" · 2026-06-12
 

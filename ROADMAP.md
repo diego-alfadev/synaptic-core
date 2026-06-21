@@ -102,7 +102,7 @@ The v1 file contract (frontmatter + tags + INDEX + `[[wikilinks]]` + registries)
 
 **Constraint:** the governance layer is a social contract, not a technical one. The technical prerequisite (a committed repo + frontmatter contract) is satisfied by v1.
 
-> **Private only.** A shared brain is **private and access-controlled**. A *public* brain pattern is **rejected for any client- or Swedbank-facing material** — knowledge bases accrete sensitive context; confidentiality and governance come first. It may be described generically (away from any client context) only as a pattern-with-a-confidentiality-caveat.
+> **Private only.** A shared brain is **private and access-controlled**. A *public* brain pattern is **rejected for any client-facing material** — knowledge bases accrete sensitive context; confidentiality and governance come first. It may be described generically (away from any client context) only as a pattern-with-a-confidentiality-caveat.
 
 ### Engram-style searchable journal — **Cortex**
 

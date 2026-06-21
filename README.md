@@ -1,10 +1,10 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/diego-alfadev/synaptic-core/v1.0.0/docs/assets/synaptic-hero.svg" alt="synaptic-core — one brain, any agent, zero install" width="880">
+  <img src="https://raw.githubusercontent.com/diego-alfadev/synaptic-core/v1.1.0/docs/assets/synaptic-hero.svg" alt="synaptic-core — one brain, any agent, zero install" width="880">
 </p>
 
 <p align="center">
   <img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-blue">
-  <img alt="version" src="https://img.shields.io/badge/version-1.0.0-5eead4">
+  <img alt="version" src="https://img.shields.io/badge/version-1.1.0-5eead4">
   <img alt="install" src="https://img.shields.io/badge/install-zero-16a34a">
   <img alt="agent" src="https://img.shields.io/badge/agent-agnostic-818cf8">
   <img alt="format" src="https://img.shields.io/badge/format-Markdown%20%2B%20%5B%5Bwikilinks%5D%5D-fbbf24">
@@ -57,7 +57,7 @@ Two-engine migration: deterministic file ops (Phase M) + mandatory agent rearran
 ## 🧠 How it works
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/diego-alfadev/synaptic-core/v1.0.0/docs/assets/synaptic-architecture.svg" alt="how synaptic works" width="900">
+  <img src="https://raw.githubusercontent.com/diego-alfadev/synaptic-core/v1.1.0/docs/assets/synaptic-architecture.svg" alt="how synaptic works" width="900">
 </p>
 
 One boot file (`BRAIN.md`, ≤110 lines, ~500 tokens) is the only mandatory read. It carries the context capsule, the capture contract, a 1-line pointer to the deployed harness rules, the brain map, and the session-start pointer. Everything else loads on demand.
@@ -163,7 +163,7 @@ The *same* nodes can be navigated through different MOC lenses depending on what
 
 **Recommendation: start with the seat.** A seat brain is the unit that beats the knowledge tax — it onboards the next person, survives a contractor rotation, and does not entangle one individual's personal notes with the role's durable knowledge. Personal is the easiest start; department is the natural growth once a seat brain works.
 
-> **A note on shared/public brains:** a private, access-controlled brain is the supported pattern. A *public* brain that anyone can read is **out of scope for any client- or Swedbank-facing material** — knowledge bases accrete sensitive context, and confidentiality + governance must come first. Described generically (away from any client context), it is at most a pattern-with-a-confidentiality-caveat, never a recommendation.
+> **A note on shared/public brains:** a private, access-controlled brain is the supported pattern. A *public* brain that anyone can read is **out of scope for any client-facing material** — knowledge bases accrete sensitive context, and confidentiality + governance must come first. Described generically (away from any client context), it is at most a pattern-with-a-confidentiality-caveat, never a recommendation.
 
 ---
 
