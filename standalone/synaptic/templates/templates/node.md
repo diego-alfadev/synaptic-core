@@ -12,7 +12,7 @@ tags:
 
 # --- Provenance & confidence (OPTIONAL, additive — adding these does NOT bump brain schema) ---
 # source: where this knowledge came from (footnote / URL / doc / "session 2026-06-21" / ticket).
-#         Provenance is the bank-governance argument: every claim is traceable.
+#         Provenance is the governance argument: every claim is traceable to its origin.
 # source: "{{e.g. internal runbook §3 · https://… · session YYYY-MM-DD · ticket KEY}}"
 # confidence: how settled this knowledge is. Three-value enum ONLY: high | medium | low.
 # confidence: medium

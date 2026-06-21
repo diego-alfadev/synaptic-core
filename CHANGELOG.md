@@ -2,15 +2,23 @@
 
 ## Unreleased
 
+> **Same brain, easier front door.** A docs-and-onboarding patch on top of v1.1.0: three ways to install (including a zero-tooling path a coding agent can run on a clean machine), a leaner newcomer-first README, and the deep theory moved where it belongs — into `docs/`. No engine changes, no schema change, nothing to migrate.
+
+### Added
+- **Three-tier install.** Pick the path that fits the machine:
+  - **Agent self-install (zero tooling).** A short bootstrap header at the top of `SKILL.md`, paired with a `MANIFEST.txt` listing every file in the bundle, lets a coding agent fetch and install the whole skill on a clean machine — no Node, no clone, no package manager. Point an agent at the skill, it reads the manifest and pulls the rest. The skill engine version bumps to 1.1.0, so existing installs reinstall the updated skill on the next harness wire.
+  - **`npx degit` one-liner.** A single copy-paste command that pulls the skill folder for anyone who already has Node.
+  - **Manual folder-copy fallback.** Copy the skill folder by hand — the always-works path, no toolchain required.
+- **First-run orientation in `/synaptic-init`.** A light, optional walkthrough on first run so a newcomer sees what was created and what to do next, instead of a bare prompt.
+
+### Changed
+- **README restructured for newcomers.** The landing is now lean and front-loaded: install, a first-5-minutes path, and the commercial rationale — in that order. The deep conceptual material (typed graph, capture contract, layering, honesty lines) moved into `docs/concepts/`, fronted by an `_index` map-of-content and wired with relative links so nothing is lost — it is one click away instead of in your face.
+- **Acknowledgments expanded.** Credit broadened to the peers and prior art studied while building this — the Karpathy LLM-wiki gist, ScrapingArt, `shannhk/llm-wikid`, `nvk/llm-wiki`, Basic Memory, and `claude-obsidian` — plus a "validated pattern" references block grouping the proven ideas the design draws on.
+
 ### Fixed
-- **Audit excludes scaffolding from link checks.** `/synaptic-audit` (and `tools/check.js`) now
-  exclude `templates/` and `references/raw/` from the broken-link (Step 3) and cross-link-coverage
-  (Step 4b) checks. Those directories legitimately hold placeholder example wikilinks
-  (`[[target]]`, `[[related-node]]`, `[[x]]`) and verbatim captured payloads — scaffolding, not
-  authored edges. The first dogfood audit false-flagged ~12 of them as "broken." CORE-safe:
-  skill-guidance + optional-tool change, pure files, no new dependencies. (`references/raw/` was
-  the gap in `check.js`; `templates/` was already excluded there — `audit.md` now states both
-  exclusions explicitly for the no-runtime path.)
+- **Install instructions corrected.** The quick-start previously implied you copy only `SKILL.md`. The skill needs its **whole folder** (`references/` + `templates/`) to function — the install steps now say so on every path.
+- **Genericized a client-specific governance phrase.** A governance wording in the README and the node template's provenance note is now generic enterprise language ("the governance argument" / "regulated and audit-sensitive work"). The public repo stays client-agnostic.
+- **Audit excludes scaffolding from link checks.** `/synaptic-audit` (and `tools/check.js`) now exclude `templates/` and `references/raw/` from the broken-link and cross-link-coverage checks — those directories hold placeholder example wikilinks (`[[target]]`, `[[x]]`) and verbatim captured payloads (scaffolding, not authored edges), which the first dogfood audit false-flagged as "broken."
 
 ## v1.1.0 — "AI Brain, on a dial" · 2026-06-21
 
