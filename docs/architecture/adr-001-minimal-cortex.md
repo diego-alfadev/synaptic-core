@@ -207,5 +207,7 @@ move is to fix CORE first, then let robust mode grow on top.
 - `synaptic-audit/research/` — raw evidence files from the real brain analysis
 - `standalone/synaptic/SKILL.md` — the unified skill package
 - `standalone/synaptic/references/upgrade-v03-to-v04.md` — migration guide
-- `seed/.synaptic/BRAIN.md` — the v0.4 boot file template
-- `tools/check.js` — TOOLS-layer lint (BRAIN.md budget, INDEX coverage, frontmatter, wikilinks)
+- `standalone/synaptic/templates/BRAIN.md` — the boot file template (single source of truth; the
+  former `seed/.synaptic/BRAIN.md` was removed in v1 — templates are now the one source and the
+  example brain is assembled on demand)
+- `tools/check.js` — Cortex lint (BRAIN.md budget, INDEX coverage, frontmatter, wikilinks)
