@@ -1,10 +1,12 @@
 # ROADMAP — SYNAPTIC-CORE
 
-> Horizon traced, not promised. The v1.0 section describes what shipped. The platform-mode section describes where this is going and what each item needs to get there — none of it is committed for a specific date.
+> Horizon traced, not promised. The shipped section describes what is in v1. The Cortex-horizon section describes where this is going and what each item needs to get there — none of it is committed for a specific date.
+
+> **Layer language (v1):** CORE = files/text on the runtime the agent already has, **hooks included** (host-run config). **Cortex** = optional utilities that need a runtime *we* add (the MCP server, the Node tools, a semantic sidecar) — deletable; the brain never depends on them. **Ecosystem** = the future team/shared ring. The horizon items below are **Cortex** unless noted.
 
 ---
 
-## v1.0 — What shipped
+## What shipped (CORE)
 
 **Status:** current branch `audit/improvement-proposal`
 
@@ -36,7 +38,7 @@ Every knowledge node and registry carries: `description` (1 line, feeds the `_in
 
 `/synaptic-init` writes the `<!-- BEGIN:SYNAPTIC -->` fragment into the project `AGENTS.md` (idempotent; created if absent) and installs the skill package into `.claude/skills/synaptic/` and `.agents/skills/synaptic/`. These are the ecosystem-standard discovery paths adopted across Claude Code, Cursor, VS Code Copilot, Gemini CLI, OpenCode, and Codex. The skill optionally writes a `.cursor/rules/synaptic.mdc` shim when `.cursor/` is detected.
 
-### Four tools (zero-dep, optional)
+### Optional Cortex tools (zero-dep)
 
 | Tool | What it does |
 |---|---|
@@ -45,7 +47,7 @@ Every knowledge node and registry carries: `description` (1 line, feeds the `_in
 | `export` | Single-file (or 4-section split) Markdown bundle for sharing, backup, or paste-into-chat |
 | `vault-open` | Minimal optional config for Obsidian, Foam (VS Code), and Logseq; produces `OPEN-IN.md` |
 
-All zero-dependency (Node ≥ 18 standard library). CORE never requires them. No-runtime fallback: the `synaptic` skill performs the equivalent operation manually.
+All zero-dependency (Node ≥ 18 standard library). These are **Cortex** — CORE never requires them. No-runtime fallback: the `synaptic` skill performs the equivalent operation manually. (Hooks, by contrast, are CORE: host-run config, not a runtime we ship.)
 
 ### Two-engine migration from v0.3 / v0.4 / v0.5
 
@@ -61,34 +63,36 @@ Phase C is a breaking change by design — it cannot be scripted away. A capable
 
 ---
 
-## Platform mode — honest horizon
+## Cortex — honest horizon
 
-The v1 file contract (frontmatter + tags + INDEX + `[[wikilinks]]` + registries) is deliberately the **indexable surface** for all four platform items below. None of them require forking the format. None of them are built in v1.
+The v1 file contract (frontmatter + tags + INDEX + `[[wikilinks]]` + registries) is deliberately the **indexable surface** for every Cortex item below. None of them require forking the format. None of them are built in v1. Each is **optional and deletable** — the brain never depends on it.
 
-### MCP server
+### MCP server — **Cortex**
 
-**What:** expose read and search over the brain to any MCP-capable agent — load a node by name, search by tag, query the INDEX, retrieve a registry row.
+**What:** expose read and search over the brain to any MCP-capable agent — load a node by name, search by tag, query the INDEX, retrieve a registry row. **MCP is Cortex** — a tool *over* the files, not the CORE line. The CORE/Cortex boundary is never drawn at "with/without MCP"; a brain works fully without it, and it degrades away cleanly.
 
 **Why:** agents that cannot read files directly (sandboxed runtimes, remote orchestration) would gain full brain access without any format change. Local agents that *can* read files already have a better path (direct file read); the MCP server targets the remote/sandboxed case.
 
 **Dependency:** a runtime (Node or Python) at the brain location; the v1 frontmatter and INDEX contract as the query surface. No schema migration needed.
 
-### Semantic search / RAG + nugget layer
+### Vector / semantic search — **Cortex (the direction, not a claim)**
 
 **What:** a two-tier derived layer, both built FROM the authored pages and deletable at any time:
 
-1. **Embeddings over nodes and registry rows** — find the most relevant node for a query even when the exact wikilink is unknown. Candidates: Smart Connections (Obsidian plugin), SQLite-vec sidecar, Engram's embedding layer.
-2. **Nugget / proposition index** — extract atomic facts and entities from the narrative pages, embed and index them. Enables (a) fine-grained semantic retrieval (RAG over propositions, not whole pages), (b) auto-suggesting `[[links]]` that feed the `/synaptic-weave` graph-gardening operation, and (c) gap detection (concepts referenced or implied by a cluster but with no authored node).
+1. **Embeddings over nodes and registry rows** — find the most relevant node for a query even when the exact wikilink is unknown. Candidates: Smart Connections (Obsidian plugin), SQLite-vec sidecar, an embedding layer.
+2. **Nugget / proposition index** — extract atomic facts and entities from the narrative pages, embed and index them. Enables (a) fine-grained semantic retrieval over propositions, not whole pages, and (b) **proposing** candidate `[[links]]` for the `/synaptic-weave` graph-gardening operation to review.
 
-**Why:** the MOC-of-MOCs navigation is efficient when you know *where* to look; semantic search helps when you do not. The nugget layer adds fine-grained recall and drives automated relation discovery without touching the authoritative pages.
+**Honesty line:** we are **not** GraphRAG and make **no auto-discovery-of-non-intuitive-links claim**. GraphRAG / LightRAG are cited as *the direction*. Edges stay **authored**; this layer **proposes, never auto-writes** — `/synaptic-weave` and a human confirm. Multi-hop relational retrieval here runs over **authored directional edges** an embedding cannot infer.
 
-**Relationship to the wiki:** the wiki (narrative pages) stays the authored, authoritative layer. The nugget index is strictly derived — it does not replace pages, and nothing in CORE reads it. Think of it as a computed view over the same content.
+**Why:** the MOC-of-MOCs navigation is efficient when you know *where* to look; the semantic sidecar is the **designed answer to the ticket → playbook seam at scale**, when you do not. It degrades to grep/MOC and is never required at CORE.
+
+**Relationship to the wiki:** the wiki (narrative pages) stays the authored, authoritative layer. The derived index does not replace pages, and nothing in CORE reads it. Think of it as a computed view over the same content.
 
 **Dependency:** an embedding runtime; the v1 `tags` frontmatter and `description` field as the primary embedding surface. The derived index is deletable; files remain authoritative. The `/synaptic-weave` skill operation can use this layer when available, but falls back to tag/term overlap when it is not.
 
-**Constraint:** CORE remains 0-install-capable. This entire layer is ECOSYSTEM, never CORE. The authored pages are the substrate; the nugget index is an optional acceleration.
+**Constraint:** CORE remains 0-install-capable. This entire layer is **Cortex**, never CORE. The authored pages are the substrate; the index is an optional acceleration.
 
-### Shared / team brain
+### Shared / team brain — **Ecosystem (future ring)**
 
 **What:** a committed brain repository with governance: CODEOWNERS on `knowledge/`, a `validated:` flag for peer-reviewed nodes, pull-request-based knowledge contribution.
 
@@ -98,21 +102,25 @@ The v1 file contract (frontmatter + tags + INDEX + `[[wikilinks]]` + registries)
 
 **Constraint:** the governance layer is a social contract, not a technical one. The technical prerequisite (a committed repo + frontmatter contract) is satisfied by v1.
 
-### Robust persistence (Engram-style sidecar)
+> **Private only.** A shared brain is **private and access-controlled**. A *public* brain pattern is **rejected for any client- or Swedbank-facing material** — knowledge bases accrete sensitive context; confidentiality and governance come first. It may be described generically (away from any client context) only as a pattern-with-a-confidentiality-caveat.
 
-**What:** a derived SQLite + FTS5 sidecar built from the file graph — fast full-text search, O(log n) backlink resolution, change-history queries.
+### Engram-style searchable journal — **Cortex**
 
-**Why:** for large brains (hundreds of nodes, multiple registries), grep-based backlink queries and linear INDEX scans become slow. A derived sidecar index solves this without touching the authoritative files.
+**What:** a derived SQLite + FTS5 layer **over the journal** — fast full-text history ("did I solve a ticket like this before?"), change-history queries, and O(log n) lookups, all built from the files.
 
-**Dependency:** Engram or a compatible SQLite/FTS5 runtime; the v1 frontmatter and wikilink contract as the parse surface. The sidecar is derivable on demand and deletable — files stay authoritative at all times.
+**Why:** for large brains and long histories, grep over the journal and linear scans become slow. A derived searchable layer solves this without touching the authoritative files.
 
-**Constraint:** the sidecar is a TOOLS/ECOSYSTEM concern, never a CORE requirement. A brain without the sidecar is fully functional.
+**What it is NOT:** it is a **searchable journal layer, never a graph refiner.** It does **not** rewrite the authored pages, does **not** materialize backlinks, and does **not** become the authoritative edge store — the forward `[[wikilink]]` stays the single source of truth for relationships.
+
+**Dependency:** Engram or a compatible SQLite/FTS5 runtime; the v1 frontmatter and wikilink contract as the parse surface. Derivable on demand and deletable — files stay authoritative at all times.
+
+**Constraint:** this layer is **Cortex**, never a CORE requirement. A brain without it is fully functional.
 
 ---
 
 ## Principles that will not change
 
-These constraints are non-negotiable across every version and every platform-mode addition:
+These constraints are non-negotiable across every version and every Cortex/Ecosystem addition:
 
 1. **0-install-capable CORE** — the brain works with just files; no tool is ever a hard requirement
 2. **Files authoritative** — derived indexes (SQLite, embeddings, MCP caches) are deletable; the Markdown files are always the source of truth

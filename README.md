@@ -10,9 +10,11 @@
   <img alt="format" src="https://img.shields.io/badge/format-Markdown%20%2B%20%5B%5Bwikilinks%5D%5D-fbbf24">
 </p>
 
-<p align="center"><strong>One boot file. Any agent. No required installations.</strong></p>
+<p align="center"><strong>Create your own AI Brain.</strong><br>One boot file. Any agent. No required installations.</p>
 
-Synaptic turns daily work into structured, navigable, agent-usable knowledge — a brain any agent can pick up in seconds and that travels with you when the project ends. The differentiator: instead of dumping context somewhere, you curate it once (write-time), so every future agent session reads cheap and deterministic. No re-briefing. No tribal knowledge walking out the door.
+Synaptic-core is an **AI Brain**: a way of working with your agents that turns your daily work into structured instructions and documentation that makes you more effective. Instead of dumping context somewhere, you curate it once (write-time), so every future agent session reads cheap and deterministic — a brain any agent can pick up in seconds and that travels with you when the project ends. No re-briefing. No tribal knowledge walking out the door.
+
+> This is an **industry pattern given a direction**, not a brand-new invention. We did not invent plain-file knowledge bases or wikilinks; we point them at one job — accreting a role's knowledge so an agent grows it correctly as you work.
 
 ---
 
@@ -34,11 +36,9 @@ Copy [`standalone/synaptic/SKILL.md`](standalone/synaptic/SKILL.md) into either 
 /synaptic-init
 ```
 
-The skill runs a scope-aware interview, generates a complete personalized brain, and self-wires your harness (writes `AGENTS.md` / `CLAUDE.md` fragment, installs skill in both paths). No further steps.
+The skill runs a scope-aware interview, generates a complete personalized brain from the bundle templates, and self-wires your harness (writes `AGENTS.md` / `CLAUDE.md` fragment, installs skill in both paths). No further steps.
 
-**Advanced — drop the seed:**
-
-Copy [`seed/.synaptic/`](seed/.synaptic/) into your project root. Fill every `{{placeholder}}` in `BRAIN.md`, then tell your agent: `"Read .synaptic/BRAIN.md and follow it."` See the [seed flow details](#) below.
+> **One folder, the whole CORE.** You don't install software — you teach your agent a way of working (one skill = markdown it reads). Your knowledge then accrues as plain `.md` files you own; no server, no database, no runtime we ship. Copy one folder and you have the whole CORE. (There is no separate seed to drop in: the skill's own templates are the single source, and the example brain is assembled on demand.)
 
 **Upgrading from v0.3 / v0.4 / v0.5:**
 
@@ -46,7 +46,7 @@ Copy [`seed/.synaptic/`](seed/.synaptic/) into your project root. Fill every `{{
 /synaptic-upgrade
 ```
 
-Two-engine migration: deterministic file ops (Phase M) + mandatory agent rearrange (Phase C). See [migration details](#) in the collapsible section below.
+Two-engine migration: deterministic file ops (Phase M) + mandatory agent rearrange (Phase C). See [`docs/UPGRADE-v0.3-to-v1.md`](docs/UPGRADE-v0.3-to-v1.md) for the supervised, non-destructive runbook (runs on a copy; switch only when green).
 
 **Skill-less fallback (any agent, always works):**
 
@@ -75,6 +75,53 @@ The brain has **two planes** — wiki (what you know) and harness (how you work 
 
 ---
 
+## 🆚 RAG vs a plain wiki vs an AI Brain
+
+Three ways to give an agent knowledge — they are not the same job:
+
+| | **RAG over raw** | **A plain wiki** | **An AI Brain (synaptic-core)** |
+|---|---|---|---|
+| **State** | Stateless — re-derives an answer on every query | Inert — sits there until a human edits it | **Improves itself as you work**, within bounded, reversible limits |
+| **Reasoning cost** | Paid on every read (chunk → embed → retrieve → reason) | Paid by the human who maintains it | Paid once at write-time; reads stay cheap and near-deterministic |
+| **What the agent reads** | Reassembled chunks | Whatever pages a human wrote | A curated, linked graph an agent navigates in ~3–4 hops |
+| **Over time** | No accretion — same corpus, re-queried | Drifts and goes stale | **Compounds** — every session adds to the graph |
+
+The Karpathy framing: keep **only the key, distilled information in the window**. An AI Brain is the discipline that produces exactly that — and then keeps producing it as the work continues. It is neither a query engine bolted onto a document dump (RAG) nor a static knowledge base (a wiki): it is a knowledge base that grows correctly *as you work*, with every automated edit diff-traced, git-reversible, and archive-before-delete.
+
+### What makes the graph *relational* — typed edges
+
+A plain wiki has undifferentiated `[[wikilinks]]`: "A links to B" but never *why*. An AI Brain keeps the wikilink and adds an optional **relationship type**, so the graph carries meaning an agent can reason over — closer to a knowledge graph than a link soup.
+
+The vocabulary is **frozen at seven edges** — small enough to stay consistent, expressive enough to matter:
+
+| Edge (you author) | Inverse (computed by grep) | Use when |
+|---|---|---|
+| `relates_to` *(default)* | `relates_to` | general association — the safe default |
+| `depends_on` | `required_by` | A needs B to function |
+| `supersedes` | `superseded_by` | A replaces / obsoletes B |
+| `contradicts` | `contradicts` | A and B make incompatible claims |
+| `applies_to` | *(lateral)* | a playbook / process → the system it governs |
+| `causes` | `caused_by` | A produces / triggers B |
+| `part_of` | `has_part` | real composition (system → subsystem → component) |
+
+Three rules keep it honest and portable:
+
+- **Authored, not inferred.** Edges are written at capture time (or *proposed* by `/synaptic-weave` and confirmed). The brain makes **no auto-discovery-of-links claim** — we cite [GraphRAG](https://github.com/microsoft/graphrag) only as **the direction** (multi-hop relational retrieval), not as something we run.
+- **One direction only.** You write `depends_on`; the inverse `required_by` is computed by `grep`, never stored. No index to keep in sync.
+- **The frontmatter wikilink *is* the edge.** No separate edges file, no derived graph DB — typed edges are parser-safe block-list `[[wikilinks]]` in a node's frontmatter. Adding them is **backward-compatible** and never bumps the brain `schema_version`.
+
+### Epistemic honesty — the bank-governance argument
+
+For regulated and audit-sensitive work, "the agent said so" is not good enough. Every node can carry optional, additive epistemic metadata that makes its knowledge **traceable and falsifiable**:
+
+- **`source:`** — where the claim came from (a runbook section, a URL, a ticket, a dated session). **Provenance is the governance argument:** every fact is traceable to its origin.
+- **`confidence:`** — how settled the knowledge is, on a three-value enum (`high | medium | low`).
+- **`## bias-check`** — an in-node section for what is *not* yet known, contradicting evidence, and the conditions under which the knowledge stops holding (paired with a `contradicts` edge when another node disagrees). It scopes the **knowledge**, never the agent's tone or persona — behaviour lives in the harness, not the brain.
+
+The result is a brain that is not just navigable but **defensible**: a compliance reviewer can read any claim, see where it came from, how confident it is, and what contradicts it — in plain Markdown, with no tool.
+
+---
+
 ## ✨ Features
 
 | Feature | What it gives you |
@@ -94,7 +141,7 @@ The brain has **two planes** — wiki (what you know) and harness (how you work 
 
 **For people — your second brain**
 
-Stop re-briefing your agent every session. Your accumulated knowledge is yours: portable, readable without any tool, never locked to a service. Hand over a role with something real — not a dump of meeting notes. Knowledge compounds: every session adds to the graph.
+Stop re-briefing your agent every session. Your accumulated knowledge is yours: portable, readable without any tool, never locked to a service. Hand over a role with something real — not a dump of meeting notes. It is a knowledge base that **improves itself as you work, within bounded, reversible limits** — every session adds to the graph.
 
 **For projects — an agent that onboards in seconds**
 
@@ -103,6 +150,20 @@ An agent reads one file and already knows the scope, conventions, guardrails, an
 **For companies — knowledge continuity without a platform rollout**
 
 A contractor finishes; their successor reads `.synaptic/BRAIN.md` and picks up where they left off. No new platform to procure, no rollout project, no vendor dependency. Auditable by default: compliance can read every file. Works on-premise, air-gapped, or in any cloud.
+
+### Three intents, one brain — pick the lens
+
+The *same* nodes can be navigated through different MOC lenses depending on what the brain is *for*. These are intents, not separate structures — the directory layout never changes:
+
+| Intent | Lens (what the MOC organises around) | When |
+|---|---|---|
+| **Personal** | Your own work across whatever you touch — a portable second brain | A solo practitioner; knowledge that follows *you* |
+| **The seat** *(recommended)* | A **role/position**, independent of who fills it — onboarding, conventions, playbooks, the knowledge a successor needs | Most teams; survives rotation and handover |
+| **Department** | A shared area across multiple seats | A team-wide knowledge area, once a seat brain has proven the pattern |
+
+**Recommendation: start with the seat.** A seat brain is the unit that beats the knowledge tax — it onboards the next person, survives a contractor rotation, and does not entangle one individual's personal notes with the role's durable knowledge. Personal is the easiest start; department is the natural growth once a seat brain works.
+
+> **A note on shared/public brains:** a private, access-controlled brain is the supported pattern. A *public* brain that anyone can read is **out of scope for any client- or Swedbank-facing material** — knowledge bases accrete sensitive context, and confidentiality + governance must come first. Described generically (away from any client context), it is at most a pattern-with-a-confidentiality-caveat, never a recommendation.
 
 ---
 
@@ -114,9 +175,9 @@ Synaptic-core did not invent its substrate — it converged on patterns that the
 |---|---|---|
 | **Atomic notes — Zettelkasten / Luhmann** | One concept per node, kebab-case filename (`auth-model.md`), ~150-line soft budget; consolidation formula enforces "promote only when it recurs" | Precise retrieval: the filename IS the concept; composable links work because scope is bounded. Over-atomization is deliberately avoided — agents handle dense pages better than ten micro-files. |
 | **Maps of Content / MOC-of-MOCs — Obsidian / Nick Milo** | Three-level hierarchy: `BRAIN.md` → `knowledge/INDEX.md` (hub MOC, 1-line per cluster) → `{cluster}/_index.md` (sub-MOC, 1-line per node) → open only 1–2 nodes | Bounded navigation: ~3–4 hops to any insight regardless of brain size. The 1-line summaries in `_index.md` are the mechanism — an agent reads the summary, not the full node, to decide whether to open it. |
-| **Bidirectional `[[wikilinks]]` — wiki / Obsidian** | Every node uses `[[page-name]]` links written at capture time; backlinks resolved via `grep -r "[[node]]"` (CORE) or the FTS5 index (horizon ROBUST); opens natively in Obsidian / Foam / Logseq | Emergent link-graph: structure comes from links, not rigid folder hierarchy. A concept can belong to multiple clusters simultaneously. Multi-dimensional without duplication. |
+| **Bidirectional `[[wikilinks]]` — wiki / Obsidian** | Every node uses `[[page-name]]` links written at capture time; backlinks resolved via `grep -r "[[node]]"` (CORE) or an optional FTS5 index (horizon Cortex); opens natively in Obsidian / Foam / Logseq | Emergent link-graph: structure comes from links, not rigid folder hierarchy. A concept can belong to multiple clusters simultaneously. Multi-dimensional without duplication. |
 | **LLM-wiki / "compile knowledge" — Karpathy** | Curated narrative pages an agent reasons over whole (no chunking); `references/raw/` holds verbatim payloads as schema-on-read fallback; consolidation formula = write-time curation discipline | Curate once, read cheap forever. Agents re-read the same context constantly; schema-on-write means retrieval is near-deterministic. Coherent curated context beats reassembled chunks for reliability and auditability. |
-| **Progressive disclosure — Anthropic Agent Skills** | `BRAIN.md` (≤110 lines, ~500 tokens) is the only boot read; skill metadata surfaces in Level 1 (~100 tokens); full skill body loads on trigger; reference files and seed templates load only at brain-init | Token economy: awareness costs ~100 tokens per skill; full depth costs only when needed. The same principle governs the brain: one boot file, everything else on demand. |
+| **Progressive disclosure — Anthropic Agent Skills** | `BRAIN.md` (≤110 lines, ~500 tokens) is the only boot read; skill metadata surfaces in Level 1 (~100 tokens); full skill body loads on trigger; reference files and the bundle templates load only at brain-init | Token economy: awareness costs ~100 tokens per skill; full depth costs only when needed. The same principle governs the brain: one boot file, everything else on demand. |
 | **Frontmatter + tags — PKM metadata standard** | Every node carries `description`, `type`, `status`, `updated`, `tags` (D1 decision, SPEC §4.3); `description` feeds the `_index.md` 1-liner and any future embedding input | Machine-readable surface for `/synaptic-audit`, `Ctrl+Shift+F` faceted search, and future FTS / semantic search — without forking the format when those layers are added. |
 | **Explicit contribution protocol — spec-driven mindset** | The 6-step consolidation formula (classify → atomicity test → generalize → place & link → dedupe/SSOT → quality gate) is embedded in every `BRAIN.md` as the capture contract | Agent-agnostic, consistent: any agent that runs this formula produces a navigable graph, not a pile of notes. The formula encodes both intention (what belongs) and inertia (how it grows). |
 | **Files-authoritative / local-first — Engram-inspired governance** | Files are the single source of truth; agent-native memory (Claude Code auto-memory, etc.) is treated as a cache; tools (`check`, `migrate`, `export`) are derived readers, never writers of truth | Portable, auditable, git-native. The brain works on a locked-down laptop, air-gapped server, or any future agent platform. No runtime dependency can become a single point of failure. |
@@ -125,10 +186,10 @@ Synaptic-core did not invent its substrate — it converged on patterns that the
 
 | Technique | Why it is a horizon item, not CORE |
 |---|---|
-| **GraphRAG / semantic-nugget retrieval** (Microsoft GraphRAG, LightRAG) | Curated wikilink pages already give coherent retrieval for agent-authored brains; a full LLM-per-chunk indexing pipeline is over-engineering for CORE and cost-justified only for unstructured corpus ingestion. On the ROADMAP as an optional ECOSYSTEM layer. |
-| **SQLite/FTS5 sidecar** (Engram-style) | FTS5 adds O(log n) backlink resolution and conflict detection — genuine value at scale — but it is a derived, deletable index over the files, not a replacement. Incompatible with the zero-install CORE constraint. On the ROADMAP as ROBUST mode. |
+| **Vector / semantic search** (GraphRAG, LightRAG, Smart Connections, SQLite-vec — *the direction*) | Curated wikilink pages already give coherent retrieval for agent-authored brains; a full embed-and-retrieve pipeline is over-engineering for CORE and cost-justified only at scale or for unstructured ingestion. We are **not** GraphRAG and make **no auto-discovery-of-links claim** — we cite it as the *direction*. A Cortex semantic sidecar (opt-in, degrades to grep/MOC) is its designed answer at scale. |
+| **Engram-style searchable journal** (SQLite/FTS5) | A derived, deletable **searchable layer over the journal** — fast full-text history ("did I solve a ticket like this before?"). It is **never** a graph refiner and never rewrites the authored pages; the forward `[[wikilink]]` stays the only authoritative edge. Optional Cortex, incompatible with the zero-install CORE floor by design. |
 
-> These horizon items are enabled by the v1 file contract (frontmatter + tags + INDEX + `[[wikilinks]]`) — they attach without forking the format.
+> These horizon items are enabled by the v1 file contract (frontmatter + tags + INDEX + `[[wikilinks]]`) — they attach without forking the format. All are optional Cortex utilities the brain never depends on.
 
 ---
 
@@ -136,12 +197,14 @@ Synaptic-core did not invent its substrate — it converged on patterns that the
 
 | Command | What it does |
 |---|---|
-| `/synaptic-init` | Scope-aware interview; generates brain; self-wires harness; can import a context-pack seed |
+| `/synaptic-init` | Scope-aware interview; generates the brain from the bundle templates; self-wires harness |
 | `/synaptic-consolidate` | Run the 6-step capture contract on current session output |
 | `/synaptic-ingest [file]` | Distil a document into an atomic node + reference entry |
-| `/synaptic-audit` | Check for orphans, broken links, stale nodes, MOC coverage, registry/reference integrity, tag hygiene |
+| `/synaptic-audit` | **Diagnose only:** orphans, broken links, stale nodes, MOC coverage, **cross-link (horizontal) coverage**, **half-done / unconsolidated work + pending breadcrumbs**, registry/reference integrity, oversized untyped nodes, tag hygiene. Audit diagnoses; weave/consolidate/synthesize/maintain treat |
+| `/synaptic-weave` | Retroactive graph-gardening: missing links (+ typed-edge proposals), near-duplicates, theme promotion |
+| `/synaptic-synthesize` | Generative pass over the curated brain: writes new synthesis nodes (cross-source patterns, concept evolution, orphan rescue), each MOC-registered at write time |
+| `/synaptic-maintain` | Orchestrated diagnose-then-treat sweep: audit diagnoses; consolidate / synthesize / weave treat — approval-gated. CORE procedure (an unattended timer would be optional Cortex) |
 | `/synaptic-upgrade` | Migrate a v0.3 / v0.4 / v0.5 brain to v1 (interactive, two-engine) |
-| `/synaptic-weave` | Retroactive graph-gardening: missing links, near-duplicates, theme promotion |
 
 ---
 
@@ -150,8 +213,8 @@ Synaptic-core did not invent its substrate — it converged on patterns that the
 | Tool / pattern | Relationship |
 |---|---|
 | **gentle-ai / ai-rules-sync / block/ai-rules / rulesync** | Harness wiring and cross-agent sync — install the skill in standard paths; these tools pick it up automatically |
-| **Engram** | Robust memory horizon: SQLite + FTS5 sidecar over the brain. Files stay authoritative; Engram is a derived cache |
-| **Smart Connections / SQLite-vec / RAG stacks** | Semantic search horizon: the v1 frontmatter + tags + INDEX + wikilinks contract is the indexable surface — attaches without forking the format |
+| **Engram** | Optional searchable **journal** layer (SQLite + FTS5) for fast full-text history — never a graph refiner, never rewrites pages. Files stay authoritative; Engram is a derived, deletable cache |
+| **Smart Connections / SQLite-vec / RAG stacks** | Vector / semantic search horizon (the *direction*, opt-in Cortex): the v1 frontmatter + tags + INDEX + wikilinks contract is the indexable surface — attaches without forking the format; degrades to grep/MOC |
 | **Jira / Trello / MCP task systems** | Tasks live there. The brain documents context and decisions; it does not track tickets |
 | **Agent-native memory** (Claude Code auto-memory, Copilot Memory) | Useful within its harness; treated as cache. Files win when they conflict |
 
@@ -168,33 +231,63 @@ Synaptic-core did not invent its substrate — it converged on patterns that the
 
 ---
 
-## 📏 Consolidation discipline is the product
+## ❓ FAQ
 
-The brain does not grow on its own. Without the capture contract being run, you have a note-dump. With it, you have a compounding brain.
+**"Isn't this just auto-notes — passive meeting summaries the agent dumps somewhere?"**
 
-This is the honest trade: **you pay ~5–10 minutes per active session** to run `/synaptic-consolidate` (classify, generalize, link, gate). In exchange, you erase the re-briefing tax on every future session, the onboarding tax for every new teammate or agent, and the handover tax when the project ends. Not "zero overhead." A deliberate trade of write-time cost for read-time leverage.
+No. Passive auto-notes (transcripts, meeting summaries, a running log of everything that happened) are exactly what an AI Brain is *not*. The point is **structure + patterns + curation**, not volume:
 
-**It adapts to how you work — set `capture_policy` in `BRAIN.md`:**
+- You **capture with intention** — a meaningful turn leaves a one-line breadcrumb, not a wall of transcript.
+- Then you **consolidate** — the 6-step formula distils that into **linked atomic notes, lessons, and playbooks**: the reusable conclusion, generalized, placed in the right cluster, linked, deduped, gated.
+- The scratch is burned. What survives is the distilled, navigable knowledge — not the log.
+
+An auto-notes pile grows linearly and rots. An AI Brain compounds, because curation is the product and the log is just the safety net underneath it.
+
+---
+
+## 🎚️ Capture is a dial — start passive, turn it up or down
+
+The #1 question people ask is *"do I have to babysit this?"* The answer is **no — capture is a dial, and the default leans passive.** You decide how much the agent does for you versus how much you do by hand. Two **orthogonal** dials:
+
+**1. The passivity dial — *when* capture triggers.** Set it where you like:
+
+| Setting | What happens | Good for |
+|---|---|---|
+| **Manual** | You run `/synaptic-consolidate` when you choose | Maximum control |
+| **Event-driven (recommended)** | Hooks fire on agent events — a one-line journal breadcrumb every turn, a flush before the context window compacts, a rescue sweep on next session start | Most people; the agent does the remembering |
+| **Where-supported automation** | On hosts that support it, more of the lifecycle runs without prompting | Long or heavy sessions |
+
+Underneath all settings is an **always-on, fixed-cost floor**: a terse one-line **breadcrumb to the journal** on each meaningful turn. It lives on disk, so it survives a crash — what only lived in the context window dies; what hit the journal does not. This floor is *not* governed by `capture_policy`; it is the safety net.
+
+Honest limit: **no agent has native idle detection.** "Passive" here means *event-driven on hook-capable hosts* (a per-turn `Stop` breadcrumb on all agents; a pre-compaction flush and a next-session rescue where the host supports them) — plus the journal as the universal fallback. It is **not** an unattended daemon watching you work.
+
+**2. The `capture_policy` dial — *how much* reaches the wiki.** A separate, orthogonal valve set in `BRAIN.md`:
 
 | Policy | Behaviour | Use when |
 |---|---|---|
-| `curated` | Crown-jewels only — reusable decisions, lessons, and patterns seen 3+ times. The journal/playgrounds absorb the rest. | You want a tight, high-signal wiki. |
+| `selective` | Crown-jewels only — reusable decisions, lessons, and patterns seen 3+ times. The journal/playgrounds absorb the rest. | You want a tight, high-signal wiki. |
 | `balanced` *(default)* | Wiki-first with generous journaling — promote at 2+ instances or clearly-reusable knowledge. | Most projects. |
-| `logbook` | Capture almost everything — durable-ish notes promoted on first sight. | This brain is your **only** memory layer (no Engram, no other store). |
+| `capture-all` | Capture almost everything — durable-ish notes promoted on first sight. | This brain is your **only** memory layer (no Engram, no other store). |
 
-Same 6-step formula, one tunable valve — it changes *how much* gets promoted, never *how* the graph is built. A custom 1-line policy overrides the presets.
+Same 6-step formula, one tunable valve — it changes *how much* gets promoted, never *how* the graph is built. A custom 1-line policy overrides the presets. (The journal breadcrumb floor is unaffected — `capture_policy` governs promotion to the wiki, not the breadcrumbs.)
 
-And the discipline lives in the harness, not your head: **at session end the agent offers to consolidate** — it proposes what it would capture (per your policy), you approve; it never forces or silently skips. For zero-friction auto-capture, wire the optional hook below.
+### Then the honest manual trade
+
+The dial removes the *fatigue*, not the *trade*. The brain does not grow on its own: somewhere, the 6-step capture contract has to run — whether you trigger it or a hook does. When it runs you pay **~5–10 minutes of curation per active session** (classify, generalize, link, gate). In exchange you erase the re-briefing tax on every future session, the onboarding tax for every new teammate or agent, and the handover tax when the project ends. Not "zero overhead" — a deliberate trade of a little write-time cost for large read-time leverage. Set the dial to passive and the agent carries most of that cost for you; set it to manual and you keep full control.
+
+A suggested cadence (whichever dial you choose):
 
 | When | Action |
 |---|---|
-| **Every session end** | Run `/synaptic-consolidate` — apply the 6-step capture contract to what was produced |
-| **Weekly** | Run `/synaptic-audit` — surface orphans, broken links, stale nodes, MOC gaps |
-| **Monthly** | Run `/synaptic-weave` — retroactive graph-gardening: missing links, near-duplicates, theme promotion |
+| **Each session** | `/synaptic-consolidate` (or let the event-driven hook offer it) — apply the 6-step capture contract to what was produced |
+| **Weekly** | `/synaptic-audit` — **diagnose** staleness, orphans, broken links, MOC gaps, **cross-link (horizontal) coverage**, and **half-done / unconsolidated work + pending breadcrumbs** (audit diagnoses; weave/consolidate/synthesize treat) |
+| **Periodically** (after a stretch of consolidation) | `/synaptic-synthesize` — generative pass that writes new synthesis nodes over the curated brain (cross-source patterns, concept evolution, orphan rescue), MOC-validated at write time |
+| **Monthly** | `/synaptic-weave` — retroactive graph-gardening: missing links (+ typed-edge proposals), near-duplicates, theme promotion |
+| **Monthly, or when audit reports debt** | `/synaptic-maintain` — the orchestrated diagnose-then-treat sweep that runs all of the above in order, approval-gated (CORE procedure; an unattended schedule would be optional Cortex) |
 
-Without this cadence the brain drifts. With it, quality compounds.
+Without some cadence the brain drifts. With it, quality compounds.
 
-> **Tip:** see [`recipes/session-end-consolidate.md`](recipes/session-end-consolidate.md) for an optional Claude Code `settings.json` hook that reminds you to consolidate when the session changes `journal/` or `playgrounds/`.
+> **Tip:** see [`recipes/session-end-consolidate.md`](recipes/session-end-consolidate.md) for the optional host-run hook config that wires the event-driven setting (the breadcrumb floor, a pre-compaction flush where supported, and a next-session rescue sweep). Hooks are plain host-run config — they are CORE, not a runtime we ship.
 
 ---
 
@@ -254,35 +347,39 @@ We are in practice a **pragmatic hybrid**: the wiki is schema-on-write, and verb
 </details>
 
 <details>
-<summary>Matrioshka architecture (CORE · TOOLS · ECOSYSTEM)</summary>
+<summary>Matrioshka architecture (CORE · Cortex · Ecosystem)</summary>
 
-Each inner layer is independent of the outer ones:
+Each inner layer is independent of the outer ones. **CORE vs Cortex is one conceptual line in one repo**, decided by a single test: *does it need a runtime we add, beyond the agent's own?* No → CORE (files/text, including host-run hook config). Yes → Cortex (utilities we ship; deletable; the brain never depends on them).
 
 ```
   ┌──────────────────────────────────┐
-  │           ECOSYSTEM              │
-  │  MCP server, RAG, Engram,        │
-  │  semantic search (horizon)       │
+  │           Ecosystem             │
+  │  shared / team brain,            │
+  │  on-the-fly (future ring)        │
   │  ┌────────────────────────┐      │
-  │  │        TOOLS           │      │
-  │  │  check · migrate       │      │
-  │  │  export · vault-open   │      │
-  │  │  graph                 │      │
-  │  │  (Node ≥ 18, optional) │      │
+  │  │        Cortex          │      │
+  │  │  MCP server · check    │      │
+  │  │  migrate · export      │      │
+  │  │  vault-open · graph    │      │
+  │  │  semantic sidecar      │      │
+  │  │  (optional runtime)    │      │
   │  │  ┌──────────────────┐  │      │
   │  │  │      CORE        │  │      │
   │  │  │  Pure Markdown   │  │      │
   │  │  │  Zero deps       │  │      │
+  │  │  │  Hooks (config)  │  │      │
   │  │  └──────────────────┘  │      │
   │  └────────────────────────┘      │
   └──────────────────────────────────┘
 ```
 
-**CORE** works everywhere, always — even on an air-gapped corporate laptop with nothing installed. **TOOLS** and **ECOSYSTEM** are optional power-ups. Removing the outer layers does not break the inner ones.
+**CORE** works everywhere, always — even on an air-gapped corporate laptop with nothing installed. **Cortex** and **Ecosystem** are optional power-ups. Removing the outer layers does not break the inner ones.
 
-- **CORE:** Pure Markdown + YAML, zero dependencies, works everywhere including air-gapped corporate environments
-- **TOOLS** (optional, zero-dep, Node ≥ 18): `check`, `migrate`, `export`, `vault-open`, `graph` — the happy path for the ~90% of users who have a runtime
-- **ECOSYSTEM** (horizon): MCP server, semantic search / RAG, shared team brain, Engram-style SQLite/FTS5 sidecar
+- **CORE:** Pure Markdown + YAML, zero dependencies, works everywhere including air-gapped corporate environments. **Hooks are CORE** — they are host-run config the agent already executes, not a runtime we ship.
+- **Cortex** (optional, the runtimes we add): the **MCP server** (a tool *over* the files — the brain never depends on it), the zero-dep Node utilities (`check`, `migrate`, `export`, `vault-open`, `graph`), and an optional semantic sidecar. All deletable; all degrade away cleanly.
+- **Ecosystem** (future ring): shared / team brain and on-the-fly collaboration — separate repos only if ever split.
+
+> Earlier docs called the middle ring "TOOLS" and put MCP in an outer "ECOSYSTEM/horizon" ring. The v1 model is simpler: **MCP is Cortex** (a tool over the files), alongside the other optional utilities. See [ROADMAP.md](ROADMAP.md).
 
 </details>
 
@@ -313,18 +410,20 @@ Repository structure:
 
 ```
 synaptic-core/
-├── seed/              # Reference brain skeleton — the v1 .synaptic/ seed
 ├── standalone/        # The synaptic skill package (installable without the full repo)
+│   └── synaptic/templates/   # SINGLE SOURCE OF TRUTH for the .synaptic/ structure
 ├── docs/              # Architecture decisions (ADR-001, ADR-002, ...) + assets
-└── tools/             # Optional TOOLS layer (check, migrate, export, vault-open, graph)
+└── tools/             # Optional Cortex utilities (check, migrate, export, vault-open, graph)
 ```
+
+> There is no `seed/` directory. The skill bundle's `templates/` are the one source of truth; the example brain is assembled on demand by the skill at `/synaptic-init`.
 
 </details>
 
 <details>
 <summary>Optional tooling (check · migrate · export · vault-open · graph)</summary>
 
-All tools are **zero-dependency** (Node ≥ 18 standard library only). CORE never requires them. When no runtime is available, the `synaptic` skill instructs the agent to perform the equivalent operation manually.
+These are optional **Cortex** utilities — **zero-dependency** (Node ≥ 18 standard library only). CORE never requires them. When no runtime is available, the `synaptic` skill instructs the agent to perform the equivalent operation manually.
 
 | Tool | Command | What it does |
 |---|---|---|
@@ -366,7 +465,7 @@ The principles:
 
 ## 🗺️ Further reading
 
-- [ROADMAP.md](ROADMAP.md) — what shipped in v1.0 and the honest platform-mode horizon (MCP server, semantic search, team brain, Engram-style sidecar)
+- [ROADMAP.md](ROADMAP.md) — what shipped and the honest Cortex horizon (MCP = Cortex, optional vector/semantic search, team brain, Engram-style searchable journal)
 - [PITCH.md](PITCH.md) — the two-tier value framing; Tier 2 covers the technical foundations in depth
 
 ---
@@ -386,7 +485,7 @@ We believe in synergy over competition. SYNAPTIC-CORE is a knowledge standard, n
 
 ## Contributing
 
-Bug reports, edge cases, example brains for different domains, improvements to the spec, ECOSYSTEM plugins — open an issue or submit a PR. The standard is young and actively evolving.
+Bug reports, edge cases, example brains for different domains, improvements to the spec, Cortex utilities and Ecosystem plugins — open an issue or submit a PR. The standard is young and actively evolving.
 
 ---
 

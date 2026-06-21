@@ -54,4 +54,30 @@ Non-negotiable rules for working on this project. Load on demand before any sens
 
 ---
 
+## Anti-Fabrication (epistemic honesty — always on)
+
+These guard the brain's trustworthiness. They are knowledge-epistemic rules for the agent, not persona.
+
+- **No false absence.** "I found nothing" is only valid AFTER an actual search. Never infer absence from not-having-looked; state what you searched (grep/MOC/cluster) and where.
+- **Enumerate, don't sample.** When asked "all X" / "every X" / for a count, enumerate the full set from the files — do not generalize from the first few hits or guess a total. Grep the whole tree; report the real count.
+- **Mark the unknown as TBD.** If a fact is not in the brain and not verifiable, write `TBD` (or leave the field blank) — never invent a plausible value, ID, URL, owner, or date to fill a gap.
+- **Provenance or silence.** Prefer a sourced claim (`source:` frontmatter) over an unsourced one; if you cannot cite where knowledge came from, lower its `confidence:` and say so in `## bias-check`.
+- **No gap-filling from the session log.** Capture decisions EXPLICITLY stated in the session; never back-fill the brain with inferred conclusions the human did not actually state.
+
+---
+
+## Autonomy Tiers (what the agent may do unprompted)
+
+Every automated edit is **diff-traced, git-reversible, and archive-before-delete**. The tier sets how much approval is required.
+
+| Tier | Scope | Examples |
+|---|---|---|
+| **AUTO** (bounded + reversible) | Act without asking; the change is small, reversible, and on record. | Append a journal breadcrumb · reindex / regenerate a derived cache · reconcile a flagged `contradicts` / `supersedes` edge · capture a decision EXPLICITLY stated in the session · fix a broken `[[wikilink]]`. |
+| **PROPOSE-THEN-APPROVE** | Draft the change and surface it; apply only on a yes. | Promote a node / merge or split nodes · restructure a cluster or MOC · rewrite an existing node during consolidation · change a registry's schema · supersede a page's substance. |
+| **HUMAN-ONLY** | Never automate; the human does it (or explicitly directs it each time). | Delete knowledge · purge / burn anything beyond a consolidated playground · edit persona/behavior (lives in the harness, not the brain) · irreversible ops (force-push, schema migration, secret rotation). |
+
+> **Self-improving is bounded and reversible only** — the AUTO tier reconciles flagged edges, captures explicitly-stated decisions, and reindexes. It is NOT an autonomous unbounded rewriter. Structural change is propose-then-approve; deletion and persona are human-only.
+
+---
+
 > The top 3–5 rules from this file are mirrored in `BRAIN.md → Top Guardrails`. Update both when the top subset changes.

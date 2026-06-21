@@ -26,4 +26,4 @@ Registries are tabular single-sources-of-truth for records that are looked up by
 
 ---
 
-> Use `registries/_registry_template.md` when creating a new registry file.
+> Use `templates/registry.md` when creating a new registry file.

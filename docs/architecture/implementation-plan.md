@@ -1,5 +1,14 @@
 # SYNAPTIC-CORE: Architecture Synthesis & Recommendation (v4 — Final)
 
+> **⚠️ HISTORICAL — superseded.** This is the original pre-v0.4 architecture synthesis. Several
+> structures described here (`identity/`, `BOOTSTRAP.md`/`MANIFEST.md`, `_tree.yaml`, `areas/`+`domains/`,
+> per-brain `skills/`, the `seed/` notion, the CORE/TOOLS/ECOSYSTEM naming) were **replaced** by later
+> decisions. For the current design read, in order: ADR-001 → ADR-002 → ADR-003, then `ROADMAP.md` and
+> `strategy/v1-final.md`. In v1: there is **no `seed/`** (the skill bundle's `templates/` are the single
+> source of truth; the example brain is assembled on demand), the layer naming is **CORE · Cortex ·
+> Ecosystem** (with **MCP = Cortex** and **hooks = CORE**), and **canvas is not a feature**. Kept for
+> provenance only.
+
 > *"Un estándar abierto para cerebros portables de IA — manuales de instrucciones que cualquier agente puede asimilar y cualquier humano puede leer."*
 
 ---
