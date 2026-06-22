@@ -8,6 +8,75 @@
 
 ---
 
+## v1.1 hardening addendum — read alongside the phases below
+
+> The phase-by-phase body below is correct; these reinforcements close real failure modes surfaced by
+> a readiness review (especially for **large** and **team-shared / global** brains). The operational,
+> paste-to-your-agent form of all of this is **`docs/UPGRADE-v0.3-to-v1.AGENT.md`** — prefer driving a
+> real migration from there. Where this addendum and the older body differ, **the addendum wins.**
+
+- **Topology first (does NOT change the migration — only the wiring).** Detect/ask whether the brain
+  is a single-project `.synaptic/` *inside* one repo, or a **shared/global** `.synaptic/` sitting
+  *beside* several repos and serving all of them. The schema migration (M/C/V) is identical either way;
+  only **Harness wiring** and **team coordination** branch on it.
+- **Safeguard is a HARD GATE.** Before touching anything: if the brain isn't git-tracked, `git init` it
+  and commit a `pre-v1` tag; make a folder backup; **verify the backup is byte-complete** (file-count +
+  size parity). If the brain is on OneDrive/a sync share, move the backup + work copy to a **local**
+  path first (a sync client can upload half-written files and corrupt the rollback / leak confidential
+  content). No-clone case: the agent self-installs the skill from GitHub raw (see SKILL.md Bootstrap)
+  and fetches `tools/` separately (they are NOT in the skill manifest).
+- **No silent deletions.** Every merge/split/removal goes in a DELETIONS LEDGER, shown and confirmed;
+  knowledge deletion is human-only. Mostly this migration is *refactor + construction*, not deletion.
+- **Content-conservation gate REPLACES the node-count gate.** "v1 count ≥ v0.3 count" cannot prove
+  no-loss (dedupe lowers it, splits raise it). Instead: before Phase C, snapshot every node as
+  `(path, title, sha256(body-minus-frontmatter))`; afterwards each must be **present, logged-merged
+  (loser→winner), or logged-split**. Any node neither present nor logged = SILENT DROP = STOP. Keep the
+  count only as a smoke check, defined identically on both sides.
+- **Re-file, don't rewrite.** `description:` is EXTRACTIVE (condense the node's own first sentence —
+  never synthesize); `tags:` from a closed vocabulary; **DEFER the C5 "Generalize" prose rewrite** to a
+  later supervised consolidate (it can silently drop a load-bearing caveat). On wikilink conversion,
+  resolve duplicate basenames first and verify each `[[target]]` resolves to the SAME physical file the
+  old path did (link **identity**, not just "resolves to something").
+- **Resumable.** Run Phase C cluster-by-cluster with a ledger (per cluster: C3/C4/C5/C11 +
+  every-node-in-_index?). A large supervised pass will span sessions/compactions — "Phase C complete"
+  means all clusters ticked, the precondition to Phase V.
+- **Staging is deleted LAST, never at Phase V time.** Keep `_migration-staging/` through Phase V **and**
+  a post-cutover soak; deleting it is the final action after stability — this OVERRIDES the C12 step's
+  "delete as final step of Phase C". A mis-file found in Phase V/early-soak must still be recoverable.
+- **Shared/global harness wiring (multi-repo).** The default bridge + the skill's Detect-on-Load
+  hardcode a CWD-relative `.synaptic/`, and `deploy.js` writes one `<project-root>/AGENTS.md` — none fit
+  a sibling brain. For a global brain, wire **each** consuming repo explicitly (atomic per-repo commit):
+  re-point the bridge pointer to the shared brain (`../.synaptic/` for one-level repos, else absolute /
+  per-machine indirection — into the file that repo's host actually reads, incl.
+  `.github/copilot-instructions.md` for VS Code Copilot and `.cursor/rules/*`), deploy the RULES block,
+  remove the old v0.3 fragment in the same commit, and **patch the installed skill's Detect-on-Load to
+  resolve the pointer and STAY SILENT when a `BEGIN:SYNAPTIC` bridge is present** (otherwise it offers
+  onboarding in each repo and risks a competing nested brain). Track a per-repo wiring matrix.
+- **Team-shared brains: FREEZE + delta-reconcile before the swap.** "Work on a copy, switch when green"
+  silently discards teammate edits made to the LIVE brain during the (hours/days) migration window.
+  Before cutover: announce + ack a freeze (lock the repo if git), take the reconcile baseline at the
+  last moment, port every interim delta into the v1 copy through Phase C, re-verify. The brain-folder
+  **swap (filesystem)** and the per-repo **wiring (git)** must land **together per machine**.
+- **Rollback that actually works.** PRIMARY: delete the v1 brain and **rename** `*-v0.3-backup` back.
+  Do NOT `git checkout <backup-path>` (it does not swap the folder in). On a shared git brain, a forward
+  "revert to `pre-v1`" — never a force-push/reset.
+- **Optional deep clean (on request only).** After the strict migration, a diagnose-then-treat sweep =
+  `/synaptic-maintain` (`references/maintain.md`): pre-check → `/synaptic-audit` → consolidate /
+  reconcile / `/synaptic-synthesize` / `/synaptic-weave` → post-check, approval-gated, with a
+  before/after diff against the backup.
+- **Report (always).** Emphasize the **refactor before vs after** (counts: nodes/links/orphans/MOC
+  coverage, what split/merged/re-typed, broken links fixed — diffed against the backup), plus the
+  migration summary, the harness wiring matrix, the conservation result + deletions ledger, and the
+  decision log.
+
+> **Known inconsistency (flagged, not yet resolved):** `templates/BRAIN.md` still ships a
+> `## Top Guardrails` block, and `harness/conventions.md`/`guardrails.md` instruct mirroring the top
+> rules into it — but C1/C6 and the Phase V checklist say BRAIN.md carries **no** guardrails block
+> (rules live in `harness/` and are deployed). Until synaptic-core resolves this, pick one convention
+> per brain and apply it consistently; Phase V greps `BRAIN.md` for `Top Guardrails`.
+
+---
+
 ## The supervised, non-destructive M → C → V flow
 
 The migration is **one-time, supervised, and non-destructive**, run **on a copy**, with three phases:
