@@ -157,7 +157,9 @@ references/upgrade-to-v1.md, with these BINDING reinforcements (they close real 
     originals to HARNESS_ORIGINALS/ (they are harness material); inventory/ → registries/; worklines/
     → playgrounds or your task system; skills/ → harness/skills/; rebuild knowledge/INDEX.md + each
     cluster _index.md from real files only; journal → thin 3-section format.
-  • DO NOT delete _migration-staging/ here — keep it through Step 6 and the soak (Step 10).
+  • DO NOT delete _migration-staging/ here — keep it through Step 6 and the soak (Step 10). This
+    OVERRIDES the referenced procedure's step C12 ("delete staging as the final step of Phase C") —
+    do not act on C12; staging is removed only in Step 10.
   • BRAIN.md guardrails: follow references/upgrade-to-v1.md — operating rules live in harness/ and are
     DEPLOYED (Step 5); do not invent rules. (KNOWN INCONSISTENCY: the shipped templates/BRAIN.md still
     carries a "## Top Guardrails" block that the v1 procedure says to omit. Until synaptic-core
@@ -190,14 +192,21 @@ SINGLE deploy-source for ALL consumers.
        Cursor; with explicit consent, CLAUDE.md only if the host reads nothing else). The brain
        pointer is NOT `.synaptic/` — use `../.synaptic/` if every repo is exactly one level under the
        shared root, else the absolute brain path (only if all teammates share that root; otherwise a
-       per-machine indirection). Grep the repo afterwards: a bare `.synaptic/BRAIN.md` pointer must be ZERO.
+       per-machine indirection). On a OneDrive/sync-share brain PREFER `../.synaptic/`: an absolute
+       path embeds a per-user root (e.g. each user's own OneDrive folder) and is usually NOT portable
+       across teammates. Rewrite EVERY brain-path reference in that file to the chosen pointer — the
+       bridge line AND any path named in the RULES block or capsule, not just the BEGIN:SYNAPTIC line.
+       Grep the repo afterwards: a bare `.synaptic/BRAIN.md` pointer must be ZERO.
    (b) Immediately after it, the BEGIN:SYNAPTIC-RULES block = conventions.md + guardrails.md bodies
        (frontmatter stripped). Both blocks land together — never RULES without the bridge.
-   (c) Patch the installed skill's Detect-on-Load for this team: resolve the brain via the bridge
-       pointer (or the configured shared path), and STAY SILENT — never offer onboarding — when a
-       BEGIN:SYNAPTIC bridge is present. Without this patch, the skill must NOT be installed
-       user-global (it would fire onboarding in every unrelated folder); install per-repo and tell
-       teammates to never accept an onboarding offer in a wired repo.
+   (c) Install AND patch the skill in this repo. First INSTALL the v1 skill into this repo (re-run
+       Step 0A's self-install into THIS repo's .claude/skills/synaptic + .agents/skills/synaptic —
+       Step 0 only installed it where you drove the upgrade, so each consuming repo needs its own
+       copy unless you use a single user-global install). Then PATCH its Detect-on-Load for this team:
+       resolve the brain via the bridge pointer (or the configured shared path), and STAY SILENT —
+       never offer onboarding — when a BEGIN:SYNAPTIC bridge is present. Without this patch, the skill
+       must NOT be installed user-global (it would fire onboarding in every unrelated folder); install
+       per-repo and tell teammates to never accept an onboarding offer in a wired repo.
    (d) Remove the old v0.3 synaptic fragment in the SAME commit (so a repo is never left pointer-less).
    Maintain a WIRING MATRIX: repo | host-read file | bridge re-pointed | rules block | shims re-pointed
    | skill installed+patched | v0.3 fragment removed | merged. Each repo is binary old|new, never partial.
@@ -237,7 +246,7 @@ edits silently. Before replacing anything:
      git, lock it (read-only / a pre-commit reject) so a missed-the-memo write is blocked, not lost.
   2. Take the reconcile baseline AT THE LAST MOMENT, after acks.
   3. DELTA-RECONCILE: diff the LIVE brain against the Step-2 baseline (`git -C <brain> diff
-     --name-status pre-1 HEAD`, else an mtime/checksum compare vs the backup). For EACH interim change,
+     --name-status pre-v1 HEAD`, else an mtime/checksum compare vs the backup). For EACH interim change,
      hand-port it into the v1 work copy AND run it through Phase C formatting; fold new journal
      breadcrumbs in BEFORE the ≤80-line trim. Re-run Step 6 incl. the conservation gate, comparing the
      count against the LIVE brain at freeze time (not the day-1 snapshot).
@@ -280,6 +289,9 @@ backup to diff against):
   • REFACTOR before vs after (the headline): node/link/orphan/MOC-coverage counts before (backup) and
     after; what was split, merged (loser→winner), re-typed, re-tagged; broken links fixed; a few
     representative diffs. If Step 8 ran, include its diagnose/treat/defer summary.
+    [needs Node] graph.js gives link/orphan counts directly; [no Node] derive node counts and MOC
+    coverage by hand from the Step-4 conservation manifest + each _index listing, and mark the
+    link/orphan figures best-effort.
   • VERIFICATION + ROLLBACK readiness: check.js status; backup path + git tag; staging still present.
   • OPEN ITEMS: anything deferred, any teammate freeze/cutover coordination still pending, the
     DECISION LOG of non-obvious calls.
