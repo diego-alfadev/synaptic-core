@@ -67,12 +67,15 @@ not a one-click job.
 A **single-project** brain wires the normal way: a `BEGIN:SYNAPTIC` pointer + your deployed operating
 rules go into the project's `AGENTS.md`.
 
-A **shared / global** brain (one `.synaptic/` serving many sibling repos) needs explicit wiring,
-because the default pointer is repo-relative and the skill's auto-detection, left unpatched, would
-look for a `.synaptic/` *inside each repo*, not find one, and offer to create a **new** brain — which
-would compete with the shared one. The runbook handles this: each repo gets a re-pointed pointer (to
-the shared brain), the rules deployed, the old v0.3 fragment removed, and the skill told to stay quiet
-when a pointer is already present. The agent tracks a per-repo wiring matrix so no repo is left half-wired.
+A **global / seat** brain (one `.synaptic/` serving many sibling repos — typically a *private,
+per-user* brain) needs explicit wiring, because the default pointer is repo-relative and the skill's
+auto-detection, left unpatched, would look for a `.synaptic/` *inside each repo*, not find one, and
+offer to create a **new** brain — which would compete with the seat brain. The runbook handles this by
+first **detecting** your current wiring, then **preferring a single user-level pointer** that applies
+across all repos (for VS Code Copilot, the `applyTo: "**/*"` instructions file — one place, every repo,
+and your work repos stay clean of brain references), re-pointed at the brain's fixed path, with the
+operating rules deployed (symlink preferred) and the skill patched to stay quiet when a pointer is
+already present. Per-repo wiring is only a fallback for hosts that can't do user-level.
 
 ---
 
