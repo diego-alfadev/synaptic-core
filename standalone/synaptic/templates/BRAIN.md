@@ -70,15 +70,13 @@ Run on consolidation (manual `/synaptic-consolidate`, or offered at session end 
 
 ---
 
-## Top Guardrails
+## Operating rules — deployed, not read here
 
-> Full set in `harness/guardrails.md`. These three to five rules are always on:
-
-- {{GUARDRAIL_1 — e.g. "Never commit secrets or credentials to any repository."}}
-- {{GUARDRAIL_2 — e.g. "Never deploy to production without explicit sign-off."}}
-- {{GUARDRAIL_3 — e.g. "Never merge a PR without at least one review."}}
-- {{GUARDRAIL_4 — optional}}
-- {{GUARDRAIL_5 — optional}}
+> Conventions and guardrails live in `harness/conventions.md` + `harness/guardrails.md` as the
+> **source**, and are **deployed into your harnessing** (instruction files / AGENTS.md block —
+> **symlink preferred over copy**) so they sit in the agent's **system prompt**. They are **not**
+> read from the brain at session start — only when you edit them, or to verify the deployed copy is
+> in sync. (No guardrails block lives here: a boot-time read would duplicate the system prompt.)
 
 ---
 

@@ -17,14 +17,18 @@
 
 - **Topology first (does NOT change the migration — only the wiring).** Detect/ask whether the brain
   is a single-project `.synaptic/` *inside* one repo, or a **shared/global** `.synaptic/` sitting
-  *beside* several repos and serving all of them. The schema migration (M/C/V) is identical either way;
-  only **Harness wiring** and **team coordination** branch on it.
+  *beside* several repos and serving all of them (commonly a PRIVATE per-user "seat" brain). The schema
+  migration (M/C/V) is identical either way; only **Harness wiring** and **cutover coordination** branch
+  on it. Also **detect the existing harness wiring** (the host's chatmode/instructions/AGENTS files) so
+  you know the current→desired state — this detection belongs in `/synaptic-init` and every
+  `/synaptic-upgrade`, not just this one.
 - **Safeguard is a HARD GATE.** Before touching anything: if the brain isn't git-tracked, `git init` it
   and commit a `pre-v1` tag; make a folder backup; **verify the backup is byte-complete** (file-count +
   size parity). If the brain is on OneDrive/a sync share, move the backup + work copy to a **local**
   path first (a sync client can upload half-written files and corrupt the rollback / leak confidential
-  content). No-clone case: the agent self-installs the skill from GitHub raw (see SKILL.md Bootstrap)
-  and fetches `tools/` separately (they are NOT in the skill manifest).
+  content). Back up the **existing harness wiring** too (chatmode/instructions/AGENTS files) — the
+  upgrade rewrites them. No-clone case: the agent self-installs the skill from GitHub raw (see SKILL.md
+  Bootstrap) and fetches `tools/` separately (they are NOT in the skill manifest).
 - **No silent deletions.** Every merge/split/removal goes in a DELETIONS LEDGER, shown and confirmed;
   knowledge deletion is human-only. Mostly this migration is *refactor + construction*, not deletion.
 - **Content-conservation gate REPLACES the node-count gate.** "v1 count ≥ v0.3 count" cannot prove
@@ -43,20 +47,27 @@
 - **Staging is deleted LAST, never at Phase V time.** Keep `_migration-staging/` through Phase V **and**
   a post-cutover soak; deleting it is the final action after stability — this OVERRIDES the C12 step's
   "delete as final step of Phase C". A mis-file found in Phase V/early-soak must still be recoverable.
-- **Shared/global harness wiring (multi-repo).** The default bridge + the skill's Detect-on-Load
-  hardcode a CWD-relative `.synaptic/`, and `deploy.js` writes one `<project-root>/AGENTS.md` — none fit
-  a sibling brain. For a global brain, wire **each** consuming repo explicitly (atomic per-repo commit):
-  re-point the bridge pointer to the shared brain (`../.synaptic/` for one-level repos, else absolute /
-  per-machine indirection — into the file that repo's host actually reads, incl.
-  `.github/copilot-instructions.md` for VS Code Copilot and `.cursor/rules/*`), deploy the RULES block,
-  remove the old v0.3 fragment in the same commit, and **patch the installed skill's Detect-on-Load to
-  resolve the pointer and STAY SILENT when a `BEGIN:SYNAPTIC` bridge is present** (otherwise it offers
-  onboarding in each repo and risks a competing nested brain). Track a per-repo wiring matrix.
-- **Team-shared brains: FREEZE + delta-reconcile before the swap.** "Work on a copy, switch when green"
-  silently discards teammate edits made to the LIVE brain during the (hours/days) migration window.
-  Before cutover: announce + ack a freeze (lock the repo if git), take the reconcile baseline at the
-  last moment, port every interim delta into the v1 copy through Phase C, re-verify. The brain-folder
-  **swap (filesystem)** and the per-repo **wiring (git)** must land **together per machine**.
+- **Global/seat harness wiring — DETECT current, then deploy (prefer user-level, prefer symlink).**
+  First SCAN for the existing wiring (VS Code Copilot `*.chatmode.md` + `*.instructions.md` with
+  `applyTo:`, `.github/copilot-instructions.md`, `AGENTS.md`, `CLAUDE.md`, `.cursor/rules/*`) to learn
+  the current→desired delta. The default bridge + the skill's Detect-on-Load hardcode a CWD-relative
+  `.synaptic/`, and `deploy.js` writes one `<project-root>/AGENTS.md` — none fit a sibling brain.
+  PREFER ONE USER-LEVEL pointer that applies across all repos (Copilot's `applyTo: "**/*"` instructions
+  file is ideal — one file, every repo, and it keeps the work repos CLEAN of brain refs — a private
+  brain must never leak into a work repo). Rewrite the detected v0.x bridge to v1 (BRAIN.md / INDEX /
+  registries paths; `/synaptic-*` commands; drop the HEARTBEAT re-read). Point at the brain by its
+  fixed path (absolute is fine for a per-user brain; `../.synaptic/` only if the workspace root is the
+  brain's parent). Deploy conventions+guardrails as the always-on rules — **SYMLINK the `harness/`
+  source where the host allows it**, else emit the block. Only AGENTS.md / Cursor hosts that don't
+  climb to a shared root need per-repo wiring. In ALL cases **patch the installed skill's Detect-on-Load
+  to resolve the pointer and STAY SILENT when a `BEGIN:SYNAPTIC` bridge is present** (else it offers
+  onboarding and risks a competing nested brain).
+- **Cutover depends on private-vs-shared.** A PRIVATE per-user brain (the typical seat/departmental
+  case — one writer, one machine) just swaps the folder once Phase V is green (~couple of hours). Only
+  a GENUINELY SHARED brain (several concurrent writers) needs the FREEZE + delta-reconcile, since
+  "work on a copy, switch when green" would otherwise silently discard interim edits: announce + ack a
+  freeze (lock the repo if git), baseline at the last moment, port each interim delta through Phase C,
+  re-verify; the brain-folder swap (filesystem) and the harness rewrite land **together per machine**.
 - **Rollback that actually works.** PRIMARY: delete the v1 brain and **rename** `*-v0.3-backup` back.
   Do NOT `git checkout <backup-path>` (it does not swap the folder in). On a shared git brain, a forward
   "revert to `pre-v1`" — never a force-push/reset.
@@ -69,11 +80,12 @@
   migration summary, the harness wiring matrix, the conservation result + deletions ledger, and the
   decision log.
 
-> **Known inconsistency (flagged, not yet resolved):** `templates/BRAIN.md` still ships a
-> `## Top Guardrails` block, and `harness/conventions.md`/`guardrails.md` instruct mirroring the top
-> rules into it — but C1/C6 and the Phase V checklist say BRAIN.md carries **no** guardrails block
-> (rules live in `harness/` and are deployed). Until synaptic-core resolves this, pick one convention
-> per brain and apply it consistently; Phase V greps `BRAIN.md` for `Top Guardrails`.
+> **Operating rules live in the harness, not in BRAIN.md (resolved).** Conventions + guardrails are the
+> brain's SOURCE in `harness/`, and are **deployed into the harnessing / system prompt** (SYMLINK
+> preferred over copy) — read from the brain only when edited or to verify sync, never at session
+> start. The v1 `templates/BRAIN.md` no longer ships a `## Top Guardrails` block (a boot-time read
+> would duplicate the system prompt); BRAIN.md carries only the harness deploy-source pointer. Phase V
+> greps `BRAIN.md` for `Top Guardrails` (must be empty).
 
 ---
 

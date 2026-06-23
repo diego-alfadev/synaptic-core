@@ -78,14 +78,23 @@ the relevant later steps on them. Do not block the migration on them; block only
      steps act ONLY on files that exist (never stall on a missing optional file).
   3. Git + sync state. Is the brain folder tracked by git? Is it on a sync share (OneDrive / Dropbox /
      network drive)? (Both gate Step 2.)
-  4. Team. Is anyone else actively writing to this brain right now? How does the brain folder physically
-     reach each teammate's disk — one shared/network copy, or N independent local copies? (Gates the
-     freeze + cutover in Step 7.)
-  5. Hosts + repos (only if GLOBAL). List every consuming repo and, per repo, which file its agent
-     actually READS for instructions: AGENTS.md, .github/copilot-instructions.md (VS Code Copilot),
-     CLAUDE.md, or .cursor/rules/*. Are all repos exactly one level under the workspace root (so a
-     relative `../.synaptic/` pointer is universally valid), and do all teammates check out at the
-     SAME absolute root (so an absolute pointer is portable)? (Gates Step 5B pointer choice.)
+  4. Private vs shared. Is this a PRIVATE per-user brain — one writer, one machine, often not even
+     git-tracked (the TYPICAL "personal / seat / departmental" brain) — or a GENUINELY SHARED brain
+     that several people write to concurrently? If shared, also: does it reach each person via one
+     shared/network copy or N local copies? → A private brain takes the simple path (Step 7A: ~couple
+     of hours, backup, done). A shared brain needs the freeze + delta-reconcile + atomic cutover (7B).
+  5. Host + CURRENT harness wiring (DETECT it; do not assume single-project). Which host is used
+     (VS Code Copilot / Claude Code / Cursor / Codex)? Then SCAN for the EXISTING wiring so you know
+     the current→desired delta — search user-level AND workspace/repo locations for anything that
+     mentions `.synaptic`, `BOOTSTRAP`, or a synaptic command: VS Code Copilot `*.chatmode.md` +
+     `*.instructions.md` (mind `applyTo:` — `applyTo: "**/*"` applies across ALL repos from ONE
+     user-level file), `.github/copilot-instructions.md`, `AGENTS.md`, `CLAUDE.md`, `.cursor/rules/*`.
+     Record: which file the host actually READS, the brain pointer it uses, and every v0.x path/command
+     it names (`BOOTSTRAP.md`, `HEARTBEAT.md`, `inventory/`, `identity/…`, `/plan` `/discover` `/help`)
+     — those are rewritten in Step 5. For a global/seat brain, note whether wiring is USER-LEVEL
+     (one file, applies everywhere — PREFERRED, keeps repos clean of brain refs) or per-repo, and what
+     brain path resolves from a repo CWD (the fixed absolute brain path for a local per-user brain;
+     `../.synaptic/` only if every repo is exactly one level under the brain's parent).
 
 ────────────────────────────────────────────────────────────────────────
 STEP 2 — Safeguard: git baseline + verified backup (HARD GATE)   [no Node; uses git CLI]
@@ -97,6 +106,10 @@ Do NOT touch the brain until BOTH of these exist and are verified.
      "pre-v1-upgrade snapshot"`. Then tag it: `git -C <brain> tag pre-v1`. If it IS already git, just
      commit any pending changes and tag `pre-v1`.
   2. Folder backup: copy the whole brain to a SIBLING `*-v0.3-backup` (e.g. `<brain>-v0.3-backup`).
+     ALSO back up the EXISTING harness wiring found in Step 1.5 (the `*.chatmode.md` /
+     `*.instructions.md` / AGENTS.md / copilot-instructions / `.cursor/rules` files) — the upgrade
+     REWRITES them (their v0.x paths and command names change), so you need the originals to diff
+     against and to roll back. Note their exact locations in the DECISION LOG.
   3. SYNC GUARD: if Step 1 said the folder is on OneDrive/Dropbox/network, MOVE the backup, the work
      copy, and all migration artifacts to a LOCAL, non-synced path first (or pause sync for the window).
      A sync client can create conflict copies or upload half-written files — your rollback backup must
@@ -160,18 +173,24 @@ references/upgrade-to-v1.md, with these BINDING reinforcements (they close real 
   • DO NOT delete _migration-staging/ here — keep it through Step 6 and the soak (Step 10). This
     OVERRIDES the referenced procedure's step C12 ("delete staging as the final step of Phase C") —
     do not act on C12; staging is removed only in Step 10.
-  • BRAIN.md guardrails: follow references/upgrade-to-v1.md — operating rules live in harness/ and are
-    DEPLOYED (Step 5); do not invent rules. (KNOWN INCONSISTENCY: the shipped templates/BRAIN.md still
-    carries a "## Top Guardrails" block that the v1 procedure says to omit. Until synaptic-core
-    resolves this, ASK me which convention to follow for this brain, and apply it consistently. Phase V
-    greps for it.)
+  • BRAIN.md carries NO operating-rules block. Conventions + guardrails live in harness/ as the SOURCE
+    and are DEPLOYED to the harnessing / system prompt in Step 5 (SYMLINK preferred over copy) — read
+    from the brain only when edited or to verify sync, never at session start. Do not invent rules and
+    do not add a "## Top Guardrails" block to BRAIN.md (the v1 templates no longer ship one).
 
 ────────────────────────────────────────────────────────────────────────
-STEP 5 — Harness wiring   [no Node — do this manually per repo; deploy.js does NOT fit the global case]
+STEP 5 — Harness wiring (DETECT current → deploy desired)   [no Node]
 ────────────────────────────────────────────────────────────────────────
 First fill the shared harness source fully: populate harness/conventions.md + harness/guardrails.md
-with NO {{placeholder}} tokens (any placeholder makes the deploy refuse). These two files are the
-SINGLE deploy-source for ALL consumers.
+with NO {{placeholder}} tokens (any placeholder makes the deploy refuse). These are the SOURCE; they
+are DEPLOYED into the harnessing / system prompt (SYMLINK preferred over copy) and read from the brain
+only when edited / to verify sync — never at session start.
+
+5.0 — DETECT current → desired (from Step 1.5) before changing anything. You have the inventory of the
+existing harness files and the v0.x paths/commands they reference. The delta: the v0.3 bridge points at
+BOOTSTRAP.md / HEARTBEAT.md / inventory/ / identity/ and lists v0.x commands; the v1 bridge points at
+BRAIN.md / knowledge/INDEX.md / registries/ and lists /synaptic-* commands, and DROPS the "re-read
+HEARTBEAT every N turns" anti-drift (v1 boots from BRAIN.md). Originals are backed up (Step 2.2).
 
 5A — SINGLE-PROJECT brain (.synaptic nested inside the one repo):
    • Run the skill's Harness Self-Wire (SKILL.md §a–c) on the project root: write the BEGIN:SYNAPTIC
@@ -179,37 +198,39 @@ SINGLE deploy-source for ALL consumers.
      `node tools/deploy.js <project-root>` for the RULES block — it backs up AGENTS.md, diffs, and
      refuses on placeholders). Remove the old v0.3 bridge fragments.
 
-5B — GLOBAL / SHARED brain (.synaptic beside many repos) — the multi-repo wiring:
-   CURRENT SITUATION (why the defaults don't fit): the canonical bridge block and the skill's
-   Detect-on-Load both hardcode a CWD-relative `.synaptic/` path, and deploy.js writes ONE
-   <project-root>/AGENTS.md. An agent whose working dir is a sibling repo would (a) not find the brain
-   via `.synaptic/`, and (b) worse — its Detect-on-Load concludes "no brain" and OFFERS ONBOARDING,
-   risking a competing nested brain. So for a global brain, wire each repo EXPLICITLY:
-   For EACH consuming repo (from Step 1.5), prepare ONE atomic payload and apply it as a single commit
-   (route through the repo's normal PR/branch flow so it can't clobber a teammate's uncommitted work):
-   (a) Re-pointed BEGIN:SYNAPTIC bridge block in the file that repo's host actually reads (AGENTS.md
-       and/or .github/copilot-instructions.md for VS Code Copilot; .cursor/rules/synaptic.mdc for
-       Cursor; with explicit consent, CLAUDE.md only if the host reads nothing else). The brain
-       pointer is NOT `.synaptic/` — use `../.synaptic/` if every repo is exactly one level under the
-       shared root, else the absolute brain path (only if all teammates share that root; otherwise a
-       per-machine indirection). On a OneDrive/sync-share brain PREFER `../.synaptic/`: an absolute
-       path embeds a per-user root (e.g. each user's own OneDrive folder) and is usually NOT portable
-       across teammates. Rewrite EVERY brain-path reference in that file to the chosen pointer — the
-       bridge line AND any path named in the RULES block or capsule, not just the BEGIN:SYNAPTIC line.
-       Grep the repo afterwards: a bare `.synaptic/BRAIN.md` pointer must be ZERO.
-   (b) Immediately after it, the BEGIN:SYNAPTIC-RULES block = conventions.md + guardrails.md bodies
-       (frontmatter stripped). Both blocks land together — never RULES without the bridge.
-   (c) Install AND patch the skill in this repo. First INSTALL the v1 skill into this repo (re-run
-       Step 0A's self-install into THIS repo's .claude/skills/synaptic + .agents/skills/synaptic —
-       Step 0 only installed it where you drove the upgrade, so each consuming repo needs its own
-       copy unless you use a single user-global install). Then PATCH its Detect-on-Load for this team:
-       resolve the brain via the bridge pointer (or the configured shared path), and STAY SILENT —
-       never offer onboarding — when a BEGIN:SYNAPTIC bridge is present. Without this patch, the skill
-       must NOT be installed user-global (it would fire onboarding in every unrelated folder); install
-       per-repo and tell teammates to never accept an onboarding offer in a wired repo.
-   (d) Remove the old v0.3 synaptic fragment in the SAME commit (so a repo is never left pointer-less).
-   Maintain a WIRING MATRIX: repo | host-read file | bridge re-pointed | rules block | shims re-pointed
-   | skill installed+patched | v0.3 fragment removed | merged. Each repo is binary old|new, never partial.
+5B — GLOBAL / SEAT brain (.synaptic beside many repos — typically a PRIVATE per-user brain):
+   CURRENT SITUATION (why the defaults don't fit): the canonical bridge + the skill's Detect-on-Load
+   hardcode a CWD-relative `.synaptic/`, and deploy.js writes one <project-root>/AGENTS.md — none suit
+   one brain serving many sibling repos. Worse, an agent at a sibling-repo CWD that finds no local
+   `.synaptic/` may OFFER ONBOARDING → a competing nested brain.
+
+   Wire by HOST, and PREFER ONE USER-LEVEL pointer that applies across all repos — this keeps the
+   repos themselves CLEAN of brain references (important when repo files are committed to a shared
+   remote; a private brain must never leak into a work repo):
+
+   • VS Code Copilot (the common case): the wiring is USER-LEVEL — an instructions file with
+     `applyTo: "**/*"` (ONE file → every repo) plus the chatmode file, NOT per-repo committed files.
+     Rewrite the detected v0.3 bridge to v1: point at BRAIN.md / knowledge/INDEX.md / registries/
+     (not BOOTSTRAP/HEARTBEAT/inventory/identity), list the /synaptic-* commands, drop the HEARTBEAT
+     re-read. Point at the brain by its FIXED path — the ABSOLUTE local brain path is fine for a
+     per-user brain (cross-machine portability is moot, each user has their own); `../.synaptic/` only
+     if the workspace root is the brain's parent. Make conventions+guardrails the always-on rules by
+     SYMLINKING the harness/ source into the instructions location where the host allows it (else emit
+     the block and note the source). Keep the brain LOCAL — never commit Synaptic refs into the repos.
+   • AGENTS.md hosts: one AGENTS.md at the shared workspace root if the host climbs to it; else a
+     marker-wrapped BEGIN:SYNAPTIC + BEGIN:SYNAPTIC-RULES block per repo (re-pointed brain path; old
+     v0.3 fragment removed in the same edit). Cursor: `.cursor/rules/*`. Per-repo wiring is only needed
+     here — and for a genuinely SHARED brain, route each repo edit through its PR flow and track a
+     wiring matrix (repo | host-read file | bridge re-pointed | rules | v0.3 fragment removed | done).
+
+   • In ALL cases: install the v1 skill where the host discovers it (user-global is fine for a private
+     per-user brain) and PATCH its Detect-on-Load to resolve the brain via the configured pointer and
+     STAY SILENT when a bridge is already present (so it never offers a competing brain). Grep the
+     wired file(s): a bare CWD-relative `.synaptic/BRAIN.md` pointer must be ZERO.
+
+   (The productized version — `deploy.js --brain/--repos`, a `scope: seat|org` + brain-path config,
+   and a pointer-resolving Detect-on-Load — is a proposed synaptic-core improvement; until it lands,
+   do the above by hand.)
 
 ────────────────────────────────────────────────────────────────────────
 STEP 6 — Phase V (verify) on the work copy   [needs Node for check.js; [no Node] matrix below]
@@ -232,31 +253,33 @@ STEP 6 — Phase V (verify) on the work copy   [needs Node for check.js; [no Nod
      confirm it is present, OR logged as merged (loser→winner), OR logged as split. Any node neither
      present nor logged = SILENT DROP = STOP and keep the original. Count is a smoke check only, with
      an exact, identical definition run on BOTH the backup and the work copy.
-   • GREPS: `grep -n "Top Guardrails" BRAIN.md` matches the convention you chose in Step 4 (the
-     procedure default is EMPTY); for a global brain, grep each wired repo for a bare `.synaptic/BRAIN.md`
-     → must be ZERO. BRAIN.md ≤110 lines with a deploy-source pointer present.
+   • GREPS: `grep -n "Top Guardrails" BRAIN.md` must be EMPTY (v1 BRAIN.md carries no rules block —
+     rules are deployed to the harness/system prompt); grep the wired harness file(s) for a bare
+     `.synaptic/BRAIN.md` → must be ZERO. BRAIN.md ≤110 lines with the harness deploy-source pointer present.
    STOP and keep the original on any ERROR or gate failure.
 
 ────────────────────────────────────────────────────────────────────────
-STEP 7 — Freeze, delta-reconcile, atomic cutover (team-shared brains)   [no Node]
+STEP 7 — Cut over to the v1 brain   [no Node]
 ────────────────────────────────────────────────────────────────────────
-Phase C took time; if anyone else writes to the LIVE brain meanwhile, a naive swap would discard their
-edits silently. Before replacing anything:
-  1. Announce a FREEZE and get an explicit ack from every teammate ("stopped writing"). If the brain is
-     git, lock it (read-only / a pre-commit reject) so a missed-the-memo write is blocked, not lost.
+7A — PRIVATE per-user brain (the TYPICAL case: one writer, one machine):
+  No team coordination needed. With Phase V green on the work copy: SWAP — rename the live brain to the
+  `*-v0.3-backup` name (you already have the backup + `pre-v1` tag) and move the work copy into place.
+  Apply the Step-5 harness rewrite (user-level — one place). Re-run the Step-6 greps against the live
+  brain + the wired harness file. Done — this is the ~couple-of-hours path. (If YOU wrote to the live
+  brain during the migration, fold those edits into the copy first — same idea as 7B.3, just for one
+  person.)
+
+7B — GENUINELY SHARED brain (several concurrent writers — rare; only if Step 1.4 said so):
+  Phase C took time; a naive swap would discard teammates' interim edits silently. Before replacing:
+  1. Announce a FREEZE and get an explicit ack from everyone. If the brain is git, lock it.
   2. Take the reconcile baseline AT THE LAST MOMENT, after acks.
   3. DELTA-RECONCILE: diff the LIVE brain against the Step-2 baseline (`git -C <brain> diff
-     --name-status pre-v1 HEAD`, else an mtime/checksum compare vs the backup). For EACH interim change,
-     hand-port it into the v1 work copy AND run it through Phase C formatting; fold new journal
-     breadcrumbs in BEFORE the ≤80-line trim. Re-run Step 6 incl. the conservation gate, comparing the
-     count against the LIVE brain at freeze time (not the day-1 snapshot).
-  4. ATOMIC CUTOVER, per machine: the brain-folder SWAP (a filesystem move) and the per-repo wiring
-     (git commits from Step 5B) must land TOGETHER on each machine — never on separate schedules, or a
-     teammate ends up with a v1 pointer over a v0.3 brain (or vice-versa). If the brain reaches disks
-     via a shared/network copy → one swap for everyone; if N local copies → an explicit per-teammate
-     checklist ("merge the wiring commit AND replace your local brain from the shared upgraded copy, in
-     one sitting"). Swap = rename the live brain to the backup name (already have it) and move the work
-     copy into place. Re-run the Step-6 multi-repo greps against the LIVE repos after cutover.
+     --name-status pre-v1 HEAD`, else an mtime/checksum compare vs the backup). Hand-port each interim
+     change into the v1 work copy through Phase C formatting; fold new journal breadcrumbs in BEFORE
+     the ≤80-line trim. Re-run Step 6 incl. the conservation gate vs the LIVE brain at freeze time.
+  4. ATOMIC CUTOVER, per machine: the brain-folder SWAP (filesystem) and the harness rewrite must land
+     TOGETHER on each machine — never on separate schedules (else a v1 pointer over a v0.3 brain, or
+     vice-versa). Shared/network copy → one swap for everyone; N local copies → a per-person checklist.
 
 ────────────────────────────────────────────────────────────────────────
 STEP 8 — OPTIONAL full audit + refactor sweep (ONLY if I ask for it)   [no Node; check.js optional]
