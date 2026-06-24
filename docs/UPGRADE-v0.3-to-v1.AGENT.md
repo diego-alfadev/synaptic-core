@@ -87,8 +87,10 @@ the relevant later steps on them. Do not block the migration on them; block only
      (VS Code Copilot / Claude Code / Cursor / Codex)? Then SCAN for the EXISTING wiring so you know
      the current→desired delta — search user-level AND workspace/repo locations for anything that
      mentions `.synaptic`, `BOOTSTRAP`, or a synaptic command: VS Code Copilot `*.chatmode.md` +
-     `*.instructions.md` (mind `applyTo:` — `applyTo: "**/*"` applies across ALL repos from ONE
-     user-level file), `.github/copilot-instructions.md`, `AGENTS.md`, `CLAUDE.md`, `.cursor/rules/*`.
+     `*.instructions.md` (a USER-LEVEL/profile instructions file applies across ALL workspaces; its
+     `applyTo:` glob only scopes which files WITHIN a workspace it attaches to — globality comes from
+     the user-level placement, not from `applyTo`), `.github/copilot-instructions.md` (Copilot also
+     reads `AGENTS.md` natively), `AGENTS.md`, `CLAUDE.md`, `.cursor/rules/*`.
      Record: which file the host actually READS, the brain pointer it uses, and every v0.x path/command
      it names (`BOOTSTRAP.md`, `HEARTBEAT.md`, `inventory/`, `identity/…`, `/plan` `/discover` `/help`)
      — those are rewritten in Step 5. For a global/seat brain, note whether wiring is USER-LEVEL
@@ -208,8 +210,11 @@ HEARTBEAT every N turns" anti-drift (v1 boots from BRAIN.md). Originals are back
    repos themselves CLEAN of brain references (important when repo files are committed to a shared
    remote; a private brain must never leak into a work repo):
 
-   • VS Code Copilot (the common case): the wiring is USER-LEVEL — an instructions file with
-     `applyTo: "**/*"` (ONE file → every repo) plus the chatmode file, NOT per-repo committed files.
+   • VS Code Copilot (the common case): the wiring is a USER-LEVEL / profile instructions file (which
+     applies across ALL workspaces) plus the chatmode file — NOT per-repo committed files. Set
+     `applyTo: "**/*"` INSIDE it so it attaches to every file within each workspace; globality itself
+     comes from the user-level PLACEMENT, not from `applyTo`. Keep BOTH the pointer and the rules
+     content user-level — never write either into a committed work repo.
      Rewrite the detected v0.3 bridge to v1: point at BRAIN.md / knowledge/INDEX.md / registries/
      (not BOOTSTRAP/HEARTBEAT/inventory/identity), list the /synaptic-* commands, drop the HEARTBEAT
      re-read. Point at the brain by its FIXED path — the ABSOLUTE local brain path is fine for a

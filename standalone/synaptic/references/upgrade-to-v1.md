@@ -52,9 +52,11 @@
   `applyTo:`, `.github/copilot-instructions.md`, `AGENTS.md`, `CLAUDE.md`, `.cursor/rules/*`) to learn
   the current→desired delta. The default bridge + the skill's Detect-on-Load hardcode a CWD-relative
   `.synaptic/`, and `deploy.js` writes one `<project-root>/AGENTS.md` — none fit a sibling brain.
-  PREFER ONE USER-LEVEL pointer that applies across all repos (Copilot's `applyTo: "**/*"` instructions
-  file is ideal — one file, every repo, and it keeps the work repos CLEAN of brain refs — a private
-  brain must never leak into a work repo). Rewrite the detected v0.x bridge to v1 (BRAIN.md / INDEX /
+  PREFER ONE USER-LEVEL pointer that applies across all repos (a Copilot USER-LEVEL/profile instructions
+  file applies across all workspaces — globality comes from the user-level PLACEMENT, not from `applyTo`,
+  whose glob only scopes which files within a workspace it attaches to). Keep work repos CLEAN: never
+  write the bridge pointer OR the rules content into a committed repo file (it leaks brain-sourced
+  material). Copilot reads `AGENTS.md` natively too; Gemini CLI (`GEMINI.md`) is the notable non-reader. Rewrite the detected v0.x bridge to v1 (BRAIN.md / INDEX /
   registries paths; `/synaptic-*` commands; drop the HEARTBEAT re-read). Point at the brain by its
   fixed path (absolute is fine for a per-user brain; `../.synaptic/` only if the workspace root is the
   brain's parent). Deploy conventions+guardrails as the always-on rules — **SYMLINK the `harness/`
