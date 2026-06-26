@@ -201,10 +201,11 @@ HEARTBEAT every N turns" anti-drift (v1 boots from BRAIN.md). Originals are back
      refuses on placeholders). Remove the old v0.3 bridge fragments.
 
 5B — GLOBAL / SEAT brain (.synaptic beside many repos — typically a PRIVATE per-user brain):
-   CURRENT SITUATION (why the defaults don't fit): the canonical bridge + the skill's Detect-on-Load
-   hardcode a CWD-relative `.synaptic/`, and deploy.js writes one <project-root>/AGENTS.md — none suit
-   one brain serving many sibling repos. Worse, an agent at a sibling-repo CWD that finds no local
-   `.synaptic/` may OFFER ONBOARDING → a competing nested brain.
+   CURRENT SITUATION: the v1 skill's Detect-on-Load now RESOLVES the bridge pointer and STAYS SILENT
+   when a `BEGIN:SYNAPTIC` bridge is present — so a sibling-repo CWD with no local `.synaptic/` no longer
+   offers onboarding / risks a competing brain (no manual patch needed). What still needs doing by hand:
+   the default bridge text hardcodes `.synaptic/` and `deploy.js` writes one <project-root>/AGENTS.md, so
+   the WIRING below is manual.
 
    Wire by HOST, and PREFER ONE USER-LEVEL pointer that applies across all repos — this keeps the
    repos themselves CLEAN of brain references (important when repo files are committed to a shared
@@ -229,13 +230,15 @@ HEARTBEAT every N turns" anti-drift (v1 boots from BRAIN.md). Originals are back
      wiring matrix (repo | host-read file | bridge re-pointed | rules | v0.3 fragment removed | done).
 
    • In ALL cases: install the v1 skill where the host discovers it (user-global is fine for a private
-     per-user brain) and PATCH its Detect-on-Load to resolve the brain via the configured pointer and
-     STAY SILENT when a bridge is already present (so it never offers a competing brain). Grep the
-     wired file(s): a bare CWD-relative `.synaptic/BRAIN.md` pointer must be ZERO.
+     per-user brain). Detect-on-Load already resolves the bridge pointer + stays silent when bridged —
+     no manual patch. Grep the wired file(s): a bare CWD-relative `.synaptic/BRAIN.md` pointer must be
+     ZERO. Then RECORD what you wired in `harness/setup/<host>.md` (e.g. `harness/setup/vscode.md`):
+     bridge location + pointer, rules target, hooks, command stubs — your re-deploy recipe for the next
+     machine, and it travels in the backup.
 
-   (The productized version — `deploy.js --brain/--repos`, a `scope: seat|org` + brain-path config,
-   and a pointer-resolving Detect-on-Load — is a proposed synaptic-core improvement; until it lands,
-   do the above by hand.)
+   (Pointer-resolving + stay-silent Detect-on-Load is SHIPPED in v1. Still a proposed future
+   synaptic-core improvement: `deploy.js --brain/--repos` + a `scope: seat|org` + brain-path config to
+   automate the wiring above; until then, do it by hand.)
 
 ────────────────────────────────────────────────────────────────────────
 STEP 6 — Phase V (verify) on the work copy   [needs Node for check.js; [no Node] matrix below]
