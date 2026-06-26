@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/diego-alfadev/synaptic-core/v1.1.0/docs/assets/synaptic-hero.svg" alt="synaptic-core — one brain, any agent, zero install" width="880">
+  <img src="https://raw.githubusercontent.com/diego-alfadev/synaptic-core/v1.2.0/docs/assets/synaptic-hero.svg" alt="synaptic-core — one brain, any agent, zero install" width="880">
 </p>
 
 <p align="center">
