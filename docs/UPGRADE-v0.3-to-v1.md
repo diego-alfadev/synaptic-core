@@ -40,7 +40,7 @@ not a one-click job.
    structure, convert links to `[[wikilinks]]`, add frontmatter, build the MOCs. This is the bulk of
    the work and it's mostly *re-filing, not rewriting* — your facts are carried through verbatim.
 4. **Harness wiring.** Point your agent(s) at the brain and deploy your operating rules. Simple for a
-   single-project brain; explicit per-repo for a shared one (see below).
+   single-project brain; for a global/seat brain, preferably one user-level pointer (see below).
 5. **Phase V — verify.** Confirm nothing was lost, no broken links, everything reachable.
 6. **(Optional) deep clean.** On request, a full audit + refactor sweep (see "Optional" below).
 7. **Report.** A before/after comparison so you can see exactly what changed.

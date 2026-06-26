@@ -50,8 +50,9 @@
 - **Global/seat harness wiring — DETECT current, then deploy (prefer user-level, prefer symlink).**
   First SCAN for the existing wiring (VS Code Copilot `*.chatmode.md` + `*.instructions.md` with
   `applyTo:`, `.github/copilot-instructions.md`, `AGENTS.md`, `CLAUDE.md`, `.cursor/rules/*`) to learn
-  the current→desired delta. The default bridge + the skill's Detect-on-Load hardcode a CWD-relative
-  `.synaptic/`, and `deploy.js` writes one `<project-root>/AGENTS.md` — none fit a sibling brain.
+  the current→desired delta. The default bridge TEXT hardcodes a CWD-relative `.synaptic/`, and
+  `deploy.js` writes one `<project-root>/AGENTS.md` — neither fits a sibling brain. (Detection itself is
+  handled: the v1 skill's Detect-on-Load resolves a bridge pointer + stays silent when bridged.)
   PREFER ONE USER-LEVEL pointer that applies across all repos (a Copilot USER-LEVEL/profile instructions
   file applies across all workspaces — globality comes from the user-level PLACEMENT, not from `applyTo`,
   whose glob only scopes which files within a workspace it attaches to). Keep work repos CLEAN: never
@@ -61,9 +62,9 @@
   fixed path (absolute is fine for a per-user brain; `../.synaptic/` only if the workspace root is the
   brain's parent). Deploy conventions+guardrails as the always-on rules — **SYMLINK the `harness/`
   source where the host allows it**, else emit the block. Only AGENTS.md / Cursor hosts that don't
-  climb to a shared root need per-repo wiring. In ALL cases **patch the installed skill's Detect-on-Load
-  to resolve the pointer and STAY SILENT when a `BEGIN:SYNAPTIC` bridge is present** (else it offers
-  onboarding and risks a competing nested brain).
+  climb to a shared root need per-repo wiring. In ALL cases install the current v1 skill — its
+  Detect-on-Load already resolves the bridge pointer and stays silent when a `BEGIN:SYNAPTIC` bridge is
+  present (NO manual patch). Grep the wired file(s): a bare CWD-relative `.synaptic/BRAIN.md` must be ZERO.
 - **Cutover depends on private-vs-shared.** A PRIVATE per-user brain (the typical seat/departmental
   case — one writer, one machine) just swaps the folder once Phase V is green (~couple of hours). Only
   a GENUINELY SHARED brain (several concurrent writers) needs the FREEZE + delta-reconcile, since
@@ -115,6 +116,10 @@ The migration is non-destructive, content-preserving, and fully reversible:
 - **Reversible:** run the migration on a branch or a copy of the repo (**switch only when green; keep the old**). If you are not happy with the result, you merge nothing and your old brain is intact on the original branch.
 
 ### Practical runbook (typical case: Node + Python + an agent)
+
+> Superseded by the v1.1 hardening addendum above and `docs/UPGRADE-v0.3-to-v1.AGENT.md` — the
+> branch/merge form below is the in-repo variant only; the addendum's copy + verified-backup +
+> folder-swap + conservation gate take precedence.
 
 1. **Branch:** `git switch -c v1-upgrade` — work on a copy; the original branch is your fallback.
 2. **Phase M (mechanical):** if `tools/migrate.js` exists, run `node tools/migrate.js .synaptic` (use `--dry-run` first to preview moves without writing anything) — deterministic file staging, safe and scriptable; otherwise do the manual equivalent (stage files to `_migration-staging/` per the M-step checklist below by hand).
