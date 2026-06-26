@@ -8,7 +8,7 @@ tags: [harness, guardrails, hard-rules]
 
 # Guardrails
 
-Non-negotiable rules for working on this project. Load on demand before any sensitive operation (deploy, secret rotation, production access, external comms). A compressed subset (3–5 rules) is mirrored in `BRAIN.md → Top Guardrails` for always-on awareness.
+Non-negotiable rules for working on this project. This file is the **source**; it is **deployed into your harnessing** (instruction file / AGENTS.md block — **symlink preferred over copy**) so it sits in the agent's system prompt for always-on awareness. It is read from the brain only when you edit it, or to verify the deployed copy is in sync — not at session start.
 
 > **Scope test:** rules about how the project/work must run → here. Rules about how the agent behaves toward its owner → AGENTS.md / CLAUDE.md.
 
@@ -80,4 +80,4 @@ Every automated edit is **diff-traced, git-reversible, and archive-before-delete
 
 ---
 
-> The top 3–5 rules from this file are mirrored in `BRAIN.md → Top Guardrails`. Update both when the top subset changes.
+> This file is deployed into the harnessing (system prompt) as the agent's always-on rules — edit it here (the source), then re-deploy / re-sync. It is **not** mirrored into a `BRAIN.md` block (a boot-time read would duplicate the system prompt).

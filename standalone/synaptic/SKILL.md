@@ -51,22 +51,31 @@ If the bundle IS complete beside this file — every path in `MANIFEST.txt` is p
 
 ## Detect on Load
 
+**Resolve the brain location FIRST.** A brain is either `.synaptic/` at the workspace root, OR the path
+named by a `<!-- BEGIN:SYNAPTIC -->` bridge (in `AGENTS.md` / an instructions file) when one is present.
+A **global / seat** brain lives at the bridge's path, NOT at `CWD/.synaptic` — resolve the bridge before
+deciding "no brain". This is what lets one brain serve a workspace that holds many repos.
+
 ```
-Does .synaptic/BRAIN.md exist?
+Resolve brain: CWD .synaptic/BRAIN.md, else the BRAIN.md at the BEGIN:SYNAPTIC bridge's pointer.
+Does a brain resolve?
 ├── YES → Read BRAIN.md frontmatter schema/format version.
 │         Run COMPAT-CHECK (warn-not-gate — see below). Booting NEVER waits on it.
 │         schema ≥ 1.0 → Boot: read BRAIN.md, follow it.
-│           Is harness wired? (BEGIN:SYNAPTIC in AGENTS.md AND BEGIN:SYNAPTIC-RULES present AND skill dir present)
+│           Is harness wired? (BEGIN:SYNAPTIC bridge AND BEGIN:SYNAPTIC-RULES present AND skill dir present)
 │           ├── All present → normal boot.
 │           └── Any missing → run Harness Self-Wire (wire + deploy; no interview), then boot.
 │         schema < 1.0 (0.4, 0.5) → offer /synaptic-upgrade: "Found a v{X} brain — run /synaptic-upgrade to migrate."
 │
-└── NO — Does .synaptic/ exist (no BRAIN.md)?
-    ├── YES → v0.3 brain detected (BOOTSTRAP.md pattern).
-    │         Offer /synaptic-upgrade: "Found a v0.3 brain — run /synaptic-upgrade to migrate to v1."
-    │         Load references/upgrade-to-v1.md when user confirms.
-    └── NO  → No brain found.
-              Offer onboarding: "No brain found — start the setup interview? (y/n)"
+└── NO BRAIN.md — but a brain DIRECTORY exists (CWD .synaptic/ or the bridge-pointed dir) with no BRAIN.md?
+    ├── YES → pre-v1 brain detected (no BRAIN.md; BOOTSTRAP.md is a corroborating, not required, signal).
+    │         Offer /synaptic-upgrade: "Found a pre-v1 brain — run /synaptic-upgrade to migrate to v1."
+    │         Load references/upgrade-to-v1.md when the user confirms.
+    └── NO brain resolves at all:
+        ├── A BEGIN:SYNAPTIC bridge IS present (it names a brain path that is currently unreachable)
+        │     → DO NOT offer onboarding. A bridge means a brain is intended; report the unreachable
+        │       pointer instead ("bridge points at <path> but no brain is there — fix the path / restore it").
+        └── No bridge AND no brain dir → Offer onboarding: "No brain found — start the setup interview? (y/n)"
 ```
 
 When booting: read `BRAIN.md` only. Load all other files on demand through `knowledge/INDEX.md`.
@@ -227,6 +236,13 @@ Commands (synaptic skill): /synaptic-init /synaptic-consolidate /synaptic-ingest
 <!-- END:SYNAPTIC -->
 ```
 
+**Brain pointer (global / seat brains).** The block above hardcodes `.synaptic/` for a brain nested at
+the workspace root. For a **global / seat** brain (one `.synaptic/` serving a workspace that holds many
+repos, from a higher root or pointed to from elsewhere), replace `.synaptic/` in BOTH pointer lines with
+the brain's actual path — relative to the workspace root, or absolute for a fixed local per-user brain.
+For a **private** brain over committed work repos, place the bridge AND the deployed rules at **user
+level** (e.g. the host's user-level instructions) — never write either into a committed work repo.
+
 Do **not** touch `CLAUDE.md` (user persona territory). If the user explicitly asks to add a brain pointer there, do so only on their explicit instruction.
 
 ### b. Skill install
@@ -237,6 +253,18 @@ Copy this skill package directory (where this SKILL.md lives, with its `referenc
 - `.agents/skills/synaptic/` — discovered by VS Code Copilot, Gemini CLI, OpenCode, Codex
 
 Create directories if absent. If a target already contains a `SKILL.md` with the same `version:`, skip and report "already present". Otherwise overwrite.
+
+**Command discoverability (optional, best-effort).** So the `/synaptic-*` commands surface in the host's
+slash menu, optionally emit a thin **command stub** per command that the host lists and that only
+**points to the SOT** (the skill's `references/<cmd>.md`) — e.g. for VS Code Copilot a `*.prompt.md` per
+command in the host's prompts location, body: *"Run the synaptic skill's `<cmd>` — follow
+`references/<cmd>.md`."* **[VERIFY]** the host actually lists them. No fallback needed: the agent already
+honors a typed `/synaptic-*` and loads its reference, stubs or not.
+
+**Record the wiring.** After wiring + deploy, write/update `harness/setup/<host>.md` in the brain (e.g.
+`harness/setup/vscode.md`) capturing what was deployed where for this host: the bridge location + brain
+pointer, the rules target, the hook config, and any command stubs. This documents the setup, is the
+**re-deploy recipe when you move machines**, and travels in the backup.
 
 ### c. Deploy operating rules (idempotent)
 
