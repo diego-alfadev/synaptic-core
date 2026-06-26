@@ -2,7 +2,17 @@
 
 ## Unreleased
 
-> **Same brain, easier front door.** A docs-and-onboarding patch on top of v1.1.0: three ways to install (including a zero-tooling path a coding agent can run on a clean machine), a leaner newcomer-first README, and the deep theory moved where it belongs — into `docs/`. No engine changes, no schema change, nothing to migrate.
+_(nothing yet)_
+
+## v1.2.0 — Upgrade path + seat brains · 2026-06-26
+
+> **Bring your v0.3 brain to v1, and run one brain per workspace.** This release adds the full v0.3→v1
+> upgrade path (a paste-to-agent runbook + a hardened skill-side procedure), first-class support for a
+> **seat / global brain** that serves a whole workspace of repos (the skill now resolves the brain via
+> its `BEGIN:SYNAPTIC` bridge pointer and stays silent when a brain is already wired, so a sibling-repo
+> CWD never spawns a competing nested brain), and the zero-tooling three-tier install. The brain
+> **schema is unchanged (still 1.0)** — an existing v1 brain has nothing to migrate; just reinstall the
+> skill to get the new behavior. Only a **v0.3 brain** runs `/synaptic-upgrade`.
 
 ### Added
 - **Three-tier install.** Pick the path that fits the machine:
