@@ -8,6 +8,90 @@
 
 ---
 
+## v1.1 hardening addendum — read alongside the phases below
+
+> The phase-by-phase body below is correct; these reinforcements close real failure modes surfaced by
+> a readiness review (especially for **large** and **team-shared / global** brains). The operational,
+> paste-to-your-agent form of all of this is **`docs/UPGRADE-v0.3-to-v1.AGENT.md`** — prefer driving a
+> real migration from there. Where this addendum and the older body differ, **the addendum wins.**
+
+- **Topology first (does NOT change the migration — only the wiring).** Detect/ask whether the brain
+  is a single-project `.synaptic/` *inside* one repo, or a **shared/global** `.synaptic/` sitting
+  *beside* several repos and serving all of them (commonly a PRIVATE per-user "seat" brain). The schema
+  migration (M/C/V) is identical either way; only **Harness wiring** and **cutover coordination** branch
+  on it. Also **detect the existing harness wiring** (the host's chatmode/instructions/AGENTS files) so
+  you know the current→desired state — this detection belongs in `/synaptic-init` and every
+  `/synaptic-upgrade`, not just this one.
+- **Safeguard is a HARD GATE.** Before touching anything: if the brain isn't git-tracked, `git init` it
+  and commit a `pre-v1` tag; make a folder backup; **verify the backup is byte-complete** (file-count +
+  size parity). If the brain is on OneDrive/a sync share, move the backup + work copy to a **local**
+  path first (a sync client can upload half-written files and corrupt the rollback / leak confidential
+  content). Back up the **existing harness wiring** too (chatmode/instructions/AGENTS files) — the
+  upgrade rewrites them. No-clone case: the agent self-installs the skill from GitHub raw (see SKILL.md
+  Bootstrap) and fetches `tools/` separately (they are NOT in the skill manifest).
+- **No silent deletions.** Every merge/split/removal goes in a DELETIONS LEDGER, shown and confirmed;
+  knowledge deletion is human-only. Mostly this migration is *refactor + construction*, not deletion.
+- **Content-conservation gate REPLACES the node-count gate.** "v1 count ≥ v0.3 count" cannot prove
+  no-loss (dedupe lowers it, splits raise it). Instead: before Phase C, snapshot every node as
+  `(path, title, sha256(body-minus-frontmatter))`; afterwards each must be **present, logged-merged
+  (loser→winner), or logged-split**. Any node neither present nor logged = SILENT DROP = STOP. Keep the
+  count only as a smoke check, defined identically on both sides.
+- **Re-file, don't rewrite.** `description:` is EXTRACTIVE (condense the node's own first sentence —
+  never synthesize); `tags:` from a closed vocabulary; **DEFER the C5 "Generalize" prose rewrite** to a
+  later supervised consolidate (it can silently drop a load-bearing caveat). On wikilink conversion,
+  resolve duplicate basenames first and verify each `[[target]]` resolves to the SAME physical file the
+  old path did (link **identity**, not just "resolves to something").
+- **Resumable.** Run Phase C cluster-by-cluster with a ledger (per cluster: C3/C4/C5/C11 +
+  every-node-in-_index?). A large supervised pass will span sessions/compactions — "Phase C complete"
+  means all clusters ticked, the precondition to Phase V.
+- **Staging is deleted LAST, never at Phase V time.** Keep `_migration-staging/` through Phase V **and**
+  a post-cutover soak; deleting it is the final action after stability — this OVERRIDES the C12 step's
+  "delete as final step of Phase C". A mis-file found in Phase V/early-soak must still be recoverable.
+- **Global/seat harness wiring — DETECT current, then deploy (prefer user-level, prefer symlink).**
+  First SCAN for the existing wiring (VS Code Copilot `*.chatmode.md` + `*.instructions.md` with
+  `applyTo:`, `.github/copilot-instructions.md`, `AGENTS.md`, `CLAUDE.md`, `.cursor/rules/*`) to learn
+  the current→desired delta. The default bridge TEXT hardcodes a CWD-relative `.synaptic/`, and
+  `deploy.js` writes one `<project-root>/AGENTS.md` — neither fits a sibling brain. (Detection itself is
+  handled: the v1 skill's Detect-on-Load resolves a bridge pointer + stays silent when bridged.)
+  PREFER ONE USER-LEVEL pointer that applies across all repos (a Copilot USER-LEVEL/profile instructions
+  file applies across all workspaces — globality comes from the user-level PLACEMENT, not from `applyTo`,
+  whose glob only scopes which files within a workspace it attaches to). Keep work repos CLEAN: never
+  write the bridge pointer OR the rules content into a committed repo file (it leaks brain-sourced
+  material). Copilot reads `AGENTS.md` natively too; Gemini CLI (`GEMINI.md`) is the notable non-reader. Rewrite the detected v0.x bridge to v1 (BRAIN.md / INDEX /
+  registries paths; `/synaptic-*` commands; drop the HEARTBEAT re-read). Point at the brain by its
+  fixed path (absolute is fine for a per-user brain; `../.synaptic/` only if the workspace root is the
+  brain's parent). Deploy conventions+guardrails as the always-on rules — **SYMLINK the `harness/`
+  source where the host allows it**, else emit the block. Only AGENTS.md / Cursor hosts that don't
+  climb to a shared root need per-repo wiring. In ALL cases install the current v1 skill — its
+  Detect-on-Load already resolves the bridge pointer and stays silent when a `BEGIN:SYNAPTIC` bridge is
+  present (NO manual patch). Grep the wired file(s): a bare CWD-relative `.synaptic/BRAIN.md` must be ZERO.
+- **Cutover depends on private-vs-shared.** A PRIVATE per-user brain (the typical seat/departmental
+  case — one writer, one machine) just swaps the folder once Phase V is green (~couple of hours). Only
+  a GENUINELY SHARED brain (several concurrent writers) needs the FREEZE + delta-reconcile, since
+  "work on a copy, switch when green" would otherwise silently discard interim edits: announce + ack a
+  freeze (lock the repo if git), baseline at the last moment, port each interim delta through Phase C,
+  re-verify; the brain-folder swap (filesystem) and the harness rewrite land **together per machine**.
+- **Rollback that actually works.** PRIMARY: delete the v1 brain and **rename** `*-v0.3-backup` back.
+  Do NOT `git checkout <backup-path>` (it does not swap the folder in). On a shared git brain, a forward
+  "revert to `pre-v1`" — never a force-push/reset.
+- **Optional deep clean (on request only).** After the strict migration, a diagnose-then-treat sweep =
+  `/synaptic-maintain` (`references/maintain.md`): pre-check → `/synaptic-audit` → consolidate /
+  reconcile / `/synaptic-synthesize` / `/synaptic-weave` → post-check, approval-gated, with a
+  before/after diff against the backup.
+- **Report (always).** Emphasize the **refactor before vs after** (counts: nodes/links/orphans/MOC
+  coverage, what split/merged/re-typed, broken links fixed — diffed against the backup), plus the
+  migration summary, the harness wiring matrix, the conservation result + deletions ledger, and the
+  decision log.
+
+> **Operating rules live in the harness, not in BRAIN.md (resolved).** Conventions + guardrails are the
+> brain's SOURCE in `harness/`, and are **deployed into the harnessing / system prompt** (SYMLINK
+> preferred over copy) — read from the brain only when edited or to verify sync, never at session
+> start. The v1 `templates/BRAIN.md` no longer ships a `## Top Guardrails` block (a boot-time read
+> would duplicate the system prompt); BRAIN.md carries only the harness deploy-source pointer. Phase V
+> greps `BRAIN.md` for `Top Guardrails` (must be empty).
+
+---
+
 ## The supervised, non-destructive M → C → V flow
 
 The migration is **one-time, supervised, and non-destructive**, run **on a copy**, with three phases:
@@ -32,6 +116,10 @@ The migration is non-destructive, content-preserving, and fully reversible:
 - **Reversible:** run the migration on a branch or a copy of the repo (**switch only when green; keep the old**). If you are not happy with the result, you merge nothing and your old brain is intact on the original branch.
 
 ### Practical runbook (typical case: Node + Python + an agent)
+
+> Superseded by the v1.1 hardening addendum above and `docs/UPGRADE-v0.3-to-v1.AGENT.md` — the
+> branch/merge form below is the in-repo variant only; the addendum's copy + verified-backup +
+> folder-swap + conservation gate take precedence.
 
 1. **Branch:** `git switch -c v1-upgrade` — work on a copy; the original branch is your fallback.
 2. **Phase M (mechanical):** if `tools/migrate.js` exists, run `node tools/migrate.js .synaptic` (use `--dry-run` first to preview moves without writing anything) — deterministic file staging, safe and scriptable; otherwise do the manual equivalent (stage files to `_migration-staging/` per the M-step checklist below by hand).
