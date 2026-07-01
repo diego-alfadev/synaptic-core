@@ -81,6 +81,18 @@ function isPlaceholder(value) {
 }
 
 /**
+ * True if the frontmatter `lint` field carries a given flag.
+ * Accepts a scalar (`lint: allow-large`) or a list (`lint: [allow-large, …]` /
+ * block-list form — parseFrontmatter returns lists as arrays). Absent/other-typed
+ * values → false. Optional additive frontmatter → NO schema bump.
+ */
+function hasLintFlag(lintValue, flag) {
+  if (lintValue === undefined || lintValue === null) return false;
+  if (Array.isArray(lintValue)) return lintValue.some(v => String(v).trim() === flag);
+  return String(lintValue).trim() === flag;
+}
+
+/**
  * Walk a directory recursively, returning absolute .md file paths.
  * Returns [] if the directory does not exist.
  */
@@ -712,11 +724,16 @@ function checkBudgets() {
     const lines = readLines(filePath);
     if (lines.length <= KNOWLEDGE_BUDGET) continue;
 
-    // Check type — if type: reference, skip (deliberately long canonical doc)
     const fm = parseFrontmatter(lines);
+    // Suppress the soft-budget WARN when EITHER holds (both additive, back-compat):
+    //   - type: reference    (existing — deliberately long canonical doc)
+    //   - lint: allow-large  (new — decouples the budget waiver from the semantic
+    //     type so `type:` isn't abused as `reference` just to dodge the budget;
+    //     honored as a scalar `lint: allow-large` OR a list `lint: [allow-large, …]`)
     if (fm && fm.type === 'reference') continue;
+    if (fm && hasLintFlag(fm.lint, 'allow-large')) continue;
 
-    warn(filePath, `node is ${lines.length} lines (soft budget: ${KNOWLEDGE_BUDGET}; tag "type: reference" to suppress)`);
+    warn(filePath, `node is ${lines.length} lines (soft budget: ${KNOWLEDGE_BUDGET}; tag "type: reference" or "lint: allow-large" to suppress)`);
   }
 }
 
