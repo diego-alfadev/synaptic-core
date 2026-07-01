@@ -2,7 +2,18 @@
 
 ## Unreleased
 
-_(nothing yet)_
+### Added
+- **God-node / surprising-edge audit heuristics.** `/synaptic-audit` gains two diagnose-only
+  graph-health passes (prose-CORE, WARN, no runtime required): a **god-node** check that flags an
+  over-connected hub (edge degree ≥ 15, or ≥ 3× the brain's median node degree — whichever is lower)
+  as a candidate to split into atomic sub-nodes or confirm as a legitimate hub, and a
+  **surprising-edge** check that lists authored edges whose endpoints live in different top-level
+  `knowledge/` clusters (the high-value multi-hop links embeddings can't infer) for the owner to
+  confirm or correct. Both route to `/synaptic-weave`, make no auto-discovery claim (edges are
+  authored, never inferred), and compute "degree" over the same knowledge-scoped, MOC-excluded,
+  undirected-deduped edge universe as `tools/check.js` / `tools/graph.js`. `check.js` additionally
+  emits both as advisory WARN-class counts when the brain is otherwise clean — never an ERROR, never
+  a gate.
 
 ## v1.2.0 — Upgrade path + seat brains · 2026-06-26
 
