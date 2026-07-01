@@ -187,62 +187,70 @@ Obsidian or Foam — wikilinks and frontmatter work natively with zero config.
 
 ---
 
-## graph.js — Visual Brain Graph Renderer
+## graph.js — Interactive Force-Directed Brain Graph
 
 ```sh
-node tools/graph.js [path-to-.synaptic] [--out FILE] [--format html|svg] [--title "..."]
+node tools/graph.js [path-to-.synaptic] [--out FILE] [--title "..."]
 
 # Examples
 node tools/graph.js                                         # reads ./.synaptic, writes synaptic-graph.html
 node tools/graph.js /path/to/.synaptic                      # explicit path
 node tools/graph.js /path/to/.synaptic --out brain.html     # custom output filename
-node tools/graph.js /path/to/.synaptic --format svg         # raw SVG file instead
 node tools/graph.js /path/to/.synaptic --title "Q2 Brain"   # override title in the output
 ```
 
-Renders a **visual graph of your Synaptic brain** as a self-contained HTML file (default) or
-raw SVG — no Obsidian, no npm install, no network access required. Open the HTML file in any
-browser and the graph is immediately interactive.
+Renders a **force-directed, interactive graph of your Synaptic brain** as a single
+self-contained HTML file — no Obsidian, no npm install, **no network access**. Open the file in
+any browser and interrogate the graph directly. All JS and CSS are inlined; the emitted HTML has
+**zero external resource URLs** (no CDN, no `<script src>`, no `<link href>`), so it opens on a
+locked-down corporate laptop with nothing installed.
+
+**Interactive single-file graph UX inspired by Graphify (MIT) — approach reused, code
+re-implemented, no dependency taken.** (Graphify's Tree-sitter/NetworkX + LLM extraction and
+blob-as-truth model are explicitly rejected; we read only OUR authored edges, zero LLM tokens.)
+
+**Shared topology.** Edges/degrees come from the shared `tools/lib/brain-graph.js` module — the
+**same knowledge-scoped, MOC-excluded edge universe `check.js` reports**, so the two tools never
+disagree on the graph.
 
 **What it shows:**
 
 | Element | Detail |
 |---|---|
-| **Nodes** | Every knowledge node (coloured by cluster), plus registries and references as their own groups, and a central INDEX hub |
-| **Edges** | Undirected `[[wikilink]]` connections between nodes, extracted and deduplicated |
-| **Node radius** | Scales with edge degree (more connections → larger circle) |
-| **Labels** | Kebab-case basename, shortened for long names; full id in hover tooltip |
-| **Tooltips** | Hover any node: full id, `type`, degree, and `tags` |
-| **Legend** | Cluster name → colour with node counts; harness presence noted |
-| **Title bar** | Brain name (from `BRAIN.md` frontmatter `name:`), node/edge/cluster count, orphan count, most-connected node |
+| **Nodes** | Every `knowledge/` node (non-MOC), coloured by top-level cluster; radius scales with edge degree |
+| **Edges** | **Typed frontmatter edges** (`relates_to`/`depends_on`/`supersedes`/`contradicts`/`applies_to`/`causes`/`part_of`, block-list `- "[[t]]"`) **plus** body `[[wikilinks]]` — undirected, deduplicated. Edge colour/style encodes the edge type |
+| **Typed-edge aware** | Frontmatter block-list edges the old renderer missed are now first-class (a pair joined only by a `depends_on` edge shows a link) |
+| **MOC-edge exclusion** | `_index.md` / `INDEX.md` / `README.md` are excluded as edge **sources and targets** — their wikilinks are navigation scaffolding, not knowledge edges, so INDEX is never a false super-hub |
+| **Tooltips** | Hover any node: full id, cluster, `type`, degree, `lifecycle` (if set), and `tags` |
+| **Legend / filters** | Left panel: per-cluster and per-edge-type toggles with counts; lifecycle toggles to hide `resource` / `archived`+`dormant` nodes |
+
+**Interactive controls (all in-browser, no server):**
+
+- **Zoom / pan** — scroll to zoom, drag the canvas to pan.
+- **Search** — the search box highlights nodes by id substring; **Enter** centers the match.
+- **Filter** — toggle clusters and edge-types on/off; hide `resource`/`archived` lifecycle nodes.
+- **Expand / collapse** — click a node to hide/show its exclusive neighbours, so a large brain
+  starts legible and drills down on demand. Drag a node to pin it.
 
 **Deterministic layout — before/after comparable:**
 
-Positions are pure functions of *(sorted cluster index, sorted node index within cluster)* —
-no `Math.random`, no time-based seeding. Two runs on the same brain always produce identical
-coordinates. Comparing a brain before and after `/synaptic-weave` or `/synaptic-audit` is meaningful: nodes
-that moved are new or re-clustered, not randomly shuffled.
-
-**HTML output — pan/zoom in any browser:**
-
-The default `html` format embeds the SVG inside a self-contained HTML page with ~30 lines of
-vanilla JavaScript for pan (drag) and zoom (scroll wheel). No CDN, no external resources.
-Opens on a locked-down corporate laptop with nothing installed. Use `--format svg` if you
-only need the raw image file (for slides, email, or a PDF).
-
-**Great for executive show-and-tell:**
-
-Drop `synaptic-graph.html` in an email or a share drive. The recipient opens it in Chrome or
-Edge — no install, no login, no account. The coloured clusters and connection density make the
-brain's structure immediately legible to non-technical stakeholders.
+The force simulation (charge/repulsion + link spring + centering) is driven by a **seeded PRNG**
+(`mulberry32`, seeded from node count) — **never `Math.random`, never time-based**. Two runs on
+the same brain converge to the same layout, so comparing a brain before and after
+`/synaptic-weave` or `/synaptic-audit` is meaningful.
 
 **Robustness:**
 
-- Missing `knowledge/`, empty brain, or nodes without frontmatter: handled gracefully; still
-  emits a valid output file and prints a clear summary.
-- Unresolved wikilinks (cluster-level links like `[[ci-cd-patterns]]`, or links to unknown
-  nodes) are counted and reported in the stdout summary but never crash the script.
+- Missing `knowledge/`, empty brain, or nodes without frontmatter: handled gracefully — still
+  emits a valid HTML file (with an empty-state message) and prints a clear stdout summary.
+- Unresolved wikilinks (links to unknown nodes) are counted in the summary, never crash the run.
 - Very long node names are shortened in the label; the full id is always in the tooltip.
+
+**Self-test:** run `node tools/graph.js <repo>/.synaptic --out /tmp/g.html`, open `/tmp/g.html`,
+then confirm: (i) a settled force-directed layout, (ii) search highlights a known id, (iii) a
+cluster toggle hides/shows that cluster, (iv) clicking a node expands/collapses neighbours, (v) a
+`depends_on`-only pair shows a link, (vi) an `_index.md`-only wikilink shows no link, (vii) the
+emitted HTML has zero external resource URLs.
 
 **No-runtime fallback:** ask your agent to describe the brain's cluster structure and
 connection density — the same information `check.js` reports as orphan/link counts.
