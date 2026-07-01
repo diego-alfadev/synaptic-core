@@ -8,6 +8,11 @@
 const fs   = require('node:fs');
 const path = require('node:path');
 
+// Shared, canonical knowledge-scoped / MOC-excluded edge-graph universe.
+// KEEP IN SYNC: this is the SAME module tools/graph.js imports, so check.js and
+// graph.html always report the identical topology (council cross-cutting rule).
+const { buildBrainGraph } = require('./lib/brain-graph');
+
 // ---------------------------------------------------------------------------
 // CLI
 // ---------------------------------------------------------------------------
@@ -658,6 +663,57 @@ printFindings('WARNINGS', warnings);
 
 const totalErrors   = errors.length;
 const totalWarnings = warnings.length;
+
+// ---------------------------------------------------------------------------
+// Retrieval-readiness report (advisory — NEVER gates the exit code)
+// ---------------------------------------------------------------------------
+// Structural green (0 errors) does not prove the brain can answer anything.
+// This block reports the SHARED knowledge-scoped, MOC-excluded edge universe
+// (tools/lib/brain-graph.js — identical to graph.js) so check.js and the graph
+// viz never disagree on the topology.
+
+function printRetrievalReadiness() {
+  let g;
+  try {
+    g = buildBrainGraph(brainRoot);
+  } catch (e) {
+    console.log(`\nRetrieval-readiness: (skipped — ${e.message})`);
+    return;
+  }
+
+  const nodes        = g.nodeCount;
+  const edges        = g.edgeCount;
+  const orphans      = g.orphanCount;
+  const epn          = g.edgesPerNode;         // undirected edgeList.length / nodeCount
+  const mocReachable = g.mocReachableCount;
+  const orphanRatio  = nodes > 0 ? orphans / nodes : 0;
+
+  const epnStr = nodes > 0 ? epn.toFixed(2) : 'n/a';
+  const orphanPctStr = nodes > 0 ? (orphanRatio * 100).toFixed(0) + '%' : 'n/a';
+
+  console.log('\nRetrieval-readiness (knowledge nodes only; MOC/_index/INDEX/README excluded):');
+  console.log(`  Nodes            : ${nodes}`);
+  console.log(`  Edges            : ${edges} (undirected, deduped; typed frontmatter edges + body [[wikilinks]])`);
+  console.log(`  Orphans          : ${orphans} (degree-0 knowledge nodes; ${orphanPctStr} of nodes)`);
+  console.log(`  Edges per node   : ${epnStr}`);
+  console.log(`  MOC-reachable    : ${mocReachable} / ${nodes} (linked from INDEX.md or a cluster _index.md)`);
+
+  // "structural-green != retrieval-green" caveat — printed only when the brain
+  // is structurally clean (0 errors) yet a retrieval-risk heuristic trips.
+  // Advisory only: it never changes the exit code.
+  const heuristicTrips = nodes > 0 && (orphanRatio > 0.20 || epn < 0.5);
+  if (totalErrors === 0 && heuristicTrips) {
+    console.log('');
+    console.log('  CAVEAT: structural-green != retrieval-green.');
+    console.log('  0 errors, but this brain shows low connectivity ' +
+      `(orphan ratio ${orphanPctStr} > 20% OR edges/node ${epnStr} < 0.5).`);
+    console.log('  A brain can pass every structural check and still be hard to retrieve from.');
+    console.log('  Run /synaptic-weave to author missing edges, and do a retrieval drill ' +
+      '(BRAIN -> INDEX -> cluster _index -> node). This is advisory; it does NOT fail the check.');
+  }
+}
+
+printRetrievalReadiness();
 
 console.log(`\nSummary: ${totalErrors} error(s), ${totalWarnings} warning(s)`);
 
