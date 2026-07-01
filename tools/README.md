@@ -74,6 +74,16 @@ Output is grouped by file.
 | `BRAIN.md` > 110 lines | WARN |
 | `updated:` > 90 days old (skip placeholders) | WARN |
 
+**Retrieval-readiness report (advisory, never gates):** after the checks, `check.js` prints a
+retrieval-readiness block computed over the **shared knowledge-scoped, MOC-excluded edge universe**
+(`tools/lib/brain-graph.js` — the same module `graph.js` uses, so the two tools never disagree on
+topology): total **nodes**, total **edges** (undirected, deduped — typed frontmatter edges + body
+`[[wikilinks]]`), **orphans** (degree-0 knowledge nodes), **edges-per-node** (undirected
+`edges / nodes`), and **MOC-reachable** count. When `errors == 0` **and** a retrieval-risk heuristic
+trips (orphan ratio > 20% **OR** edges-per-node < 0.5), it prints a **"structural-green ≠
+retrieval-green"** caveat. This is advisory only — the exit code stays **ERROR-driven**; the report
+never fails the check.
+
 **No-runtime fallback:** run `/synaptic-audit` — the synaptic skill replicates this checklist
 using agent read/grep operations.
 
