@@ -836,6 +836,60 @@ function printRetrievalReadiness() {
   console.log(`  Edges per node   : ${epnStr}`);
   console.log(`  MOC-reachable    : ${mocReachable} / ${nodes} (linked from INDEX.md or a cluster _index.md)`);
 
+  // ---------------------------------------------------------------------------
+  // Graph-health heuristics (v1.3.0 §3) — god-nodes + surprising (cross-cluster)
+  // edges. ADVISORY ONLY: WARN-class, never ERROR, never required, NEVER gates
+  // the exit code. Emitted only when the brain is structurally clean (0 errors)
+  // so they surface as graph-gardening hints, not as noise on a broken brain.
+  // Both reuse the SHARED graph `g` (tools/lib/brain-graph.js) — the identical
+  // knowledge-scoped, MOC-excluded, undirected-deduped edge/degree universe the
+  // /synaptic-audit prose (references/audit.md Steps 4c/4d) defines by hand, so
+  // check.js and a by-hand audit always agree. No new parsing, no extra reads.
+  if (totalErrors === 0 && nodes > 0) {
+    // God-node degree threshold: min(15, 3× median node degree) — whichever lower.
+    const degrees = g.nodes.map(n => g.degreeOf[n.id] || 0).sort((x, y) => x - y);
+    const mid = Math.floor(degrees.length / 2);
+    const median = degrees.length % 2
+      ? degrees[mid]
+      : (degrees[mid - 1] + degrees[mid]) / 2;
+    // "whichever lower" — but a median of 0 (very sparse brain) makes 3× median = 0,
+    // which would flag every connected node; guard so the 3× rule only tightens the
+    // absolute 15 when the median is a meaningful (>=1) signal. A threshold below 2 is
+    // never useful (it would flag ordinary 2-edge nodes), so floor the effective bar at 2.
+    const godThreshold = median >= 1 ? Math.max(2, Math.min(15, 3 * median)) : 15;
+    const godNodes = g.nodes
+      .filter(n => (g.degreeOf[n.id] || 0) >= godThreshold)
+      .sort((a, b) => (g.degreeOf[b.id] || 0) - (g.degreeOf[a.id] || 0));
+
+    // Surprising edges: endpoints in different top-level knowledge/ clusters.
+    const crossClusterEdges = g.edgeList.filter(e => {
+      const na = g.nodeById[e.a];
+      const nb = g.nodeById[e.b];
+      return na && nb && na.cluster !== nb.cluster;
+    });
+
+    if (godNodes.length || crossClusterEdges.length) {
+      console.log('');
+      console.log('  Graph-health (advisory — WARN only; run /synaptic-weave to confirm/split; ' +
+        'does NOT fail the check):');
+      console.log(`  God-nodes        : ${godNodes.length} ` +
+        `(degree >= ${godThreshold} = min(15, 3x median ${median}))`);
+      for (const n of godNodes.slice(0, 10)) {
+        const rel = n.cluster ? `knowledge/${n.cluster}/${n.id}.md` : `knowledge/${n.id}.md`;
+        console.log(`    - ${rel} — degree ${g.degreeOf[n.id]} ` +
+          '(candidate to split into atomic sub-nodes, or a legitimate hub — confirm)');
+      }
+      console.log(`  Surprising edges : ${crossClusterEdges.length} ` +
+        '(cross-cluster; high-value multi-hop links — confirm or fix a mis-file. ' +
+        'No auto-discovery: edges are authored, not inferred.)');
+      for (const e of crossClusterEdges.slice(0, 10)) {
+        const ca = g.nodeById[e.a].cluster || '(root)';
+        const cb = g.nodeById[e.b].cluster || '(root)';
+        console.log(`    - ${e.a} --[${e.type}]-- ${e.b}  (${ca} <-> ${cb})`);
+      }
+    }
+  }
+
   // "structural-green != retrieval-green" caveat — printed only when the brain
   // is structurally clean (0 errors) yet a retrieval-risk heuristic trips.
   // Advisory only: it never changes the exit code.
