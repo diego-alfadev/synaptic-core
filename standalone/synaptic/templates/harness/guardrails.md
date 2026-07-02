@@ -8,7 +8,7 @@ tags: [harness, guardrails, hard-rules]
 
 # Guardrails
 
-Non-negotiable rules for working on this project. This file is the **source**; it is **deployed into your harnessing** (instruction file / AGENTS.md block — **symlink preferred over copy**) so it sits in the agent's system prompt for always-on awareness. It is read from the brain only when you edit it, or to verify the deployed copy is in sync — not at session start.
+Non-negotiable rules for working on this project. This file is the **source**; it is **deployed into your harnessing** (instruction file / AGENTS.md block — **copy, or a symlink ONLY on a POSIX local, non-synced path**) so it sits in the agent's system prompt for always-on awareness. It is read from the brain only when you edit it, or to verify the deployed copy is in sync — not at session start.
 
 > **Scope test:** rules about how the project/work must run → here. Rules about how the agent behaves toward its owner → AGENTS.md / CLAUDE.md.
 

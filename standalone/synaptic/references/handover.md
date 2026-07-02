@@ -26,8 +26,9 @@ reconstruction, less tribal-knowledge dependency).
   `status`-vs-`lifecycle` interaction rules — only `lifecycle` scopes the *default* working set, and
   handover/audit deliberately ignore that scoping.
 - **`status` never hides, it flags.** A stale-but-relevant node is included and **flagged** (`⚠ stale`),
-  not dropped. A node with no `status:` is **untriaged** (neither trusted-current nor stale) — surface
-  it as such, never silently promote it to "current".
+  not dropped. `status` is **required** on knowledge nodes; a node whose `status:` is an unknown/mistyped
+  value reads as **untriaged** (neither trusted-current nor stale) — surface it as such, never silently
+  promote it to "current".
 - **Leak-safe + Swedbank-agnostic.** Describe *where* things live (repos, endpoints, runbooks) —
   never paste raw endpoints, IDs, secrets, or internal identifiers. Honor the
   local-vs-remote boundary and the confidentiality rules (`docs/concepts/local-vs-remote-boundary.md`).
@@ -61,7 +62,7 @@ filter**. Assemble the five sections below.
 |---|---|
 | include a `lifecycle: dormant` + `status: active` binding decision | **YES — MUST appear** (dormant scopes only the *default* load, not exports) |
 | include a `status: stale` but relevant node | **YES — flagged `⚠ stale`**, never hidden (`status` never omits) |
-| include a node with no `status:` | **YES — marked `untriaged`**, never promoted to "current" |
+| include a node whose `status:` is an unknown/mistyped value | **YES — marked `untriaged`**, never promoted to "current" (`status` is required; an unknown value reads as untriaged) |
 | apply the default-working-set (`lifecycle`) filter | **NO** — handover reads ALL lifecycles and ALL statuses |
 
 ## Output shape (worked example — author-complete, by inspection)

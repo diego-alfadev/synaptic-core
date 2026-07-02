@@ -1,3 +1,5 @@
+<!-- summary: Migrate a v0.3 / v0.4 / v0.5 brain to v1 (schema/format change) via the supervised M→C→V flow; always runs host-setup detection first + stub-drift check; redeploys operating rules + capture hooks. -->
+
 # /synaptic-upgrade — Migration Guide to v1.0
 
 > **Canonical runbook:** the authoritative, user-facing v0.3-beta → v1-beta migration runbook is
@@ -145,8 +147,9 @@
   decision log.
 
 > **Operating rules live in the harness, not in BRAIN.md (resolved).** Conventions + guardrails are the
-> brain's SOURCE in `harness/`, and are **deployed into the harnessing / system prompt** (SYMLINK
-> preferred over copy) — read from the brain only when edited or to verify sync, never at session
+> brain's SOURCE in `harness/`, and are **deployed into the harnessing / system prompt** (**copy, or a
+> symlink ONLY on a POSIX local, non-synced path** — no symlinks on Windows/OneDrive) — read from the
+> brain only when edited or to verify sync, never at session
 > start. The v1 `templates/BRAIN.md` no longer ships a `## Top Guardrails` block (a boot-time read
 > would duplicate the system prompt); BRAIN.md carries only the harness deploy-source pointer. Phase V
 > greps `BRAIN.md` for `Top Guardrails` (must be empty).
@@ -288,7 +291,7 @@ This project has a Synaptic brain at `.synaptic/`. Before working: read `.synapt
 and follow its capture contract (route durable knowledge, lessons, playbooks, and task
 workspaces as specified; files are authoritative over any agent-native memory).
 Operating rules (conventions, guardrails) are in the SYNAPTIC-RULES section below.
-Commands (synaptic skill): /synaptic-init /synaptic-consolidate /synaptic-ingest /synaptic-audit /synaptic-weave /synaptic-synthesize /synaptic-maintain /synaptic-upgrade
+Commands (synaptic skill): /synaptic-init /synaptic-consolidate /synaptic-ingest /synaptic-audit /synaptic-weave /synaptic-synthesize /synaptic-handover /synaptic-maintain /synaptic-upgrade
 <!-- END:SYNAPTIC -->
 ```
 
@@ -307,7 +310,7 @@ If `.cursor/` exists at the project root, write `.cursor/rules/synaptic.mdc`:
 
 ```
 This project has a Synaptic brain. See AGENTS.md (BEGIN:SYNAPTIC block) for instructions.
-Read `.synaptic/BRAIN.md` at session start. Commands: /synaptic-init /synaptic-consolidate /synaptic-ingest /synaptic-audit /synaptic-weave /synaptic-synthesize /synaptic-maintain /synaptic-upgrade
+Read `.synaptic/BRAIN.md` at session start. Commands: /synaptic-init /synaptic-consolidate /synaptic-ingest /synaptic-audit /synaptic-weave /synaptic-synthesize /synaptic-handover /synaptic-maintain /synaptic-upgrade
 ```
 
 ### M6 — BRAIN.md frontmatter update

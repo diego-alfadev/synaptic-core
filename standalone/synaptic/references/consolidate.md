@@ -1,3 +1,5 @@
+<!-- summary: Run the six-step capture contract on session output — route journal + playground artifacts into the structured wiki (a rewrite pass, not an append pass). -->
+
 # /synaptic-consolidate — Knowledge Consolidation Reference
 
 Route working memory from `journal/_current.md` **and scan open playground artifacts** into the
@@ -115,10 +117,12 @@ current and correct?*; `lifecycle` answers *is this in the current working set?*
   `/synaptic-audit` read **ALL statuses and ALL lifecycles** — a binding `lifecycle: dormant` +
   `status: active` decision **MUST still appear** in a handover brief (else it defeats the knowledge-tax
   thesis). See `references/handover.md` and `references/audit.md`.
-- **Absent-defaults:** `lifecycle` absent → `area` (benign, loads by default); **`status` absent →
-  `untriaged`** — neither trusted-current nor stale; surfaced as `untriaged` in audits, **never silently
-  promoted to `active`.** A hand-edit typo (`Active`, `dorment`) surfaces via the `/synaptic-audit`
-  typo advisory rather than failing open.
+- **Required vs optional + value semantics:** `status` is **REQUIRED** (a missing `status:` is a
+  `check.js` ERROR, never a default); `lifecycle` is **OPTIONAL** and absent → `area` (benign, loads by
+  default). An **unknown/mistyped** `status` value (present but off-vocabulary) reads as **`untriaged`** —
+  neither trusted-current nor stale; surfaced as `untriaged` in audits, **never silently promoted to
+  `active`.** A hand-edit typo (`Active`, `dorment`) surfaces via the `/synaptic-audit` typo advisory
+  rather than failing open.
 
 **Source `content_hash` (drift detection — an inline captured fact, NOT a materialized index):**
 

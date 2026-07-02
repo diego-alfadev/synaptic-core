@@ -23,6 +23,10 @@ exist and can **invoke them by name** — even a chat-only host with no slash-me
   the stubs both derive from it.
 - **How to generate:** for each command in the Operations table (`SKILL.md`), read its
   `references/<cmd>.md` `summary:` line and emit `  /synaptic-<cmd> — <summary>` into the bridge block.
+  **Deterministic fallback:** when a `references/<cmd>.md` has **no** `<!-- summary: … -->` line, use
+  the **H1 title tail** — the text after the `# /synaptic-<cmd> — ` prefix on the file's first heading
+  — as the description. Never hand-author or invent a description; the `summary:` line is preferred and
+  the H1 tail is the deterministic fill so generation always resolves from the file itself.
 - **Grep-checkable invariant:** each bridge description must match its `references/<cmd>.md` summary —
   no hand-authored divergence.
 

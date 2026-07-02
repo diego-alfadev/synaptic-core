@@ -13,9 +13,9 @@
 > **REACH = harness placement, not folder location.** A brain's reach is set by **where its
 > `BEGIN:SYNAPTIC` bridge is wired** — a project-level bridge activates it in one folder, a **user-level
 > / global** bridge activates it in **any** folder. Folder / broad-root / user-global are one axis, not
-> three modes; the brain FOLDER can sit anywhere readable. It stays **one brain per workspace** (no
-> simultaneous coexistence — that is deferred to Cortex/v2.0); reach means one brain reachable from more
-> folders, not two active brains.
+> three modes; the brain FOLDER can sit anywhere readable. It stays **one brain per workspace** — **one
+> reach at a time** (no simultaneous coexistence — that is deferred to Cortex/v2.0); reach means one brain
+> reachable from more folders, not two active brains.
 
 ### Added
 
@@ -84,9 +84,11 @@
 - **`status` vs `lifecycle` handling clarified across consolidate + audit.** Only **`lifecycle`** scopes
   the **default working set**; **`status` NEVER causes omission** (a stale-but-relevant node is **flagged
   `⚠ stale`, not hidden**). The `lifecycle: dormant` scoping applies to the **default load ONLY** —
-  `/synaptic-handover` and `/synaptic-audit` read **ALL statuses and ALL lifecycles**. Absent-defaults:
-  `lifecycle` absent → `area` (benign); **`status` absent → `untriaged`** (neither trusted-current nor
-  stale; never silently promoted to `active`). `/synaptic-audit` gains a **typo advisory** (WARN,
+  `/synaptic-handover` and `/synaptic-audit` read **ALL statuses and ALL lifecycles**. Field semantics:
+  `status` stays **REQUIRED** on knowledge/registries nodes (a missing `status:` is a `check.js` ERROR);
+  `lifecycle` is **OPTIONAL**, absent → `area` (benign). An **unknown/mistyped `status` value** reads as
+  **`untriaged`** (neither trusted-current nor stale; never silently promoted to `active`).
+  `/synaptic-audit` gains a **typo advisory** (WARN,
   non-gating) that flags any `status:`/`lifecycle:` value outside the allowed lowercase token set so a
   hand-edit typo surfaces instead of failing open. `SKILL.md` Detect-on-Load documents the REACH model;
   the Harness Self-Wire §a global/seat pointer note now mandates the **absolute skill path** in the

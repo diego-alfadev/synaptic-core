@@ -1,3 +1,5 @@
+<!-- summary: DIAGNOSE brain health — staleness, orphans, broken links, MOC/cross-link coverage, god-nodes, capture-yield, status/lifecycle typos, registry integrity (diagnose-only, routes fixes elsewhere). -->
+
 # /synaptic-audit — Brain Health Audit Reference
 
 Cross-session review for staleness, orphan nodes, broken links, MOC coverage, **horizontal
@@ -75,9 +77,11 @@ every other check here.
 
 ## Step 1b — `status` / `lifecycle` typo advisory (WARN — cheap grep, non-gating)
 
-Both `status` and `lifecycle` are **optional** frontmatter with **absent-defaults**. A hand-edit typo
-(`Active`, `dorment`, `Archived`) would otherwise be treated as *absent* → silently defaulted (failing
-open). Surface it instead. **Advisory, WARN never ERROR** (C1 exit-0 discipline):
+`status` is **REQUIRED** on knowledge/registries nodes; `lifecycle` is the **OPTIONAL** axis (absent →
+`area`). A hand-edit typo (`Active`, `dorment`, `Archived`) is *present* (so it passes the required-field
+check) but is an **unknown token** — it would otherwise be read as an unknown value and silently defaulted
+(`status` → `untriaged`, never `active`; `lifecycle` → `area`), i.e. failing open. Surface it instead.
+**Advisory, WARN never ERROR** (C1 exit-0 discipline):
 
 - Grep every `status:` and `lifecycle:` value; flag any **NOT** in the allowed lowercase token set:
   - `status ∈ {active, stale, archived}`
@@ -85,10 +89,12 @@ open). Surface it instead. **Advisory, WARN never ERROR** (C1 exit-0 discipline)
 - Report each off-vocabulary value with its node path → *"`status: Active` is not a valid token (did you
   mean `active`?) — a mistyped value is treated as absent and silently defaulted."*
 
-**Absent-default semantics the audit surfaces (do not conflate):**
+**Value semantics the audit surfaces (do not conflate):**
 
-- **`status` absent → `untriaged`** — neither trusted-current nor stale. Surface a node with **no**
-  `status:` as `untriaged`; **never silently promote it to `active`.**
+- **`status` is REQUIRED — an unknown value reads as `untriaged`.** A node with **no** `status:` is a
+  `check.js` **ERROR** (missing required field), not a default; surface it as a hard finding. An
+  **unknown/mistyped** `status` value (present but off-vocabulary) is neither trusted-current nor stale —
+  read it as `untriaged` and **never silently promote it to `active`.**
 - **`lifecycle` absent → `area`** — a benign role default (loads by default). Not a finding.
 
 **No runtime required.** Pure grep over frontmatter values.
