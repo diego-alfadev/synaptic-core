@@ -433,6 +433,13 @@ When all Phase C steps are confirmed complete: delete `_migration-staging/`.
 Close the migration only when all items are checked. Run `node tools/check.js` if available;
 otherwise use manual greps / inspection.
 
+> **`check.js` green is NECESSARY but NOT SUFFICIENT.** A brain can pass every structural check (0
+> errors) and still be unusable for retrieval (evidence: 0 errors yet dozens of practical orphans and
+> almost no edges — structural-green ≠ retrieval-green). Phase V is DONE only when the structural
+> checklist below passes AND the **mandatory retrieval drill** at the end of this section passes. Tick
+> the per-phase gate in `MIGRATION_DONE.md` (kept at the brain root / `_migration-staging/`, never in
+> `knowledge/`) — a phase is DONE only when every box under it is checked.
+
 **Layout (v1):**
 - [ ] `BRAIN.md`, `knowledge/INDEX.md`, `registries/_index.md`, `references/_index.md`, `journal/_current.md`, `harness/conventions.md`, `harness/guardrails.md`, `harness/skills/README.md`, `playgrounds/README.md`, `templates/node.md`, `templates/registry.md`, `templates/playbook.md`, `templates/lesson.md`
 
@@ -482,6 +489,34 @@ otherwise use manual greps / inspection.
 
 **Journal:**
 - [ ] `journal/_current.md` ≤80 lines, three-section format
+
+**Retrieval drill (MANDATORY — `check.js` green is necessary but NOT sufficient):**
+
+Prove the brain can actually be *retrieved from* by walking `BRAIN → INDEX → cluster _index → node`.
+Question-selection recipe (deterministic — pick the same way every run):
+
+- [ ] 3 fact-lookup questions from the **3 most-linked nodes** (highest edge degree) answered by MOC
+      navigation only, recording the hop path.
+- [ ] 2 lookup questions from **2 registry entries** answered by MOC navigation only.
+- [ ] 1 **cross-cluster synthesis** question attempted (answer needs two nodes in different top-level
+      clusters).
+- [ ] **Pass bar:** all 5 fact-lookups answered via MOC navigation with **0 grep-fallbacks**. The
+      synthesis question MAY miss — a miss is a `/synaptic-weave` content gap (per the v1.0 benchmark
+      caveat), not a navigation failure. A fact-lookup that needs grep is a navigation failure — fix
+      the MOC/links and re-run.
+
+**Phase → commit mapping (one commit per phase — mirror of the AGENT runbook):**
+
+The migration lands as **≥3 distinct, independently-revertible commits** on the upgrade branch, each
+passing `check.js` before the next begins — never one blended mega-commit:
+
+- [ ] `migrate: Phase M mechanical file moves` — deterministic moves + staging only (check.js **may
+      still ERROR** here — expected).
+- [ ] `refactor: Phase C content rearrange` — links / MOC / frontmatter / consolidation (check.js
+      **must reach 0 errors**).
+- [ ] `chore: cleanup + cutover` — staging deletion, harness rewrite, backups pruned (check.js
+      re-verifies; retrieval drill passes before cutover). The upgrade branch's 3 phase commits then
+      promote to `main` by a single `git merge --ff-only` (see the cutover section / AGENT runbook).
 
 Migration complete when all items are checked. **Switch only when green; keep the old branch as a
 rollback point.**

@@ -3,6 +3,21 @@
 ## Unreleased
 
 ### Added
+- **Per-phase `MIGRATION_DONE` gate + mandatory retrieval drill.** The v0.3→v1 upgrade now closes each
+  phase against a binary checklist artifact — a new `templates/MIGRATION_DONE.md` (Phase M / C / V
+  boxes, added to `MANIFEST.txt`) that lives at the **brain root or `_migration-staging/`, never in
+  `knowledge/`** (a `MIGRATION_DONE.md` under `knowledge/` is a `check.js` ERROR). A phase is DONE only
+  when every box under it is checked. Phase V adds a **mandatory retrieval drill** with a deterministic
+  question-selection recipe (3 most-linked nodes + 2 registry lookups + 1 cross-cluster synthesis,
+  answered by MOC navigation only) and a binary pass bar (all 5 fact-lookups via navigation, 0
+  grep-fallbacks; the synthesis question may miss as a `/synaptic-weave` gap) — because **`check.js`
+  green is necessary but NOT sufficient** (structural-green ≠ retrieval-green). The AGENT runbook and
+  `references/upgrade-to-v1.md` mirror the drill and the gate.
+- **Commit discipline (one commit per phase).** The upgrade runbook now prescribes **≥3 distinct,
+  named, independently-revertible commits** on the upgrade branch — `migrate: Phase M …` (check.js may
+  still error), `refactor: Phase C …` (check.js at 0 errors), `chore: cleanup + cutover …` — each
+  passing `check.js` before the next begins, with the commit hash recorded per phase in the ledger. No
+  step says "commit everything at the end."
 - **God-node / surprising-edge audit heuristics.** `/synaptic-audit` gains two diagnose-only
   graph-health passes (prose-CORE, WARN, no runtime required): a **god-node** check that flags an
   over-connected hub (edge degree ≥ 15, or ≥ 3× the brain's median node degree — whichever is lower)

@@ -29,6 +29,26 @@ Work on a COPY. Be interactive: STOP and ask before any structural or breaking c
 delete anything silently. Keep a running DECISION LOG and a DELETIONS LEDGER from the first step.
 At the end, produce the REPORT in Step 9. Do not rush — correctness over speed.
 
+┌─ COMMIT DISCIPLINE (one commit per phase) — read before you start ─────────────────────────┐
+│ Do NOT land this as one blended mega-commit. The upgrade branch carries ≥3 distinct, named,  │
+│ independently-revertible commits, each of which must pass `check.js` before the next begins:  │
+│   (1) `migrate: Phase M mechanical file moves`   — deterministic moves + staging only.        │
+│       check.js at this boundary MAY still have ERRORS (v0.x staged, empty scaffold) — expected.│
+│   (2) `refactor: Phase C content rearrange`      — links / MOC / frontmatter / consolidation. │
+│       check.js at this boundary MUST reach 0 ERRORS (structural green).                        │
+│   (3) `chore: cleanup + cutover`                 — staging deletion, harness rewrite, backups. │
+│       check.js re-verifies; the retrieval drill (Step 6) must pass before cutover.             │
+│ Each phase closes by ticking its block in MIGRATION_DONE.md and recording the commit HASH in   │
+│ the DECISION LOG / ledger. Do NOT "commit everything at the end." (See Step 3/4/7 for the exact │
+│ `git commit` lines, and MIGRATION_DONE.md for the per-phase binary gate.)                      │
+└────────────────────────────────────────────────────────────────────────────────────────────┘
+
+PHASE GATE — MIGRATION_DONE.md (binary, per phase). Copy templates/MIGRATION_DONE.md to the brain
+ROOT (next to BRAIN.md) or into _migration-staging/ — NEVER into knowledge/ (check.js ERRORs on a
+MIGRATION_DONE.md under knowledge/). Each of Steps 3, 4, 6 ends by ticking that phase's boxes; a
+phase is DONE only when EVERY box under it is checked. check.js green is necessary but NOT sufficient
+for Phase V — the Step-6 retrieval drill must also pass.
+
 ────────────────────────────────────────────────────────────────────────
 STEP 0 — Get the v1 skill + tools into THIS environment   [no Node for the skill; tools need Node]
 ────────────────────────────────────────────────────────────────────────
@@ -142,6 +162,13 @@ Phase M only MOVES files into the v1 layout and STAGES v0.x boot files — it de
 
   Report what moved. NOTHING is deleted in Phase M.
 
+  END OF PHASE M — tick the Phase M block in MIGRATION_DONE.md; the phase is DONE only when EVERY box
+  is checked. Then run `node tools/check.js <work-copy>` (ERRORS are EXPECTED here — record them, do
+  NOT fix them yet). COMMIT this phase on the upgrade branch:
+     git -C <work-copy> add -A
+     git -C <work-copy> commit -m "migrate: Phase M mechanical file moves (v0.3→v1 staging)"
+  Record the commit hash in the DECISION LOG / ledger. One commit per phase — do not blend M into C.
+
 ────────────────────────────────────────────────────────────────────────
 STEP 4 — Phase C (content rearrange) — INTERACTIVE, RESUMABLE, NON-DESTRUCTIVE   [no Node]
 ────────────────────────────────────────────────────────────────────────
@@ -179,6 +206,14 @@ references/upgrade-to-v1.md, with these BINDING reinforcements (they close real 
     and are DEPLOYED to the harnessing / system prompt in Step 5 (SYMLINK preferred over copy) — read
     from the brain only when edited or to verify sync, never at session start. Do not invent rules and
     do not add a "## Top Guardrails" block to BRAIN.md (the v1 templates no longer ship one).
+
+  END OF PHASE C — run `node tools/check.js <work-copy>` and FIX EVERY ERROR (Phase C is the phase that
+  reaches structural green: 0 errors). Then tick the Phase C block in MIGRATION_DONE.md; the phase is
+  DONE only when EVERY box is checked AND check.js is at 0 errors. COMMIT this phase:
+     git -C <work-copy> add -A
+     git -C <work-copy> commit -m "refactor: Phase C content rearrange (links, MOC, frontmatter, consolidation)"
+  Record the commit hash. This commit is independently revertible — do not fold Step 5 harness or the
+  Step 7 cutover into it.
 
 ────────────────────────────────────────────────────────────────────────
 STEP 5 — Harness wiring (DETECT current → deploy desired)   [no Node]
@@ -266,6 +301,29 @@ STEP 6 — Phase V (verify) on the work copy   [needs Node for check.js; [no Nod
      `.synaptic/BRAIN.md` → must be ZERO. BRAIN.md ≤110 lines with the harness deploy-source pointer present.
    STOP and keep the original on any ERROR or gate failure.
 
+  RETRIEVAL DRILL (MANDATORY — check.js green is necessary but NOT sufficient).   [no Node]
+  A brain can pass every structural check (0 errors) and still be un-retrievable (evidence: 0 errors
+  yet dozens of practical orphans and almost no edges). Structural-green ≠ retrieval-green. Prove the
+  brain can actually be RETRIEVED FROM before you call Phase V done:
+
+    Question-selection recipe (deterministic — pick the SAME way every run):
+      • 3 questions from the 3 MOST-LINKED nodes (highest edge degree — read the check.js
+        retrieval-readiness summary, or degree-scan by hand): one fact-lookup each.
+      • 2 questions from 2 registry entries (an environment / a repo / a glossary term): one lookup each.
+      • 1 cross-cluster SYNTHESIS question (answer needs two nodes in DIFFERENT top-level clusters).
+    Answer EACH by MOC navigation ONLY: BRAIN.md → knowledge/INDEX.md → cluster _index.md → node
+      (or registries/_index.md → registry). Record the hop path for every question.
+    PASS BAR (binary): all 5 fact-lookups (the 3 most-linked + 2 registry) answered via MOC navigation
+      with 0 grep-fallbacks required. The 1 synthesis question MAY miss — a miss is a /synaptic-weave
+      content gap (per the v1.0 benchmark caveat), NOT a navigation failure; log it as a weave to-do.
+    A fact-lookup that needs grep/keyword search to answer is a NAVIGATION FAILURE — fix the MOC/links
+      (register the node, add the missing _index entry) and re-run the drill. Record the drill result
+      table in MIGRATION_DONE.md Phase V.
+
+  END OF PHASE V — tick the Phase V block in MIGRATION_DONE.md; the phase is DONE only when the
+  structural checklist (V.1) is all-checked AND the retrieval-drill pass bar (V.2) is met. check.js
+  green alone does NOT close Phase V.
+
 ────────────────────────────────────────────────────────────────────────
 STEP 7 — Cut over to the v1 brain   [no Node]
 ────────────────────────────────────────────────────────────────────────
@@ -288,6 +346,14 @@ STEP 7 — Cut over to the v1 brain   [no Node]
   4. ATOMIC CUTOVER, per machine: the brain-folder SWAP (filesystem) and the harness rewrite must land
      TOGETHER on each machine — never on separate schedules (else a v1 pointer over a v0.3 brain, or
      vice-versa). Shared/network copy → one swap for everyone; N local copies → a per-person checklist.
+
+  END OF PHASE 3 (cleanup + cutover) — this is the THIRD phase commit. After the FF promote / swap,
+  the staging deletion (Step 10), the harness rewrite (Step 5), and any pruned backups, COMMIT:
+     git -C <brain> add -A
+     git -C <brain> commit -m "chore: cleanup + cutover (harness rewrite; staging pruned at soak-end)"
+  Record the hash in the DECISION LOG. Three named, independently-revertible commits total (M / C /
+  cleanup+cutover) — never one blended commit at the end. (Staging is deleted LAST, in Step 10; this
+  cleanup commit may therefore land in two parts: cutover now, staging-prune after the soak.)
 
 ────────────────────────────────────────────────────────────────────────
 STEP 8 — OPTIONAL full audit + refactor sweep (ONLY if I ask for it)   [no Node; check.js optional]
