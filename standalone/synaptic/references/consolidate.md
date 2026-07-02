@@ -308,9 +308,13 @@ trimmed to 22 lines; `BRAIN.md` `updated:` stamped.
 Consolidation is the *promotion* pass. It sits on top of a cheaper layer that runs continuously and
 is **not** governed by `capture_policy`:
 
-- **One terse line per meaningful turn** is written to `journal/_current.md` (the per-turn `Stop`
-  breadcrumb — the universal capture floor across all hook-capable agents). It is **fixed-cost**: a
-  single line, never a full consolidation, regardless of the capture-policy dial.
+- **One terse line per meaningful turn** is written to `journal/_current.md`. This is an
+  **instruction the agent follows, not only a hook**: the per-turn `Stop` breadcrumb automates it
+  where wired (the universal capture floor across all hook-capable agents), but write it even when no
+  hook fires — hooks are host-specific and can silently fail, so the instruction is the floor
+  underneath the automation (closes issue #2: a session that neared recompact with no breadcrumbs
+  written). It is **fixed-cost**: a single line, never a full consolidation, regardless of the
+  capture-policy dial.
 - Breadcrumbs **live on disk so they survive a crash** — what only lived in the context window dies;
   what reached the journal can still be consolidated later (including by `SessionStart`-rescue on the
   next boot — see `references/audit.md`).
@@ -319,6 +323,12 @@ is **not** governed by `capture_policy`:
 - **Do not** add a second policy dial for breadcrumbs. There are exactly two orthogonal dials:
   `capture_policy` (how aggressively things get **promoted**) and the passivity dial (**when** capture
   triggers). Breadcrumbs are the fixed floor underneath both.
+
+> **Provisional — revisit as a token-optimization.** The per-turn breadcrumb is *good for now*, not a
+> fixed rule. A future Cortex T2 Engram-style FTS journal index (a derived SQLite/FTS5 layer over the
+> journal — see `ROADMAP.md` → "Engram-style searchable journal — Cortex") may make the per-turn
+> breadcrumb partly redundant as a search surface. Treat the breadcrumb cadence as a **token-optimization
+> item to revisit** when that layer lands — not a change to make now, and never a CORE dependency on it.
 
 ---
 
