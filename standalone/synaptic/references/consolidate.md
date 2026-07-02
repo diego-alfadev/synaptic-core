@@ -106,6 +106,20 @@ current and correct?*; `lifecycle` answers *is this in the current working set?*
 > flipping `lifecycle` for actionability changes; reserve `status: archived` for "this content is
 > superseded/dead."
 
+**Interaction rules (which axis governs what — the part users get wrong):**
+
+- **Only `lifecycle` scopes the DEFAULT working set.** A `dormant` node drops out of the *default* load
+  once a brain grows. **`status` NEVER causes omission** — a stale-but-relevant node is **flagged
+  (`⚠ stale`), not hidden.**
+- **The `lifecycle: dormant` scoping applies to the DEFAULT working set ONLY.** `/synaptic-handover` and
+  `/synaptic-audit` read **ALL statuses and ALL lifecycles** — a binding `lifecycle: dormant` +
+  `status: active` decision **MUST still appear** in a handover brief (else it defeats the knowledge-tax
+  thesis). See `references/handover.md` and `references/audit.md`.
+- **Absent-defaults:** `lifecycle` absent → `area` (benign, loads by default); **`status` absent →
+  `untriaged`** — neither trusted-current nor stale; surfaced as `untriaged` in audits, **never silently
+  promoted to `active`.** A hand-edit typo (`Active`, `dorment`) surfaces via the `/synaptic-audit`
+  typo advisory rather than failing open.
+
 **Source `content_hash` (drift detection — an inline captured fact, NOT a materialized index):**
 
 When you distil a raw artifact into a `type: reference` node, capture the source provenance and a

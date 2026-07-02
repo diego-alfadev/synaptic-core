@@ -62,8 +62,36 @@ live projects. Skip any node with no `lifecycle:` field (absent → `area`, noth
 > not de-registration. It **must not** trigger the Step 2 orphan check, and its `updated:` staleness
 > is expected (Step 1 may still note age, but it is not a lifecycle-cadence finding).
 
+> **The audit reads ALL statuses and ALL lifecycles.** `lifecycle: dormant` scopes only the **default
+> working set** (the load-priority signal), **NOT** what the audit inspects. The audit (like
+> `/synaptic-handover`) reads **every** node regardless of `lifecycle` or `status` — a `dormant` or
+> `resource` node is still audited; a `status: stale` node is **flagged, not hidden**. Only `lifecycle`
+> ever scopes the *default* load; `status` **never** causes omission.
+
 **No runtime required.** Grep `lifecycle:` values and compare `updated:` — same by-hand posture as
 every other check here.
+
+---
+
+## Step 1b — `status` / `lifecycle` typo advisory (WARN — cheap grep, non-gating)
+
+Both `status` and `lifecycle` are **optional** frontmatter with **absent-defaults**. A hand-edit typo
+(`Active`, `dorment`, `Archived`) would otherwise be treated as *absent* → silently defaulted (failing
+open). Surface it instead. **Advisory, WARN never ERROR** (C1 exit-0 discipline):
+
+- Grep every `status:` and `lifecycle:` value; flag any **NOT** in the allowed lowercase token set:
+  - `status ∈ {active, stale, archived}`
+  - `lifecycle ∈ {project, area, resource, dormant}`
+- Report each off-vocabulary value with its node path → *"`status: Active` is not a valid token (did you
+  mean `active`?) — a mistyped value is treated as absent and silently defaulted."*
+
+**Absent-default semantics the audit surfaces (do not conflate):**
+
+- **`status` absent → `untriaged`** — neither trusted-current nor stale. Surface a node with **no**
+  `status:` as `untriaged`; **never silently promote it to `active`.**
+- **`lifecycle` absent → `area`** — a benign role default (loads by default). Not a finding.
+
+**No runtime required.** Pure grep over frontmatter values.
 
 ---
 
@@ -289,6 +317,46 @@ consolidate now or defer:
 - Open playgrounds ≥ 3: "Half-done — N open playgrounds. Run `/synaptic-consolidate` to process and close completed task workspaces."
 - Journal lines since last consolidation ≥ 60: "Half-done — journal at N pending breadcrumbs since last consolidation. Run `/synaptic-consolidate` before the journal nears 80 lines."
 - Any untracked playground, stale active-playground entry, drifted `content_hash`, or unresolved `contradicts`: list each as a half-done finding routed to `/synaptic-consolidate` (or `/synaptic-maintain` for the orchestrated sweep).
+
+---
+
+## Step 9b — Capture-Yield + used-but-capture-dead (WARN — advisory, non-gating)
+
+The thesis verb is **capture**. This advisory answers *does daily work produce breadcrumbs/nodes, or is
+the brain silently empty?* — from files alone. **Advisory (exit-0 / never gates)**, like every check here.
+
+**The heartbeat decouples "session opened" from "work captured".** The `SessionStart` boot heartbeat
+(`SKILL.md` §d — the FIRST thing a session writes, a one-line `journal/` boot marker) is
+**capture-INDEPENDENT**, so boots are counted even when nothing else is captured. That lets this step
+distinguish two states the naive "zero artifacts" signal conflates:
+
+- **`not-used`** — **0 boots** in the window → **benign** (nobody worked; not a capture problem). **No
+  advisory.**
+- **`used-but-capture-dead`** — **boots present, 0 captured** (0 new breadcrumbs, 0 nodes over the
+  window) → raise a **distinct "hooks-appear-dead" advisory** pointing to the per-host hook smoke-test.
+  This is the actionable failure. *(This is the refined meaning of "silent-empty": used-but-capture-dead,
+  NOT "empty brain".)*
+
+**Capture-yield section (compute from files — journal timestamps + git log / frontmatter `updated`):**
+
+- **breadcrumbs-per-session** — journal breadcrumb count ÷ session (boot) count.
+- **nodes-added-per-week** — `knowledge/**` nodes whose `updated`/creation falls in the week.
+- **% of meaningful sessions that captured something** — of sessions that did real work (heuristic:
+  touched files / lasted beyond a trivial threshold), the fraction that left ≥1 breadcrumb or node.
+
+**Bias-check (state it):** directional, single-brain, not statistically robust — a *yield* signal, not
+an accuracy claim. The **%-meaningful metric is NON-comparable across hosts** (its "meaningful session"
+heuristic resolves differently per host; hook-less hosts have no reliable session boundary, OneDrive
+placeholder state skews file-touch counts). For any cross-host or trend reading, **prefer the two robust
+counts**: **breadcrumbs per artifact-counted session** (denominator = boots we can actually count via
+the heartbeat, not a heuristic) and **nodes-per-week** (from frontmatter `updated` / git log).
+
+**Report example:** *"12 sessions BOOTED, 0 new breadcrumbs, 0 nodes added in 7 days →
+HOOKS-APPEAR-DEAD (used-but-capture-dead): capture is likely not firing on this host — run the per-host
+hook smoke-test."* A different brain: *"0 boots in 7 days → not-used (benign)"* — no advisory.
+
+**No runtime required.** Degree/count math over files (journal timestamps + frontmatter/git), LLM-free.
+*The heartbeat's actual firing is author-complete; verify on a real (Robinson) run.*
 
 ---
 

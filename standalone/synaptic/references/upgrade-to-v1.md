@@ -15,6 +15,37 @@
 > paste-to-your-agent form of all of this is **`docs/UPGRADE-v0.3-to-v1.AGENT.md`** — prefer driving a
 > real migration from there. Where this addendum and the older body differ, **the addendum wins.**
 
+## v1.4.0 addendum — host-setup detection is an ALWAYS-RUN step (not migration-only)
+
+> **This runs on EVERY `/synaptic-upgrade` and every `/synaptic-init`, including the light
+> already-schema-`1.0` path — not just a pre-v1 migration.** The canonical procedure is **`SKILL.md` →
+> "Host-setup detection"**; this addendum binds it into the upgrade flow. The convert-to-global runbook
+> (`references/convert-to-global.md`) reuses the same detect+classify+re-deploy step.
+
+- **Actively DETECT where + how the brain + harness are wired, then re-deploy the correct wiring** —
+  never silently assume a repo-local `.synaptic/`. Run the six steps in `SKILL.md` "Host-setup
+  detection": resolve brain location (project-local vs global) → scan all carriers → read
+  `harness/setup/<host>.md` and report drift → **classify** → **re-deploy accordingly** → update the
+  record. **Emit a one-line classification** (brain location · host · wiring level).
+- **Interaction with the schema dispatcher.** For a brain already on schema `1.0` (the common
+  `v1.x → v1.4.0` case), the upgrade is **not a migration** — it does the light path. **v1.4.0 adds:**
+  even on that light no-op path, host-setup detection + correct re-deploy of user-level wiring for a
+  **global** brain **still runs**, so a global-brain refresh **re-asserts its user-level wiring** rather
+  than assuming repo-local. For a genuine pre-v1 (`< 1.0`) brain, detection runs *before* M→C→V and
+  drives the "Global/seat harness wiring — DETECT current, then deploy" step below.
+- **MISCONFIGURED-global (the classic "brain covers only one folder" symptom):** brain reachable at a
+  global root but wiring found only at project level → **flag + OFFER to fix** by promoting wiring to
+  user level (convert flow, or just the wiring half if the brain is already global-rooted).
+- **Broken/unreachable pointer:** report it (do NOT treat as "no brain").
+- **Refined leak rule (v1.4.0).** A **global / private** brain is never committed **or synced** into a
+  **foreign** repo; "synced" = under `%OneDrive%`/`%OneDriveCommercial%` or any DFS/sync-share root, even
+  if never committed. A **project-scoped brain in its OWN repo is exempt** (not a leak). Grep every
+  carrier for this brain's bridge/rules in any foreign committed **or synced** file → count MUST be zero.
+- **Stub-drift check.** As part of detection, run the command-discovery stub-drift check
+  (`references/command-discovery.md`): compare recorded stubs/version vs the current SOT command list,
+  regenerate + **prune** stale stubs, clean OneDrive KFM `*-DESKTOP-*` conflict copies, and regenerate
+  the Layer-1 bridge command descriptions from the SOT summaries.
+
 - **Topology first (does NOT change the migration — only the wiring).** Detect/ask whether the brain
   is a single-project `.synaptic/` *inside* one repo, or a **shared/global** `.synaptic/` sitting
   *beside* several repos and serving all of them (commonly a PRIVATE per-user "seat" brain). The schema
@@ -60,11 +91,15 @@
   material). Copilot reads `AGENTS.md` natively too; Gemini CLI (`GEMINI.md`) is the notable non-reader. Rewrite the detected v0.x bridge to v1 (BRAIN.md / INDEX /
   registries paths; `/synaptic-*` commands; drop the HEARTBEAT re-read). Point at the brain by its
   fixed path (absolute is fine for a per-user brain; `../.synaptic/` only if the workspace root is the
-  brain's parent). Deploy conventions+guardrails as the always-on rules — **SYMLINK the `harness/`
-  source where the host allows it**, else emit the block. Only AGENTS.md / Cursor hosts that don't
-  climb to a shared root need per-repo wiring. In ALL cases install the current v1 skill — its
-  Detect-on-Load already resolves the bridge pointer and stays silent when a `BEGIN:SYNAPTIC` bridge is
-  present (NO manual patch). Grep the wired file(s): a bare CWD-relative `.synaptic/BRAIN.md` must be ZERO.
+  brain's parent). **For a user-global brain also write the skill's ABSOLUTE path into the bridge block**
+  (grep-recoverable on hosts that don't discover user-level skill dirs — `SKILL.md` §a). Deploy
+  conventions+guardrails as the always-on rules — **SYMLINK the `harness/` source ONLY on a POSIX local
+  (non-synced) path where the host allows it; on Windows or any OneDrive/DFS-synced location symlinks are
+  NOT allowed (they break on sync/copy) — emit the block / generate a pointer file** instead. Only
+  AGENTS.md / Cursor hosts that don't climb to a shared root need per-repo wiring. In ALL cases install
+  the current v1 skill — its Detect-on-Load already resolves the bridge pointer and stays silent when a
+  `BEGIN:SYNAPTIC` bridge is present (NO manual patch). Grep the wired file(s): a bare CWD-relative
+  `.synaptic/BRAIN.md` must be ZERO.
 - **Cutover = git fast-forward (primary), folder rename (non-git fallback).** The brain is a git repo;
   promote the upgrade branch's 3 phase commits by `git switch main && git merge --ff-only <upgrade-branch>`
   — files rewritten IN PLACE, no live-folder rename. On **Windows/OneDrive, PREFER FF**: a folder
