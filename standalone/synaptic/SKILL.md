@@ -501,6 +501,44 @@ gracefully** — never fail if a layer is unavailable.
 | **(c) SessionStart heartbeat + rescue** | on next boot (`SessionStart`) | most hook-capable hosts | **FIRST**, append a capture-INDEPENDENT one-line **boot heartbeat** to `journal/_current.md` (see below) so boots are counted even when nothing else is captured. **THEN** detect **unconsolidated breadcrumbs / active playgrounds** and **offer to consolidate** — recovers abandoned sessions. Pairs with `/synaptic-audit`'s half-done check = the abandonment safety sweep. |
 | **(d) SessionEnd bonus** | clean exit (`SessionEnd`) | **bonus where present** (NOT Copilot-IDE, NOT Cursor) | On clean exit, offer/run consolidation. A bonus only — capture must **never depend on it**. |
 
+> **Structured session-summary capture protocol (v1.4.0 — inspired by Engram-class memory-log
+> protocols; fully file-based, zero-runtime).** The per-turn `Stop` breadcrumb (layer a) is one terse
+> line; **at a session/context boundary** — a `PreCompact` flush, a `SessionEnd`, or a manual wrap —
+> the agent additionally writes a **short STRUCTURED session summary** into `journal/_current.md`, so
+> what survives a context loss is a legible handoff, not a raw scroll. The shape maps onto the journal's
+> existing three sections (do not invent a fourth):
+>
+> - **Goal** → the session's objective, folded into the **Resume Anchor** (*where work stopped / next
+>   step*).
+> - **Discoveries · Next-Steps** → the open questions, risks, and the next action → the **Watch List** +
+>   Resume Anchor's *next step*.
+> - **Accomplished** → the dated decisions / consolidation events → one **Log** line each.
+> - **Files-touched** → named inline in the relevant Resume-Anchor / Log line (a pointer, not a diff).
+>
+> This is the **discipline** stolen from Engram's mandatory `mem_session_summary`
+> (Goal/Discoveries/Accomplished/Next-Steps/Files) — **not** its engine: no SQLite, no MCP, no runtime,
+> no Engram dependency. It is plain text an agent writes to a file the host already has. A future
+> **Cortex-mode Engram MemoryLog backend (v2.0)** would supersede this file-journal where a runtime is
+> present; this protocol is the **CORE floor** and stands on its own with **zero runtime** (I3).
+>
+> **Anti-verbosity discipline (binding — the journal is bounded working-memory, not an archive).** The
+> session summary is a **concise structured summary, never a "bible."** Four standing rules:
+> 1. **Summarize, don't dump.** A handoff a cold agent can act on — objective, what changed, what's next
+>    — not a turn-by-turn transcript. (Cross-refs the **Simplicity Guardrail**,
+>    `docs/concepts/simplicity-guardrail.md`: keep the surface — here, the journal — small.)
+> 2. **Dedup.** Do **not** re-record a breadcrumb/summary line already in `journal/_current.md`; update
+>    or extend the existing line instead of appending a near-duplicate.
+> 3. **Don't journal what already lives durably in the wiki.** The journal is working-memory/RAM for
+>    what must survive context-loss **before** it is consolidated — **not** a copy of curated
+>    `knowledge/**` nodes. If a fact is already a durable node, breadcrumb a **pointer** to it, not its
+>    contents.
+> 4. **Prune/expire on consolidate.** `/synaptic-consolidate` **removes** the breadcrumbs it has promoted
+>    or that have gone stale (the Journal Trim step + the retention→structure transform in
+>    `references/consolidate.md`) — the journal is bounded (**≤ 80 lines**), never append-forever.
+>
+> The structured summary is the **expected capture artifact**: `/synaptic-audit`'s capture-yield check
+> (`references/audit.md`) reads for this shape, not merely for *any* text.
+
 **Deploy logic (host-gated, idempotent):**
 
 1. **Detect the host harness** from what is present in the project root: `.claude/` →

@@ -238,14 +238,25 @@ For each playground in the journal's **Active playgrounds** list:
 
 ## Journal Trim
 
+> **Retention → structure transform (v1.4.0).** Trimming is where the **structured session-summaries**
+> (Goal/Discoveries/Accomplished/Next-Steps/Files — see the Journal Breadcrumb Contract above) are
+> **distilled into durable wiki knowledge** and the **consumed/stale breadcrumbs are pruned**. A
+> breadcrumb that has been promoted into a `knowledge/**` node is **removed** from the journal (it now
+> lives durably — leaving both is the "don't journal what's in the wiki" anti-pattern); a breadcrumb
+> that has gone stale (superseded, no longer a candidate) is **expired**. The journal is **bounded
+> working-memory**, not an append-forever log: what survives the trim is only the live handoff.
+
 After routing all items:
 
 1. Rewrite `journal/_current.md` keeping only three sections:
    - **Resume Anchor** — where work stopped, next step, updated active-playground list.
    - **Watch List** — open questions and risks; carry forward unresolved items.
    - **Log** — dated one-liners: decisions, consolidation events (keep narrative thread; discard detail).
-2. Hard budget: **≤ 80 lines total**. If still over, trim the Log (oldest entries first).
-3. No archive directory — history lives in git and in consolidated knowledge nodes.
+2. **Prune consumed + stale breadcrumbs:** drop every breadcrumb already promoted into the wiki
+   (dedup against `knowledge/**`) and every stale/superseded breadcrumb — do **not** carry a durable
+   fact in both the journal and a node.
+3. Hard budget: **≤ 80 lines total**. If still over, trim the Log (oldest entries first).
+4. No archive directory — history lives in git and in consolidated knowledge nodes.
 
 ---
 
@@ -341,6 +352,20 @@ is **not** governed by `capture_policy`:
 - **Do not** add a second policy dial for breadcrumbs. There are exactly two orthogonal dials:
   `capture_policy` (how aggressively things get **promoted**) and the passivity dial (**when** capture
   triggers). Breadcrumbs are the fixed floor underneath both.
+
+> **Structured session-summary + anti-verbosity discipline (v1.4.0 — inspired by Engram-class
+> memory-log protocols; fully file-based, zero-runtime).** At a session/context boundary the agent
+> writes a **short STRUCTURED session summary** (not just per-turn lines) mapped onto the journal's
+> three sections — **Goal → Resume Anchor · Discoveries/Next-Steps → Watch List + next step ·
+> Accomplished → Log · Files-touched → named inline** (see `SKILL.md` §d for the full shape and
+> attribution). The standing discipline: capture **concise structured summaries, never "bibles"**;
+> **dedup** (do not re-record a breadcrumb already in the journal); **do not journal what already lives
+> durably in the wiki** (breadcrumb a pointer, not the node's contents — the journal is working-memory
+> for what must survive context-loss, not a copy of curated knowledge); and **prune/expire** stale
+> breadcrumbs on consolidate (see Journal Trim below — the journal is bounded, not append-forever).
+> Cross-refs the **Simplicity Guardrail** (`docs/concepts/simplicity-guardrail.md`): keep the journal
+> surface small. This is the CORE floor; a future **Cortex-mode Engram MemoryLog backend (v2.0)** would
+> supersede the file-journal where a runtime is present — this protocol needs **none**.
 
 > **Provisional — revisit as a token-optimization.** The per-turn breadcrumb is *good for now*, not a
 > fixed rule. A future Cortex T2 Engram-style FTS journal index (a derived SQLite/FTS5 layer over the
