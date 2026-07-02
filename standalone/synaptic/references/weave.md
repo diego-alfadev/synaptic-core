@@ -92,6 +92,11 @@ Search for nodes whose titles, descriptions, or tag sets overlap significantly:
 - If the user declines a merge, note it in the node's frontmatter as
   `weave-reviewed: "not-duplicate — differs because …"` to suppress future proposals.
 
+> **Deletion ledger (standing rule — not migration-only).** When a confirmed merge deletes/redirects a
+> node (or a Pass moves/archives one), record a one-line ledger entry (*what, why, loser→winner or
+> destination, recoverable-via-git*) — the same discipline `references/upgrade-to-v1.md` uses, applied
+> to every weave pass. Justify every delete/move/archive; **git is the archive.**
+
 ### Pass 5 — Theme promotion (journal/playground → knowledge)
 
 Review `journal/_current.md` and any open `playgrounds/`:
