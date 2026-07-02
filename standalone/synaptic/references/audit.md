@@ -343,12 +343,24 @@ distinguish two states the naive "zero artifacts" signal conflates:
   This is the actionable failure. *(This is the refined meaning of "silent-empty": used-but-capture-dead,
   NOT "empty brain".)*
 
+**The expected artifact is a well-formed STRUCTURED summary, not just any text (v1.4.0).** The
+structured session-summary protocol (`SKILL.md` §d / `references/consolidate.md` — inspired by
+Engram-class memory-log protocols, fully file-based) defines the shape capture is *supposed* to leave:
+a short summary mapped onto **Resume Anchor (Goal/Next-Steps) · Watch List (Discoveries) · Log
+(Accomplished)**, with files named inline. So *"did meaningful capture happen?"* checks for **that
+shape** — a populated Resume Anchor / Watch List / dated Log line at a session boundary — **not merely
+the presence of some text**. A journal that grew a wall of raw, unstructured, duplicated lines (a
+"bible") is a capture-quality finding, not a healthy yield; a boot-heartbeat line alone is a boot, not
+a captured summary.
+
 **Capture-yield section (compute from files — journal timestamps + git log / frontmatter `updated`):**
 
 - **breadcrumbs-per-session** — journal breadcrumb count ÷ session (boot) count.
 - **nodes-added-per-week** — `knowledge/**` nodes whose `updated`/creation falls in the week.
 - **% of meaningful sessions that captured something** — of sessions that did real work (heuristic:
   touched files / lasted beyond a trivial threshold), the fraction that left ≥1 breadcrumb or node.
+  A "capture" here means a **well-formed structured summary** (the shape above), not a bare unstructured
+  line.
 
 **Bias-check (state it):** directional, single-brain, not statistically robust — a *yield* signal, not
 an accuracy claim. The **%-meaningful metric is NON-comparable across hosts** (its "meaningful session"

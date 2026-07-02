@@ -78,6 +78,22 @@
   pointing to the per-host hook smoke-test). Bias-check notes the %-meaningful metric is
   **non-comparable across hosts**; prefer the two robust counts. Advisory / non-gating (C1 exit-0). *(The
   heartbeat's actual firing is author-complete; verify on a real Robinson run.)*
+- **Structured session-summary capture protocol + anti-verbosity discipline for the file-journal**
+  (inspired by Engram-class memory-log protocols; fully file-based, zero-runtime). At a
+  session/context boundary the agent writes a **short STRUCTURED summary** — Goal/Discoveries/
+  Accomplished/Next-Steps/Files-touched, mapped onto the journal's existing Resume Anchor · Watch List ·
+  Log sections — so what survives a context loss is a legible handoff, not a raw scroll. Standing
+  **anti-verbosity** rules: concise summaries never "bibles"; **dedup** (don't repeat a recorded
+  breadcrumb); **don't journal what already lives durably in the wiki** (breadcrumb a pointer, not node
+  contents); **prune/expire** consumed/stale breadcrumbs on `/synaptic-consolidate` (the journal is
+  bounded working-memory, ≤ 80 lines, not append-forever). `/synaptic-consolidate` distills the
+  structured summaries into durable knowledge and prunes the consumed breadcrumbs (retention→structure
+  transform); `/synaptic-audit`'s capture-yield check reads for the **structured shape**, not merely
+  any text. This is the **CORE floor** (no SQLite, no MCP, no Engram dependency); a future Cortex-mode
+  Engram MemoryLog backend (v2.0) would supersede the file-journal where a runtime is present, but this
+  protocol stands on its own with zero runtime. Documented in `SKILL.md` §d, the `journal/_current.md`
+  template, `references/consolidate.md` (Journal Breadcrumb Contract + Journal Trim), and
+  `references/audit.md` (capture-yield).
 
 ### Changed
 
