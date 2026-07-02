@@ -12,6 +12,7 @@ Read it newcomer-first, top to bottom — each doc is self-contained, opens with
 6. [Matrioshka architecture — CORE, Cortex, Ecosystem](./architecture-matrioshka.md) — the single runtime test that draws the layers, the proven ideas the substrate is built on, the deferred horizon, the optional tooling, and the full directory layout.
 7. [Local-vs-remote data boundary](./local-vs-remote-boundary.md) — where the data actually goes: the four-layer boundary table, the "only one egress point" argument, and the honest limit that Synaptic adds no new egress but does not police it — the governance line for a regulated enterprise client.
 8. [Verb contract — our four verbs vs Cognee's](./verb-contract.md) — the authored-verb mapping (`consolidate` / `weave` / `synthesize` / `maintain`) against Cognee's, and why `memify` is not a separate CORE verb but a Phase-4 direction gated on a usage signal CORE lacks.
+9. [Cortex boot — the retrieval port and its two driving adapters](./cortex-boot.md) — how the optional Cortex retrieval layer is wired: one written port, a zero-runtime grep/MOC default + a hidden optional qmd adapter, and the CLI + MCP server as sibling front-ends over the same core (a SPIKE, inspection-only).
 
 ---
 
