@@ -3,6 +3,17 @@
 ## Unreleased
 
 ### Added
+- **Tooling / environment notes + deletion ledger as a standing rule.** The AGENT runbook gains a
+  "Tooling / environment notes" appendix framing four host quirks as **ENV diagnostics, not Synaptic
+  rules**: Git Bash has no `rg` (use `grep -rn` / `git grep` / the agent's search — every grep-style
+  instruction stays portable); `apply_patch` / VS Code fs write failures fall back to direct writes;
+  OneDrive/Dropbox locks -> move to a local path (cross-links the Step 2 SYNC GUARD and the FF-cutover
+  rationale); and PowerShell `Get-Content`/`WriteAllText` round-trips **corrupt non-ASCII** (em-dash,
+  arrows, curly quotes) -> prefer UTF-8-aware writes and keep tool source ASCII-safe. The
+  **deletion/move/archive ledger is promoted to a STANDING rule** (not migration-only): a one-line note
+  (*what, why, loser->winner or destination, recoverable-via-git; git is the archive*) is added to
+  `references/consolidate.md`, `references/maintain.md`, and `references/weave.md`, matching the
+  discipline `references/upgrade-to-v1.md` already uses.
 - **Git fast-forward cutover (Windows/OneDrive-safe) + guided-default mode + owner orientation.** The
   v0.3->v1 upgrade now leads its cutover with `git switch main && git merge --ff-only <upgrade-branch>`
   — files rewritten in place, no live-folder rename — with the folder rename/swap demoted to a

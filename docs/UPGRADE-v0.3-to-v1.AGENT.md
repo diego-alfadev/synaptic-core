@@ -481,6 +481,30 @@ agreed soak (a few days of normal use). Delete _migration-staging/ only AFTER Ph
 cutover has been stable through the soak (it preserves per-file granularity the flat backup lacks).
 "No _migration-staging/" is the LAST action — never a Phase V precondition. Delete the backup only
 after the soak.
+
+────────────────────────────────────────────────────────────────────────
+APPENDIX — Tooling / environment notes (ENV diagnostics, NOT Synaptic rules)
+────────────────────────────────────────────────────────────────────────
+These are host/environment quirks, not brain-integrity problems. If one bites, work around it and keep
+going — none of them means the migration or the brain is broken. Four known gotchas:
+
+  1. Git Bash on Windows has NO `rg` (ripgrep). Do NOT write procedures that depend on `rg`. Use a
+     portable search: `grep -rn "<pattern>" <dir>`, `git grep -n "<pattern>"` (inside a repo), or your
+     agent's own file-search tool. Every grep-style instruction in this runbook is portable by design.
+  2. `apply_patch` failing, or a VS Code / editor filesystem WRITE failing, is an ENV issue — a tool or
+     the editor's fs layer, not a Synaptic rule. Fall back to a plain direct file write (write the file
+     with your agent's normal write tool). Do NOT treat the failure as a brain-integrity problem or
+     stop the migration over it.
+  3. OneDrive / Dropbox / network-drive LOCKS: a sync client can lock a file, upload a half-written
+     copy, or make a conflict-copy. Move the backup + work copy + all migration artifacts to a LOCAL,
+     non-synced path first (this is the Step 2 SYNC GUARD — cross-reference it), or pause sync for the
+     window. This is also WHY the cutover prefers `git merge --ff-only` over a live-folder rename.
+  4. PowerShell `Get-Content` / `[IO.File]::WriteAllText` ROUND-TRIPS CORRUPT NON-ASCII characters
+     (em-dash `—`, curly quotes, arrows `→`, etc.): the default encoding mangles them on read-back /
+     re-write. PREFER UTF-8-aware writes (your agent's direct write tool, or `Set-Content -Encoding
+     utf8` / `[IO.File]::WriteAllText($p,$t,[Text.UTF8Encoding]::new($false))`), and keep any tool
+     source you touch ASCII-safe. If you must round-trip a file through PowerShell, verify the non-ASCII
+     glyphs survived — a silently mangled `—`/`→` in a node is an ENV artifact, not authored content.
 ```
 
 ---

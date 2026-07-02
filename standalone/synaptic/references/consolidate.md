@@ -147,6 +147,12 @@ For each item being consolidated, ask: **does this contradict an existing node?*
 > git, and uses **archive-before-delete** for anything removed. This is supervised rewriting over
 > plain files — never an unguarded auto-rewriter.
 
+> **Deletion ledger (standing rule — not migration-only).** Any operation that **deletes, moves, or
+> archives** a node (a dedupe merge, a split, a burned playground, a re-file) records a one-line ledger
+> entry: *what, why, loser→winner or destination, recoverable-via-git*. This is the same discipline the
+> upgrade runbook (`references/upgrade-to-v1.md`) uses — it applies to every `/synaptic-consolidate`
+> run, not just migrations. Justify every delete/move/archive; **git is the archive.**
+
 ---
 
 ## Step 6 — Quality Gate
