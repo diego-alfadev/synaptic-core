@@ -28,6 +28,20 @@
   `lifecycle: dormant` + `status: active` decision **still appears** (dormant scopes only the *default*
   load, not exports); a stale-but-open thread is **flagged, not hidden**. New `references/handover.md`;
   added to the `SKILL.md` Operations table + the bridge command listing.
+- **Day-1 guided first-value walkthrough (`references/day-one.md`), offered from `/synaptic-init`.** A
+  short ~10-minute **cold-start** flow for a **fresh, empty** brain — the counterpart to the
+  migration/upgrade runbooks (which serve existing brains) and aimed squarely at a **non-technical /
+  low-initiative** user (good for demos, reduces friction). Three beats: **(1) first capture** — the
+  agent asks the vacation question (*"if you left tomorrow, what's one thing you own a colleague would
+  need?"*) and files the answer as one real typed, MOC-registered knowledge node (not a toy);
+  **(2) first retrieval** — the agent asks the brain that question back and answers from the node via
+  the grep/MOC floor (proving the loop closes); **(3) first "aha"** — it reuses **`/synaptic-handover`**
+  over the day-1 content to show a starter vacation-handover-shaped brief (seeding the handover
+  feature). **Non-technical-friendly** (plain guided prompts, no harness/Node/CLI vocabulary; links to
+  `docs/FOR-MANAGERS-AND-POS.md`), **zero-runtime / files-first** (read/grep + one file write), and
+  **OPTIONAL** — offered on a fresh brain, skippable, passes the Simplicity Guardrail (an offered path,
+  never a gate). `/synaptic-init` now OFFERS it after wiring; added to the Operations table and
+  `MANIFEST.txt`.
 - **REACH model + always-run host-setup detection (`/synaptic-init` + every `/synaptic-upgrade`).** The
   skill now **actively DETECTS where + how the brain + harness are wired** (project-local vs
   user-level/global) and **re-deploys the correct wiring** — never silently assuming a repo-local

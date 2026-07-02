@@ -3,6 +3,7 @@ references/audit.md
 references/command-discovery.md
 references/consolidate.md
 references/convert-to-global.md
+references/day-one.md
 references/handover.md
 references/ingest.md
 references/maintain.md
