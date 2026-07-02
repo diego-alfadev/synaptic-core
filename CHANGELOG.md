@@ -1,5 +1,97 @@
 # Changelog
 
+## [1.4.0] - 2026-07-02
+
+> **"Brain REACH + Adoption."** One MINOR (`1.4.0`) that makes a brain **reach every folder** (wire the
+> bridge at user level) and makes that brain **capture reliably, hand over cleanly, and be found**. The
+> brain **schema is unchanged (still 1.0)** — no `/synaptic-upgrade` migration is needed; reinstall the
+> skill for the new engine behavior. Additive, CORE-pure, zero-runtime. **NO Node on the authoring
+> machine → every runtime acceptance criterion is author-complete / by-inspection; the actual firing
+> (hooks, second-folder resolution, `/`-menu render, OneDrive hydration) is verified on the first real
+> (Robinson) run.**
+>
+> **REACH = harness placement, not folder location.** A brain's reach is set by **where its
+> `BEGIN:SYNAPTIC` bridge is wired** — a project-level bridge activates it in one folder, a **user-level
+> / global** bridge activates it in **any** folder. Folder / broad-root / user-global are one axis, not
+> three modes; the brain FOLDER can sit anywhere readable. It stays **one brain per workspace** (no
+> simultaneous coexistence — that is deferred to Cortex/v2.0); reach means one brain reachable from more
+> folders, not two active brains.
+
+### Added
+
+- **New verb `/synaptic-handover`.** Generates a new-joiner / covering-colleague **day-1 handover brief
+  FROM the brain** — project summary · owns · key decisions · where-to-look · open threads — sourced from
+  active `project`/`area` synthesis, `lifecycle:`/`type:` frontmatter, `decision` nodes + god-node
+  degree, `resource`/`registry` pointers, and active `project` nodes. **Extractive** (every claim links
+  to a source node), **reproducible from files alone**, **leak-safe** (describes locations, never raw
+  endpoints/IDs), Swedbank-agnostic. It **reads ALL statuses and ALL lifecycles** — a binding
+  `lifecycle: dormant` + `status: active` decision **still appears** (dormant scopes only the *default*
+  load, not exports); a stale-but-open thread is **flagged, not hidden**. New `references/handover.md`;
+  added to the `SKILL.md` Operations table + the bridge command listing.
+- **REACH model + always-run host-setup detection (`/synaptic-init` + every `/synaptic-upgrade`).** The
+  skill now **actively DETECTS where + how the brain + harness are wired** (project-local vs
+  user-level/global) and **re-deploys the correct wiring** — never silently assuming a repo-local
+  `.synaptic/`. It emits a one-line classification (brain location · host · wiring level), flags the
+  **MISCONFIGURED-global** case (brain reachable at a global root but wired only in one folder — the
+  classic "covers only one folder" symptom) with an offer to promote wiring to user level, reports a
+  **broken/unreachable** pointer instead of treating it as "no brain", and — even on the **light
+  already-schema-`1.0`** path — **re-asserts a global brain's user-level wiring**. The user-level bridge
+  carries the brain's **absolute** pointer **and the skill's absolute path** so a host that does not
+  discover user-level skill dirs can still load the skill by reading the bridge (grep-recoverable). New
+  `SKILL.md` "Host-setup detection" section + a v1.4.0 addendum in `references/upgrade-to-v1.md`.
+- **Guided user-global setup branch in `/synaptic-init` (Round 0.5 — topology).** Asks "one folder or
+  several?"; **several → user-global reach is the default** (pick a global root, generate, wire the
+  bridge + rules + hooks + skill at USER level with the absolute-pointer/absolute-skill-path discipline,
+  record + report). Includes the **nesting setup-check** (warn-don't-guard: don't create a second brain
+  inside a global brain's coverage — advisory, never a hard block) and the **confidentiality control**
+  stated plainly: a user-global brain activates on all your work (multi-client is fine — it is your own
+  memory); the one control is **never commit or sync the brain into a repo**.
+- **Convert a project brain → user-global (`references/convert-to-global.md`).** A guided runbook with
+  two sub-cases — **(a) re-wire only** (bridge moves to user level, brain folder stays put — the common,
+  lowest-risk path) and **(b) relocate** (also physically move `.synaptic/` to an OS-default root: Win
+  `C:/Users/<user>/.synaptic`, *nix/mac `~/.synaptic`). Crash-safe **copy-verify-then-remove** ordering
+  (never move-then-rewrite) with a **`convert_in_progress` marker** for deterministic resume/rollback,
+  byte-complete backup + content-conservation **+ on-disk hydration** check, a `pre-global` git tag **on
+  a brain-ONLY repo**, second-folder resolution verified **before** any old-side removal, and leak-rule
+  cleanup that strips the project bridge/rules from **ALL** carriers (not just `AGENTS.md`). First-class
+  **STOP** when the brain is already committed inside a **shared work repo** (git-history leak grep;
+  history rewrite is out of scope and needs a human decision). Refined **leak rule**: a private/global
+  brain is never committed **or synced** into a foreign repo ("synced" = under OneDrive/DFS even if never
+  committed); a project-scoped brain in its **own** repo is fine.
+- **Command discoverability (`references/command-discovery.md`).** A layered design: **Layer 1** lists
+  every `/synaptic-*` command with a one-line description in the bridge/`AGENTS.md` — the universal floor
+  that works on any host with no menu (descriptions **derived from each `references/<cmd>.md` summary**,
+  regenerated on every deploy, single-source). **Layer 2** generates per-host `/`-menu **stubs** (Claude
+  Code `~/.claude/commands/*.md`, Copilot `*.prompt.md`, Cursor prompt files) as thin **pointer files
+  (NOT symlinks** — fragile on Windows/OneDrive), each carrying a
+  `generated-from: synaptic-skill@<version> <hash>` provenance line. `/synaptic-upgrade` runs a
+  **stub-drift check** (report added/removed/renamed → regenerate + **prune** stale stubs, clean OneDrive
+  KFM `*-DESKTOP-*` conflict copies). Because stubs live **outside** the brain, `harness/setup/<host>.md`
+  records the **stub set + placement dir(s) + generating version** as the only inventory; cleanup on
+  uninstall and on convert-to-global reads that record.
+- **Capture-INDEPENDENT SessionStart heartbeat + capture-yield audit.** `SessionStart` now appends a
+  one-line **boot heartbeat** to `journal/` as its **first** action (before the rescue detect), decoupled
+  from capture, so boots are counted even when nothing else is captured. `/synaptic-audit` gains a
+  **capture-yield** advisory (breadcrumbs-per-session, nodes-per-week, %-meaningful-captured — computed
+  from files) that distinguishes **`not-used`** (0 boots — benign, no advisory) from
+  **`used-but-capture-dead`** (boots present, 0 captured → a distinct **"hooks-appear-dead"** advisory
+  pointing to the per-host hook smoke-test). Bias-check notes the %-meaningful metric is
+  **non-comparable across hosts**; prefer the two robust counts. Advisory / non-gating (C1 exit-0). *(The
+  heartbeat's actual firing is author-complete; verify on a real Robinson run.)*
+
+### Changed
+
+- **`status` vs `lifecycle` handling clarified across consolidate + audit.** Only **`lifecycle`** scopes
+  the **default working set**; **`status` NEVER causes omission** (a stale-but-relevant node is **flagged
+  `⚠ stale`, not hidden**). The `lifecycle: dormant` scoping applies to the **default load ONLY** —
+  `/synaptic-handover` and `/synaptic-audit` read **ALL statuses and ALL lifecycles**. Absent-defaults:
+  `lifecycle` absent → `area` (benign); **`status` absent → `untriaged`** (neither trusted-current nor
+  stale; never silently promoted to `active`). `/synaptic-audit` gains a **typo advisory** (WARN,
+  non-gating) that flags any `status:`/`lifecycle:` value outside the allowed lowercase token set so a
+  hand-edit typo surfaces instead of failing open. `SKILL.md` Detect-on-Load documents the REACH model;
+  the Harness Self-Wire §a global/seat pointer note now mandates the **absolute skill path** in the
+  bridge and forbids symlinks on Windows/OneDrive (emit a pointer file instead).
+
 ## [1.3.0] - 2026-07-02
 
 > **One combined release.** This single MINOR (`1.3.0`) folds the migration-&-upgrade-hardening work

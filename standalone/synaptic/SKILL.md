@@ -1,6 +1,6 @@
 ---
 name: synaptic
-version: 1.3.0          # engine semver (skill code) — independent of the brain schema/format version stamped in BRAIN.md
+version: 1.4.0          # engine semver (skill code) — independent of the brain schema/format version stamped in BRAIN.md
 supported_schema: ">=1.0 <2.0"   # brain schema/format versions this engine can read. A skill update reinstalls the skill with NO brain migration; only a schema/format change runs /synaptic-upgrade.
 description: >
   Knowledge-graph memory layer for project work — a portable, file-based brain that turns
@@ -8,7 +8,7 @@ description: >
   know) + harness (deployable operating-rules source). Triggers: `.synaptic/` present in the
   workspace, user wants persistent project memory or an AI brain, or user invokes
   /synaptic-init /synaptic-consolidate /synaptic-ingest /synaptic-audit /synaptic-weave
-  /synaptic-synthesize /synaptic-maintain /synaptic-upgrade.
+  /synaptic-synthesize /synaptic-maintain /synaptic-handover /synaptic-upgrade.
 ---
 
 ## Bootstrap / self-install
@@ -55,6 +55,14 @@ If the bundle IS complete beside this file — every path in `MANIFEST.txt` is p
 named by a `<!-- BEGIN:SYNAPTIC -->` bridge (in `AGENTS.md` / an instructions file) when one is present.
 A **global / seat** brain lives at the bridge's path, NOT at `CWD/.synaptic` — resolve the bridge before
 deciding "no brain". This is what lets one brain serve a workspace that holds many repos.
+
+**REACH = harness placement, not folder location.** A brain's *reach* is set by **where its
+`BEGIN:SYNAPTIC` bridge is wired**, not where the `.synaptic/` folder sits: a **project-level** bridge
+activates the brain only in that folder; a **user-level / global** bridge activates it in **any** folder
+the user opens. Folder / broad-root / user-global are three points on **one reach axis**, not three
+modes. "Going global" = moving the bridge up to user level (the brain folder can stay put). Because the
+user-level bridge points at the brain's **absolute** path, Detect-on-Load resolves it from **any**
+folder — that is what makes one brain serve every folder.
 
 ```
 Resolve brain: CWD .synaptic/BRAIN.md, else the BRAIN.md at the BEGIN:SYNAPTIC bridge's pointer.
@@ -105,6 +113,46 @@ brain's schema/format version against `supported_schema`:
   learn about newer skill engines. An optional Cortex "check-latest" (GitHub Releases API) is the
   only networked path and is never required.
 
+### Host-setup detection (ALWAYS run on `/synaptic-init` and every `/synaptic-upgrade`)
+
+Beyond resolving the brain, **actively detect WHERE + HOW the brain + harness are wired** and
+**re-deploy the correct wiring** — never silently assume a repo-local `.synaptic/`. This is prose an
+agent executes by read/grep (zero-runtime); it is a **first-class, always-run** step of init and every
+upgrade, not just a pre-v1 migration step. (The convert flow, `references/convert-to-global.md`, and
+the upgrade addendum, `references/upgrade-to-v1.md`, reuse this same detect+classify+re-deploy step.)
+
+1. **Resolve the brain location** (reuse the resolution above): `CWD/.synaptic/BRAIN.md`, else the brain
+   at the `BEGIN:SYNAPTIC` bridge pointer. Record **project-local vs global** (is the brain under CWD, or
+   at a higher / absolute path?).
+2. **Scan for existing wiring** across all carriers: VS Code Copilot user-level + workspace
+   `*.chatmode.md` / `*.instructions.md`, `.github/copilot-instructions.md`, `AGENTS.md`, `CLAUDE.md`,
+   `.cursor/rules/*`. Determine **where the bridge + rules currently live** (project vs user level) and
+   **which host** (`.claude/`, `.github/`, `.cursor/`, `AGENTS.md`, Gemini).
+3. **Reuse the recorded setup:** if `<brain>/harness/setup/<host>.md` exists, read it as the
+   authoritative record of the last deployment; reconcile recorded-vs-actual and **report drift**.
+4. **Classify the setup** and **emit a one-line classification** stating brain location
+   (project-local | global), host, and where wiring lives (project | user level):
+   - `{project-local brain + project-level wiring}` → re-deploy **project-level** wiring (existing behavior).
+   - `{global brain + user-level wiring}` → re-deploy **user-level** bridge + rules + hooks (absolute
+     pointer + absolute skill path; symlink only on a POSIX local non-synced path, else emit block /
+     pointer file). A `v1.x → v1.4.0` refresh of a global brain **re-asserts its user-level wiring** even
+     on the light (already-schema-`1.0`) no-op path — it never falls back to a bare repo-local bridge.
+   - `{global brain but wiring found only at project level = MISCONFIGURED}` (the classic "brain covers
+     only one folder" symptom) → **flag it and OFFER to fix**: promote wiring to user level (the convert
+     flow, `references/convert-to-global.md`, or just the wiring half if the brain is already at a global
+     root).
+   - `{bridge points at an unreachable path = broken pointer}` → **report it** (do NOT treat as "no
+     brain"; matches the Detect-on-Load unreachable-pointer branch above).
+5. **Run the command-discovery stub-drift check** (`references/command-discovery.md`): compare the
+   recorded stub set + version against the current SOT command list; regenerate + prune stale stubs;
+   clean OneDrive KFM `*-DESKTOP-*` conflict copies; regenerate the Layer-1 bridge descriptions.
+6. **Update `harness/setup/<host>.md`** with the re-deployed state.
+
+> **Absolute skill path in the bridge (grep-recoverable).** When wiring at user level, the bridge block
+> carries the **skill's absolute path** as well as the brain's, so an agent on a host that does **not**
+> discover user-level skill dirs can still locate + load the skill by reading the bridge. Surface any
+> such host-limitation in the setup report.
+
 ---
 
 ## Onboarding Interview — /synaptic-init
@@ -123,6 +171,54 @@ then proceed to Round 0. Skip this block entirely if a brain already exists.
 > "Is this brain for a project, a role, an organisation, or your life?"
 
 Tailor framing to the answer (e.g. "your stack" for project, "your domains" for org).
+
+**Round 0.5 — Topology (reach): ONE folder or SEVERAL?**
+> "Do you work in ONE project folder, or across SEVERAL folders? If several, I'll set up ONE global
+> brain that follows you into every folder — you won't have to install it again per folder."
+
+- **"Several folders" → user-global reach is the recommended default.** Take the **global branch**
+  below. There is no separate "global mode" — global is just the far end of the reach axis: the bridge
+  wired at **user level**.
+- **"One folder" →** the existing project-local flow (unchanged), plus a one-line note that they can
+  convert to global later (`references/convert-to-global.md`).
+
+> **Nesting setup-check (warn, don't guard).** On any `/synaptic-init` inside a folder, first **check**
+> whether a higher / user-level `BEGIN:SYNAPTIC` bridge already resolves a brain that would cover this
+> folder. If yes, and the user is about to create a **second** brain nested inside that coverage, warn
+> **before generating**: *"A global brain at `<path>` already covers this folder. Nesting a second brain
+> here creates two active bridges over the same location — behavior is undefined and both may fire.
+> Recommend: keep the one global brain, or convert deliberately."* This is **advisory** — proceed only on
+> explicit user confirmation; it never hard-fails (v2.0 coexistence is where arbitration lands).
+
+**Global branch (guided — hide internals; ask only on genuine forks):**
+1. **Pick the global root.** Default-propose the home dir (`~/` / `C:/Users/<user>`); confirm; allow a
+   chosen broad dev root. The brain is created at `<global-root>/.synaptic/`.
+2. **Generate the brain** at the global root from `templates/` (the normal Generate step — no change to
+   brain structure).
+3. **Detect the host + its user-level instruction context** (see Host-setup detection above; record in
+   `harness/setup/<host>.md`).
+4. **Wire the bridge at user level** — write `BEGIN:SYNAPTIC` into the host's user-level instruction
+   context, both pointer lines rewritten to the brain's **absolute** path, **plus the skill's absolute
+   path** (grep-recoverable). Never into a foreign committed **or synced** repo.
+5. **Deploy rules at user level** — `BEGIN:SYNAPTIC-RULES`. Symlink `harness/` **only** on a POSIX local
+   (non-synced) path where allowed; on **Windows or any OneDrive/DFS-synced location, symlinks are NOT
+   allowed** — emit the block / generate a pointer file.
+6. **Deploy capture hooks at user level, host-gated** (see §d) so they fire across all folders (e.g. the
+   host's user-level hook location, not `.github/hooks` inside one repo). Degrade to the
+   instruction-layer breadcrumb if no user-level hook path exists.
+7. **Install the skill** in the user-level skill discovery paths; **also** write the skill's absolute
+   path into the user-level bridge (step 4) so hosts that don't discover user-level skill dirs can still
+   load it by path.
+8. **Record + report** — write the wiring to `<global-root>/.synaptic/harness/setup/<host>.md`; report
+   which folders it now serves, where the wiring lives, the nesting warning, and any host limitation
+   (no user-level skill discovery → skill reachable only via the bridge's absolute path; no user-level
+   hook path → breadcrumb-only capture).
+
+> **Confidentiality of going global (state it plainly).** User-level wiring means this brain activates
+> on **all** the user's work, including other clients' repos. **That is not a leak — it is the user's own
+> memory, and a multi-client global brain is fine.** The one control: **never commit or sync this brain
+> into a repo** — that IS the confidentiality control. Per-client separate brains are a future
+> convenience (coexistence, deferred), not a requirement.
 
 **Round 1 — Coverage + Owner role:**
 > "What should this brain cover? What is your role here — developer, lead, analyst?"
@@ -294,9 +390,22 @@ Commands (synaptic skill): /synaptic-init /synaptic-consolidate /synaptic-ingest
 **Brain pointer (global / seat brains).** The block above hardcodes `.synaptic/` for a brain nested at
 the workspace root. For a **global / seat** brain (one `.synaptic/` serving a workspace that holds many
 repos, from a higher root or pointed to from elsewhere), replace `.synaptic/` in BOTH pointer lines with
-the brain's actual path — relative to the workspace root, or absolute for a fixed local per-user brain.
-For a **private** brain over committed work repos, place the bridge AND the deployed rules at **user
-level** (e.g. the host's user-level instructions) — never write either into a committed work repo.
+the brain's actual path — relative to the workspace root, or **absolute** for a fixed local per-user
+brain. For a **user-global** brain (reach = user-level placement), the pointer MUST be the brain's
+**absolute** path, and the bridge block MUST also carry the **skill's absolute path** on its own line
+(e.g. `Skill: <abs-path>/.claude/skills/synaptic/`) so an agent on a host that does **not** discover
+user-level skill dirs can still locate + load the skill by **reading the bridge** (grep-recoverable —
+this is the safety net when user-level skill discovery is absent). For a **private** brain over committed
+work repos, place the bridge AND the deployed rules at **user level** (the host's user-level instructions)
+— **never** write either into a foreign committed **or synced** repo (the leak rule; "synced" = under
+`%OneDrive%`/`%OneDriveCommercial%` or any DFS/sync-share root, even if never committed). A grep of the
+wired file for a bare CWD-relative `.synaptic/BRAIN.md` MUST be ZERO for a global brain.
+
+> **Command listing in the bridge (Layer-1 discoverability floor).** The `Commands (synaptic skill): …`
+> line above is the universal floor: any agent that reads the bridge knows the commands and can invoke
+> them by name even on a chat-only host. Enrich it with a **one-line description per command DERIVED from
+> the SOT** (each command's `references/<cmd>.md` `summary:` line), regenerated on every deploy — see
+> `references/command-discovery.md`. There is no hand-authored command description anywhere but the SOT.
 
 Do **not** touch `CLAUDE.md` (user persona territory). If the user explicitly asks to add a brain pointer there, do so only on their explicit instruction.
 
@@ -309,17 +418,28 @@ Copy this skill package directory (where this SKILL.md lives, with its `referenc
 
 Create directories if absent. If a target already contains a `SKILL.md` with the same `version:`, skip and report "already present". Otherwise overwrite.
 
-**Command discoverability (optional, best-effort).** So the `/synaptic-*` commands surface in the host's
-slash menu, optionally emit a thin **command stub** per command that the host lists and that only
-**points to the SOT** (the skill's `references/<cmd>.md`) — e.g. for VS Code Copilot a `*.prompt.md` per
-command in the host's prompts location, body: *"Run the synaptic skill's `<cmd>` — follow
-`references/<cmd>.md`."* **[VERIFY]** the host actually lists them. No fallback needed: the agent already
-honors a typed `/synaptic-*` and loads its reference, stubs or not.
+**Command discoverability (layered floor + per-host stubs).** Full procedure:
+`references/command-discovery.md`. Two layers:
+- **Layer 1 (universal floor):** the `Commands …` line in the bridge (§a) lists every `/synaptic-*`
+  command with a one-line description **derived from each `references/<cmd>.md` `summary:`** — works on
+  any host with no menu mechanism; the agent can invoke by name.
+- **Layer 2 (per-host `/`-menu stubs):** for hosts with a slash/prompt menu, generate thin **pointer
+  files** from the ONE SOT (Claude Code `~/.claude/commands/synaptic-*.md` with `description:`; VS Code
+  Copilot `*.prompt.md`; Cursor's prompt-file mechanism). **NOT symlinks** (fragile on Windows/OneDrive —
+  they break on sync/copy). Each stub carries a provenance line
+  `generated-from: synaptic-skill@<engine-version> <sot-hash>`. Body points *by content* to
+  `references/<cmd>.md`. Regenerate from the SOT on every deploy; the user maintains only one source.
+- **Drift + prune (on `/synaptic-upgrade`):** compare recorded stubs/version vs the current SOT command
+  list; report added/removed/renamed; **regenerate** changed and **PRUNE** stubs for commands no longer
+  in the SOT; clean OneDrive KFM `*-DESKTOP-*` conflict copies. **Cleanup:** on uninstall remove every
+  recorded stub then clear the record; on convert-to-global remove the project-level stubs.
 
 **Record the wiring.** After wiring + deploy, write/update `harness/setup/<host>.md` in the brain (e.g.
 `harness/setup/vscode.md`) capturing what was deployed where for this host: the bridge location + brain
-pointer, the rules target, the hook config, and any command stubs. This documents the setup, is the
-**re-deploy recipe when you move machines**, and travels in the backup.
+pointer (+ **absolute skill path** for a global brain), the rules target, the hook config, and — because
+stubs live **OUTSIDE** the brain and this record is the **only** map to them — the **command-stub set,
+the exact placement dir(s), and the generating engine-version** (matching the stub provenance line). This
+documents the setup, is the **re-deploy recipe when you move machines**, and travels in the backup.
 
 ### c. Deploy operating rules (idempotent)
 
@@ -378,7 +498,7 @@ gracefully** — never fail if a layer is unavailable.
 |---|---|---|---|
 | **(a) Stop breadcrumb** | per assistant turn (`Stop`) | **UNIVERSAL — all 5 agents** | Append **one terse line** to `journal/_current.md` (the meaningful change/decision this turn). The **workhorse + crash-proof floor**. **Fixed cost; NOT governed by `capture_policy`.** |
 | **(b) PreCompact flush** | before context compaction (`PreCompact`) | **Claude / Copilot / Codex** | Run `/synaptic-consolidate` (or flush breadcrumbs) **before context is lost** — the gem for long/abused sessions. |
-| **(c) SessionStart rescue** | on next boot (`SessionStart`) | most hook-capable hosts | Detect **unconsolidated breadcrumbs / active playgrounds** and **offer to consolidate** — recovers abandoned sessions. Pairs with `/synaptic-audit`'s half-done check = the abandonment safety sweep. |
+| **(c) SessionStart heartbeat + rescue** | on next boot (`SessionStart`) | most hook-capable hosts | **FIRST**, append a capture-INDEPENDENT one-line **boot heartbeat** to `journal/_current.md` (see below) so boots are counted even when nothing else is captured. **THEN** detect **unconsolidated breadcrumbs / active playgrounds** and **offer to consolidate** — recovers abandoned sessions. Pairs with `/synaptic-audit`'s half-done check = the abandonment safety sweep. |
 | **(d) SessionEnd bonus** | clean exit (`SessionEnd`) | **bonus where present** (NOT Copilot-IDE, NOT Cursor) | On clean exit, offer/run consolidation. A bonus only — capture must **never depend on it**. |
 
 **Deploy logic (host-gated, idempotent):**
@@ -420,6 +540,17 @@ gracefully** — never fail if a layer is unavailable.
 > check). Because the instruction-layer breadcrumb wrote the trail regardless, nothing is lost — the
 > rescue simply consolidates it on the next session.
 
+> **SessionStart boot heartbeat (capture-INDEPENDENT — the FIRST thing a session writes).** Before the
+> rescue detect and before any work, `SessionStart` appends a single **boot marker** line to
+> `journal/_current.md` (e.g. `- boot: 2026-07-02T09:14 (SessionStart)`). This is **decoupled from
+> capture**: it fires even when *nothing else* is captured, so "session opened" is counted separately
+> from "work captured." That separation is what lets `/synaptic-audit` (see `references/audit.md`)
+> distinguish **not-used** (0 boots — benign) from **used-but-capture-dead** (boots present, 0
+> captured — the actionable failure that points to the hook smoke-test). Like the breadcrumb, it is an
+> **instruction the agent follows** when the `SessionStart` hook fires (or by hand on a hook-less host)
+> — a one-line journal marker, no new schema. *(Author-complete; the heartbeat's actual firing is
+> verified on a real (Robinson) run.)*
+
 > **Breadcrumb cadence is provisional (token-optimization to revisit).** The per-turn breadcrumb is
 > good for now, not a fixed rule: a future Cortex T2 Engram-style FTS journal index (`ROADMAP.md` →
 > "Engram-style searchable journal — Cortex") may make it partly redundant as a search surface.
@@ -457,13 +588,14 @@ Load the referenced file only when the operation is invoked, not at boot.
 
 | Command | What it does | Reference |
 |---|---|---|
-| `/synaptic-init` | No brain → interview + generate (from `templates/`) + wire + deploy operating rules + deploy capture hooks. Brain present but unwired → wire + deploy. Brain present + wired → extend (add cluster / registries / ingest). | This file |
+| `/synaptic-init` | No brain → topology (reach) intake + interview + generate (from `templates/`) + wire (project OR user-global) + deploy operating rules + deploy capture hooks + generate discovery stubs. Brain present but unwired → run host-setup detection, wire + deploy. Brain present + wired → extend (add cluster / registries / ingest). Always runs host-setup detection first. | This file |
 | `/synaptic-consolidate` | Run the six-step capture contract on session output (journal + playground artifacts); the manual fallback when no capture hooks are wired | `references/consolidate.md` |
 | `/synaptic-ingest [file]` | Distill a document into an atomic node + reference entry | `references/ingest.md` |
-| `/synaptic-audit` | DIAGNOSE: staleness, orphans, broken `[[wikilinks]]`, MOC coverage, cross-link coverage, **god-nodes (over-connected hubs, degree ≥ 15 or ≥ 3× median) + surprising edges (cross-cluster links)**, half-done/unconsolidated + pending-breadcrumb check, registry integrity, oversized untyped nodes, tag hygiene | `references/audit.md` |
+| `/synaptic-audit` | DIAGNOSE: staleness, orphans, broken `[[wikilinks]]`, MOC coverage, cross-link coverage, **god-nodes (over-connected hubs, degree ≥ 15 or ≥ 3× median) + surprising edges (cross-cluster links)**, half-done/unconsolidated + pending-breadcrumb check, **capture-yield + used-but-capture-dead advisory**, **status/lifecycle typo advisory**, registry integrity, oversized untyped nodes, tag hygiene. Reads ALL statuses and ALL lifecycles. | `references/audit.md` |
 | `/synaptic-weave` | Graph-gardening pass: propose missing `[[links]]` (typed-edge proposals, propose-never-write), flag under-connected nodes, detect concept gaps, suggest merges, promote recurring themes | `references/weave.md` |
 | `/synaptic-synthesize` | Generative pass over the curated brain: write synthesis nodes (cross-source patterns, concept evolution, orphan rescue), each with `[[wikilinks]]` + MOC registration at write time; propose/confirm for merges. Does not replace consolidate. | `references/synthesize.md` |
 | `/synaptic-maintain` | Portable maintenance procedure: reconcile flagged `contradicts`/`supersedes` + synthesize + orphan/cross-link repair via diagnose-then-treat, approval-gated; bounded-reversible, diff-traced, archive-before-delete | `references/maintain.md` |
-| `/synaptic-upgrade` | Migrate v0.3 / v0.4 / v0.5 brain to v1 (schema/format change); redeploys operating rules + capture hooks | `references/upgrade-to-v1.md` |
+| `/synaptic-handover` | Generate a new-joiner / covering-colleague day-1 **handover brief** FROM the brain (extractive, reproducible-from-files, leak-safe): project summary · owns · key decisions · where-to-look · open threads. Reads ALL statuses and ALL lifecycles (a binding `dormant`+`active` decision still appears). | `references/handover.md` |
+| `/synaptic-upgrade` | Migrate v0.3 / v0.4 / v0.5 brain to v1 (schema/format change); ALWAYS runs host-setup detection first (re-deploys the correct project- or user-level wiring, incl. a global brain's user-level re-assert on the light already-`1.0` path) + stub-drift check; redeploys operating rules + capture hooks | `references/upgrade-to-v1.md` |
 
 **Tools awareness:** if a runtime is available, prefer `tools/` scripts (check/migrate/export/vault-open) for the mechanical steps. If no runtime, perform the operation manually as described in the reference files.
