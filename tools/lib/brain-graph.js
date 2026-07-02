@@ -103,6 +103,11 @@ function extractFrontmatterEdges(lines) {
   for (let i = bounds.start + 1; i < bounds.end; i++) {
     const line = lines[i];
 
+    // A full-line YAML comment is a no-op: it is neither a key nor a list item, so it must
+    // NOT terminate an open block list. A comment at column 0 would otherwise satisfy the
+    // `!/^\s/` block-terminator below and silently DROP the remaining `- "[[…]]"` edges.
+    if (/^\s*#/.test(line)) continue;
+
     // A block-list item under the current key: `  - "[[target]]"` (quotes optional).
     if (activeKey && /^\s+-\s+/.test(line)) {
       for (const m of line.matchAll(/\[\[([^\]]+)\]\]/g)) out.push(m[1].trim());
@@ -150,8 +155,14 @@ function extractBodyWikilinks(lines) {
     // Fenced code block toggle.
     if (/^\s*(```|~~~)/.test(rawLine)) { inFence = !inFence; continue; }
     if (inFence) continue;
-    // Strip inline code spans.
-    let line = rawLine.replace(/`[^`]*`/g, m => ' '.repeat(m.length));
+    // Strip inline code spans — MULTI-backtick first, then single. A ``double-backtick``
+    // span (used to quote text that itself contains a backtick, e.g. ``[[x]]``) must be
+    // blanked before the single-backtick pass, otherwise `/`[^`]*`/` matches the empty
+    // run between the two leading backticks and leaves the [[x]] inside exposed as a
+    // FALSE body wikilink. Length-preserving so column offsets stay stable.
+    let line = rawLine
+      .replace(/``[^`]*``/g, m => ' '.repeat(m.length))
+      .replace(/`[^`]*`/g, m => ' '.repeat(m.length));
     if (line.includes('<!--')) {
       if (!line.includes('-->')) {
         const before = line.slice(0, line.indexOf('<!--'));
@@ -302,6 +313,9 @@ function extractFrontmatterEdgesTyped(lines) {
   let activeKey = null;
   for (let i = bounds.start + 1; i < bounds.end; i++) {
     const line = lines[i];
+    // Full-line YAML comment: no-op, must not terminate an open block list (see the twin
+    // extractFrontmatterEdges above — a column-0 `#` would otherwise drop remaining edges).
+    if (/^\s*#/.test(line)) continue;
     if (activeKey && /^\s+-\s+/.test(line)) {
       for (const m of line.matchAll(/\[\[([^\]]+)\]\]/g)) out.push({ target: m[1].trim(), kind: activeKey });
       continue;
@@ -363,6 +377,8 @@ function parseFrontmatterLite(lines) {
   let collectingList = false;
   for (let i = bounds.start + 1; i < bounds.end; i++) {
     const line = lines[i];
+    // Full-line YAML comment: no-op, must not terminate an open block list.
+    if (/^\s*#/.test(line)) continue;
     if (collectingList && /^\s+-\s+/.test(line)) {
       const val = line.replace(/^\s+-\s+/, '').replace(/^["']|["']$/g, '').trim();
       if (!Array.isArray(fields[currentKey])) fields[currentKey] = [];

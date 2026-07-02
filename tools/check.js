@@ -157,6 +157,11 @@ function parseFrontmatter(lines) {
   for (let i = 1; i < endIdx; i++) {
     const line = lines[i];
 
+    // Full-line YAML comment: a no-op. It is neither a key nor a list item, so it must not
+    // terminate an open block list — a column-0 `#` would otherwise satisfy the non-indented
+    // terminator below and silently drop the remaining `- item` values from the list.
+    if (/^\s*#/.test(line)) continue;
+
     // Block list item under a previous key
     if (collectingList && /^\s+-\s+/.test(line)) {
       const val = line.replace(/^\s+-\s+/, '').replace(/^["']|["']$/g, '').trim();
@@ -226,8 +231,15 @@ function stripNonProse(lines, onProse) {
       continue;
     }
     if (inFence) continue;
-    // Blank inline code spans (length-preserving so column offsets stay stable).
-    let line = rawLine.replace(/`[^`]*`/g, m => ' '.repeat(m.length));
+    // Blank inline code spans — MULTI-backtick first, then single (length-preserving so
+    // column offsets stay stable). A ``double-backtick`` span (used to quote text that
+    // itself contains a backtick, e.g. ``[[x]]``) must be blanked before the single pass,
+    // otherwise /`[^`]*`/ matches the empty run between the two leading backticks and
+    // leaves the [[x]] inside exposed as a FALSE wikilink. Kept identical to
+    // tools/lib/brain-graph.js extractBodyWikilinks so the two edge universes never diverge.
+    let line = rawLine
+      .replace(/``[^`]*``/g, m => ' '.repeat(m.length))
+      .replace(/`[^`]*`/g, m => ' '.repeat(m.length));
 
     if (line.includes('<!--')) {
       if (!line.includes('-->')) {
@@ -607,9 +619,12 @@ function checkBrokenLinks() {
 // knowledge/, never children of it. We therefore do NOT scan knowledge/**/playgrounds/;
 // we flag `_migration-staging/` only when it has leaked INSIDE knowledge/.
 //
-// Audit-report name heuristic: a date-prefixed file (YYYY-MM-DD…) OR a name that
-// contains the word "audit" (e.g. audit-2026-07-report.md, 2026-07-02-audit.md).
-const AUDIT_NAME_RE = /(^\d{4}-\d{2}-\d{2})|audit/i;
+// Audit-report name heuristic: a date-prefixed file (YYYY-MM-DD…), OR a name where
+// "audit" appears as the TYPE token — at the very start (audit-2026-07-report.md) or as
+// the final token before .md (2026-07-02-audit.md, cluster-audit.md). Deliberately NOT a
+// bare substring: a descriptive knowledge node that merely mentions auditing
+// (e.g. synaptic-audit-outcome.md — "audit" sandwiched mid-name) must NOT trip this WARN.
+const AUDIT_NAME_RE = /^\d{4}-\d{2}-\d{2}|^audit[-_]|[-_]audit\.md$/i;
 
 function checkNonLiveArtifacts() {
   const knowledgeDir = path.join(brainRoot, 'knowledge');

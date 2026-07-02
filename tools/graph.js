@@ -436,8 +436,11 @@ var DATA = ${safeJson(DATA)};
     });
   }
   function highlight(n, on){
-    if (!on){ nodes.forEach(function(m){ m._el.classList.remove("dim"); });
-              edges.forEach(function(e){ e._el.classList.remove("dim"); }); return; }
+    // On mouseleave, do NOT blanket-clear "dim": that would wipe an active search filter
+    // (search and hover share the same "dim" class). Restore whatever the search box asks
+    // for instead — applySearch() clears all dims when the query is empty, so a plain
+    // hover-off with no search behaves exactly as before.
+    if (!on){ applySearch(); return; }
     var keep = {}; keep[n.id]=1; (adj[n.id]||[]).forEach(function(id){ keep[id]=1; });
     nodes.forEach(function(m){ if(!keep[m.id]) m._el.classList.add("dim"); });
     edges.forEach(function(e){ if(e.a.id!==n.id && e.b.id!==n.id) e._el.classList.add("dim"); });
@@ -516,7 +519,10 @@ var DATA = ${safeJson(DATA)};
 
   // ---- search ---------------------------------------------------------------
   var searchBox = document.getElementById("search");
-  searchBox.addEventListener("input", function(){
+  // Apply the current search query to the shared "dim" class. Empty query clears all dims.
+  // Defined as a hoisted function declaration so highlight() (above) can call it on
+  // mouseleave to restore search state instead of wiping it.
+  function applySearch(){
     var q = searchBox.value.trim().toLowerCase();
     nodes.forEach(function(n){
       if (!q){ n._el.classList.remove("dim"); return; }
@@ -525,10 +531,14 @@ var DATA = ${safeJson(DATA)};
     });
     if(!q) edges.forEach(function(e){ e._el.classList.remove("dim"); });
     else edges.forEach(function(e){ e._el.classList.add("dim"); });
-  });
+  }
+  searchBox.addEventListener("input", applySearch);
   searchBox.addEventListener("keydown", function(ev){
     if (ev.key !== "Enter") return;
     var q = searchBox.value.trim().toLowerCase();
+    // Empty box: Enter is a no-op. Otherwise indexOf("")===0 would match (and center on)
+    // the first visible node, jumping the viewport for no reason.
+    if (!q) return;
     var hit = nodes.filter(function(n){ return n._vis && n.id.toLowerCase().indexOf(q)>=0; })[0];
     if (hit){ ox = stage.clientWidth/2 - hit.x*scale; oy = stage.clientHeight/2 - hit.y*scale; applyTransform(); }
   });
