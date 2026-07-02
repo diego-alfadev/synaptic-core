@@ -260,6 +260,16 @@ Yes → run /synaptic-ingest on the document now. Queue further documents for po
 After the interview, run **Harness Self-Wire** (wire AGENTS.md + install skill + deploy operating
 rules + **deploy capture hooks**), then report the file list.
 
+**Day-1 first-value offer (fresh brain only — OPTIONAL follow-through).** Once the brain is generated
+and wired, and it is still **empty** (a true first run, no existing nodes), **OFFER** the guided
+first-value walkthrough — do not force it: *"Your brain is set up and empty. Want a 10-minute guided
+first capture? I'll walk you through capturing one thing you own, retrieving it back, and turning it
+into a starter handover brief. Or skip it and just start working — the brain captures as you go either
+way."* On **yes**, load `references/day-one.md` and run it (first capture → first retrieval → the
+vacation-handover "aha"). On **no**, say the brain is ready and stop. Skip this offer entirely on a
+migration/upgrade or when the brain already has nodes. This is an *offered* path, never a gate
+(Simplicity Guardrail, `docs/concepts/simplicity-guardrail.md`).
+
 ---
 
 ## Generate
@@ -626,7 +636,7 @@ Load the referenced file only when the operation is invoked, not at boot.
 
 | Command | What it does | Reference |
 |---|---|---|
-| `/synaptic-init` | No brain → topology (reach) intake + interview + generate (from `templates/`) + wire (project OR user-global) + deploy operating rules + deploy capture hooks + generate discovery stubs. Brain present but unwired → run host-setup detection, wire + deploy. Brain present + wired → extend (add cluster / registries / ingest). Always runs host-setup detection first. | This file |
+| `/synaptic-init` | No brain → topology (reach) intake + interview + generate (from `templates/`) + wire (project OR user-global) + deploy operating rules + deploy capture hooks + generate discovery stubs, then **OFFER the optional Day-1 guided first-value walkthrough** on the fresh empty brain. Brain present but unwired → run host-setup detection, wire + deploy. Brain present + wired → extend (add cluster / registries / ingest). Always runs host-setup detection first. | This file · `references/day-one.md` (Day-1 flow) |
 | `/synaptic-consolidate` | Run the six-step capture contract on session output (journal + playground artifacts); the manual fallback when no capture hooks are wired | `references/consolidate.md` |
 | `/synaptic-ingest [file]` | Distill a document into an atomic node + reference entry | `references/ingest.md` |
 | `/synaptic-audit` | DIAGNOSE: staleness, orphans, broken `[[wikilinks]]`, MOC coverage, cross-link coverage, **god-nodes (over-connected hubs, degree ≥ 15 or ≥ 3× median) + surprising edges (cross-cluster links)**, half-done/unconsolidated + pending-breadcrumb check, **capture-yield + used-but-capture-dead advisory**, **status/lifecycle typo advisory**, registry integrity, oversized untyped nodes, tag hygiene. Reads ALL statuses and ALL lifecycles. | `references/audit.md` |
