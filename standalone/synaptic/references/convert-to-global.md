@@ -147,6 +147,10 @@ repo, plus the history warning above.
      which side (old/new) is resolvable and either **resume** (new side present + verified → finish
      cleanup) or **roll back** (new side incomplete → restore per the rollback rule), then clear the
      marker.
+   - **On resume, read the authoritative `convert_in_progress` marker from `harness/setup/<host>.md` in
+     whichever brain the user-level bridge currently resolves to** — a partial convert may leave a marker
+     in both the old (project-side) and new (relocated) copies, so the resolved brain's copy is the one
+     of record; ignore a stale marker in a copy the live bridge no longer points at.
 10. **Report + soak note.** Keep the backup + `pre-global` tag until stable, then remove.
 
 ## Done checklist (binary — no content loss)
