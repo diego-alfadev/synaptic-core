@@ -8,6 +8,11 @@
 const fs   = require('node:fs');
 const path = require('node:path');
 
+// Shared, canonical knowledge-scoped / MOC-excluded edge-graph universe.
+// KEEP IN SYNC: this is the SAME module tools/graph.js imports, so check.js and
+// graph.html always report the identical topology (council cross-cutting rule).
+const { buildBrainGraph } = require('./lib/brain-graph');
+
 // ---------------------------------------------------------------------------
 // CLI
 // ---------------------------------------------------------------------------
@@ -48,6 +53,20 @@ function isUnderReferencesRaw(filePath) {
 }
 
 /**
+ * True if file lives under audits/ (any depth) at the brain root.
+ * audits/ holds CLOSED audit reports — a snapshot in time that may reference nodes
+ * which were later renamed/removed. Any [[...]] inside is a historical pointer, NOT a
+ * live authored edge, so audits/ is scaffolding excluded from broken-link validation
+ * (same treatment as references/raw/ and templates/). audits/ is a root sibling of
+ * knowledge/, so Checks 2/3/4/8/9 (which walk knowledge/ + registries/) never see it,
+ * and its absence is never an error (additive, backward-compatible).
+ */
+function isUnderAudits(filePath) {
+  const rel = path.relative(brainRoot, filePath).replace(/\\/g, '/');
+  return rel === 'audits' || rel.startsWith('audits/');
+}
+
+/**
  * True for MOC/sentinel files excluded from content checks.
  * INDEX.md, _index.md, README.md are excluded from frontmatter/naming/orphan checks.
  */
@@ -59,6 +78,18 @@ function isMocFile(filePath) {
 /** True if value is a {{...}} placeholder. */
 function isPlaceholder(value) {
   return typeof value === 'string' && /^\{\{.+\}\}$/.test(value.trim());
+}
+
+/**
+ * True if the frontmatter `lint` field carries a given flag.
+ * Accepts a scalar (`lint: allow-large`) or a list (`lint: [allow-large, …]` /
+ * block-list form — parseFrontmatter returns lists as arrays). Absent/other-typed
+ * values → false. Optional additive frontmatter → NO schema bump.
+ */
+function hasLintFlag(lintValue, flag) {
+  if (lintValue === undefined || lintValue === null) return false;
+  if (Array.isArray(lintValue)) return lintValue.some(v => String(v).trim() === flag);
+  return String(lintValue).trim() === flag;
 }
 
 /**
@@ -126,6 +157,11 @@ function parseFrontmatter(lines) {
   for (let i = 1; i < endIdx; i++) {
     const line = lines[i];
 
+    // Full-line YAML comment: a no-op. It is neither a key nor a list item, so it must not
+    // terminate an open block list — a column-0 `#` would otherwise satisfy the non-indented
+    // terminator below and silently drop the remaining `- item` values from the list.
+    if (/^\s*#/.test(line)) continue;
+
     // Block list item under a previous key
     if (collectingList && /^\s+-\s+/.test(line)) {
       const val = line.replace(/^\s+-\s+/, '').replace(/^["']|["']$/g, '').trim();
@@ -165,14 +201,21 @@ function parseFrontmatter(lines) {
 }
 
 /**
- * Extract all [[wikilinks]] from lines, skipping:
- *   - HTML comment blocks (<!-- ... -->)
- *   - fenced code blocks (``` ... ``` or ~~~ ... ~~~)
- *   - inline code spans (`...`)
- * Returns an array of raw link strings (may contain # or | — strip those for resolution).
+ * Shared fence/comment/inline-code stripper (line walker).
+ * Walks `lines` and yields, per surviving prose line, the text that remains AFTER:
+ *   - dropping fenced code blocks (``` ... ``` or ~~~ ... ~~~) entirely
+ *   - dropping HTML comment blocks (<!-- ... -->) — multi-line and single-line
+ *   - blanking inline code spans (`...`) to spaces (length-preserving)
+ * A callback receives each surviving prose string. Lines that are fully consumed
+ * (a fence delimiter, a line inside a fence/comment, or a line that only opened a
+ * comment) contribute no callback for their skipped portion.
+ *
+ * This is the SINGLE source of "is this real prose?" — reused by both the wikilink
+ * extractor (Check 5) and the non-live `{{...}}` placeholder scan (Check: non-live
+ * artifacts). Keeping one walker prevents the fence-blindness bug class that was
+ * fixed for wikilinks (bd40a29) from being reintroduced for a new token.
  */
-function extractWikilinks(lines) {
-  const links = [];
+function stripNonProse(lines, onProse) {
   let inComment = false;
   let inFence = false;
 
@@ -182,29 +225,64 @@ function extractWikilinks(lines) {
       continue;
     }
     // Fenced code block toggle: a line opening or closing ``` / ~~~ flips the flag;
-    // skip wikilink extraction while inside a fence.
+    // the delimiter line and everything inside the fence are not prose.
     if (/^\s*(```|~~~)/.test(rawLine)) {
       inFence = !inFence;
       continue;
     }
     if (inFence) continue;
-    // Strip inline code spans
-    let line = rawLine.replace(/`[^`]*`/g, m => ' '.repeat(m.length));
+    // Blank inline code spans — MULTI-backtick first, then single (length-preserving so
+    // column offsets stay stable). A ``double-backtick`` span (used to quote text that
+    // itself contains a backtick, e.g. ``[[x]]``) must be blanked before the single pass,
+    // otherwise /`[^`]*`/ matches the empty run between the two leading backticks and
+    // leaves the [[x]] inside exposed as a FALSE wikilink. Kept identical to
+    // tools/lib/brain-graph.js extractBodyWikilinks so the two edge universes never diverge.
+    let line = rawLine
+      .replace(/``[^`]*``/g, m => ' '.repeat(m.length))
+      .replace(/`[^`]*`/g, m => ' '.repeat(m.length));
 
     if (line.includes('<!--')) {
       if (!line.includes('-->')) {
-        const before = line.slice(0, line.indexOf('<!--'));
-        for (const m of before.matchAll(/\[\[([^\]]+)\]\]/g)) links.push(m[1].trim());
+        // Comment opens and does not close on this line: only the text BEFORE
+        // the opener is prose; the rest is swallowed by the comment.
+        onProse(line.slice(0, line.indexOf('<!--')));
         inComment = true;
         continue;
       }
-      // Single-line comment — strip it
+      // One or more single-line comments — strip them out.
       line = line.replace(/<!--.*?-->/g, '');
     }
 
-    for (const m of line.matchAll(/\[\[([^\]]+)\]\]/g)) links.push(m[1].trim());
+    onProse(line);
   }
+}
+
+/**
+ * Extract all [[wikilinks]] from lines, skipping:
+ *   - HTML comment blocks (<!-- ... -->)
+ *   - fenced code blocks (``` ... ``` or ~~~ ... ~~~)
+ *   - inline code spans (`...`)
+ * Returns an array of raw link strings (may contain # or | — strip those for resolution).
+ */
+function extractWikilinks(lines) {
+  const links = [];
+  stripNonProse(lines, (prose) => {
+    for (const m of prose.matchAll(/\[\[([^\]]+)\]\]/g)) links.push(m[1].trim());
+  });
   return links;
+}
+
+/**
+ * True if any surviving PROSE line (fences / comments / inline-code stripped)
+ * contains a {{...}} placeholder token. Fence-aware by construction — a node that
+ * quotes `{{placeholder}}` inside a code fence or an inline `code span` is NOT flagged.
+ */
+function hasProsePlaceholder(lines) {
+  let found = false;
+  stripNonProse(lines, (prose) => {
+    if (!found && /\{\{[^}]*\}\}/.test(prose)) found = true;
+  });
+  return found;
 }
 
 /**
@@ -225,6 +303,10 @@ function buildLinkIndex(root) {
     path.join(root, 'registries'),
     path.join(root, 'references'),
     path.join(root, 'harness'),
+    // audits/ = closed audit reports (root sibling). Included so a LIVE node may link
+    // TO a closed audit — [[audits/2026-…]] — without a broken-link ERROR. (Links FROM
+    // inside audits/ are separately excluded via isUnderAudits in Check 5.)
+    path.join(root, 'audits'),
   ];
   // Also add any .md directly at brain root
   for (const entry of (fs.existsSync(root) ? fs.readdirSync(root, { withFileTypes: true }) : [])) {
@@ -366,6 +448,17 @@ function checkFrontmatter() {
         warn(filePath, 'frontmatter "tags" is an empty list — add at least one tag');
       }
     }
+
+    // lifecycle: OPTIONAL additive axis — never required, never ERRORs. If present, it must be
+    // one of the closed enum values; an out-of-enum value is a WARN (typo/near-collision), never
+    // a gate. Absent → legal (treated as `area`; no schema bump).
+    const lifecycle = fm.lifecycle;
+    if (lifecycle !== undefined && lifecycle !== null) {
+      const LIFECYCLE_ENUM = ['project', 'area', 'resource', 'dormant'];
+      if (!LIFECYCLE_ENUM.includes(String(lifecycle).trim())) {
+        warn(filePath, `frontmatter "lifecycle" is "${lifecycle}" — expected one of ${LIFECYCLE_ENUM.join(' | ')} (optional field; leave absent for the default "area")`);
+      }
+    }
   }
 }
 
@@ -481,11 +574,14 @@ function checkBrokenLinks() {
   // carries placeholder/example wikilinks or verbatim payloads (NOT real edges):
   //   - templates/      (example/placeholder content: [[target]], [[related-node]], [[x]])
   //   - references/raw/  (verbatim captured payloads; any [[...]] inside is source text)
+  //   - audits/         (closed audit reports; [[...]] inside is a historical pointer
+  //                      to nodes that may have been renamed/removed since the audit)
   //   - MOC files (_index.md, INDEX.md, README.md): they list nodes that
   //     should exist; the orphan check (check 4) covers the inverse.
   //     In a fresh/seed brain MOC files will always have placeholder links.
   for (const filePath of walkMd(brainRoot)) {
-    if (isUnderTemplates(filePath) || isUnderReferencesRaw(filePath) || isMocFile(filePath)) continue;
+    if (isUnderTemplates(filePath) || isUnderReferencesRaw(filePath) ||
+        isUnderAudits(filePath) || isMocFile(filePath)) continue;
 
     const lines = readLines(filePath);
     const rawLinks = extractWikilinks(lines);
@@ -498,6 +594,73 @@ function checkBrokenLinks() {
       if (!linkIndex.has(target)) {
         err(filePath, `broken wikilink: [[${rawLink}]]`);
       }
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Check 5b: Non-live artifacts leaking into knowledge/
+// ---------------------------------------------------------------------------
+// knowledge/ is LIVE nodes only. Templates, closed-audit reports, MIGRATION_DONE
+// checklists, and migration-staging leftovers must live elsewhere
+// (templates/ | audits/ | playgrounds/ | _migration-staging/), never in knowledge/.
+//
+// Council split (BINDING — v1.2.1-v1.3.0-council-verdict.md C4):
+//   ERROR — only zero-false-positive, name-based artifacts:
+//     * a file named MIGRATION_DONE.md under knowledge/
+//     * a `_migration-staging/` path segment appearing INSIDE knowledge/
+//   WARN  — fuzzy heuristics (never gate on these):
+//     * a node whose surviving PROSE (fence-aware) carries a {{...}} placeholder
+//       → looks like an unfilled template
+//     * a file whose NAME matches a closed-audit-report pattern
+//       → looks like it belongs in audits/
+//
+// Topology note: playgrounds/ and _migration-staging/ are BRAIN-ROOT SIBLINGS of
+// knowledge/, never children of it. We therefore do NOT scan knowledge/**/playgrounds/;
+// we flag `_migration-staging/` only when it has leaked INSIDE knowledge/.
+//
+// Audit-report name heuristic: a date-prefixed file (YYYY-MM-DD…), OR a name where
+// "audit" appears as the TYPE token — at the very start (audit-2026-07-report.md) or as
+// the final token before .md (2026-07-02-audit.md, cluster-audit.md). Deliberately NOT a
+// bare substring: a descriptive knowledge node that merely mentions auditing
+// (e.g. synaptic-audit-outcome.md — "audit" sandwiched mid-name) must NOT trip this WARN.
+const AUDIT_NAME_RE = /^\d{4}-\d{2}-\d{2}|^audit[-_]|[-_]audit\.md$/i;
+
+function checkNonLiveArtifacts() {
+  const knowledgeDir = path.join(brainRoot, 'knowledge');
+  if (!fs.existsSync(knowledgeDir)) return;
+
+  for (const filePath of walkMd(knowledgeDir)) {
+    // templates/ under knowledge/ is legitimate scaffolding; MOC files are sentinels.
+    if (isUnderTemplates(filePath) || isMocFile(filePath)) continue;
+
+    const base = path.basename(filePath);
+    const rel  = path.relative(brainRoot, filePath).replace(/\\/g, '/');
+
+    // --- ERROR: exact-name / path-segment artifacts (zero false positives) ---
+    const isMigrationDone = base === 'MIGRATION_DONE.md';
+    // `_migration-staging/` leaked INSIDE knowledge/ (a path segment, not the filename).
+    const inLeakedStaging = /\/_migration-staging\//.test('/' + rel + '/');
+
+    if (isMigrationDone) {
+      err(filePath, 'non-live artifact in knowledge/: MIGRATION_DONE.md — move to the brain root or _migration-staging/ (git-ignored/removed at soak-end)');
+    }
+    if (inLeakedStaging) {
+      err(filePath, 'non-live artifact in knowledge/: _migration-staging/ leftover — staging is a root sibling of knowledge/, not a child of it');
+    }
+
+    // Exact-name artifacts already ERRORed above — do not ALSO emit the fuzzy WARNs
+    // for them (MIGRATION_DONE.md legitimately carries {{...}} template placeholders).
+    if (isMigrationDone || inLeakedStaging) continue;
+
+    // --- WARN: fuzzy heuristics (never gate) ---
+    // (a) placeholder-bearing node — fence-aware prose scan (shared stripNonProse).
+    if (hasProsePlaceholder(readLines(filePath))) {
+      warn(filePath, 'possible non-live artifact in knowledge/: contains a {{...}} placeholder in prose — an unfilled template belongs in templates/, not knowledge/');
+    }
+    // (b) audit-report-looking filename.
+    if (AUDIT_NAME_RE.test(base)) {
+      warn(filePath, `possible non-live artifact in knowledge/: filename "${base}" looks like a closed-audit report — closed audits belong in audits/, not knowledge/`);
     }
   }
 }
@@ -587,11 +750,16 @@ function checkBudgets() {
     const lines = readLines(filePath);
     if (lines.length <= KNOWLEDGE_BUDGET) continue;
 
-    // Check type — if type: reference, skip (deliberately long canonical doc)
     const fm = parseFrontmatter(lines);
+    // Suppress the soft-budget WARN when EITHER holds (both additive, back-compat):
+    //   - type: reference    (existing — deliberately long canonical doc)
+    //   - lint: allow-large  (new — decouples the budget waiver from the semantic
+    //     type so `type:` isn't abused as `reference` just to dodge the budget;
+    //     honored as a scalar `lint: allow-large` OR a list `lint: [allow-large, …]`)
     if (fm && fm.type === 'reference') continue;
+    if (fm && hasLintFlag(fm.lint, 'allow-large')) continue;
 
-    warn(filePath, `node is ${lines.length} lines (soft budget: ${KNOWLEDGE_BUDGET}; tag "type: reference" to suppress)`);
+    warn(filePath, `node is ${lines.length} lines (soft budget: ${KNOWLEDGE_BUDGET}; tag "type: reference" or "lint: allow-large" to suppress)`);
   }
 }
 
@@ -631,6 +799,7 @@ checkFrontmatter();
 checkNaming();
 checkMocCoverage();
 checkBrokenLinks();
+checkNonLiveArtifacts();
 checkRegistries();
 checkReferences();
 checkBudgets();
@@ -658,6 +827,111 @@ printFindings('WARNINGS', warnings);
 
 const totalErrors   = errors.length;
 const totalWarnings = warnings.length;
+
+// ---------------------------------------------------------------------------
+// Retrieval-readiness report (advisory — NEVER gates the exit code)
+// ---------------------------------------------------------------------------
+// Structural green (0 errors) does not prove the brain can answer anything.
+// This block reports the SHARED knowledge-scoped, MOC-excluded edge universe
+// (tools/lib/brain-graph.js — identical to graph.js) so check.js and the graph
+// viz never disagree on the topology.
+
+function printRetrievalReadiness() {
+  let g;
+  try {
+    g = buildBrainGraph(brainRoot);
+  } catch (e) {
+    console.log(`\nRetrieval-readiness: (skipped — ${e.message})`);
+    return;
+  }
+
+  const nodes        = g.nodeCount;
+  const edges        = g.edgeCount;
+  const orphans      = g.orphanCount;
+  const epn          = g.edgesPerNode;         // undirected edgeList.length / nodeCount
+  const mocReachable = g.mocReachableCount;
+  const orphanRatio  = nodes > 0 ? orphans / nodes : 0;
+
+  const epnStr = nodes > 0 ? epn.toFixed(2) : 'n/a';
+  const orphanPctStr = nodes > 0 ? (orphanRatio * 100).toFixed(0) + '%' : 'n/a';
+
+  console.log('\nRetrieval-readiness (knowledge nodes only; MOC/_index/INDEX/README excluded):');
+  console.log(`  Nodes            : ${nodes}`);
+  console.log(`  Edges            : ${edges} (undirected, deduped; typed frontmatter edges + body [[wikilinks]])`);
+  console.log(`  Orphans          : ${orphans} (degree-0 knowledge nodes; ${orphanPctStr} of nodes)`);
+  console.log(`  Edges per node   : ${epnStr}`);
+  console.log(`  MOC-reachable    : ${mocReachable} / ${nodes} (linked from INDEX.md or a cluster _index.md)`);
+
+  // ---------------------------------------------------------------------------
+  // Graph-health heuristics (v1.3.0 §3) — god-nodes + surprising (cross-cluster)
+  // edges. ADVISORY ONLY: WARN-class, never ERROR, never required, NEVER gates
+  // the exit code. Emitted only when the brain is structurally clean (0 errors)
+  // so they surface as graph-gardening hints, not as noise on a broken brain.
+  // Both reuse the SHARED graph `g` (tools/lib/brain-graph.js) — the identical
+  // knowledge-scoped, MOC-excluded, undirected-deduped edge/degree universe the
+  // /synaptic-audit prose (references/audit.md Steps 4c/4d) defines by hand, so
+  // check.js and a by-hand audit always agree. No new parsing, no extra reads.
+  if (totalErrors === 0 && nodes > 0) {
+    // God-node degree threshold: min(15, 3× median node degree) — whichever lower.
+    const degrees = g.nodes.map(n => g.degreeOf[n.id] || 0).sort((x, y) => x - y);
+    const mid = Math.floor(degrees.length / 2);
+    const median = degrees.length % 2
+      ? degrees[mid]
+      : (degrees[mid - 1] + degrees[mid]) / 2;
+    // "whichever lower" — but a median of 0 (very sparse brain) makes 3× median = 0,
+    // which would flag every connected node; guard so the 3× rule only tightens the
+    // absolute 15 when the median is a meaningful (>=1) signal. A threshold below 2 is
+    // never useful (it would flag ordinary 2-edge nodes), so floor the effective bar at 2.
+    const godThreshold = median >= 1 ? Math.max(2, Math.min(15, 3 * median)) : 15;
+    const godNodes = g.nodes
+      .filter(n => (g.degreeOf[n.id] || 0) >= godThreshold)
+      .sort((a, b) => (g.degreeOf[b.id] || 0) - (g.degreeOf[a.id] || 0));
+
+    // Surprising edges: endpoints in different top-level knowledge/ clusters.
+    const crossClusterEdges = g.edgeList.filter(e => {
+      const na = g.nodeById[e.a];
+      const nb = g.nodeById[e.b];
+      return na && nb && na.cluster !== nb.cluster;
+    });
+
+    if (godNodes.length || crossClusterEdges.length) {
+      console.log('');
+      console.log('  Graph-health (advisory — WARN only; run /synaptic-weave to confirm/split; ' +
+        'does NOT fail the check):');
+      console.log(`  God-nodes        : ${godNodes.length} ` +
+        `(degree >= ${godThreshold} = min(15, 3x median ${median}))`);
+      for (const n of godNodes.slice(0, 10)) {
+        const rel = n.cluster ? `knowledge/${n.cluster}/${n.id}.md` : `knowledge/${n.id}.md`;
+        console.log(`    - ${rel} — degree ${g.degreeOf[n.id]} ` +
+          '(candidate to split into atomic sub-nodes, or a legitimate hub — confirm)');
+      }
+      console.log(`  Surprising edges : ${crossClusterEdges.length} ` +
+        '(cross-cluster; high-value multi-hop links — confirm or fix a mis-file. ' +
+        'No auto-discovery: edges are authored, not inferred.)');
+      for (const e of crossClusterEdges.slice(0, 10)) {
+        const ca = g.nodeById[e.a].cluster || '(root)';
+        const cb = g.nodeById[e.b].cluster || '(root)';
+        console.log(`    - ${e.a} --[${e.type}]-- ${e.b}  (${ca} <-> ${cb})`);
+      }
+    }
+  }
+
+  // "structural-green != retrieval-green" caveat — printed only when the brain
+  // is structurally clean (0 errors) yet a retrieval-risk heuristic trips.
+  // Advisory only: it never changes the exit code.
+  const heuristicTrips = nodes > 0 && (orphanRatio > 0.20 || epn < 0.5);
+  if (totalErrors === 0 && heuristicTrips) {
+    console.log('');
+    console.log('  CAVEAT: structural-green != retrieval-green.');
+    console.log('  0 errors, but this brain shows low connectivity ' +
+      `(orphan ratio ${orphanPctStr} > 20% OR edges/node ${epnStr} < 0.5).`);
+    console.log('  A brain can pass every structural check and still be hard to retrieve from.');
+    console.log('  Run /synaptic-weave to author missing edges, and do a retrieval drill ' +
+      '(BRAIN -> INDEX -> cluster _index -> node). This is advisory; it does NOT fail the check.');
+  }
+}
+
+printRetrievalReadiness();
 
 console.log(`\nSummary: ${totalErrors} error(s), ${totalWarnings} warning(s)`);
 

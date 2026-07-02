@@ -1,6 +1,6 @@
 ---
 name: synaptic
-version: 1.2.0          # engine semver (skill code) — independent of the brain schema/format version stamped in BRAIN.md
+version: 1.3.0          # engine semver (skill code) — independent of the brain schema/format version stamped in BRAIN.md
 supported_schema: ">=1.0 <2.0"   # brain schema/format versions this engine can read. A skill update reinstalls the skill with NO brain migration; only a schema/format change runs /synaptic-upgrade.
 description: >
   Knowledge-graph memory layer for project work — a portable, file-based brain that turns
@@ -212,6 +212,61 @@ Use real data — no `{{placeholder}}` values in generated files. Report the ful
 
 ---
 
+## Lifecycle axis (optional actionability scoping)
+
+Knowledge nodes (and registries, where meaningful) MAY carry one optional frontmatter field —
+`lifecycle:` — that scopes the **active working set**. It applies to `knowledge/**` and
+`registries/` only; it is **never** used on `playgrounds/` or `journal/` (those are the separate
+raw/working layer, governed by consolidation, not by a lifecycle field). Adding it does **not** bump
+the brain schema — it is additive optional frontmatter, the same class as typed edges and provenance.
+
+**Field + values (closed enum, exactly four):**
+
+```yaml
+lifecycle: project | area | resource | dormant
+```
+
+- `project` — a disposable **hot node**: a live, time-boxed effort. Links OUT to durable nodes.
+- `area` — an ongoing responsibility / durable domain node with no end date. **The default for
+  un-tagged nodes.**
+- `resource` — reference material relevant *someday*, not part of the current working set.
+- `dormant` — cooled off: kept for the record, not loading by default. Reversible (see below).
+
+**Default / absent (backward-compatible).** A node **without** `lifecycle:` is treated as **`area`**
+for scoping — it default-loads, exactly as every pre-v1.3.0 node did. Absence is legal, never an
+error; a skill-less or older-skill agent that does not understand the field simply ignores it.
+
+**Active-set scoping rule (the convention the agent follows — no index, no runtime):**
+
+- **Default working context (default-load set) = `project` + `area` + (absent → area).**
+- **Lazy-pull set = `resource` + `dormant`** — loaded only when a query / MOC path explicitly
+  points at them, or the user asks.
+- **MOC visibility is unaffected:** a node's lifecycle never removes it from its cluster `_index.md`.
+  Cooling a node is a load-priority signal, not de-registration (de-registration would orphan it).
+
+**Archive-don't-delete demotion (reversible cooling, never a delete).**
+
+- **Demote:** flip `lifecycle: dormant`. Keep the file in place; keep its `_index.md` entry
+  (optionally append " (dormant)" to the one-line summary so the MOC stays honest); keep all its
+  `[[wikilinks]]` and typed edges intact. Archiving must not sever the graph.
+- This is **decoupled from `status`** — demotion flips `lifecycle` **only**; do NOT also set
+  `status: archived`. `status` stays the orthogonal editorial-trust field (a node can be
+  `status: active` + `lifecycle: dormant`).
+- **Promote (reverse):** flip `lifecycle:` back to `project` / `area` when it becomes live again —
+  a single-field edit, no other change required. Nothing was deleted, so nothing is lost.
+- **Boundary with hard delete:** deletion stays a separate, explicit, approval-gated
+  `/synaptic-maintain` action ("archive-before-delete"). The lifecycle `dormant` flip is the softer,
+  in-graph, reversible step *before* any maintain-delete.
+
+**`project`-links-out convention (no new `type:` token).** `project` is a *lifecycle* value, not a
+`type:`. A project node keeps a normal `type:` (usually `knowledge` or `decision`) and carries
+`lifecycle: project` — the `type:` enum is unchanged. A project node SHOULD carry ≥1 outgoing typed
+edge (`relates_to` / `depends_on` / `part_of`) to a durable `area`/`resource` node, so when it is
+cooled to `dormant` the durable knowledge survives independently. Audit/weave may flag a `project`
+node with **zero** outgoing durable edges — a diagnose-only finding, never an auto-fix.
+
+---
+
 ## Harness Self-Wire
 
 Run after /synaptic-init or on any boot where wiring is absent. Goal: make every agent in the project aware of the brain automatically, without touching user persona config.
@@ -340,10 +395,35 @@ gracefully** — never fail if a layer is unavailable.
    skill via the host runtime (append-breadcrumb for `Stop`; `/synaptic-consolidate` for the rest).
 3. **Always deploy `Stop`** (universal). Deploy `PreCompact` / `SessionStart` / `SessionEnd` only
    where the detected host supports them.
-4. **Degrade gracefully:** if the host exposes **no usable hooks**, deploy nothing and tell the
-   user plainly: *"This host has no capture hooks — run `/synaptic-consolidate` manually at the end
-   of meaningful work (and `/synaptic-maintain` periodically)."* The brain still works fully; only
-   the automation degrades.
+4. **Degrade gracefully:** if the host exposes **no usable hooks**, deploy nothing and fall back to
+   the **instruction layer**: the breadcrumb contract in `BRAIN.md` still instructs the agent to
+   append a one-line journal breadcrumb per meaningful turn *by hand*, so the breadcrumb floor holds
+   with zero automation. Tell the user plainly: *"This host has no capture hooks — the agent still
+   writes per-turn breadcrumbs as an instruction; run `/synaptic-consolidate` manually at the end of
+   meaningful work (and `/synaptic-maintain` periodically)."* The brain still works fully; only the
+   automation degrades — the instruction-layer breadcrumb is what closes issue #2 on hook-less hosts.
+5. **Per-host degradation floor (what stays when a layer is missing).** On **every** host the
+   instruction-layer breadcrumb is the floor, so no host is ever breadcrumb-empty:
+   - **Claude Code** — full set (Stop, PreCompact, SessionStart, SessionEnd).
+   - **Copilot** — Stop + PreCompact + SessionStart; no SessionEnd → clean-exit consolidation falls
+     back to the SessionStart-rescue net (below) or a manual `/synaptic-consolidate`.
+   - **Codex / `AGENTS.md` host** — Stop + PreCompact + SessionStart + SessionEnd as available; any
+     absent layer → instruction-only breadcrumbs + manual `/synaptic-consolidate`.
+   - **Cursor** — Stop + SessionStart only; **no PreCompact** → flush-before-compaction falls back to
+     the SessionStart-rescue net + instruction-only breadcrumbs.
+   - **Gemini CLI** — Stop + SessionStart where exposed; anything not exposed →
+     instruction-only breadcrumbs + manual `/synaptic-consolidate`.
+
+> **PreCompact not fired? SessionStart-rescue is the net.** On any host where `PreCompact` is absent
+> or silently fails to fire, the next-boot `SessionStart` rescue detects the unconsolidated
+> breadcrumbs / active playgrounds and offers to consolidate (see `references/audit.md`'s half-done
+> check). Because the instruction-layer breadcrumb wrote the trail regardless, nothing is lost — the
+> rescue simply consolidates it on the next session.
+
+> **Breadcrumb cadence is provisional (token-optimization to revisit).** The per-turn breadcrumb is
+> good for now, not a fixed rule: a future Cortex T2 Engram-style FTS journal index (`ROADMAP.md` →
+> "Engram-style searchable journal — Cortex") may make it partly redundant as a search surface.
+> Revisit the cadence when that layer lands — never a CORE dependency.
 
 **Honest limits (do not overclaim — v1-final §5.9, §9.1):**
 - **No agent has native idle detection.** This is **passive, event-driven** capture on hook-capable
@@ -380,7 +460,7 @@ Load the referenced file only when the operation is invoked, not at boot.
 | `/synaptic-init` | No brain → interview + generate (from `templates/`) + wire + deploy operating rules + deploy capture hooks. Brain present but unwired → wire + deploy. Brain present + wired → extend (add cluster / registries / ingest). | This file |
 | `/synaptic-consolidate` | Run the six-step capture contract on session output (journal + playground artifacts); the manual fallback when no capture hooks are wired | `references/consolidate.md` |
 | `/synaptic-ingest [file]` | Distill a document into an atomic node + reference entry | `references/ingest.md` |
-| `/synaptic-audit` | DIAGNOSE: staleness, orphans, broken `[[wikilinks]]`, MOC coverage, cross-link coverage, half-done/unconsolidated + pending-breadcrumb check, registry integrity, oversized untyped nodes, tag hygiene | `references/audit.md` |
+| `/synaptic-audit` | DIAGNOSE: staleness, orphans, broken `[[wikilinks]]`, MOC coverage, cross-link coverage, **god-nodes (over-connected hubs, degree ≥ 15 or ≥ 3× median) + surprising edges (cross-cluster links)**, half-done/unconsolidated + pending-breadcrumb check, registry integrity, oversized untyped nodes, tag hygiene | `references/audit.md` |
 | `/synaptic-weave` | Graph-gardening pass: propose missing `[[links]]` (typed-edge proposals, propose-never-write), flag under-connected nodes, detect concept gaps, suggest merges, promote recurring themes | `references/weave.md` |
 | `/synaptic-synthesize` | Generative pass over the curated brain: write synthesis nodes (cross-source patterns, concept evolution, orphan rescue), each with `[[wikilinks]]` + MOC registration at write time; propose/confirm for merges. Does not replace consolidate. | `references/synthesize.md` |
 | `/synaptic-maintain` | Portable maintenance procedure: reconcile flagged `contradicts`/`supersedes` + synthesize + orphan/cross-link repair via diagnose-then-treat, approval-gated; bounded-reversible, diff-traced, archive-before-delete | `references/maintain.md` |

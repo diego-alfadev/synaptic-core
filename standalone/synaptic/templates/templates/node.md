@@ -4,6 +4,17 @@ type: knowledge
 # type options: knowledge | pattern | playbook | decision | reference | lesson | registry
 status: active
 # status options: active | stale | archived
+#
+# --- Lifecycle / actionability axis (OPTIONAL, additive — adding this does NOT bump brain schema) ---
+# lifecycle = is this node LIVE right now? (actionability) — ORTHOGONAL to `status` (editorial/trust).
+# Closed enum, exactly four: project | area | resource | dormant. Absent is legal → treated as `area`.
+#   project  = a disposable hot node: a live, time-boxed effort; links OUT to durable nodes.  [loads by default]
+#   area     = an ongoing responsibility / durable domain with no end date. The default for un-tagged nodes.  [loads by default]
+#   resource = reference material relevant someday, not the current working set.  [lazy-pull — not loaded by default]
+#   dormant  = cooled off: kept for the record, not loading by default. Reversible (flip back to project/area).  [lazy-pull]
+# ORTHOGONAL to `status`: a node may be `status: active` (content correct) + `lifecycle: dormant` (project over) — valid.
+# Prefer flipping `lifecycle` for actionability changes; reserve `status: archived` for superseded/dead content.
+# lifecycle: area
 updated: "{{YYYY-MM-DD}}"
 tags:
   - "{{cluster-tag}}"

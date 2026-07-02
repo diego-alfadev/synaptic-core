@@ -7,6 +7,14 @@
 > skill-side procedure the agent executes lives in
 > **`standalone/synaptic/references/upgrade-to-v1.md`** (it is fetched in Step 0).
 >
+> **This lands you on v1.3.0.** Step 0 installs the *current* skill, so a fresh v0.3 → v1 migration
+> today produces a brain on the latest engine (**v1.3.0**) — brain **schema still `1.0`** — with the
+> **PARA lifecycle axis** (optional `lifecycle:` field, absent → `area`, backward-compatible), the
+> **hardened `check.js`** (retrieval-readiness report + structural≠retrieval caveat), the interactive
+> `graph.html`, and the god-node audit. The migration STEPS are unchanged by v1.3.0; you simply end up
+> current. **Node:** OPTIONAL for the migration (every step is tagged; each Node step has a `[no Node]`
+> fallback), but the `tools/*.js` accelerators need **Node ≥ 18** — without it, run the manual matrix.
+>
 > **Design stance (read before running).** This is **non-destructive and minimally-destructive by
 > construction**: the work is mostly *refactor + construction* (re-file, re-link, add frontmatter).
 > Deletions are **never silent** — every removal is surfaced and confirmed, and originals are kept in
@@ -28,6 +36,42 @@ You are upgrading my Synaptic brain from schema v0.3 to v1. Follow this runbook 
 Work on a COPY. Be interactive: STOP and ask before any structural or breaking change, and never
 delete anything silently. Keep a running DECISION LOG and a DELETIONS LEDGER from the first step.
 At the end, produce the REPORT in Step 9. Do not rush — correctness over speed.
+
+┌─ COMMIT DISCIPLINE (one commit per phase) — read before you start ─────────────────────────┐
+│ Do NOT land this as one blended mega-commit. The upgrade branch carries ≥3 distinct, named,  │
+│ independently-revertible commits, each of which must pass `check.js` before the next begins:  │
+│   (1) `migrate: Phase M mechanical file moves`   — deterministic moves + staging only.        │
+│       check.js at this boundary MAY still have ERRORS (v0.x staged, empty scaffold) — expected.│
+│   (2) `refactor: Phase C content rearrange`      — links / MOC / frontmatter / consolidation. │
+│       check.js at this boundary MUST reach 0 ERRORS (structural green).                        │
+│   (3) `chore: cleanup + cutover`                 — staging deletion, harness rewrite, backups. │
+│       check.js re-verifies; the retrieval drill (Step 6) must pass before cutover.             │
+│ Each phase closes by ticking its block in MIGRATION_DONE.md and recording the commit HASH in   │
+│ the DECISION LOG / ledger. Do NOT "commit everything at the end." (See Step 3/4/7 for the exact │
+│ `git commit` lines, and MIGRATION_DONE.md for the per-phase binary gate.)                      │
+└────────────────────────────────────────────────────────────────────────────────────────────┘
+
+PHASE GATE — MIGRATION_DONE.md (binary, per phase). Copy templates/MIGRATION_DONE.md to the brain
+ROOT (next to BRAIN.md) or into _migration-staging/ — NEVER into knowledge/ (check.js ERRORs on a
+MIGRATION_DONE.md under knowledge/). Each of Steps 3, 4, 6 ends by ticking that phase's boxes; a
+phase is DONE only when EVERY box under it is checked. check.js green is necessary but NOT sufficient
+for Phase V — the Step-6 retrieval drill must also pass.
+
+┌─ MODE: guided (DEFAULT) vs interactive ───────────────────────────────────────────────────────┐
+│ Run in GUIDED mode by DEFAULT. Guided = supervised-but-quiet: hide the internals, drive the     │
+│ migration yourself, and ASK ME only on genuine forks. The ONLY questions guided mode may ask:    │
+│   1. Topology intake (Step 1) — the small set of brain-shape questions needed to wire/cut over.  │
+│   2. Any DELETION / merge / split of knowledge content (the DELETIONS LEDGER items) — human-only.│
+│   3. Private-vs-shared (Step 1.4) — it selects the cutover path (7A simple swap vs 7B freeze).   │
+│   4. Cutover acknowledgement (Step 7) — the go/no-go before the brain is swapped/promoted.       │
+│ Anything else (routine re-files, link conversions, MOC rebuilds, frontmatter fill) guided just   │
+│ DOES and reports at the end — it does not narrate each step or ask permission for it.            │
+│ `interactive` (advanced, opt-in) = surface EVERY step for confirmation. `autonomous` = no user   │
+│ available: make the reasonable choice at each fork, never destroy ambiguous content, log it.     │
+│ CRITICAL: guided vs interactive changes VERBOSITY / how much is surfaced — NOT the safety gates.  │
+│ The content-conservation gate, the no-silent-deletion ledger, and the Phase V drills run          │
+│ IDENTICALLY in all modes. Guided is quieter, never less safe.                                    │
+└────────────────────────────────────────────────────────────────────────────────────────────────┘
 
 ────────────────────────────────────────────────────────────────────────
 STEP 0 — Get the v1 skill + tools into THIS environment   [no Node for the skill; tools need Node]
@@ -142,6 +186,13 @@ Phase M only MOVES files into the v1 layout and STAGES v0.x boot files — it de
 
   Report what moved. NOTHING is deleted in Phase M.
 
+  END OF PHASE M — tick the Phase M block in MIGRATION_DONE.md; the phase is DONE only when EVERY box
+  is checked. Then run `node tools/check.js <work-copy>` (ERRORS are EXPECTED here — record them, do
+  NOT fix them yet). COMMIT this phase on the upgrade branch:
+     git -C <work-copy> add -A
+     git -C <work-copy> commit -m "migrate: Phase M mechanical file moves (v0.3→v1 staging)"
+  Record the commit hash in the DECISION LOG / ledger. One commit per phase — do not blend M into C.
+
 ────────────────────────────────────────────────────────────────────────
 STEP 4 — Phase C (content rearrange) — INTERACTIVE, RESUMABLE, NON-DESTRUCTIVE   [no Node]
 ────────────────────────────────────────────────────────────────────────
@@ -179,6 +230,14 @@ references/upgrade-to-v1.md, with these BINDING reinforcements (they close real 
     and are DEPLOYED to the harnessing / system prompt in Step 5 (SYMLINK preferred over copy) — read
     from the brain only when edited or to verify sync, never at session start. Do not invent rules and
     do not add a "## Top Guardrails" block to BRAIN.md (the v1 templates no longer ship one).
+
+  END OF PHASE C — run `node tools/check.js <work-copy>` and FIX EVERY ERROR (Phase C is the phase that
+  reaches structural green: 0 errors). Then tick the Phase C block in MIGRATION_DONE.md; the phase is
+  DONE only when EVERY box is checked AND check.js is at 0 errors. COMMIT this phase:
+     git -C <work-copy> add -A
+     git -C <work-copy> commit -m "refactor: Phase C content rearrange (links, MOC, frontmatter, consolidation)"
+  Record the commit hash. This commit is independently revertible — do not fold Step 5 harness or the
+  Step 7 cutover into it.
 
 ────────────────────────────────────────────────────────────────────────
 STEP 5 — Harness wiring (DETECT current → deploy desired)   [no Node]
@@ -266,16 +325,59 @@ STEP 6 — Phase V (verify) on the work copy   [needs Node for check.js; [no Nod
      `.synaptic/BRAIN.md` → must be ZERO. BRAIN.md ≤110 lines with the harness deploy-source pointer present.
    STOP and keep the original on any ERROR or gate failure.
 
+  RETRIEVAL DRILL (MANDATORY — check.js green is necessary but NOT sufficient).   [no Node]
+  A brain can pass every structural check (0 errors) and still be un-retrievable (evidence: 0 errors
+  yet dozens of practical orphans and almost no edges). Structural-green ≠ retrieval-green. Prove the
+  brain can actually be RETRIEVED FROM before you call Phase V done:
+
+    Question-selection recipe (deterministic — pick the SAME way every run):
+      • 3 questions from the 3 MOST-LINKED nodes (highest edge degree — read the check.js
+        retrieval-readiness summary, or degree-scan by hand): one fact-lookup each.
+      • 2 questions from 2 registry entries (an environment / a repo / a glossary term): one lookup each.
+      • 1 cross-cluster SYNTHESIS question (answer needs two nodes in DIFFERENT top-level clusters).
+    Answer EACH by MOC navigation ONLY: BRAIN.md → knowledge/INDEX.md → cluster _index.md → node
+      (or registries/_index.md → registry). Record the hop path for every question.
+    PASS BAR (binary): all 5 fact-lookups (the 3 most-linked + 2 registry) answered via MOC navigation
+      with 0 grep-fallbacks required. The 1 synthesis question MAY miss — a miss is a /synaptic-weave
+      content gap (per the v1.0 benchmark caveat), NOT a navigation failure; log it as a weave to-do.
+    A fact-lookup that needs grep/keyword search to answer is a NAVIGATION FAILURE — fix the MOC/links
+      (register the node, add the missing _index entry) and re-run the drill. Record the drill result
+      table in MIGRATION_DONE.md Phase V.
+
+  END OF PHASE V — tick the Phase V block in MIGRATION_DONE.md; the phase is DONE only when the
+  structural checklist (V.1) is all-checked AND the retrieval-drill pass bar (V.2) is met. check.js
+  green alone does NOT close Phase V.
+
 ────────────────────────────────────────────────────────────────────────
 STEP 7 — Cut over to the v1 brain   [no Node]
 ────────────────────────────────────────────────────────────────────────
 7A — PRIVATE per-user brain (the TYPICAL case: one writer, one machine):
-  No team coordination needed. With Phase V green on the work copy: SWAP — rename the live brain to the
-  `*-v0.3-backup` name (you already have the backup + `pre-v1` tag) and move the work copy into place.
-  Apply the Step-5 harness rewrite (user-level — one place). Re-run the Step-6 greps against the live
-  brain + the wired harness file. Done — this is the ~couple-of-hours path. (If YOU wrote to the live
-  brain during the migration, fold those edits into the copy first — same idea as 7B.3, just for one
-  person.)
+  No team coordination needed. With Phase V green (structural + retrieval drill), cut over.
+
+  PRIMARY — GIT FAST-FORWARD (the brain is a git repo; this is the Windows/OneDrive-safe path):
+    You built the v1 copy on an upgrade branch (or a git worktree — see Step 2 / the note in
+    references/upgrade-to-v1.md) carrying the 3 phase commits. Promote it by rewriting files IN PLACE,
+    never by renaming the live folder:
+       git -C <brain> switch main            # or your default branch
+       git -C <brain> merge --ff-only <upgrade-branch>
+    `--ff-only` rewrites the working tree in place (no folder swap, nothing to lock or half-move) and
+    FAILS LOUDLY if it cannot fast-forward. Then apply the Step-5 harness rewrite (user-level — one
+    place) and re-run the Step-6 greps against the live brain + the wired harness file.
+    • WINDOWS / OneDrive: PREFER FF. A live-folder rename can hit a file lock (an editor/agent/sync
+      client holding a handle), leave a half-moved state, or trigger a OneDrive conflict-copy. FF
+      touches file *contents* in place and avoids all three. If the brain is on a sync share, still
+      move the work to a LOCAL path first (Step 2 SYNC GUARD) and let sync settle after the merge.
+    • IF `--ff-only` REFUSES: `main` advanced since you branched -> you have concurrent writers ->
+      this is not actually a single-writer brain. Do NOT force a merge-commit. Go to the shared-brain
+      freeze + delta-reconcile path (7B), reconcile the divergence, then promote.
+    • If YOU wrote to the live brain during the migration, fold those edits into the branch first
+      (same idea as 7B.3, just for one person) so the FF is clean.
+
+  FALLBACK — FOLDER RENAME/SWAP (NON-GIT brains only): if the brain is genuinely not git-tracked (and
+    Step 2 could not `git init` it), SWAP — rename the live brain to the `*-v0.3-backup` name (you have
+    the backup) and move the work copy into place, then apply the harness rewrite. This is the fallback
+    path only; on Windows/OneDrive it carries the lock/half-move/conflict-copy risk the FF path avoids.
+  Done — this is the ~couple-of-hours path.
 
 7B — GENUINELY SHARED brain (several concurrent writers — rare; only if Step 1.4 said so):
   Phase C took time; a naive swap would discard teammates' interim edits silently. Before replacing:
@@ -285,9 +387,19 @@ STEP 7 — Cut over to the v1 brain   [no Node]
      --name-status pre-v1 HEAD`, else an mtime/checksum compare vs the backup). Hand-port each interim
      change into the v1 work copy through Phase C formatting; fold new journal breadcrumbs in BEFORE
      the ≤80-line trim. Re-run Step 6 incl. the conservation gate vs the LIVE brain at freeze time.
-  4. ATOMIC CUTOVER, per machine: the brain-folder SWAP (filesystem) and the harness rewrite must land
-     TOGETHER on each machine — never on separate schedules (else a v1 pointer over a v0.3 brain, or
-     vice-versa). Shared/network copy → one swap for everyone; N local copies → a per-person checklist.
+  4. ATOMIC CUTOVER, per machine: the brain promote and the harness rewrite must land TOGETHER on each
+     machine — never on separate schedules (else a v1 pointer over a v0.3 brain, or vice-versa). For a
+     GIT brain, promote via `git merge --ff-only` (as in 7A) after the reconcile lands on the branch —
+     files rewritten in place, no folder rename; for a non-git brain the fallback is the folder swap.
+     Shared/network copy → one promote for everyone; N local copies → a per-person checklist.
+
+  END OF PHASE 3 (cleanup + cutover) — this is the THIRD phase commit. After the FF promote / swap,
+  the staging deletion (Step 10), the harness rewrite (Step 5), and any pruned backups, COMMIT:
+     git -C <brain> add -A
+     git -C <brain> commit -m "chore: cleanup + cutover (harness rewrite; staging pruned at soak-end)"
+  Record the hash in the DECISION LOG. Three named, independently-revertible commits total (M / C /
+  cleanup+cutover) — never one blended commit at the end. (Staging is deleted LAST, in Step 10; this
+  cleanup commit may therefore land in two parts: cutover now, staging-prune after the soak.)
 
 ────────────────────────────────────────────────────────────────────────
 STEP 8 — OPTIONAL full audit + refactor sweep (ONLY if I ask for it)   [no Node; check.js optional]
@@ -327,14 +439,47 @@ backup to diff against):
   • OPEN ITEMS: anything deferred, any teammate freeze/cutover coordination still pending, the
     DECISION LOG of non-obvious calls.
 
+  Then add TWO owner-facing sections (write these FOR THE OWNER, plain language — distinct from the
+  technical migration report above; in guided mode this is the part the owner actually reads):
+
+  • HOW TO USE YOUR NEW BRAIN (owner orientation):
+    - What your brain now contains — the headline counts: N clusters, N knowledge nodes, N registries,
+      N references (from the conservation manifest + each _index listing / graph.js).
+    - How to find anything — the navigation rule: open `BRAIN.md` (the only session-start read) →
+      `knowledge/INDEX.md` (the hub) → the cluster's `_index.md` → the 1-2 nodes you need. Registries
+      (`registries/_index.md`) are your tabular lookups; references (`references/_index.md`) index
+      verbatim artifacts. You do not read the whole brain — you navigate to the node.
+    - How it stays current — your agent captures breadcrumbs as you work and OFFERS to consolidate;
+      run `/synaptic-consolidate` at session end and `/synaptic-audit` periodically. Operating rules
+      live in `harness/` and are deployed to your agent's system prompt (not read from the brain).
+    - Where NOT to put things — `knowledge/` is live nodes only; scratch goes to `playgrounds/`, closed
+      audits to `audits/`, this migration's `MIGRATION_DONE.md` stays at the root / staging.
+
+  • SOAK + CLEANUP CHECKLIST (owner to-do, over the next few days of normal use):
+    - [ ] Keep `<brain>-v0.3-backup`, the `pre-v1` git tag, per-repo AGENTS.md backups, AND
+          `_migration-staging/` through the soak — they are your recovery net.
+    - [ ] Use the brain normally for the agreed soak (a few days); watch for a mis-filed or missing
+          node (recoverable from staging per-file, which the flat backup cannot do as cleanly).
+    - [ ] Confirm the harness wiring works: your agent reads `BRAIN.md` at session start and the
+          `/synaptic-*` commands are available.
+    - [ ] After the soak is stable: delete `_migration-staging/` (Step 10 — the LAST action), then the
+          folder backup. This is when the `chore: cleanup + cutover` commit's staging-prune half lands.
+
 ────────────────────────────────────────────────────────────────────────
-ROLLBACK (trivial — you changed nothing destructive)
+ROLLBACK (trivial — you changed nothing destructive)   [rollback matches your cutover path]
 ────────────────────────────────────────────────────────────────────────
-PRIMARY (topology-independent): delete the v1 brain folder and rename `<brain>-v0.3-backup` back to
-`<brain>`. (Do NOT use `git checkout <backup-path>` — it does not swap the folder in.)
-If the brain is git: a FORWARD "revert to the pre-v1 tag" commit teammates pull — never a force-push/
-reset on a shared remote. Revert each wired repo via its PR / `git checkout -- AGENTS.md` / the dated
-backup.
+Rollback mirrors how you cut over (Step 7), so it is consistent with the FF-primary model:
+
+GIT BRAIN (the normal case — you promoted by `git merge --ff-only`): roll back via GIT, not a folder
+  rename. Locally, reset the branch to the snapshot: `git -C <brain> reset --hard pre-v1` (the tag from
+  Step 2). On a SHARED remote, never force-push/reset — land a FORWARD "revert to the pre-v1 tag"
+  commit teammates pull. Revert each wired repo via its PR / `git checkout -- AGENTS.md` / the dated
+  backup. (Do NOT `git checkout <backup-path>` — it restores a path into the tree, it does not swap the
+  folder in.)
+
+NON-GIT BRAIN ONLY (the fallback cutover was a folder rename): delete the v1 brain folder and rename
+  `<brain>-v0.3-backup` back to `<brain>`. This is the non-git path — a git brain rolls back via git
+  above, not by renaming.
 
 ────────────────────────────────────────────────────────────────────────
 STEP 10 — Soak, then delete staging LAST
@@ -344,6 +489,30 @@ agreed soak (a few days of normal use). Delete _migration-staging/ only AFTER Ph
 cutover has been stable through the soak (it preserves per-file granularity the flat backup lacks).
 "No _migration-staging/" is the LAST action — never a Phase V precondition. Delete the backup only
 after the soak.
+
+────────────────────────────────────────────────────────────────────────
+APPENDIX — Tooling / environment notes (ENV diagnostics, NOT Synaptic rules)
+────────────────────────────────────────────────────────────────────────
+These are host/environment quirks, not brain-integrity problems. If one bites, work around it and keep
+going — none of them means the migration or the brain is broken. Four known gotchas:
+
+  1. Git Bash on Windows has NO `rg` (ripgrep). Do NOT write procedures that depend on `rg`. Use a
+     portable search: `grep -rn "<pattern>" <dir>`, `git grep -n "<pattern>"` (inside a repo), or your
+     agent's own file-search tool. Every grep-style instruction in this runbook is portable by design.
+  2. `apply_patch` failing, or a VS Code / editor filesystem WRITE failing, is an ENV issue — a tool or
+     the editor's fs layer, not a Synaptic rule. Fall back to a plain direct file write (write the file
+     with your agent's normal write tool). Do NOT treat the failure as a brain-integrity problem or
+     stop the migration over it.
+  3. OneDrive / Dropbox / network-drive LOCKS: a sync client can lock a file, upload a half-written
+     copy, or make a conflict-copy. Move the backup + work copy + all migration artifacts to a LOCAL,
+     non-synced path first (this is the Step 2 SYNC GUARD — cross-reference it), or pause sync for the
+     window. This is also WHY the cutover prefers `git merge --ff-only` over a live-folder rename.
+  4. PowerShell `Get-Content` / `[IO.File]::WriteAllText` ROUND-TRIPS CORRUPT NON-ASCII characters
+     (em-dash `—`, curly quotes, arrows `→`, etc.): the default encoding mangles them on read-back /
+     re-write. PREFER UTF-8-aware writes (your agent's direct write tool, or `Set-Content -Encoding
+     utf8` / `[IO.File]::WriteAllText($p,$t,[Text.UTF8Encoding]::new($false))`), and keep any tool
+     source you touch ASCII-safe. If you must round-trip a file through PowerShell, verify the non-ASCII
+     glyphs survived — a silently mangled `—`/`→` in a node is an ENV artifact, not authored content.
 ```
 
 ---

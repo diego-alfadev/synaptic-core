@@ -45,6 +45,28 @@ For each flagged node: note the staleness age and likely section to review. Pres
 
 ---
 
+## Step 1a — Lifecycle Completion-Cadence (WARN — optional `lifecycle:` axis)
+
+Advisory hygiene for the optional `lifecycle:` axis (`project | area | resource | dormant`; see
+`SKILL.md` "Lifecycle axis"). **Diagnose only, WARN never ERROR** — the fix (flip `lifecycle:`) is
+the owner's decision or `/synaptic-maintain`. Reuses the Step 1 staleness machinery, tightened for
+live projects. Skip any node with no `lifecycle:` field (absent → `area`, nothing to flag here).
+
+- Flag any `lifecycle: project` node whose `updated:` is older than **60 days** →
+  *"active-project gone quiet — archive it (`lifecycle: dormant`) or reactivate?"*
+- Flag any `lifecycle: area` node whose `updated:` is older than **90 days** →
+  *"area gone silent — still a live responsibility?"* (Reuses the Step 1 staleness threshold.)
+
+> **`lifecycle: dormant` / `resource` are NOT orphans.** A node cooled to `dormant` (or tagged
+> `resource`) is still registered in its cluster `_index.md` — cooling is a load-priority signal,
+> not de-registration. It **must not** trigger the Step 2 orphan check, and its `updated:` staleness
+> is expected (Step 1 may still note age, but it is not a lifecycle-cadence finding).
+
+**No runtime required.** Grep `lifecycle:` values and compare `updated:` — same by-hand posture as
+every other check here.
+
+---
+
 ## Step 2 — Orphan Nodes
 
 Read `knowledge/INDEX.md` (hub MOC) and every `knowledge/{cluster}/_index.md` (sub-MOCs). Then scan all `.md` files in `knowledge/`:
@@ -114,6 +136,75 @@ Scaffolding-exclusion note above) — flag **plausible-but-missing** horizontal 
 > (Pass 1), which proposes the link **and a typed edge type** for confirmation. Cite GraphRAG only
 > as *the direction* (multi-hop relational retrieval); make **no auto-discovery claim** — edges are
 > authored, never inferred (C5).
+
+---
+
+## Step 4c — God-Nodes (over-connected hubs)
+
+A **god-node** is a knowledge node with an unusually high **edge degree** — a "kitchen-sink" node
+that has quietly absorbed too much and is a candidate to split into atomic sub-nodes (or a
+legitimately central concept that is fine as-is). Surfacing it keeps nodes atomic and retrievable.
+
+**Degree (the ONE universe — identical to `tools/check.js` / `tools/graph.js`):** count the
+**distinct authored edges** touching the node, over the **knowledge-scoped, MOC-excluded** graph:
+
+- **Nodes counted:** `knowledge/**` files only, **excluding** `templates/` and MOC/sentinel files
+  (`_index.md`, `INDEX.md`, `README.md`). `registries/`, `references/`, `references/raw/`, and any
+  synthetic INDEX hub are **not** graph nodes.
+- **Edges counted:** frontmatter **typed edges** (block-list `- "[[target]]"` under
+  `relates_to` / `depends_on` / `supersedes` / `contradicts` / `applies_to` / `causes` / `part_of`)
+  **plus** body `[[wikilinks]]` (skip fenced code, inline code, HTML comments, and `{{…}}`
+  placeholders). Resolve targets by **kebab-case basename**.
+- **MOC links are excluded from the edge set** — a `[[node]]` that appears only inside an `_index.md`
+  / `INDEX.md` / `README.md` is navigational scaffolding, not an authored knowledge edge, and does
+  NOT count toward degree (same doctrine as the Scaffolding-exclusion note above).
+- **Undirected, deduplicated:** an A↔B pair counts as **one** edge no matter how many times or in how
+  many directions it is authored; a self-link (A→A) is dropped. Degree = the number of distinct
+  neighbours a node has in this deduped undirected graph.
+
+**Threshold (advisory — WARN, never ERROR):** flag a node whose degree is
+**≥ 15, OR ≥ 3× the median node degree of the brain — whichever is lower** (so it scales down on a
+small brain and does not over-fire on a large one). Both numbers are heuristics, not hard limits.
+(Degenerate case: when the median degree is **0** — a very sparse brain where most nodes are
+orphans — the "3× median" rule collapses to 0 and would flag every connected node, so ignore it and
+apply the absolute **≥ 15** bar only. The 3× rule is meant to *tighten* the bar on a well-connected
+brain, never to flood a sparse one.)
+
+> **Diagnose only.** Route the split option to **`/synaptic-weave`** (near-duplicate / split
+> proposals) or the owner. Remediation prompt: *"candidate to split into atomic sub-nodes, or a
+> legitimate hub — confirm."* A god-node is not an error — a genuinely central concept legitimately
+> has many edges; the owner confirms split-vs-keep.
+
+**No runtime required.** Compute degree by counting the `[[…]]` edges per node (typed frontmatter +
+body, MOC-excluded, undirected-deduped) by hand — grep-able, matching the "every check here is
+grep-able by hand" posture. `tools/check.js` MAY emit this as a WARN reusing the same shared graph,
+but CORE never depends on it.
+
+---
+
+## Step 4d — Surprising Edges (cross-cluster links)
+
+A **surprising edge** is an authored edge whose two endpoints live in **different top-level
+`knowledge/` clusters** — a **cross-cluster edge**. (The cluster of a node = its
+`knowledge/{cluster}/` directory, exactly the top-level grouping the degree computation above uses.)
+These are the **high-value multi-hop relations embeddings can't infer** — the same cross-linking
+differentiator called out in Step 4b — so surfacing them is dual-purpose:
+
+- **(a) confirm a genuine interdisciplinary link** — keep it, and ensure it carries a typed edge; or
+- **(b) catch a mis-filed node or a wrong link** — the "surprise" is a filing/authoring error.
+
+For each cross-cluster edge, list the **endpoint pair + the edge type** (the typed-edge kind, or
+`wikilink` for an untyped body link), e.g. `knowledge/auth/jwt-decode.md —[depends_on]→
+knowledge/infra/key-vault.md`. Advisory — **WARN, never ERROR**.
+
+> **Diagnose only.** Route confirmation to **`/synaptic-weave`** (which proposes / confirms edge
+> types). Make **no auto-discovery claim** — Synaptic does **not** infer edges; every edge here was
+> **authored** by hand or by a prior weave, never discovered from embeddings (C5), consistent with
+> Step 4b. This check only *surfaces* edges that already exist for the owner to confirm or correct.
+
+**No runtime required.** Cluster membership = the node's top-level `knowledge/` subdirectory; an edge
+is cross-cluster iff its two endpoints' subdirectories differ — pure read/grep. `tools/check.js` MAY
+emit a cross-cluster-edge count as a WARN reusing the same shared graph; CORE never depends on it.
 
 ---
 
@@ -241,26 +332,40 @@ Brain audit — N findings (showing top N):  [audit DIAGNOSES; weave/consolidate
 5. knowledge/ci-cd/deploy-playbook.md (type: playbook) — no link to any system it applies to
    → [/synaptic-weave Pass 1] Propose [[deploy-service]] + applies_to edge?
 
+## God-nodes (over-connected)
+6. knowledge/architecture/platform-overview.md — degree 18 (≥ 15, and ≥ 3× median 4) [WARN]
+   → [/synaptic-weave] Candidate to split into atomic sub-nodes, or a legitimate hub — confirm.
+
+## Surprising edges (cross-cluster)
+7. knowledge/auth/jwt-decode.md —[depends_on]→ knowledge/infra/key-vault.md (auth ↔ infra) [WARN]
+   → [/synaptic-weave] Confirm the interdisciplinary link (keep + ensure typed) or fix a mis-file.
+      (No auto-discovery — this edge was authored, not inferred.)
+
 ## Registry integrity
-6. registries/_index.md lists "environments" — registries/environments.md not found
+8. registries/_index.md lists "environments" — registries/environments.md not found
    → Remove phantom entry or create the file?
 
 ## References _index.md issues
-7. references/_index.md lists "schema-v2.sql" — not found in references/raw/
+9. references/_index.md lists "schema-v2.sql" — not found in references/raw/
    → Remove entry or restore file?
 
 ## Oversized untyped nodes
-8. knowledge/architecture/overview.md — 342 lines, type: knowledge
+10. knowledge/architecture/overview.md — 342 lines, type: knowledge
    → Split into sub-nodes or re-tag type: reference?
 
 ## Tag hygiene
-9. knowledge/infra/load-balancer.md — tags: [] (empty)
+11. knowledge/infra/load-balancer.md — tags: [] (empty)
    → Add tags: [infra, networking] (or relevant cluster/topic tags)
 
 ## Half-done / unconsolidated
-10. playgrounds/feat-99-spike/ — open, not in journal Active list; journal at 71 pending breadcrumbs
+12. playgrounds/feat-99-spike/ — open, not in journal Active list; journal at 71 pending breadcrumbs
    → [/synaptic-consolidate] Process & close; promote durable conclusions, burn scratch.
 ```
+
+> The example above lists **every** category heading for reference; a **live** report still obeys the
+> **cap of 10 highest-impact findings** (note the total if more exist). The god-node / surprising-edge
+> and BRAIN.md-sanity findings are **WARN-severity advisories** — they rank below ERROR-class findings
+> (broken links, orphans, missing MOC coverage) when the list is capped.
 
 Ask: "Apply all? Or pick specific items?" — do not make changes without confirmation. Route each
 finding to its treating procedure; audit itself writes nothing.
