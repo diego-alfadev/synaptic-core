@@ -85,9 +85,26 @@ Before writing:
 1. **Place** the node in the correct cluster under `knowledge/{cluster}/`.
 2. **Frontmatter (D1):** fill `description`, `type`, `status: active`, `updated: {today}`, `tags: [cluster-tag, topic-tags]`. No placeholders.
 3. **`[[wikilinks]]`:** add wikilinks to related nodes at first mention. One link per target page per source page is sufficient.
+3a. **Lifecycle (OPTIONAL):** set `lifecycle:` **only** if the node is a live project (`lifecycle: project`) or clearly a lazy-pull resource (`lifecycle: resource`); otherwise **leave it absent** (absent → treated as `area`, loads by default). Enum: `project | area | resource | dormant`. It is **orthogonal to `status`** — see the table below. A `project` node SHOULD link OUT to a durable `area`/`resource` node so its knowledge survives when it later cools to `dormant`.
 4. **Register** the node in `knowledge/{cluster}/_index.md` (one-line entry: `[[node-name]] — {description}`). If the cluster does not exist, create the `_index.md` from `templates/node.md` pattern and add the cluster to `knowledge/INDEX.md`.
 5. **Tabular data** → update or create the relevant `registries/{table}.md`; register in `registries/_index.md`.
 6. **Large verbatim artifact** → copy to `references/raw/`; add one-line entry to `references/_index.md`; create a distilled knowledge node with `type: reference` that links to the artifact entry. **Record a source `content_hash`** on the distilled node (see below) so future runs can detect that the raw artifact changed.
+
+**`status` vs `lifecycle` — two orthogonal fields (do not conflate):**
+
+`status` and `lifecycle` are independent and both may appear. `status` answers *is this content
+current and correct?*; `lifecycle` answers *is this in the current working set?* The literal
+`archived`/`dormant` tokens are deliberately different so the two enums never collide.
+
+| Field | Question it answers | Enum | Change it when… |
+|---|---|---|---|
+| `status` | Editorial / trust — is the content current & correct? | `active` \| `stale` \| `archived` | The content is superseded/dead (pair with a `supersedes`/`superseded_by` edge). |
+| `lifecycle` | Actionability — is this LIVE / in the working set? | `project` \| `area` \| `resource` \| `dormant` | A project ends or an area cools (flip to `dormant`); it re-activates (flip back). |
+
+> **Combined example:** a node may be `status: active` + `lifecycle: dormant` — the content is
+> **true**, but the project is over, so it does **not** load by default. Perfectly valid. Prefer
+> flipping `lifecycle` for actionability changes; reserve `status: archived` for "this content is
+> superseded/dead."
 
 **Source `content_hash` (drift detection — an inline captured fact, NOT a materialized index):**
 
@@ -146,6 +163,12 @@ For each item being consolidated, ask: **does this contradict an existing node?*
 > **CORE-safety:** every rewrite here is **diff-traced in the consolidation log**, recoverable via
 > git, and uses **archive-before-delete** for anything removed. This is supervised rewriting over
 > plain files — never an unguarded auto-rewriter.
+
+> **Deletion ledger (standing rule — not migration-only).** Any operation that **deletes, moves, or
+> archives** a node (a dedupe merge, a split, a burned playground, a re-file) records a one-line ledger
+> entry: *what, why, loser→winner or destination, recoverable-via-git*. This is the same discipline the
+> upgrade runbook (`references/upgrade-to-v1.md`) uses — it applies to every `/synaptic-consolidate`
+> run, not just migrations. Justify every delete/move/archive; **git is the archive.**
 
 ---
 
@@ -285,9 +308,13 @@ trimmed to 22 lines; `BRAIN.md` `updated:` stamped.
 Consolidation is the *promotion* pass. It sits on top of a cheaper layer that runs continuously and
 is **not** governed by `capture_policy`:
 
-- **One terse line per meaningful turn** is written to `journal/_current.md` (the per-turn `Stop`
-  breadcrumb — the universal capture floor across all hook-capable agents). It is **fixed-cost**: a
-  single line, never a full consolidation, regardless of the capture-policy dial.
+- **One terse line per meaningful turn** is written to `journal/_current.md`. This is an
+  **instruction the agent follows, not only a hook**: the per-turn `Stop` breadcrumb automates it
+  where wired (the universal capture floor across all hook-capable agents), but write it even when no
+  hook fires — hooks are host-specific and can silently fail, so the instruction is the floor
+  underneath the automation (closes issue #2: a session that neared recompact with no breadcrumbs
+  written). It is **fixed-cost**: a single line, never a full consolidation, regardless of the
+  capture-policy dial.
 - Breadcrumbs **live on disk so they survive a crash** — what only lived in the context window dies;
   what reached the journal can still be consolidated later (including by `SessionStart`-rescue on the
   next boot — see `references/audit.md`).
@@ -296,6 +323,12 @@ is **not** governed by `capture_policy`:
 - **Do not** add a second policy dial for breadcrumbs. There are exactly two orthogonal dials:
   `capture_policy` (how aggressively things get **promoted**) and the passivity dial (**when** capture
   triggers). Breadcrumbs are the fixed floor underneath both.
+
+> **Provisional — revisit as a token-optimization.** The per-turn breadcrumb is *good for now*, not a
+> fixed rule. A future Cortex T2 Engram-style FTS journal index (a derived SQLite/FTS5 layer over the
+> journal — see `ROADMAP.md` → "Engram-style searchable journal — Cortex") may make the per-turn
+> breadcrumb partly redundant as a search surface. Treat the breadcrumb cadence as a **token-optimization
+> item to revisit** when that layer lands — not a change to make now, and never a CORE dependency on it.
 
 ---
 

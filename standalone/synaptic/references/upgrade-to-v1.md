@@ -65,19 +65,45 @@
   climb to a shared root need per-repo wiring. In ALL cases install the current v1 skill — its
   Detect-on-Load already resolves the bridge pointer and stays silent when a `BEGIN:SYNAPTIC` bridge is
   present (NO manual patch). Grep the wired file(s): a bare CWD-relative `.synaptic/BRAIN.md` must be ZERO.
+- **Cutover = git fast-forward (primary), folder rename (non-git fallback).** The brain is a git repo;
+  promote the upgrade branch's 3 phase commits by `git switch main && git merge --ff-only <upgrade-branch>`
+  — files rewritten IN PLACE, no live-folder rename. On **Windows/OneDrive, PREFER FF**: a folder
+  rename can hit a file lock, half-move, or a sync conflict-copy; FF touches file contents in place and
+  avoids all three. `--ff-only` FAILS LOUDLY if `main` advanced — which means concurrent writers, so go
+  to the shared-brain freeze path. The folder rename/swap is the fallback for **non-git brains only**.
+  A **git worktree** is the safe way to build the v1 copy without a second full clone (Windows-friendly;
+  avoids OneDrive double-syncing a full copy).
 - **Cutover depends on private-vs-shared.** A PRIVATE per-user brain (the typical seat/departmental
-  case — one writer, one machine) just swaps the folder once Phase V is green (~couple of hours). Only
-  a GENUINELY SHARED brain (several concurrent writers) needs the FREEZE + delta-reconcile, since
-  "work on a copy, switch when green" would otherwise silently discard interim edits: announce + ack a
-  freeze (lock the repo if git), baseline at the last moment, port each interim delta through Phase C,
-  re-verify; the brain-folder swap (filesystem) and the harness rewrite land **together per machine**.
-- **Rollback that actually works.** PRIMARY: delete the v1 brain and **rename** `*-v0.3-backup` back.
-  Do NOT `git checkout <backup-path>` (it does not swap the folder in). On a shared git brain, a forward
-  "revert to `pre-v1`" — never a force-push/reset.
+  case — one writer, one machine) just FF-promotes once Phase V is green (~couple of hours). Only a
+  GENUINELY SHARED brain (several concurrent writers) needs the FREEZE + delta-reconcile, since "work on
+  a copy, switch when green" would otherwise silently discard interim edits: announce + ack a freeze
+  (lock the repo if git), baseline at the last moment, port each interim delta through Phase C,
+  re-verify; then the FF-promote (git) and the harness rewrite land **together per machine** (folder
+  swap only for a non-git shared copy).
+- **Rollback that actually works — matches the cutover path.** GIT brain: roll back via git — reset the
+  branch to the `pre-v1` tag locally, or on a shared remote a FORWARD "revert to `pre-v1`" commit
+  (never a force-push/reset). Do NOT `git checkout <backup-path>` (it does not swap the folder in).
+  NON-GIT brain only: delete the v1 brain and **rename** `*-v0.3-backup` back.
 - **Optional deep clean (on request only).** After the strict migration, a diagnose-then-treat sweep =
   `/synaptic-maintain` (`references/maintain.md`): pre-check → `/synaptic-audit` → consolidate /
   reconcile / `/synaptic-synthesize` / `/synaptic-weave` → post-check, approval-gated, with a
   before/after diff against the backup.
+- **Mode: guided (DEFAULT) vs interactive vs autonomous.** Run **guided** by default =
+  supervised-but-quiet: hide the internals, drive the migration, and ask the owner ONLY on genuine
+  forks. The ONLY questions guided mode may ask: (1) topology intake (the brain-shape questions),
+  (2) any knowledge deletion/merge/split (human-only), (3) private-vs-shared (it picks the cutover
+  path), (4) cutover acknowledgement (go/no-go). Everything else (re-files, link conversion, MOC
+  rebuilds, frontmatter fill) it just does and reports at the end. `interactive` (advanced, opt-in)
+  surfaces every step; `autonomous` (no user available — see the "Autonomous mode" note below) makes
+  the reasonable choice at each fork and logs it. **Guided vs interactive changes VERBOSITY / how much
+  is surfaced — NOT the safety gates:** the content-conservation gate, the no-silent-deletion ledger,
+  and the Phase V retrieval drill run IDENTICALLY in every mode. Guided is quieter, never less safe.
+- **Owner orientation (always, alongside the technical report).** Produce a plain-language, owner-facing
+  "how to use your new brain" section — what it now contains (cluster/node/registry/reference counts),
+  the navigation rule (`BRAIN.md` → `INDEX.md` → cluster `_index.md` → node), how it stays current
+  (`/synaptic-consolidate`, `/synaptic-audit`; rules are deployed, not read from the brain), and a
+  **soak/cleanup checklist** (keep the backup + `pre-v1` tag + `_migration-staging/` through the soak;
+  delete staging LAST once stable).
 - **Report (always).** Emphasize the **refactor before vs after** (counts: nodes/links/orphans/MOC
   coverage, what split/merged/re-typed, broken links fixed — diffed against the backup), plus the
   migration summary, the harness wiring matrix, the conservation result + deletions ledger, and the
@@ -125,7 +151,7 @@ The migration is non-destructive, content-preserving, and fully reversible:
 2. **Phase M (mechanical):** if `tools/migrate.js` exists, run `node tools/migrate.js .synaptic` (use `--dry-run` first to preview moves without writing anything) — deterministic file staging, safe and scriptable; otherwise do the manual equivalent (stage files to `_migration-staging/` per the M-step checklist below by hand).
 3. **Phase C (agent rearrange):** tell your agent `/synaptic-upgrade` — the capable-agent phase: link conversion, MOC creation, consolidation formula applied retroactively, harness triage. The agent proposes each change; you confirm before it is written.
 4. **Verify:** if `tools/check.js` exists, run `node tools/check.js .synaptic` for graph health; otherwise do the manual equivalent (the Phase V checklist greps / inspection below). Then `/synaptic-audit` in the agent for staleness and coverage. Review the result in Obsidian or Foam before proceeding.
-5. **Merge:** once satisfied, `git switch main && git merge v1-upgrade`. The old branch remains as a rollback point.
+5. **Promote (fast-forward):** once satisfied, `git switch main && git merge --ff-only v1-upgrade` — files rewritten in place, no folder rename (Windows/OneDrive-safe). If `--ff-only` refuses, `main` advanced (concurrent writers) → reconcile via the shared-brain freeze path first. The old branch/`pre-v1` tag remains as a rollback point.
 
 > If anything looks wrong after Phase C, do not merge — you have the original branch. Open an issue or re-run Phase C with more conservative settings.
 
@@ -136,9 +162,11 @@ Content-preserving migration from v0.3, v0.4, or v0.5 to v1.0 "two-plane wiki + 
 **Read this file fully before making any changes.** Run Phase M first (mechanical, safe),
 then Phase C (mandatory content rearrange; requires judgment), then verify with Phase V.
 
-**Autonomous mode** (no user available — batch/rehearsal run): make the reasonable choice at
-every junction, never destroy ambiguous content (prefer staging/moving over deleting), and
-record every non-obvious judgment in a migration decision log delivered with the result.
+**Autonomous mode** (no user available — batch/rehearsal run): the no-user variant of the modes
+defined in the hardening addendum above (guided is the DEFAULT when a user IS present). Make the
+reasonable choice at every junction, never destroy ambiguous content (prefer staging/moving over
+deleting), and record every non-obvious judgment in a migration decision log delivered with the
+result. Mode changes verbosity/prompting only — the safety gates run identically.
 
 ---
 
@@ -433,6 +461,13 @@ When all Phase C steps are confirmed complete: delete `_migration-staging/`.
 Close the migration only when all items are checked. Run `node tools/check.js` if available;
 otherwise use manual greps / inspection.
 
+> **`check.js` green is NECESSARY but NOT SUFFICIENT.** A brain can pass every structural check (0
+> errors) and still be unusable for retrieval (evidence: 0 errors yet dozens of practical orphans and
+> almost no edges — structural-green ≠ retrieval-green). Phase V is DONE only when the structural
+> checklist below passes AND the **mandatory retrieval drill** at the end of this section passes. Tick
+> the per-phase gate in `MIGRATION_DONE.md` (kept at the brain root / `_migration-staging/`, never in
+> `knowledge/`) — a phase is DONE only when every box under it is checked.
+
 **Layout (v1):**
 - [ ] `BRAIN.md`, `knowledge/INDEX.md`, `registries/_index.md`, `references/_index.md`, `journal/_current.md`, `harness/conventions.md`, `harness/guardrails.md`, `harness/skills/README.md`, `playgrounds/README.md`, `templates/node.md`, `templates/registry.md`, `templates/playbook.md`, `templates/lesson.md`
 
@@ -482,6 +517,34 @@ otherwise use manual greps / inspection.
 
 **Journal:**
 - [ ] `journal/_current.md` ≤80 lines, three-section format
+
+**Retrieval drill (MANDATORY — `check.js` green is necessary but NOT sufficient):**
+
+Prove the brain can actually be *retrieved from* by walking `BRAIN → INDEX → cluster _index → node`.
+Question-selection recipe (deterministic — pick the same way every run):
+
+- [ ] 3 fact-lookup questions from the **3 most-linked nodes** (highest edge degree) answered by MOC
+      navigation only, recording the hop path.
+- [ ] 2 lookup questions from **2 registry entries** answered by MOC navigation only.
+- [ ] 1 **cross-cluster synthesis** question attempted (answer needs two nodes in different top-level
+      clusters).
+- [ ] **Pass bar:** all 5 fact-lookups answered via MOC navigation with **0 grep-fallbacks**. The
+      synthesis question MAY miss — a miss is a `/synaptic-weave` content gap (per the v1.0 benchmark
+      caveat), not a navigation failure. A fact-lookup that needs grep is a navigation failure — fix
+      the MOC/links and re-run.
+
+**Phase → commit mapping (one commit per phase — mirror of the AGENT runbook):**
+
+The migration lands as **≥3 distinct, independently-revertible commits** on the upgrade branch, each
+passing `check.js` before the next begins — never one blended mega-commit:
+
+- [ ] `migrate: Phase M mechanical file moves` — deterministic moves + staging only (check.js **may
+      still ERROR** here — expected).
+- [ ] `refactor: Phase C content rearrange` — links / MOC / frontmatter / consolidation (check.js
+      **must reach 0 errors**).
+- [ ] `chore: cleanup + cutover` — staging deletion, harness rewrite, backups pruned (check.js
+      re-verifies; retrieval drill passes before cutover). The upgrade branch's 3 phase commits then
+      promote to `main` by a single `git merge --ff-only` (see the cutover section / AGENT runbook).
 
 Migration complete when all items are checked. **Switch only when green; keep the old branch as a
 rollback point.**

@@ -42,6 +42,14 @@ Every knowledge node and registry carries: `description` (1 line, feeds the `_in
 
 The skill now ships with a bootstrap header in `SKILL.md` plus a `MANIFEST.txt` listing every file in the bundle, so a coding agent can fetch and install the whole skill on a clean machine with **no Node, no clone, no package manager** — reinforcing the 0-install-capable CORE principle from the install side, not just the runtime side. The `npx degit` one-liner and a manual folder-copy fallback round out a three-tier install; all three install the whole skill folder (`references/` + `templates/`), never `SKILL.md` alone. (This three-tier install shipped in v1.2.0.)
 
+### Migration hardening + structural improvements (shipped in v1.3.0)
+
+The combined `1.3.0` release folds the migration-&-upgrade-hardening work (per-phase `MIGRATION_DONE` gate + mandatory retrieval drill + one-commit-per-phase; git fast-forward cutover with the folder-rename demoted to a non-git, Windows/OneDrive-safe fallback; the instruction-first breadcrumb floor that closes issue #2 on hook-less hosts; the standing deletion/move/archive ledger; retrieval-readiness reporting and non-live-artifact checks in `check`) together with additive structural improvements. The **brain schema is unchanged (still 1.0)** — an existing v1 brain has nothing to migrate; reinstall the skill for the new engine behavior. Structural additions, all CORE and backward-compatible:
+
+- **Optional PARA lifecycle axis** — knowledge nodes MAY carry `lifecycle: project | area | resource | dormant`, an actionability axis orthogonal to `status`, scoping the active working set (`project` + `area` + absent load by default; `resource` + `dormant` lazy-pull). Absence behaves exactly as a pre-1.3.0 node, so **no schema bump**; a skill-less agent ignores the unknown key. Demotion is reversible archive-don't-delete (flip to `dormant`, keep file/index/edges).
+- **God-node + surprising-edge audit heuristics** — `/synaptic-audit` gains two diagnose-only, prose-CORE graph-health passes (over-connected hub detection; cross-cluster authored-edge listing), routing to `/synaptic-weave`, computed over the same knowledge-scoped edge universe as `check`/`graph`. No auto-discovery claim; edges stay authored.
+- **Local-vs-remote data-boundary governance doc** and a **verb-contract note** (`docs/concepts/`) — the explicit local/remote boundary (host LLM context = the sole egress point; Synaptic adds no server/DB/telemetry), and the four-verb contract mapped against Cognee's, with `memify` deferred to a P4 usage-signal-gated direction (no present-tense self-improvement claim).
+
 ### Optional Cortex tools (zero-dep)
 
 | Tool | What it does |
@@ -50,7 +58,7 @@ The skill now ships with a bootstrap header in `SKILL.md` plus a `MANIFEST.txt` 
 | `migrate` | Phase M automation: deterministic file ops for v0.x → v1 upgrade |
 | `export` | Single-file (or 4-section split) Markdown bundle for sharing, backup, or paste-into-chat |
 | `vault-open` | Minimal optional config for Obsidian, Foam (VS Code), and Logseq; produces `OPEN-IN.md` |
-| `graph` | Renders the authored `[[wikilink]]` edges as a navigable graph view of the brain |
+| `graph` | Renders the authored `[[wikilink]]` edges as a navigable graph view of the brain — a self-contained, zero-network, typed-edge-aware interactive force-directed HTML with cluster/edge-type/lifecycle filters (rewritten in v1.3.0, replacing the static viz) |
 | `deploy` | Writes the harness `<!-- BEGIN:SYNAPTIC -->` fragment and skill package into the outer harness |
 
 All zero-dependency (Node ≥ 18 standard library). These are **Cortex** — CORE never requires them. No-runtime fallback: the `synaptic` skill performs the equivalent operation manually. (Hooks, by contrast, are CORE: host-run config, not a runtime we ship.)

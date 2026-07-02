@@ -91,6 +91,10 @@ links or phantom nodes. Report what was diagnosed, what was treated, and what wa
   and persona content are **human-only**; structural changes are propose-then-approve.
 - **Every automated edit is diff-traced, git-reversible, archive-before-delete.** This is the bounded,
   reversible AUTO tier — never an autonomous unbounded rewriter.
+- **Deletion ledger (standing rule — not migration-only).** Any leg that deletes, moves, or archives a
+  node records a one-line ledger entry (*what, why, loser→winner or destination, recoverable-via-git*),
+  the same discipline `references/upgrade-to-v1.md` uses. It applies to every maintenance sweep, not
+  just migrations. Justify every delete/move/archive; **git is the archive.**
 - **No re-implementation.** Maintain delegates to `audit` / `consolidate` / `synthesize` / `weave`;
   the algorithms live in their own files (single source of truth for each procedure).
 - **CORE procedure, Cortex timer.** The procedure is pure files/text. Scheduling it unattended needs
