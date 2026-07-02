@@ -54,6 +54,24 @@
   undirected-deduped edge universe as `tools/check.js` / `tools/graph.js`. `check.js` additionally
   emits both as advisory WARN-class counts when the brain is otherwise clean — never an ERROR, never
   a gate.
+- **PARA lifecycle axis (optional, backward-compatible).** Knowledge nodes MAY carry one optional
+  frontmatter field — `lifecycle: project | area | resource | dormant` — an **actionability** axis
+  that is **orthogonal to the editorial `status: active | stale | archived`** field (the enums share
+  no token — `dormant` deliberately differs from `archived` to prevent cross-field bleed). It scopes
+  the active working set: **`project` + `area` + (absent → area)** load by default; **`resource` +
+  `dormant`** are lazy-pull. Absence is legal and behaves exactly as a pre-v1.3.0 node (loads by
+  default), so **no schema bump** and a v1.2.0 / skill-less agent simply ignores the unknown key.
+  Demotion is **archive-don't-delete**: flip `lifecycle: dormant` (a reversible cooling that keeps
+  the file, its `_index.md` entry, and its edges intact — **decoupled from `status`**; do not also
+  set `status: archived`); promotion is a single-field flip back. `project` is a *lifecycle* value,
+  **not a new `type:` token** (the `type:` enum is unchanged); a `project` node should link OUT to a
+  durable `area`/`resource` node. Documented across the node template (commented-out block),
+  `SKILL.md` (new "Lifecycle axis" section), `references/consolidate.md` (Step 4 + a `status`-vs-
+  `lifecycle` orthogonality table with the `status: active` + `lifecycle: dormant` example),
+  `references/audit.md` (a WARN completion-cadence pass: `project` quiet > 60d / `area` quiet > 90d,
+  and an explicit note that `dormant`/`resource` are NOT orphans), and `BRAIN.md`. `tools/check.js`
+  adds an advisory WARN when a present `lifecycle:` value is out of enum — never required, never an
+  ERROR.
 
 ## v1.2.0 — Upgrade path + seat brains · 2026-06-26
 
