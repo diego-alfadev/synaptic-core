@@ -150,7 +150,17 @@ function extractTitle(proseLines, bodyStart, fallbackId) {
   return fallbackId;
 }
 
-/** Count occurrences of `token` as a substring in `haystackLower`. */
+/**
+ * Count WHOLE-WORD occurrences of `token` in `haystackLower`. A token matches only when
+ * it is bounded by a non-alphanumeric character (or a string edge) on both sides, so a
+ * short token like "ai" hits the word "ai" but NOT the "ai" inside "brain"/"domain"/
+ * "email"/"training". Substring matching would make such tokens match almost every node
+ * in an AI-themed brain, collapsing ranking onto the degree boost. Boundaries mirror the
+ * tokenizer, which treats every non-[a-z0-9] char as a separator; a kebab id like
+ * "cortex-scope" therefore still yields a whole-word hit for "cortex" and for "scope".
+ *
+ * `token` is always tokenizer-produced ([a-z0-9]+), so it needs no regex escaping.
+ */
 function countHits(haystackLower, token) {
   if (!token) return 0;
   let count = 0;
@@ -158,7 +168,13 @@ function countHits(haystackLower, token) {
   for (;;) {
     const i = haystackLower.indexOf(token, from);
     if (i === -1) break;
-    count++;
+    const before = i === 0 ? '' : haystackLower[i - 1];
+    const afterIdx = i + token.length;
+    const after = afterIdx >= haystackLower.length ? '' : haystackLower[afterIdx];
+    // A boundary is the string edge or any non-alphanumeric char (matches tokenizer split).
+    const leftBoundary  = before === '' || !/[a-z0-9]/.test(before);
+    const rightBoundary = after === ''  || !/[a-z0-9]/.test(after);
+    if (leftBoundary && rightBoundary) count++;
     from = i + token.length;
   }
   return count;

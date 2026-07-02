@@ -32,22 +32,45 @@ const { createRetrieval, DEFAULT_ADAPTER, ADAPTERS } = require('./lib/retrieval-
 // ---------------------------------------------------------------------------
 
 /**
- * Parse argv into { command, positionals, flags }.
+ * Parse argv into { command, positionals, flags, error }.
  * Recognised value flags: --adapter, --limit, --brain, --collection (repeatable).
  * Recognised boolean flags: --fts-only, --json, --help/-h.
+ *
+ * A value flag with no following value (end of argv, or immediately followed by another
+ * `--flag`) is a usage error rather than a silently-swallowed `undefined`: e.g. a trailing
+ * `--collection` would otherwise push `undefined` and filter EVERY node out, giving a
+ * baffling empty result set with no diagnostic. We report it via `error` and let main() fail.
  */
 function parseArgs(argv) {
   const flags = { adapter: null, limit: null, brain: null, collections: [],
                   ftsOnly: false, json: false, help: false };
   const positionals = [];
+  let error = null;
+
+  // Consume the value for a value-flag `name` at position `i`. Returns { value, consumed }.
+  // `consumed` tells the caller whether to advance `i` past the value token. A value that
+  // looks like another flag (`--x`) or is missing (end of argv) is a usage error and is NOT
+  // consumed, so e.g. `--limit --json` neither eats `--json` as the limit nor drops it.
+  const takeValue = (name, i) => {
+    const next = argv[i + 1];
+    if (next === undefined || (typeof next === 'string' && next.startsWith('--'))) {
+      if (!error) error = `${name} requires a value`;
+      return { value: undefined, consumed: false };
+    }
+    return { value: next, consumed: true };
+  };
 
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     switch (a) {
-      case '--adapter':    flags.adapter = argv[++i]; break;
-      case '--limit':      flags.limit   = argv[++i]; break;
-      case '--brain':      flags.brain   = argv[++i]; break;
-      case '--collection': flags.collections.push(argv[++i]); break;
+      case '--adapter': { const r = takeValue('--adapter', i); flags.adapter = r.value; if (r.consumed) i++; break; }
+      case '--limit':   { const r = takeValue('--limit', i);   flags.limit   = r.value; if (r.consumed) i++; break; }
+      case '--brain':   { const r = takeValue('--brain', i);   flags.brain   = r.value; if (r.consumed) i++; break; }
+      case '--collection': {
+        const r = takeValue('--collection', i);
+        if (r.consumed) { flags.collections.push(r.value); i++; }
+        break;
+      }
       case '--fts-only':   flags.ftsOnly = true; break;
       case '--json':       flags.json    = true; break;
       case '--help':
@@ -62,7 +85,7 @@ function parseArgs(argv) {
     }
   }
   const command = positionals.shift() || null;
-  return { command, positionals, flags };
+  return { command, positionals, flags, error };
 }
 
 const HELP = `cortex — Synaptic retrieval CLI (optional TOOLS layer; zero-runtime default)
@@ -178,13 +201,17 @@ async function cmdStatus(port, flags) {
 // ---------------------------------------------------------------------------
 
 async function main() {
-  const { command, positionals, flags } = parseArgs(process.argv.slice(2));
+  const { command, positionals, flags, error } = parseArgs(process.argv.slice(2));
 
   if (flags.help || !command) {
     process.stdout.write(HELP);
     // No command is a usage prompt, not a failure → exit 0 so `--help`-style probes pass.
     return 0;
   }
+
+  // A value-flag missing its value (e.g. trailing `--collection`) is a usage error: fail
+  // with a clear message instead of silently degrading to an empty/confusing result set.
+  if (error) fail(`${error} (see --help).`);
 
   const known = ['query', 'get', 'status'];
   if (!known.includes(command)) {
