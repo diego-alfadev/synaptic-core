@@ -49,6 +49,22 @@ MIGRATION_DONE.md under knowledge/). Each of Steps 3, 4, 6 ends by ticking that 
 phase is DONE only when EVERY box under it is checked. check.js green is necessary but NOT sufficient
 for Phase V — the Step-6 retrieval drill must also pass.
 
+┌─ MODE: guided (DEFAULT) vs interactive ───────────────────────────────────────────────────────┐
+│ Run in GUIDED mode by DEFAULT. Guided = supervised-but-quiet: hide the internals, drive the     │
+│ migration yourself, and ASK ME only on genuine forks. The ONLY questions guided mode may ask:    │
+│   1. Topology intake (Step 1) — the small set of brain-shape questions needed to wire/cut over.  │
+│   2. Any DELETION / merge / split of knowledge content (the DELETIONS LEDGER items) — human-only.│
+│   3. Private-vs-shared (Step 1.4) — it selects the cutover path (7A simple swap vs 7B freeze).   │
+│   4. Cutover acknowledgement (Step 7) — the go/no-go before the brain is swapped/promoted.       │
+│ Anything else (routine re-files, link conversions, MOC rebuilds, frontmatter fill) guided just   │
+│ DOES and reports at the end — it does not narrate each step or ask permission for it.            │
+│ `interactive` (advanced, opt-in) = surface EVERY step for confirmation. `autonomous` = no user   │
+│ available: make the reasonable choice at each fork, never destroy ambiguous content, log it.     │
+│ CRITICAL: guided vs interactive changes VERBOSITY / how much is surfaced — NOT the safety gates.  │
+│ The content-conservation gate, the no-silent-deletion ledger, and the Phase V drills run          │
+│ IDENTICALLY in all modes. Guided is quieter, never less safe.                                    │
+└────────────────────────────────────────────────────────────────────────────────────────────────┘
+
 ────────────────────────────────────────────────────────────────────────
 STEP 0 — Get the v1 skill + tools into THIS environment   [no Node for the skill; tools need Node]
 ────────────────────────────────────────────────────────────────────────
@@ -328,12 +344,32 @@ STEP 6 — Phase V (verify) on the work copy   [needs Node for check.js; [no Nod
 STEP 7 — Cut over to the v1 brain   [no Node]
 ────────────────────────────────────────────────────────────────────────
 7A — PRIVATE per-user brain (the TYPICAL case: one writer, one machine):
-  No team coordination needed. With Phase V green on the work copy: SWAP — rename the live brain to the
-  `*-v0.3-backup` name (you already have the backup + `pre-v1` tag) and move the work copy into place.
-  Apply the Step-5 harness rewrite (user-level — one place). Re-run the Step-6 greps against the live
-  brain + the wired harness file. Done — this is the ~couple-of-hours path. (If YOU wrote to the live
-  brain during the migration, fold those edits into the copy first — same idea as 7B.3, just for one
-  person.)
+  No team coordination needed. With Phase V green (structural + retrieval drill), cut over.
+
+  PRIMARY — GIT FAST-FORWARD (the brain is a git repo; this is the Windows/OneDrive-safe path):
+    You built the v1 copy on an upgrade branch (or a git worktree — see Step 2 / the note in
+    references/upgrade-to-v1.md) carrying the 3 phase commits. Promote it by rewriting files IN PLACE,
+    never by renaming the live folder:
+       git -C <brain> switch main            # or your default branch
+       git -C <brain> merge --ff-only <upgrade-branch>
+    `--ff-only` rewrites the working tree in place (no folder swap, nothing to lock or half-move) and
+    FAILS LOUDLY if it cannot fast-forward. Then apply the Step-5 harness rewrite (user-level — one
+    place) and re-run the Step-6 greps against the live brain + the wired harness file.
+    • WINDOWS / OneDrive: PREFER FF. A live-folder rename can hit a file lock (an editor/agent/sync
+      client holding a handle), leave a half-moved state, or trigger a OneDrive conflict-copy. FF
+      touches file *contents* in place and avoids all three. If the brain is on a sync share, still
+      move the work to a LOCAL path first (Step 2 SYNC GUARD) and let sync settle after the merge.
+    • IF `--ff-only` REFUSES: `main` advanced since you branched -> you have concurrent writers ->
+      this is not actually a single-writer brain. Do NOT force a merge-commit. Go to the shared-brain
+      freeze + delta-reconcile path (7B), reconcile the divergence, then promote.
+    • If YOU wrote to the live brain during the migration, fold those edits into the branch first
+      (same idea as 7B.3, just for one person) so the FF is clean.
+
+  FALLBACK — FOLDER RENAME/SWAP (NON-GIT brains only): if the brain is genuinely not git-tracked (and
+    Step 2 could not `git init` it), SWAP — rename the live brain to the `*-v0.3-backup` name (you have
+    the backup) and move the work copy into place, then apply the harness rewrite. This is the fallback
+    path only; on Windows/OneDrive it carries the lock/half-move/conflict-copy risk the FF path avoids.
+  Done — this is the ~couple-of-hours path.
 
 7B — GENUINELY SHARED brain (several concurrent writers — rare; only if Step 1.4 said so):
   Phase C took time; a naive swap would discard teammates' interim edits silently. Before replacing:
@@ -343,9 +379,11 @@ STEP 7 — Cut over to the v1 brain   [no Node]
      --name-status pre-v1 HEAD`, else an mtime/checksum compare vs the backup). Hand-port each interim
      change into the v1 work copy through Phase C formatting; fold new journal breadcrumbs in BEFORE
      the ≤80-line trim. Re-run Step 6 incl. the conservation gate vs the LIVE brain at freeze time.
-  4. ATOMIC CUTOVER, per machine: the brain-folder SWAP (filesystem) and the harness rewrite must land
-     TOGETHER on each machine — never on separate schedules (else a v1 pointer over a v0.3 brain, or
-     vice-versa). Shared/network copy → one swap for everyone; N local copies → a per-person checklist.
+  4. ATOMIC CUTOVER, per machine: the brain promote and the harness rewrite must land TOGETHER on each
+     machine — never on separate schedules (else a v1 pointer over a v0.3 brain, or vice-versa). For a
+     GIT brain, promote via `git merge --ff-only` (as in 7A) after the reconcile lands on the branch —
+     files rewritten in place, no folder rename; for a non-git brain the fallback is the folder swap.
+     Shared/network copy → one promote for everyone; N local copies → a per-person checklist.
 
   END OF PHASE 3 (cleanup + cutover) — this is the THIRD phase commit. After the FF promote / swap,
   the staging deletion (Step 10), the harness rewrite (Step 5), and any pruned backups, COMMIT:
@@ -393,14 +431,47 @@ backup to diff against):
   • OPEN ITEMS: anything deferred, any teammate freeze/cutover coordination still pending, the
     DECISION LOG of non-obvious calls.
 
+  Then add TWO owner-facing sections (write these FOR THE OWNER, plain language — distinct from the
+  technical migration report above; in guided mode this is the part the owner actually reads):
+
+  • HOW TO USE YOUR NEW BRAIN (owner orientation):
+    - What your brain now contains — the headline counts: N clusters, N knowledge nodes, N registries,
+      N references (from the conservation manifest + each _index listing / graph.js).
+    - How to find anything — the navigation rule: open `BRAIN.md` (the only session-start read) →
+      `knowledge/INDEX.md` (the hub) → the cluster's `_index.md` → the 1-2 nodes you need. Registries
+      (`registries/_index.md`) are your tabular lookups; references (`references/_index.md`) index
+      verbatim artifacts. You do not read the whole brain — you navigate to the node.
+    - How it stays current — your agent captures breadcrumbs as you work and OFFERS to consolidate;
+      run `/synaptic-consolidate` at session end and `/synaptic-audit` periodically. Operating rules
+      live in `harness/` and are deployed to your agent's system prompt (not read from the brain).
+    - Where NOT to put things — `knowledge/` is live nodes only; scratch goes to `playgrounds/`, closed
+      audits to `audits/`, this migration's `MIGRATION_DONE.md` stays at the root / staging.
+
+  • SOAK + CLEANUP CHECKLIST (owner to-do, over the next few days of normal use):
+    - [ ] Keep `<brain>-v0.3-backup`, the `pre-v1` git tag, per-repo AGENTS.md backups, AND
+          `_migration-staging/` through the soak — they are your recovery net.
+    - [ ] Use the brain normally for the agreed soak (a few days); watch for a mis-filed or missing
+          node (recoverable from staging per-file, which the flat backup cannot do as cleanly).
+    - [ ] Confirm the harness wiring works: your agent reads `BRAIN.md` at session start and the
+          `/synaptic-*` commands are available.
+    - [ ] After the soak is stable: delete `_migration-staging/` (Step 10 — the LAST action), then the
+          folder backup. This is when the `chore: cleanup + cutover` commit's staging-prune half lands.
+
 ────────────────────────────────────────────────────────────────────────
-ROLLBACK (trivial — you changed nothing destructive)
+ROLLBACK (trivial — you changed nothing destructive)   [rollback matches your cutover path]
 ────────────────────────────────────────────────────────────────────────
-PRIMARY (topology-independent): delete the v1 brain folder and rename `<brain>-v0.3-backup` back to
-`<brain>`. (Do NOT use `git checkout <backup-path>` — it does not swap the folder in.)
-If the brain is git: a FORWARD "revert to the pre-v1 tag" commit teammates pull — never a force-push/
-reset on a shared remote. Revert each wired repo via its PR / `git checkout -- AGENTS.md` / the dated
-backup.
+Rollback mirrors how you cut over (Step 7), so it is consistent with the FF-primary model:
+
+GIT BRAIN (the normal case — you promoted by `git merge --ff-only`): roll back via GIT, not a folder
+  rename. Locally, reset the branch to the snapshot: `git -C <brain> reset --hard pre-v1` (the tag from
+  Step 2). On a SHARED remote, never force-push/reset — land a FORWARD "revert to the pre-v1 tag"
+  commit teammates pull. Revert each wired repo via its PR / `git checkout -- AGENTS.md` / the dated
+  backup. (Do NOT `git checkout <backup-path>` — it restores a path into the tree, it does not swap the
+  folder in.)
+
+NON-GIT BRAIN ONLY (the fallback cutover was a folder rename): delete the v1 brain folder and rename
+  `<brain>-v0.3-backup` back to `<brain>`. This is the non-git path — a git brain rolls back via git
+  above, not by renaming.
 
 ────────────────────────────────────────────────────────────────────────
 STEP 10 — Soak, then delete staging LAST

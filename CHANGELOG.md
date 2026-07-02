@@ -3,6 +3,20 @@
 ## Unreleased
 
 ### Added
+- **Git fast-forward cutover (Windows/OneDrive-safe) + guided-default mode + owner orientation.** The
+  v0.3->v1 upgrade now leads its cutover with `git switch main && git merge --ff-only <upgrade-branch>`
+  — files rewritten in place, no live-folder rename — with the folder rename/swap demoted to a
+  **non-git fallback** and an explicit Windows/OneDrive lock/half-move/conflict-copy warning; if
+  `--ff-only` refuses, that surfaces concurrent writers and routes to the shared-brain freeze path. A
+  git worktree is noted as the safe way to build the v1 copy. ROLLBACK is reconciled to match: a git
+  brain rolls back via git (reset to / forward-revert the `pre-v1` tag), the rename is the non-git path
+  only. A **"Mode: guided (default) vs interactive"** callout enumerates the ONLY questions guided mode
+  may ask (topology intake, any deletion, private-vs-shared, cutover ack) and states that guided vs
+  interactive changes **verbosity, NOT the safety gates** (conservation gate, no-silent-deletion
+  ledger, and Phase V drill run identically in every mode). Step 9 gains an owner-facing "how to use
+  your new brain" orientation plus a soak/cleanup checklist. `references/upgrade-to-v1.md` mirrors the
+  FF cutover, the mode definition (reconciled with the existing autonomous-mode note), and the
+  worktree note.
 - **Per-phase `MIGRATION_DONE` gate + mandatory retrieval drill.** The v0.3→v1 upgrade now closes each
   phase against a binary checklist artifact — a new `templates/MIGRATION_DONE.md` (Phase M / C / V
   boxes, added to `MANIFEST.txt`) that lives at the **brain root or `_migration-staging/`, never in
