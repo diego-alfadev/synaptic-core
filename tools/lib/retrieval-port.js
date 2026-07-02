@@ -186,9 +186,13 @@ function createRetrieval(config = {}) {
  * without qmd — the common, air-gapped case — never loads any qmd-facing code and the
  * default path stays node-stdlib-only (invariants 2 + 3).
  *
- * NOTE (Step 1 spike): the QmdAdapter is intentionally NOT authored yet. This probe is
- * the seam that a later step drops it into; today it always returns null, which is the
- * correct, safe behaviour — `--adapter qmd` cleanly degrades to grep/MOC.
+ * The QmdAdapter (adapters/qmd-adapter.js) is option (c) from the build-vs-adopt spec:
+ * qmd wrapped behind this port, invoked as an EXTERNAL process (never require()'d into
+ * our address space) with a mandatory grep/MOC fallback. It exposes a STATIC
+ * `isAvailable(config)` capability probe (is `qmd` on PATH / does `@tobilu/qmd` resolve?);
+ * when the probe is false — the common, air-gapped case — we return null here and the
+ * caller silently degrades to grep/MOC. `--adapter qmd` therefore never crashes when qmd
+ * is absent, and even when present the adapter itself degrades to grep/MOC on any failure.
  *
  * @param {Object} config
  * @returns {(RetrievalPort & {adapter: string}) | null}
