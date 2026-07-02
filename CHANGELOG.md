@@ -82,6 +82,14 @@
   community-over-combat (opaque runtime vs inert auditable files, no overclaim), and an honest-limits
   section stating plainly that Synaptic adds no new egress but does **not** police it — access control
   is the host's and filesystem's job. Swedbank-agnostic ("a regulated enterprise client").
+- **Verb-contract note (memify deferred to P4, gated on usage signal).** New
+  `docs/concepts/verb-contract.md` (linked from the concepts `_index.md`) maps our authored verbs
+  (`consolidate` / `weave` / `synthesize` / `maintain`) against Cognee's (`add` / `cognify` /
+  `memify` / `search`) and records the sharpened conclusion: **`memify` is NOT a separate CORE verb —
+  it overlaps weave+maintain; the only genuinely new part (usage-reweighting) needs a usage log CORE
+  lacks, so it is deferred to Phase 4 gated on a usage signal.** The note makes no present-tense
+  self-improvement / usage-weighting claim — usage-weighted self-improvement is framed as a P4
+  direction only, keeping the four-verb contract crisp and non-overlapping.
 
 ## v1.2.0 — Upgrade path + seat brains · 2026-06-26
 
