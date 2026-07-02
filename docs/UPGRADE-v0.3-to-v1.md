@@ -4,6 +4,19 @@
 > original brain stays untouched, and you only switch over once you've verified the result. Worst
 > case, you keep your old brain. Tokens are not a concern — let the agent be thorough.
 
+> **This path now lands you on v1.3.0.** You install the *current* skill, so a fresh v0.3 → v1
+> migration today produces a brain on the latest engine (**v1.3.0**) — schema still `1.0`, plus the
+> **PARA lifecycle axis** (an optional `lifecycle:` field, absent → `area`, fully backward-compatible)
+> and the **hardened `check.js`** (retrieval-readiness report + the structural≠retrieval caveat). The
+> interactive `graph.html` and the god-node audit come for free. Nothing here changes because of
+> v1.3.0 — the migration steps are identical; you simply end up current.
+>
+> **Node:** the migration itself does **not** require Node — the runbook tags every step
+> `[needs Node]` or `[no Node]`, and each Node step has a hand-done fallback. But the `tools/*.js`
+> accelerators (`migrate.js` / `check.js` / `graph.js`) **do** need Node ≥ 18 on the migrant's
+> machine; without it you run the **manual matrix** instead (fully specified). If you want the fast
+> path and the interactive graph, make sure the environment has Node.
+
 This is the human-readable explanation of *what happens and why*. When you're ready to actually run
 it, hand your agent the operational runbook — **[UPGRADE-v0.3-to-v1.AGENT.md](UPGRADE-v0.3-to-v1.AGENT.md)** —
 which drives the whole thing step by step. This page is the map; that file is the route.
