@@ -234,7 +234,7 @@
 **Your data is safe on every path** — you work on a copy and switch only when you're happy.
 
 - **From v0.3.x →** run `/synaptic-upgrade`, or follow the supervised runbook [`docs/UPGRADE-v0.3-to-v1.md`](docs/UPGRADE-v0.3-to-v1.md). It restructures **on a copy** (Phase M mechanical → Phase C agent re-file → Phase V verify: counts, links, MOC coverage), and you replace the original only once it is green. Worst case, you keep your old brain.
-- **From v1.0.0 →** just re-copy the skill ([`standalone/synaptic/SKILL.md`](standalone/synaptic/SKILL.md)). Your brain keeps working as-is — the schema is unchanged. One optional, one-word touch: rename your `capture_policy` value (`curated → selective`, `logbook → capture-all`).
+- **Already on v1 (v1.0.0+) →** there is nothing to migrate — the schema is unchanged (still `1.0`). Just reinstall/update the skill to engine `1.3.0` ([`standalone/synaptic/SKILL.md`](standalone/synaptic/SKILL.md)); everything v1.3.0 adds (optional PARA `lifecycle:` axis, interactive `graph.html`, god-node audit, hardened `check.js`) is additive and reversible. See the short feature-adoption guide [`docs/UPGRADE-v1.x-to-v1.3.0.md`](docs/UPGRADE-v1.x-to-v1.3.0.md). `/synaptic-upgrade` invoked on an already-`1.0` brain recognizes the current schema and refreshes the engine + offers PARA — it does **not** run a full migration. One optional, one-word touch if you skipped it earlier: rename your `capture_policy` value (`curated → selective`, `logbook → capture-all`).
 
 Nothing to deploy, no server, no database — the upgrade is files in, files out.
 
