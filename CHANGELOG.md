@@ -1,9 +1,64 @@
 # Changelog
 
-## Unreleased
+## [Unreleased]
 
-### Added
-- **CORE breadcrumb instruction robust when hooks are absent (issue #2).** The per-turn journal
+> **One branch, two releases (split pending).** The work below was built on a single branch
+> (`feat/v1.2.1-migration-hardening`) but is authored as **two distinct releases**: a PATCH
+> (`v1.2.1` — migration & upgrade hardening, no schema/behavior change to a clean v1 brain) and a
+> MINOR (`v1.3.0` — additive structural improvements). They are grouped separately below.
+> **No version number is stamped and `SKILL.md` `version:` is not bumped yet — the release split
+> (whether to cut one release or two) is Diego's decision; version stamping awaits it.**
+
+---
+
+### v1.2.1 (migration & upgrade hardening — PATCH) · [C1..C7]
+
+- **[C1] Retrieval-readiness report + structural≠retrieval caveat.** `tools/check.js` now prints a
+  retrieval-readiness summary (nodes, edges, clusters, orphans, edges/node, MOC-reachable) computed
+  over the one canonical knowledge-scoped, MOC-excluded, undirected-deduped edge/degree universe
+  (new `tools/lib/brain-graph.js`, shared verbatim with `tools/graph.js` and the audit heuristics so
+  the tools can never disagree on topology). When the brain is structurally clean (0 errors) yet a
+  connectivity heuristic trips (orphan ratio > 20% OR edges/node < 0.5), it prints an **advisory
+  CAVEAT** — *structural-green ≠ retrieval-green* — that **never changes the exit code**.
+- **[C2] Flag non-live artifacts in `knowledge/`; `audits/` exclusion.** `tools/check.js` gains a
+  fence-aware non-live-artifact check: an **ERROR** only for exact-name / path-segment leaks
+  (`MIGRATION_DONE.md` inside `knowledge/`, a `_migration-staging/` path segment leaked inside
+  `knowledge/`), and **WARN**-only fuzzy heuristics (surviving prose carrying a `{{...}}` placeholder;
+  a filename matching a closed-audit-report pattern). `audits/` is wired into both the exclusion set
+  and the link index. `playgrounds/` and `_migration-staging/` are treated as brain-root siblings of
+  `knowledge/`, never children.
+- **[C3] `lint: allow-large` suppresses the soft-budget WARN.** A node may carry `lint: allow-large`
+  (scalar or list form) to opt out of the soft size-budget WARN while `type: reference` continues to
+  suppress it — decoupling the budget policy from the node type.
+- **[C4] Per-phase `MIGRATION_DONE` gate + mandatory retrieval drill + one-commit-per-phase.** The
+  v0.3→v1 upgrade now closes each phase against a binary checklist artifact — a new
+  `templates/MIGRATION_DONE.md` (Phase M / C / V boxes, added to `MANIFEST.txt`) that lives at the
+  **brain root or `_migration-staging/`, never in `knowledge/`** (a `MIGRATION_DONE.md` under
+  `knowledge/` is a `check.js` ERROR). A phase is DONE only when every box under it is checked.
+  Phase V adds a **mandatory retrieval drill** with a deterministic question-selection recipe (3
+  most-linked nodes + 2 registry lookups + 1 cross-cluster synthesis, answered by MOC navigation
+  only) and a binary pass bar (all 5 fact-lookups via navigation, 0 grep-fallbacks; the synthesis
+  question may miss as a `/synaptic-weave` gap) — because **`check.js` green is necessary but NOT
+  sufficient** (structural-green ≠ retrieval-green). The upgrade runbook now prescribes **≥3 distinct,
+  named, independently-revertible commits** on the upgrade branch — `migrate: Phase M …` (check.js may
+  still error), `refactor: Phase C …` (check.js at 0 errors), `chore: cleanup + cutover …` — each
+  passing `check.js` before the next begins, with the commit hash recorded per phase in the ledger.
+  No step says "commit everything at the end." The AGENT runbook and `references/upgrade-to-v1.md`
+  mirror the drill and the gate.
+- **[C5] Git fast-forward cutover (Windows/OneDrive-safe) + guided-default mode + owner orientation.**
+  The v0.3→v1 upgrade now leads its cutover with `git switch main && git merge --ff-only
+  <upgrade-branch>` — files rewritten in place, no live-folder rename — with the folder rename/swap
+  demoted to a **non-git fallback** and an explicit Windows/OneDrive lock/half-move/conflict-copy
+  warning; if `--ff-only` refuses, that surfaces concurrent writers and routes to the shared-brain
+  freeze path. A git worktree is noted as the safe way to build the v1 copy. ROLLBACK is reconciled to
+  match: a git brain rolls back via git (reset to / forward-revert the `pre-v1` tag), the rename is
+  the non-git path only. A **"Mode: guided (default) vs interactive"** callout enumerates the ONLY
+  questions guided mode may ask (topology intake, any deletion, private-vs-shared, cutover ack) and
+  states that guided vs interactive changes **verbosity, NOT the safety gates** (conservation gate,
+  no-silent-deletion ledger, and Phase V drill run identically in every mode). Step 9 gains an
+  owner-facing "how to use your new brain" orientation plus a soak/cleanup checklist.
+  `references/upgrade-to-v1.md` mirrors the FF cutover, the mode definition, and the worktree note.
+- **[C6] CORE breadcrumb instruction robust when hooks are absent (issue #2).** The per-turn journal
   breadcrumb is now stated as an **instruction the agent follows, not only a hook** — the floor
   underneath the automation, so a session that reaches compaction is **never breadcrumb-empty** (the
   issue #2 failure mode: a session neared recompact with no breadcrumbs written). `templates/BRAIN.md`
@@ -20,7 +75,7 @@
   unattended idle daemon at CORE). The size-locked `BEGIN:SYNAPTIC` bridge block is left
   **byte-for-byte untouched** (the instruction already lives in CORE via `BRAIN.md`; per the adversarial
   council, the strengthening was retargeted off the bridge).
-- **Tooling / environment notes + deletion ledger as a standing rule.** The AGENT runbook gains a
+- **[C7] Tooling / environment notes + deletion ledger as a standing rule.** The AGENT runbook gains a
   "Tooling / environment notes" appendix framing four host quirks as **ENV diagnostics, not Synaptic
   rules**: Git Bash has no `rg` (use `grep -rn` / `git grep` / the agent's search — every grep-style
   instruction stays portable); `apply_patch` / VS Code fs write failures fall back to direct writes;
@@ -31,47 +86,10 @@
   (*what, why, loser->winner or destination, recoverable-via-git; git is the archive*) is added to
   `references/consolidate.md`, `references/maintain.md`, and `references/weave.md`, matching the
   discipline `references/upgrade-to-v1.md` already uses.
-- **Git fast-forward cutover (Windows/OneDrive-safe) + guided-default mode + owner orientation.** The
-  v0.3->v1 upgrade now leads its cutover with `git switch main && git merge --ff-only <upgrade-branch>`
-  — files rewritten in place, no live-folder rename — with the folder rename/swap demoted to a
-  **non-git fallback** and an explicit Windows/OneDrive lock/half-move/conflict-copy warning; if
-  `--ff-only` refuses, that surfaces concurrent writers and routes to the shared-brain freeze path. A
-  git worktree is noted as the safe way to build the v1 copy. ROLLBACK is reconciled to match: a git
-  brain rolls back via git (reset to / forward-revert the `pre-v1` tag), the rename is the non-git path
-  only. A **"Mode: guided (default) vs interactive"** callout enumerates the ONLY questions guided mode
-  may ask (topology intake, any deletion, private-vs-shared, cutover ack) and states that guided vs
-  interactive changes **verbosity, NOT the safety gates** (conservation gate, no-silent-deletion
-  ledger, and Phase V drill run identically in every mode). Step 9 gains an owner-facing "how to use
-  your new brain" orientation plus a soak/cleanup checklist. `references/upgrade-to-v1.md` mirrors the
-  FF cutover, the mode definition (reconciled with the existing autonomous-mode note), and the
-  worktree note.
-- **Per-phase `MIGRATION_DONE` gate + mandatory retrieval drill.** The v0.3→v1 upgrade now closes each
-  phase against a binary checklist artifact — a new `templates/MIGRATION_DONE.md` (Phase M / C / V
-  boxes, added to `MANIFEST.txt`) that lives at the **brain root or `_migration-staging/`, never in
-  `knowledge/`** (a `MIGRATION_DONE.md` under `knowledge/` is a `check.js` ERROR). A phase is DONE only
-  when every box under it is checked. Phase V adds a **mandatory retrieval drill** with a deterministic
-  question-selection recipe (3 most-linked nodes + 2 registry lookups + 1 cross-cluster synthesis,
-  answered by MOC navigation only) and a binary pass bar (all 5 fact-lookups via navigation, 0
-  grep-fallbacks; the synthesis question may miss as a `/synaptic-weave` gap) — because **`check.js`
-  green is necessary but NOT sufficient** (structural-green ≠ retrieval-green). The AGENT runbook and
-  `references/upgrade-to-v1.md` mirror the drill and the gate.
-- **Commit discipline (one commit per phase).** The upgrade runbook now prescribes **≥3 distinct,
-  named, independently-revertible commits** on the upgrade branch — `migrate: Phase M …` (check.js may
-  still error), `refactor: Phase C …` (check.js at 0 errors), `chore: cleanup + cutover …` — each
-  passing `check.js` before the next begins, with the commit hash recorded per phase in the ledger. No
-  step says "commit everything at the end."
-- **God-node / surprising-edge audit heuristics.** `/synaptic-audit` gains two diagnose-only
-  graph-health passes (prose-CORE, WARN, no runtime required): a **god-node** check that flags an
-  over-connected hub (edge degree ≥ 15, or ≥ 3× the brain's median node degree — whichever is lower)
-  as a candidate to split into atomic sub-nodes or confirm as a legitimate hub, and a
-  **surprising-edge** check that lists authored edges whose endpoints live in different top-level
-  `knowledge/` clusters (the high-value multi-hop links embeddings can't infer) for the owner to
-  confirm or correct. Both route to `/synaptic-weave`, make no auto-discovery claim (edges are
-  authored, never inferred), and compute "degree" over the same knowledge-scoped, MOC-excluded,
-  undirected-deduped edge universe as `tools/check.js` / `tools/graph.js`. `check.js` additionally
-  emits both as advisory WARN-class counts when the brain is otherwise clean — never an ERROR, never
-  a gate.
-- **PARA lifecycle axis (optional, backward-compatible).** Knowledge nodes MAY carry one optional
+
+### v1.3.0 (structural improvements — MINOR) · [§1..§5]
+
+- **[§1] PARA lifecycle axis (optional, backward-compatible).** Knowledge nodes MAY carry one optional
   frontmatter field — `lifecycle: project | area | resource | dormant` — an **actionability** axis
   that is **orthogonal to the editorial `status: active | stale | archived`** field (the enums share
   no token — `dormant` deliberately differs from `archived` to prevent cross-field bleed). It scopes
@@ -89,7 +107,28 @@
   and an explicit note that `dormant`/`resource` are NOT orphans), and `BRAIN.md`. `tools/check.js`
   adds an advisory WARN when a present `lifecycle:` value is out of enum — never required, never an
   ERROR.
-- **Local-vs-remote data-boundary governance doc.** New `docs/concepts/local-vs-remote-boundary.md`
+- **[§2] Interactive force-directed `graph.html` (replaces the static viz).** `tools/graph.js` is
+  rewritten to emit a **single self-contained, zero-network HTML file** (inline CSS + a
+  deterministic force-directed simulation seeded from node count) — no CDN, no `<script src>`, no
+  fetch. It is **typed-edge aware** (colours/dashes per edge kind) with cluster/edge-type/lifecycle
+  filters, search, pan/zoom, and expand/collapse hubs. The graph shares the exact same
+  `buildBrainGraph` universe as `check.js` (edge parity guaranteed by construction), and node
+  ids/labels/tags reach the DOM only via safe sinks (`textContent`/`setAttribute`), with the embedded
+  `DATA` payload escaped so a filename containing `</script>` can't break out of the inline script.
+  Force-directed layout + MIT/Graphify attribution lines carried in `tools/README.md`. `--format` is
+  swallowed for CLI back-compat; an empty brain renders a graceful empty state.
+- **[§3] God-node / surprising-edge audit heuristics.** `/synaptic-audit` gains two diagnose-only
+  graph-health passes (prose-CORE, WARN, no runtime required): a **god-node** check that flags an
+  over-connected hub (edge degree ≥ 15, or ≥ 3× the brain's median node degree — whichever is lower)
+  as a candidate to split into atomic sub-nodes or confirm as a legitimate hub, and a
+  **surprising-edge** check that lists authored edges whose endpoints live in different top-level
+  `knowledge/` clusters (the high-value multi-hop links embeddings can't infer) for the owner to
+  confirm or correct. Both route to `/synaptic-weave`, make no auto-discovery claim (edges are
+  authored, never inferred), and compute "degree" over the same knowledge-scoped, MOC-excluded,
+  undirected-deduped edge universe as `tools/check.js` / `tools/graph.js`. `check.js` additionally
+  emits both as advisory WARN-class counts when the brain is otherwise clean — never an ERROR, never
+  a gate.
+- **[§4] Local-vs-remote data-boundary governance doc.** New `docs/concepts/local-vs-remote-boundary.md`
   (linked from the concepts `_index.md`) draws the explicit line between what stays 100% local and
   what — if anything — leaves the machine: a four-layer boundary table (CORE files / TOOLS / host
   LLM / future Cortex), the reusable governance one-liner, the "only one egress point" argument (the
@@ -99,7 +138,7 @@
   community-over-combat (opaque runtime vs inert auditable files, no overclaim), and an honest-limits
   section stating plainly that Synaptic adds no new egress but does **not** police it — access control
   is the host's and filesystem's job. Swedbank-agnostic ("a regulated enterprise client").
-- **Verb-contract note (memify deferred to P4, gated on usage signal).** New
+- **[§5] Verb-contract note (memify deferred to P4, gated on usage signal).** New
   `docs/concepts/verb-contract.md` (linked from the concepts `_index.md`) maps our authored verbs
   (`consolidate` / `weave` / `synthesize` / `maintain`) against Cognee's (`add` / `cognify` /
   `memify` / `search`) and records the sharpened conclusion: **`memify` is NOT a separate CORE verb —
