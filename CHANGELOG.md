@@ -1,17 +1,16 @@
 # Changelog
 
-## [Unreleased]
+## [1.3.0] - 2026-07-02
 
-> **One branch, two releases (split pending).** The work below was built on a single branch
-> (`feat/v1.2.1-migration-hardening`) but is authored as **two distinct releases**: a PATCH
-> (`v1.2.1` — migration & upgrade hardening, no schema/behavior change to a clean v1 brain) and a
-> MINOR (`v1.3.0` — additive structural improvements). They are grouped separately below.
-> **No version number is stamped and `SKILL.md` `version:` is not bumped yet — the release split
-> (whether to cut one release or two) is Diego's decision; version stamping awaits it.**
+> **One combined release.** This single MINOR (`1.3.0`) folds the migration-&-upgrade-hardening work
+> (originally scoped as a standalone PATCH `v1.2.1`) together with the additive structural
+> improvements. `v1.2.1` is **not released standalone** — its entries ship inside 1.3.0 under the
+> labeled sub-group below. The brain **schema is unchanged (still 1.0)**; no `/synaptic-upgrade` is
+> needed to adopt this release — reinstall the skill for the new engine behavior.
 
 ---
 
-### v1.2.1 (migration & upgrade hardening — PATCH) · [C1..C7]
+### Migration & upgrade hardening (originally scoped as v1.2.1) · [C1..C7]
 
 - **[C1] Retrieval-readiness report + structural≠retrieval caveat.** `tools/check.js` now prints a
   retrieval-readiness summary (nodes, edges, clusters, orphans, edges/node, MOC-reachable) computed
@@ -87,7 +86,7 @@
   `references/consolidate.md`, `references/maintain.md`, and `references/weave.md`, matching the
   discipline `references/upgrade-to-v1.md` already uses.
 
-### v1.3.0 (structural improvements — MINOR) · [§1..§5]
+### Structural improvements · [§1..§5]
 
 - **[§1] PARA lifecycle axis (optional, backward-compatible).** Knowledge nodes MAY carry one optional
   frontmatter field — `lifecycle: project | area | resource | dormant` — an **actionability** axis

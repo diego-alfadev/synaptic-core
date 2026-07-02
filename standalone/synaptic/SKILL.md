@@ -1,6 +1,6 @@
 ---
 name: synaptic
-version: 1.2.0          # engine semver (skill code) — independent of the brain schema/format version stamped in BRAIN.md
+version: 1.3.0          # engine semver (skill code) — independent of the brain schema/format version stamped in BRAIN.md
 supported_schema: ">=1.0 <2.0"   # brain schema/format versions this engine can read. A skill update reinstalls the skill with NO brain migration; only a schema/format change runs /synaptic-upgrade.
 description: >
   Knowledge-graph memory layer for project work — a portable, file-based brain that turns
