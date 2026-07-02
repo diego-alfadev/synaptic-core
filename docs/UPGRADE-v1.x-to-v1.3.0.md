@@ -28,6 +28,16 @@ A skill-code update = **reinstall the skill, NO brain migration.** Only a schema
 behavior lives in the engine/tools, not in your nodes. The compat-check confirms this at load: a v1
 brain (schema `1.0`) is in range for the `1.3.0` engine, so you get **no warning** — it just boots.
 
+**If you invoke `/synaptic-upgrade` anyway, it handles this gracefully — it does NOT run a full
+migration.** The command first reads `BRAIN.md`'s schema/format version. On a brain that is **already
+schema `1.0`**, there is nothing to migrate, so it must **not** enter the v0.3→v1 M→C→V flow (no
+staging, no re-file, no cutover, no content-conservation gate — those are for a real schema change).
+Instead it recognizes "already on the current schema" and does the light path: **confirm/refresh the
+engine to `1.3.0`** (point you at the reinstall step below if the installed skill is older) and
+**offer the optional PARA `lifecycle:` adoption** described here. It reports "no schema migration
+needed" and stops — a no-op on your nodes. The only case that triggers a real migration is a brain
+whose schema is genuinely `< 1.0` (a pre-v1 brain), which is the v0.3→v1 path, not this one.
+
 ---
 
 ## The one required step: update the skill to engine 1.3.0
@@ -119,6 +129,36 @@ configure, nothing added to your brain.
 Both route to `/synaptic-weave`, make **no** auto-discovery claim (edges are authored, never
 inferred), and are advisory only. `check.js` also surfaces them as WARN-class counts when the brain
 is otherwise clean — never an ERROR.
+
+---
+
+## The migration hardening axes carry over — adapted for a no-migration upgrade
+
+v1.3.0 was hardened on the back of the v0.3→v1 **migration** work, and the three quality axes we built
+for that heavy path apply here too — just lighter, because nothing in your brain is being rewritten:
+
+- **Checks from minute 0.** In a migration, `check.js` runs at every phase boundary. Here there is no
+  phase boundary, but the discipline is the same: run `node tools/check.js <brain>` (or the manual
+  matrix if you have no Node) **right after the engine swap** to confirm the brain is still clean on
+  the new engine — it should already be green, since no node changed. If you then start tagging
+  `lifecycle:`, re-run it: v1.3.0's hardened `check.js` adds only an advisory **WARN** for an
+  out-of-enum `lifecycle:` value (never an ERROR, never a gate), so a typo surfaces immediately instead
+  of silently mis-scoping your working set.
+- **Retrieval drills, not just structural green.** The migration's hard lesson — *structural-green ≠
+  retrieval-green* — still holds. Adopting the engine changes nothing retrieval-wise, so no full drill
+  is required; but if you use this upgrade as the moment to start cooling nodes with `lifecycle:
+  dormant`, do a **one-question spot-check** afterwards: pick a fact that lives in (or links through) a
+  node you just cooled and confirm you can still reach it by MOC navigation. `dormant` is a
+  load-priority signal, not de-registration — the node stays in its `_index.md` — so the answer must
+  still be reachable. If it isn't, you removed an `_index` entry by mistake; fix the MOC.
+- **Artifact hygiene.** The migration keeps `_migration-staging/` and a `pre-v1` tag as its recovery
+  net. This upgrade has no staging (nothing is staged), and the recovery net is simply a **git commit
+  before the engine swap** (see Reversibility) plus the reinstallable previous release. Keep the new
+  interactive `synaptic-graph.html` out of `knowledge/` — it is a generated artifact (regenerate it
+  from `tools/graph.js`, do not commit it into the graph the way a node would be).
+
+These are **adapted, not bolted on**: the same axes, scaled down to a no-schema-change engine refresh
+where the only thing that can change is the optional `lifecycle:` metadata you choose to add.
 
 ---
 
