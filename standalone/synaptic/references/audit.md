@@ -45,6 +45,28 @@ For each flagged node: note the staleness age and likely section to review. Pres
 
 ---
 
+## Step 1a — Lifecycle Completion-Cadence (WARN — optional `lifecycle:` axis)
+
+Advisory hygiene for the optional `lifecycle:` axis (`project | area | resource | dormant`; see
+`SKILL.md` "Lifecycle axis"). **Diagnose only, WARN never ERROR** — the fix (flip `lifecycle:`) is
+the owner's decision or `/synaptic-maintain`. Reuses the Step 1 staleness machinery, tightened for
+live projects. Skip any node with no `lifecycle:` field (absent → `area`, nothing to flag here).
+
+- Flag any `lifecycle: project` node whose `updated:` is older than **60 days** →
+  *"active-project gone quiet — archive it (`lifecycle: dormant`) or reactivate?"*
+- Flag any `lifecycle: area` node whose `updated:` is older than **90 days** →
+  *"area gone silent — still a live responsibility?"* (Reuses the Step 1 staleness threshold.)
+
+> **`lifecycle: dormant` / `resource` are NOT orphans.** A node cooled to `dormant` (or tagged
+> `resource`) is still registered in its cluster `_index.md` — cooling is a load-priority signal,
+> not de-registration. It **must not** trigger the Step 2 orphan check, and its `updated:` staleness
+> is expected (Step 1 may still note age, but it is not a lifecycle-cadence finding).
+
+**No runtime required.** Grep `lifecycle:` values and compare `updated:` — same by-hand posture as
+every other check here.
+
+---
+
 ## Step 2 — Orphan Nodes
 
 Read `knowledge/INDEX.md` (hub MOC) and every `knowledge/{cluster}/_index.md` (sub-MOCs). Then scan all `.md` files in `knowledge/`:

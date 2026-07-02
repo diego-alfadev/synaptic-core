@@ -85,9 +85,26 @@ Before writing:
 1. **Place** the node in the correct cluster under `knowledge/{cluster}/`.
 2. **Frontmatter (D1):** fill `description`, `type`, `status: active`, `updated: {today}`, `tags: [cluster-tag, topic-tags]`. No placeholders.
 3. **`[[wikilinks]]`:** add wikilinks to related nodes at first mention. One link per target page per source page is sufficient.
+3a. **Lifecycle (OPTIONAL):** set `lifecycle:` **only** if the node is a live project (`lifecycle: project`) or clearly a lazy-pull resource (`lifecycle: resource`); otherwise **leave it absent** (absent → treated as `area`, loads by default). Enum: `project | area | resource | dormant`. It is **orthogonal to `status`** — see the table below. A `project` node SHOULD link OUT to a durable `area`/`resource` node so its knowledge survives when it later cools to `dormant`.
 4. **Register** the node in `knowledge/{cluster}/_index.md` (one-line entry: `[[node-name]] — {description}`). If the cluster does not exist, create the `_index.md` from `templates/node.md` pattern and add the cluster to `knowledge/INDEX.md`.
 5. **Tabular data** → update or create the relevant `registries/{table}.md`; register in `registries/_index.md`.
 6. **Large verbatim artifact** → copy to `references/raw/`; add one-line entry to `references/_index.md`; create a distilled knowledge node with `type: reference` that links to the artifact entry. **Record a source `content_hash`** on the distilled node (see below) so future runs can detect that the raw artifact changed.
+
+**`status` vs `lifecycle` — two orthogonal fields (do not conflate):**
+
+`status` and `lifecycle` are independent and both may appear. `status` answers *is this content
+current and correct?*; `lifecycle` answers *is this in the current working set?* The literal
+`archived`/`dormant` tokens are deliberately different so the two enums never collide.
+
+| Field | Question it answers | Enum | Change it when… |
+|---|---|---|---|
+| `status` | Editorial / trust — is the content current & correct? | `active` \| `stale` \| `archived` | The content is superseded/dead (pair with a `supersedes`/`superseded_by` edge). |
+| `lifecycle` | Actionability — is this LIVE / in the working set? | `project` \| `area` \| `resource` \| `dormant` | A project ends or an area cools (flip to `dormant`); it re-activates (flip back). |
+
+> **Combined example:** a node may be `status: active` + `lifecycle: dormant` — the content is
+> **true**, but the project is over, so it does **not** load by default. Perfectly valid. Prefer
+> flipping `lifecycle` for actionability changes; reserve `status: archived` for "this content is
+> superseded/dead."
 
 **Source `content_hash` (drift detection — an inline captured fact, NOT a materialized index):**
 

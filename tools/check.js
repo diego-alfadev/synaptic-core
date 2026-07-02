@@ -436,6 +436,17 @@ function checkFrontmatter() {
         warn(filePath, 'frontmatter "tags" is an empty list — add at least one tag');
       }
     }
+
+    // lifecycle: OPTIONAL additive axis — never required, never ERRORs. If present, it must be
+    // one of the closed enum values; an out-of-enum value is a WARN (typo/near-collision), never
+    // a gate. Absent → legal (treated as `area`; no schema bump).
+    const lifecycle = fm.lifecycle;
+    if (lifecycle !== undefined && lifecycle !== null) {
+      const LIFECYCLE_ENUM = ['project', 'area', 'resource', 'dormant'];
+      if (!LIFECYCLE_ENUM.includes(String(lifecycle).trim())) {
+        warn(filePath, `frontmatter "lifecycle" is "${lifecycle}" — expected one of ${LIFECYCLE_ENUM.join(' | ')} (optional field; leave absent for the default "area")`);
+      }
+    }
   }
 }
 

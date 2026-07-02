@@ -62,7 +62,7 @@ Run on consolidation (manual `/synaptic-consolidate`, or offered at session end 
 1. **Classify** — durable knowledge · tabular record → registry · lesson · decision · big task → playground · temporal → journal · noise → drop.
 2. **Atomicity test** — one concept per node; promote only when it recurs (2+ instances → pattern) or is a reusable decision/lesson, per `capture_policy`. Incident-specifics stay in playground/journal.
 3. **Generalize** — strip the anecdote, keep the reusable pattern; name = the concept, not the ticket.
-4. **Place & link** — atomic node in the right cluster; fill frontmatter (incl. optional `source` / `confidence` / typed edges); add `[[wikilinks]]`; register in cluster `_index.md`.
+4. **Place & link** — atomic node in the right cluster; fill frontmatter (incl. optional `source` / `confidence` / typed edges, and the optional `lifecycle: project|area|resource|dormant` actionability axis — absent → `area`, loads by default); add `[[wikilinks]]`; register in cluster `_index.md`.
 5. **Dedupe / SSOT** — search first; update, don't duplicate; one source of truth per fact.
 6. **Quality gate** — professional & verifiable only; soft budget ~150 lines or tag `type: reference`; stamp `updated:`; confirm reachable from a MOC.
 
