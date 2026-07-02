@@ -83,6 +83,8 @@ The v1 file contract (frontmatter + tags + INDEX + `[[wikilinks]]` + registries)
 
 ### MCP server — **Cortex**
 
+> **SPIKED (not shipped) on `feat/cortex-boot`.** The retrieval **L0** (core-lib: the `RetrievalPort` contract + the zero-runtime grep/MOC default adapter, `tools/lib/retrieval-port.js` + `tools/lib/adapters/grep-moc-adapter.js`) and **T1** (the brain-API driving adapters: the `tools/cortex.js` CLI and the `tools/mcp/server.js` MCP server, plus the optional hidden `qmd` adapter `tools/lib/adapters/qmd-adapter.js`) exist as a **spike** — authored + verified by inspection only, **not runtime-tested**, and NOT released. The MCP server's four tools (`query`/`get`/`multi_get`/`status`) and handlers are complete against the port; only the `@modelcontextprotocol/sdk` stdio transport is a marked `TODO`. Wiring, tiers, and the accelerator-never-dependency invariant are documented in [`docs/concepts/cortex-boot.md`](docs/concepts/cortex-boot.md). This is a horizon spike, **not** a v1 deliverable.
+
 **What:** expose read and search over the brain to any MCP-capable agent — load a node by name, search by tag, query the INDEX, retrieve a registry row. **MCP is Cortex** — a tool *over* the files, not the CORE line. The CORE/Cortex boundary is never drawn at "with/without MCP"; a brain works fully without it, and it degrades away cleanly.
 
 **Why:** agents that cannot read files directly (sandboxed runtimes, remote orchestration) would gain full brain access without any format change. Local agents that *can* read files already have a better path (direct file read); the MCP server targets the remote/sandboxed case.
