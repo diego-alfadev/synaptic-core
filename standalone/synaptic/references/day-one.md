@@ -51,7 +51,7 @@ Take their answer and capture it as **one real knowledge node** — genuinely us
    - a process / how-to / runbook → `type: playbook`
    - where something lives / a catalog fact → `type: reference` (or a `registries/` row if tabular)
    - anything else durable → `type: knowledge`
-2. **Write the node** from `templates/templates/node.md` into the right `knowledge/{cluster}/` folder.
+2. **Write the node** from `templates/node.md` into the right `knowledge/{cluster}/` folder.
    If no cluster fits yet, create a sensible cluster (e.g. `knowledge/handover/`) — this is the
    brain's first cluster and that is fine. Fill real frontmatter, **no placeholders**: a self-contained
    one-line `description:`, `status: active`, `updated: {today}`, 1–2 `tags`. Leave `lifecycle:` absent
