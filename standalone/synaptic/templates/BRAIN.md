@@ -42,7 +42,9 @@ updated: "{{YYYY-MM-DD}}"
 
 ### Incremental journal breadcrumbs (the safety net)
 
-One terse line appended to `journal/_current.md → ## Log` per meaningful turn (a `Stop`-hook breadcrumb where hooks are wired). **Fixed cost, always on, policy-independent.** They live on disk so they survive a crash; what only lived in context dies. Breadcrumbs are not promotion — they are the raw trail that consolidation later distills.
+One terse line appended to `journal/_current.md → ## Log` per meaningful turn. **Fixed cost, always on, policy-independent.** They live on disk so they survive a crash; what only lived in context dies. Breadcrumbs are not promotion — they are the raw trail that consolidation later distills.
+
+> **This is an instruction you follow, not only a hook.** Append the breadcrumb per meaningful turn yourself; the `Stop` hook automates it where wired, but write it even when no hook fires. Hooks are host-specific and can silently fail to fire — the instruction is the floor underneath the automation, so a session that reaches compaction is **never breadcrumb-empty** (this closes issue #2: a session neared recompact with no breadcrumbs written). Nothing fires without you acting; there is no idle daemon (see the honest limit below).
 
 ### Layered capture (does NOT depend on SessionEnd)
 

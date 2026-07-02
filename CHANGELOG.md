@@ -3,6 +3,23 @@
 ## Unreleased
 
 ### Added
+- **CORE breadcrumb instruction robust when hooks are absent (issue #2).** The per-turn journal
+  breadcrumb is now stated as an **instruction the agent follows, not only a hook** — the floor
+  underneath the automation, so a session that reaches compaction is **never breadcrumb-empty** (the
+  issue #2 failure mode: a session neared recompact with no breadcrumbs written). `templates/BRAIN.md`
+  Capture Contract names the failure mode and instructs "append the breadcrumb per meaningful turn
+  yourself; the `Stop` hook automates it where wired, but write it even when no hook fires — nothing
+  fires without you acting, there is no idle daemon." `references/consolidate.md` "Journal Breadcrumb
+  Contract" mirrors the instruction-first framing and adds a **provisional note** — the per-turn
+  breadcrumb is a **token-optimization to revisit** when a Cortex T2 Engram-style FTS journal lands
+  (cross-links `ROADMAP.md` → "Engram-style searchable journal — Cortex"), never a CORE dependency.
+  `SKILL.md` §d adds a **per-host degradation floor** (Claude Code / Copilot / Codex / Cursor / Gemini)
+  spelling out the **instruction-only breadcrumbs + manual `/synaptic-consolidate`** fallback when a
+  host has no usable hooks, plus a **"PreCompact not fired? SessionStart-rescue is the net"**
+  cross-reference. Reconciled with the honest-limits section (no native idle detection / never an
+  unattended idle daemon at CORE). The size-locked `BEGIN:SYNAPTIC` bridge block is left
+  **byte-for-byte untouched** (the instruction already lives in CORE via `BRAIN.md`; per the adversarial
+  council, the strengthening was retargeted off the bridge).
 - **Tooling / environment notes + deletion ledger as a standing rule.** The AGENT runbook gains a
   "Tooling / environment notes" appendix framing four host quirks as **ENV diagnostics, not Synaptic
   rules**: Git Bash has no `rg` (use `grep -rn` / `git grep` / the agent's search — every grep-style

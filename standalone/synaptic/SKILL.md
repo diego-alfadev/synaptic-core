@@ -395,10 +395,35 @@ gracefully** — never fail if a layer is unavailable.
    skill via the host runtime (append-breadcrumb for `Stop`; `/synaptic-consolidate` for the rest).
 3. **Always deploy `Stop`** (universal). Deploy `PreCompact` / `SessionStart` / `SessionEnd` only
    where the detected host supports them.
-4. **Degrade gracefully:** if the host exposes **no usable hooks**, deploy nothing and tell the
-   user plainly: *"This host has no capture hooks — run `/synaptic-consolidate` manually at the end
-   of meaningful work (and `/synaptic-maintain` periodically)."* The brain still works fully; only
-   the automation degrades.
+4. **Degrade gracefully:** if the host exposes **no usable hooks**, deploy nothing and fall back to
+   the **instruction layer**: the breadcrumb contract in `BRAIN.md` still instructs the agent to
+   append a one-line journal breadcrumb per meaningful turn *by hand*, so the breadcrumb floor holds
+   with zero automation. Tell the user plainly: *"This host has no capture hooks — the agent still
+   writes per-turn breadcrumbs as an instruction; run `/synaptic-consolidate` manually at the end of
+   meaningful work (and `/synaptic-maintain` periodically)."* The brain still works fully; only the
+   automation degrades — the instruction-layer breadcrumb is what closes issue #2 on hook-less hosts.
+5. **Per-host degradation floor (what stays when a layer is missing).** On **every** host the
+   instruction-layer breadcrumb is the floor, so no host is ever breadcrumb-empty:
+   - **Claude Code** — full set (Stop, PreCompact, SessionStart, SessionEnd).
+   - **Copilot** — Stop + PreCompact + SessionStart; no SessionEnd → clean-exit consolidation falls
+     back to the SessionStart-rescue net (below) or a manual `/synaptic-consolidate`.
+   - **Codex / `AGENTS.md` host** — Stop + PreCompact + SessionStart + SessionEnd as available; any
+     absent layer → instruction-only breadcrumbs + manual `/synaptic-consolidate`.
+   - **Cursor** — Stop + SessionStart only; **no PreCompact** → flush-before-compaction falls back to
+     the SessionStart-rescue net + instruction-only breadcrumbs.
+   - **Gemini CLI** — Stop + SessionStart where exposed; anything not exposed →
+     instruction-only breadcrumbs + manual `/synaptic-consolidate`.
+
+> **PreCompact not fired? SessionStart-rescue is the net.** On any host where `PreCompact` is absent
+> or silently fails to fire, the next-boot `SessionStart` rescue detects the unconsolidated
+> breadcrumbs / active playgrounds and offers to consolidate (see `references/audit.md`'s half-done
+> check). Because the instruction-layer breadcrumb wrote the trail regardless, nothing is lost — the
+> rescue simply consolidates it on the next session.
+
+> **Breadcrumb cadence is provisional (token-optimization to revisit).** The per-turn breadcrumb is
+> good for now, not a fixed rule: a future Cortex T2 Engram-style FTS journal index (`ROADMAP.md` →
+> "Engram-style searchable journal — Cortex") may make it partly redundant as a search surface.
+> Revisit the cadence when that layer lands — never a CORE dependency.
 
 **Honest limits (do not overclaim — v1-final §5.9, §9.1):**
 - **No agent has native idle detection.** This is **passive, event-driven** capture on hook-capable
