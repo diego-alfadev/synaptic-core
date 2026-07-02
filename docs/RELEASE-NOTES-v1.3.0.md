@@ -13,6 +13,23 @@ jargon. **Part B** is the change-level technical detail.
 
 ---
 
+## TL;DR — which path are you on?
+
+- **Already on Synaptic v1 (v1.0.0+)?** → This is an **UPGRADE, not a migration.** No schema change,
+  nothing to migrate. Update/reinstall the skill so the engine is `1.3.0`; optionally start tagging
+  `lifecycle:` on nodes. The new interactive graph, god-node audit and hardened checks come for free.
+  **→ Follow [`docs/UPGRADE-v1.x-to-v1.3.0.md`](UPGRADE-v1.x-to-v1.3.0.md).** (Invoking
+  `/synaptic-upgrade` on an already-`1.0` brain just refreshes the engine + offers PARA — it does **not**
+  run a full migration.)
+- **Still on v0.3 (pre-1.0)?** → This is a **MIGRATION** and it lands you on v1.3.0. Back up first,
+  run it guided, one commit per phase, and pass the retrieval drill before cutover (git fast-forward).
+  **→ Follow [`docs/UPGRADE-v0.3-to-v1.md`](UPGRADE-v0.3-to-v1.md)** (paste-to-agent runbook:
+  [`docs/UPGRADE-v0.3-to-v1.AGENT.md`](UPGRADE-v0.3-to-v1.AGENT.md)). Needs Node for the tools (else the
+  documented manual fallbacks).
+- **Brand new?** → `/synaptic-init`.
+
+---
+
 ## Part A — What v1.3.0 gives you
 
 - **Safer, more honest migrations.** A brain can be *structurally* clean and still be hard to
