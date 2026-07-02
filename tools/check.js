@@ -341,6 +341,18 @@ const NINETY_DAYS_MS = 90 * 24 * 60 * 60 * 1000;
 const KNOWLEDGE_BUDGET = 150;
 const BRAIN_BUDGET = 110;
 
+// Closed, lowercase token sets for the two OPTIONAL orthogonal frontmatter axes
+// (v1.4.0 §5.5). Both are advisory-only surfaces — an out-of-set value is a WARN
+// (typo/near-collision), never an ERROR, and NEVER gates the exit code (C1 exit-0
+// discipline). Kept as module-level constants so the frontmatter check and the
+// token advisory share ONE source of the allowed tokens (no second hand-kept list).
+//   status    — content trust/freshness: is this still true/current?
+//   lifecycle — role/actionability: what part does this play in my work now?
+// Absent-defaults differ (documented in docs/): absent `status` = UNTRIAGED (never
+// silently promoted to `active`); absent `lifecycle` = the benign role default `area`.
+const STATUS_ENUM    = ['active', 'stale', 'archived'];
+const LIFECYCLE_ENUM = ['project', 'area', 'resource', 'dormant'];
+
 // ---------------------------------------------------------------------------
 // Findings collector
 // ---------------------------------------------------------------------------
@@ -434,8 +446,28 @@ function checkFrontmatter() {
     for (const field of REQUIRED_FIELDS) {
       const val = fm[field];
       if (val === undefined || val === null) {
+        // Absent `status` is UNTRIAGED — neither trusted-current nor stale — and is
+        // NEVER silently promoted to `active` (v1.4.0 §5.5(b)). On knowledge/registries
+        // nodes `status` is REQUIRED, so an absent value ERRORs here rather than being
+        // read as a benign default; the token advisory below covers the fail-open
+        // sibling case (present-but-mistyped, which passes this presence check).
         err(filePath, `frontmatter missing required field: ${field}`);
       }
+    }
+
+    // status: typo-advisory (v1.4.0 §5.5(c) fix (c)). `status` passes the presence
+    // check above as long as SOME value is present — so a hand-edit typo (`Active`,
+    // `Archived`, `stalr`, a trailing-space `active `) sails through and would then be
+    // treated by downstream tooling as an UNKNOWN token (effectively unset → fail-open,
+    // silently NOT `active`). Surface it as a WARN (never ERROR/gate) so the typo is
+    // visible instead of failing open. Mirrors the lifecycle WARN below; parseFrontmatter
+    // already .trim()s scalar values, so a trailing-space value is normalised before the
+    // set test (an author who wrote `Active ` sees "Active", the real defect).
+    // author-complete; verify with Node on Robinson's run.
+    const status = fm.status;
+    if (status !== undefined && status !== null &&
+        !STATUS_ENUM.includes(String(status).trim())) {
+      warn(filePath, `frontmatter "status" is "${status}" — expected one of ${STATUS_ENUM.join(' | ')} (a mistyped value fails open: it is treated as unknown/untriaged, NOT silently as "active")`);
     }
 
     // tags: must be a YAML list
@@ -450,14 +482,13 @@ function checkFrontmatter() {
     }
 
     // lifecycle: OPTIONAL additive axis — never required, never ERRORs. If present, it must be
-    // one of the closed enum values; an out-of-enum value is a WARN (typo/near-collision), never
-    // a gate. Absent → legal (treated as `area`; no schema bump).
+    // one of the closed enum values (module-level LIFECYCLE_ENUM, shared with the status advisory
+    // above); an out-of-enum value is a WARN (typo/near-collision), never a gate. Absent → legal
+    // (treated as `area`; no schema bump). (v1.4.0 §5.5(c) — the lifecycle half of the typo-advisory.)
     const lifecycle = fm.lifecycle;
-    if (lifecycle !== undefined && lifecycle !== null) {
-      const LIFECYCLE_ENUM = ['project', 'area', 'resource', 'dormant'];
-      if (!LIFECYCLE_ENUM.includes(String(lifecycle).trim())) {
-        warn(filePath, `frontmatter "lifecycle" is "${lifecycle}" — expected one of ${LIFECYCLE_ENUM.join(' | ')} (optional field; leave absent for the default "area")`);
-      }
+    if (lifecycle !== undefined && lifecycle !== null &&
+        !LIFECYCLE_ENUM.includes(String(lifecycle).trim())) {
+      warn(filePath, `frontmatter "lifecycle" is "${lifecycle}" — expected one of ${LIFECYCLE_ENUM.join(' | ')} (optional field; leave absent for the default "area")`);
     }
   }
 }
