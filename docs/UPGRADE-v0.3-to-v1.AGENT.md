@@ -7,6 +7,14 @@
 > skill-side procedure the agent executes lives in
 > **`standalone/synaptic/references/upgrade-to-v1.md`** (it is fetched in Step 0).
 >
+> **This lands you on v1.3.0.** Step 0 installs the *current* skill, so a fresh v0.3 → v1 migration
+> today produces a brain on the latest engine (**v1.3.0**) — brain **schema still `1.0`** — with the
+> **PARA lifecycle axis** (optional `lifecycle:` field, absent → `area`, backward-compatible), the
+> **hardened `check.js`** (retrieval-readiness report + structural≠retrieval caveat), the interactive
+> `graph.html`, and the god-node audit. The migration STEPS are unchanged by v1.3.0; you simply end up
+> current. **Node:** OPTIONAL for the migration (every step is tagged; each Node step has a `[no Node]`
+> fallback), but the `tools/*.js` accelerators need **Node ≥ 18** — without it, run the manual matrix.
+>
 > **Design stance (read before running).** This is **non-destructive and minimally-destructive by
 > construction**: the work is mostly *refactor + construction* (re-file, re-link, add frontmatter).
 > Deletions are **never silent** — every removal is surfaced and confirmed, and originals are kept in
