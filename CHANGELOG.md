@@ -72,6 +72,16 @@
   and an explicit note that `dormant`/`resource` are NOT orphans), and `BRAIN.md`. `tools/check.js`
   adds an advisory WARN when a present `lifecycle:` value is out of enum — never required, never an
   ERROR.
+- **Local-vs-remote data-boundary governance doc.** New `docs/concepts/local-vs-remote-boundary.md`
+  (linked from the concepts `_index.md`) draws the explicit line between what stays 100% local and
+  what — if anything — leaves the machine: a four-layer boundary table (CORE files / TOOLS / host
+  LLM / future Cortex), the reusable governance one-liner, the "only one egress point" argument (the
+  host LLM's context is the sole boundary, governed by the host's policy, not ours — Synaptic adds no
+  server, DB, telemetry, or new network boundary), regulated-enterprise applicability (locked-down
+  laptop, auditable by inspection, no platform rollout), an honest Cognee contrast framed
+  community-over-combat (opaque runtime vs inert auditable files, no overclaim), and an honest-limits
+  section stating plainly that Synaptic adds no new egress but does **not** police it — access control
+  is the host's and filesystem's job. Swedbank-agnostic ("a regulated enterprise client").
 
 ## v1.2.0 — Upgrade path + seat brains · 2026-06-26
 
