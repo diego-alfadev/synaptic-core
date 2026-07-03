@@ -1,3 +1,5 @@
+<!-- summary: DIAGNOSE brain health — staleness, orphans, broken links, MOC/cross-link coverage, god-nodes, capture-yield, status/lifecycle typos, registry integrity (diagnose-only, routes fixes elsewhere). -->
+
 # /synaptic-audit — Brain Health Audit Reference
 
 Cross-session review for staleness, orphan nodes, broken links, MOC coverage, **horizontal
@@ -62,8 +64,40 @@ live projects. Skip any node with no `lifecycle:` field (absent → `area`, noth
 > not de-registration. It **must not** trigger the Step 2 orphan check, and its `updated:` staleness
 > is expected (Step 1 may still note age, but it is not a lifecycle-cadence finding).
 
+> **The audit reads ALL statuses and ALL lifecycles.** `lifecycle: dormant` scopes only the **default
+> working set** (the load-priority signal), **NOT** what the audit inspects. The audit (like
+> `/synaptic-handover`) reads **every** node regardless of `lifecycle` or `status` — a `dormant` or
+> `resource` node is still audited; a `status: stale` node is **flagged, not hidden**. Only `lifecycle`
+> ever scopes the *default* load; `status` **never** causes omission.
+
 **No runtime required.** Grep `lifecycle:` values and compare `updated:` — same by-hand posture as
 every other check here.
+
+---
+
+## Step 1b — `status` / `lifecycle` typo advisory (WARN — cheap grep, non-gating)
+
+`status` is **REQUIRED** on knowledge/registries nodes; `lifecycle` is the **OPTIONAL** axis (absent →
+`area`). A hand-edit typo (`Active`, `dorment`, `Archived`) is *present* (so it passes the required-field
+check) but is an **unknown token** — it would otherwise be read as an unknown value and silently defaulted
+(`status` → `untriaged`, never `active`; `lifecycle` → `area`), i.e. failing open. Surface it instead.
+**Advisory, WARN never ERROR** (C1 exit-0 discipline):
+
+- Grep every `status:` and `lifecycle:` value; flag any **NOT** in the allowed lowercase token set:
+  - `status ∈ {active, stale, archived}`
+  - `lifecycle ∈ {project, area, resource, dormant}`
+- Report each off-vocabulary value with its node path → *"`status: Active` is not a valid token (did you
+  mean `active`?) — a mistyped value is treated as absent and silently defaulted."*
+
+**Value semantics the audit surfaces (do not conflate):**
+
+- **`status` is REQUIRED — an unknown value reads as `untriaged`.** A node with **no** `status:` is a
+  `check.js` **ERROR** (missing required field), not a default; surface it as a hard finding. An
+  **unknown/mistyped** `status` value (present but off-vocabulary) is neither trusted-current nor stale —
+  read it as `untriaged` and **never silently promote it to `active`.**
+- **`lifecycle` absent → `area`** — a benign role default (loads by default). Not a finding.
+
+**No runtime required.** Pure grep over frontmatter values.
 
 ---
 
@@ -289,6 +323,58 @@ consolidate now or defer:
 - Open playgrounds ≥ 3: "Half-done — N open playgrounds. Run `/synaptic-consolidate` to process and close completed task workspaces."
 - Journal lines since last consolidation ≥ 60: "Half-done — journal at N pending breadcrumbs since last consolidation. Run `/synaptic-consolidate` before the journal nears 80 lines."
 - Any untracked playground, stale active-playground entry, drifted `content_hash`, or unresolved `contradicts`: list each as a half-done finding routed to `/synaptic-consolidate` (or `/synaptic-maintain` for the orchestrated sweep).
+
+---
+
+## Step 9b — Capture-Yield + used-but-capture-dead (WARN — advisory, non-gating)
+
+The thesis verb is **capture**. This advisory answers *does daily work produce breadcrumbs/nodes, or is
+the brain silently empty?* — from files alone. **Advisory (exit-0 / never gates)**, like every check here.
+
+**The heartbeat decouples "session opened" from "work captured".** The `SessionStart` boot heartbeat
+(`SKILL.md` §d — the FIRST thing a session writes, a one-line `journal/` boot marker) is
+**capture-INDEPENDENT**, so boots are counted even when nothing else is captured. That lets this step
+distinguish two states the naive "zero artifacts" signal conflates:
+
+- **`not-used`** — **0 boots** in the window → **benign** (nobody worked; not a capture problem). **No
+  advisory.**
+- **`used-but-capture-dead`** — **boots present, 0 captured** (0 new breadcrumbs, 0 nodes over the
+  window) → raise a **distinct "hooks-appear-dead" advisory** pointing to the per-host hook smoke-test.
+  This is the actionable failure. *(This is the refined meaning of "silent-empty": used-but-capture-dead,
+  NOT "empty brain".)*
+
+**The expected artifact is a well-formed STRUCTURED summary, not just any text (v1.4.0).** The
+structured session-summary protocol (`SKILL.md` §d / `references/consolidate.md` — inspired by
+Engram-class memory-log protocols, fully file-based) defines the shape capture is *supposed* to leave:
+a short summary mapped onto **Resume Anchor (Goal/Next-Steps) · Watch List (Discoveries) · Log
+(Accomplished)**, with files named inline. So *"did meaningful capture happen?"* checks for **that
+shape** — a populated Resume Anchor / Watch List / dated Log line at a session boundary — **not merely
+the presence of some text**. A journal that grew a wall of raw, unstructured, duplicated lines (a
+"bible") is a capture-quality finding, not a healthy yield; a boot-heartbeat line alone is a boot, not
+a captured summary.
+
+**Capture-yield section (compute from files — journal timestamps + git log / frontmatter `updated`):**
+
+- **breadcrumbs-per-session** — journal breadcrumb count ÷ session (boot) count.
+- **nodes-added-per-week** — `knowledge/**` nodes whose `updated`/creation falls in the week.
+- **% of meaningful sessions that captured something** — of sessions that did real work (heuristic:
+  touched files / lasted beyond a trivial threshold), the fraction that left ≥1 breadcrumb or node.
+  A "capture" here means a **well-formed structured summary** (the shape above), not a bare unstructured
+  line.
+
+**Bias-check (state it):** directional, single-brain, not statistically robust — a *yield* signal, not
+an accuracy claim. The **%-meaningful metric is NON-comparable across hosts** (its "meaningful session"
+heuristic resolves differently per host; hook-less hosts have no reliable session boundary, OneDrive
+placeholder state skews file-touch counts). For any cross-host or trend reading, **prefer the two robust
+counts**: **breadcrumbs per artifact-counted session** (denominator = boots we can actually count via
+the heartbeat, not a heuristic) and **nodes-per-week** (from frontmatter `updated` / git log).
+
+**Report example:** *"12 sessions BOOTED, 0 new breadcrumbs, 0 nodes added in 7 days →
+HOOKS-APPEAR-DEAD (used-but-capture-dead): capture is likely not firing on this host — run the per-host
+hook smoke-test."* A different brain: *"0 boots in 7 days → not-used (benign)"* — no advisory.
+
+**No runtime required.** Degree/count math over files (journal timestamps + frontmatter/git), LLM-free.
+*The heartbeat's actual firing is author-complete; verify on a real (Robinson) run.*
 
 ---
 

@@ -1,3 +1,5 @@
+<!-- summary: A generative pass over the curated brain — write new synthesis nodes (cross-source patterns, concept evolution, orphan rescue), each with wikilinks + MOC registration. Does not replace consolidate. -->
+
 # /synaptic-synthesize — Generative Synthesis Reference
 
 A **generative** pass that runs over the **already-curated brain** and writes **new synthesis

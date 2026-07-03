@@ -12,6 +12,9 @@ Read it newcomer-first, top to bottom — each doc is self-contained, opens with
 6. [Matrioshka architecture — CORE, Cortex, Ecosystem](./architecture-matrioshka.md) — the single runtime test that draws the layers, the proven ideas the substrate is built on, the deferred horizon, the optional tooling, and the full directory layout.
 7. [Local-vs-remote data boundary](./local-vs-remote-boundary.md) — where the data actually goes: the four-layer boundary table, the "only one egress point" argument, and the honest limit that Synaptic adds no new egress but does not police it — the governance line for a regulated enterprise client.
 8. [Verb contract — our four verbs vs Cognee's](./verb-contract.md) — the authored-verb mapping (`consolidate` / `weave` / `synthesize` / `maintain`) against Cognee's, and why `memify` is not a separate CORE verb but a Phase-4 direction gated on a usage signal CORE lacks.
+9. [Reach — how far a brain sees](./reach.md) — reach = harness placement, not folder location; the three reference points on one axis (folder / workspace-broad / user-global); "one reach at a time" in v1.4.0; and the leak rule as the whole confidentiality control.
+10. [`status` vs `lifecycle`](./status-vs-lifecycle.md) — the two orthogonal, optional frontmatter axes: content trust/freshness vs role/actionability; which axis scopes the default load; the combined-value corners; and why neither bumps the schema.
+11. [Simplicity guardrail](./simplicity-guardrail.md) — the standing rule that keeps "just files, zero runtime, any agent" true as the product grows: the three-point (optional · files-only intact · no schema bump) design-time check.
 
 ---
 

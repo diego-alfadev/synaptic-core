@@ -1,3 +1,5 @@
+<!-- summary: Graph-gardening pass — propose missing typed-edge [[links]] (propose-never-write), flag under-connected nodes, detect concept gaps, suggest merges, promote recurring themes. -->
+
 # /synaptic-weave — Graph-Gardening Operation
 
 A deliberate re-wiring and connection-quality pass over the brain. Run periodically or on
