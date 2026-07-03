@@ -65,4 +65,4 @@ Portable operating norms of this team or project. Load on demand (e.g. before wr
 
 ---
 
-> This file is the **source**; it is **deployed into your harnessing** (instruction file / AGENTS.md block — **symlink preferred over copy**) so it sits in the agent's system prompt, not read from the brain at session start. Full security/ops rules in `harness/guardrails.md`.
+> This file is the **source**; it is **deployed into your harnessing** (instruction file / AGENTS.md block — **copy, or a symlink ONLY on a POSIX local, non-synced path**) so it sits in the agent's system prompt, not read from the brain at session start. Full security/ops rules in `harness/guardrails.md`.

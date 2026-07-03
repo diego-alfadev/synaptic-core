@@ -118,6 +118,14 @@ The v1 file contract (frontmatter + tags + INDEX + `[[wikilinks]]` + registries)
 
 > **Private only.** A shared brain is **private and access-controlled**. A *public* brain pattern is **rejected for any client-facing material** — knowledge bases accrete sensitive context; confidentiality and governance come first. It may be described generically (away from any client context) only as a pattern-with-a-confidentiality-caveat.
 
+### Multi-brain coexistence — **deferred (Cortex / v2.0)**
+
+**What:** more than one brain active over the same folder at once, with deterministic arbitration between them (today it stays **one brain per workspace** — reach means one brain reachable from more folders, not two active brains firing together).
+
+**Why deferred:** the v1.4.0 REACH model and the nesting setup-check deliberately warn-don't-guard against a second brain nested inside a global brain's coverage, because simultaneous coexistence needs an arbitration layer that is out of scope for v1. It is parked to **Cortex / v2.0**; `references/convert-to-global.md` and the CHANGELOG reference this same deferral.
+
+**Constraint:** CORE never requires it — a workspace works fully with exactly one resolvable bridge.
+
 ### Engram-style searchable journal — **Cortex**
 
 **What:** a derived SQLite + FTS5 layer **over the journal** — fast full-text history ("did I solve a ticket like this before?"), change-history queries, and O(log n) lookups, all built from the files.

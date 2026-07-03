@@ -1,3 +1,5 @@
+<!-- summary: The orchestrated diagnose-then-treat sweep — runs audit, then consolidate/reconcile/synthesize/weave in order, approval-gated, bounded-reversible, diff-traced, archive-before-delete. -->
+
 # /synaptic-maintain — Brain Maintenance Procedure Reference
 
 The **orchestrated diagnose-then-treat sweep** for the whole brain. `/synaptic-maintain` runs the

@@ -1,3 +1,5 @@
+<!-- summary: Distil an external document (or a task/playground directory) into an atomic knowledge node + reference entry, applying the consolidation promotion + quality-gate steps to a single source. -->
+
 # /synaptic-ingest — Document Ingestion Reference
 
 Ingest an external document into the brain. Usage: `/synaptic-ingest path/to/file.ext`

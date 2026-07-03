@@ -76,7 +76,8 @@ Run on consolidation (manual `/synaptic-consolidate`, or offered at session end 
 
 > Conventions and guardrails live in `harness/conventions.md` + `harness/guardrails.md` as the
 > **source**, and are **deployed into your harnessing** (instruction files / AGENTS.md block —
-> **symlink preferred over copy**) so they sit in the agent's **system prompt**. They are **not**
+> **copy, or a symlink ONLY on a POSIX local, non-synced path**) so they sit in the agent's
+> **system prompt**. They are **not**
 > read from the brain at session start — only when you edit them, or to verify the deployed copy is
 > in sync. (No guardrails block lives here: a boot-time read would duplicate the system prompt.)
 
@@ -108,15 +109,7 @@ Run on consolidation (manual `/synaptic-consolidate`, or offered at session end 
 
 ## Commands
 
-Provided by the `synaptic` skill (installed in `.claude/skills/` or `.agents/skills/`):
-
-| Command | Action |
-|---|---|
-| `/synaptic-init` | Scope-aware setup interview; self-wires harness; assembles the example brain on demand from the skill's bundled templates |
-| `/synaptic-consolidate` | Run the 6-step capture contract on current session output |
-| `/synaptic-ingest [file]` | Distill a document into an atomic node + reference entry |
-| `/synaptic-audit` | Check for orphans, broken links, stale nodes, MOC coverage, registry integrity |
-| `/synaptic-upgrade` | Migrate brain to a newer synaptic-core version |
+Commands are provided by the `synaptic` skill (installed in `.claude/skills/` or `.agents/skills/`) — see the bridge command listing (the `BEGIN:SYNAPTIC` block in AGENTS.md) or the `SKILL.md` Operations table for the full, current set. This file keeps no separate command list, so nothing here can drift out of sync with the skill.
 
 ---
 

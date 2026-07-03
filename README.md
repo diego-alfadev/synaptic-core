@@ -18,7 +18,7 @@ Synaptic-core is an **AI Brain**: a folder of plain Markdown files that turns yo
 
 ## Install
 
-Pick the tier that matches your setup. They all end the same way: a `.synaptic/` brain in your project and `/synaptic-init` ready to run.
+Pick the tier that matches your setup. They all end the same way: a `.synaptic/` brain and `/synaptic-init` ready to run. The default sets up a brain for the current project; the same one brain can instead follow you across every folder you open — that is a placement choice, not a different install. See [reach](docs/concepts/reach.md) for how far a brain sees.
 
 Works with **any agent that can fetch a URL and write files** — Claude Code, Cursor, Gemini CLI, Codex, OpenCode, and more. Hosts without slash-command support still get the full brain via the skill-less fallback at the end of this section.
 
@@ -117,6 +117,13 @@ The landing invites; the docs explain. Start at the index, then follow the threa
 - [docs/concepts/navigation-and-planes.md](docs/concepts/navigation-and-planes.md) — MOC-of-MOCs bounded navigation and the two-plane (wiki · harness) model
 - [docs/concepts/capture-and-consolidation.md](docs/concepts/capture-and-consolidation.md) — the 6-step formula and the capture dial (`selective` / `balanced` / `capture-all`)
 - [docs/concepts/architecture-matrioshka.md](docs/concepts/architecture-matrioshka.md) — CORE · Cortex · Ecosystem, and why hooks are CORE
+- [docs/concepts/reach.md](docs/concepts/reach.md) — reach = harness placement, not folder location; folder / workspace / user-global on one axis; the leak rule
+- [docs/concepts/status-vs-lifecycle.md](docs/concepts/status-vs-lifecycle.md) — the two orthogonal, optional frontmatter axes (content trust vs role/actionability) and why neither bumps the schema
+- [docs/concepts/simplicity-guardrail.md](docs/concepts/simplicity-guardrail.md) — the standing rule that keeps "just files, zero runtime, any agent" true as the surface grows
+
+Not a developer? Start here:
+
+- [docs/FOR-MANAGERS-AND-POS.md](docs/FOR-MANAGERS-AND-POS.md) — what a manager or PO actually does with a brain, and a minimal way to use one with just a chat assistant
 
 And the two longer reads:
 
