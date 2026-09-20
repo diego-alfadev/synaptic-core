@@ -1,6 +1,6 @@
 ---
 name: synaptic
-version: 1.4.0          # engine semver (skill code) — independent of the brain schema/format version stamped in BRAIN.md
+version: 1.5.0          # engine semver (skill code) — independent of the brain schema/format version stamped in BRAIN.md
 supported_schema: ">=1.0 <2.0"   # brain schema/format versions this engine can read. A skill update reinstalls the skill with NO brain migration; only a schema/format change runs /synaptic-upgrade.
 description: >
   Knowledge-graph memory layer for project work — a portable, file-based brain that turns
@@ -506,10 +506,61 @@ gracefully** — never fail if a layer is unavailable.
 
 | Layer | Trigger | Host support | What it does |
 |---|---|---|---|
-| **(a) Stop breadcrumb** | per assistant turn (`Stop`) | **UNIVERSAL — all 5 agents** | Append **one terse line** to `journal/_current.md` (the meaningful change/decision this turn). The **workhorse + crash-proof floor**. **Fixed cost; NOT governed by `capture_policy`.** |
+| **(a0) Activity marker** | per `Stop` + `SessionStart` | hook-capable hosts | **Host-executed shell append** of ONE deterministic line to `journal/_activity/<host>-<date>.log` — see "Deterministic activity marker" below. **The mechanical proof-of-life floor: it fires whether or not the agent does anything.** Content-free; not semantic capture. |
+| **(a) Stop breadcrumb** | per assistant turn (`Stop`) | **UNIVERSAL — all 5 agents** | Append **one terse line** to `journal/_current.md` (the meaningful change/decision this turn). The **semantic workhorse** — best-effort: it is an instruction the agent follows, so it is NOT the non-empty guarantee (a0 is). **Fixed cost; NOT governed by `capture_policy`.** |
 | **(b) PreCompact flush** | before context compaction (`PreCompact`) | **Claude / Copilot / Codex** | Run `/synaptic-consolidate` (or flush breadcrumbs) **before context is lost** — the gem for long/abused sessions. |
-| **(c) SessionStart heartbeat + rescue** | on next boot (`SessionStart`) | most hook-capable hosts | **FIRST**, append a capture-INDEPENDENT one-line **boot heartbeat** to `journal/_current.md` (see below) so boots are counted even when nothing else is captured. **THEN** detect **unconsolidated breadcrumbs / active playgrounds** and **offer to consolidate** — recovers abandoned sessions. Pairs with `/synaptic-audit`'s half-done check = the abandonment safety sweep. |
+| **(c) SessionStart heartbeat + rescue** | on next boot (`SessionStart`) | most hook-capable hosts | **FIRST**, the capture-INDEPENDENT **boot marker** is written by the layer-(a0) shell append into `journal/_activity/<host>-<date>.log` (v1.5.0 — moved out of `journal/_current.md`; see the migration note below) so boots are counted even when nothing else is captured. **THEN** detect **unconsolidated breadcrumbs / active playgrounds** and **offer to consolidate** — recovers abandoned sessions. Pairs with `/synaptic-audit`'s half-done check = the abandonment safety sweep. |
 | **(d) SessionEnd bonus** | clean exit (`SessionEnd`) | **bonus where present** (NOT Copilot-IDE, NOT Cursor) | On clean exit, offer/run consolidation. A bonus only — capture must **never depend on it**. |
+
+> **Deterministic activity marker (v1.5.0 — the mechanical non-empty floor; layer a0).** Layers (a)–(d)
+> are **instructions the agent follows** when a hook fires. If the agent does not follow them (long or
+> abused sessions, compaction, or simply not doing it), **nothing is written** — which is why journals
+> could still end up empty (repo issue #2a). Layer **(a0)** closes that at the floor by having the **host
+> itself** run a shell command the agent cannot skip:
+>
+> - **Write = PURE BLIND APPEND of ONE line.** No read, no dedup, no rewrite — a read-modify-write is
+>   program-shaped (not expressible identically across shells) and would risk sync conflict-copies.
+> - **Line shape (stable field contract):** `<ISO-8601-UTC timestamp> <event>` where
+>   `event ∈ {boot, stop}`. Nothing that needs an LLM or a JSON parser. *(A host session-id from hook
+>   stdin is OPTIONAL enrichment — POSIX `sh` has no JSON parser, so it is never part of the floor.)*
+> - **Destination: `journal/_activity/<host>-<YYYY-MM-DD>.log`** — **per host + per day**, so two hosts
+>   (or two concurrent sessions) never contend on one file. This is what keeps it safe on
+>   OneDrive/DFS-synced brains: many small appends, no shared rewrite. `/synaptic-init` and
+>   `/synaptic-upgrade` **create `journal/_activity/`** (the append fails if the directory is absent).
+> - **Encoding PINNED: UTF-8, no BOM.** Windows PowerShell 5.1's `>>` / `Add-Content` / `Out-File`
+>   default to **UTF-16LE + BOM**, which would make the shared ledger non-grep-clean and produce
+>   binary-ish git diffs. Use the pinned forms below.
+>
+> ```sh
+> # POSIX sh (Linux/macOS) — Stop; use `boot` for SessionStart
+> printf '%s stop\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "<brain>/journal/_activity/$(hostname)-$(date -u +%F).log"
+> ```
+> ```powershell
+> # Windows PowerShell 5.1 — UTF-8 no BOM (do NOT use >> or Add-Content defaults)
+> $p = "<brain>\journal\_activity\$env:COMPUTERNAME-$((Get-Date).ToUniversalTime().ToString('yyyy-MM-dd')).log"
+> [IO.File]::AppendAllText($p, ((Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ') + " stop`n"), (New-Object Text.UTF8Encoding $false))
+> ```
+>
+> **Bound / rollup is AGENT-owned, never the hook.** `/synaptic-consolidate` (or `/synaptic-audit`)
+> prunes and rolls up old per-day activity logs. The hook only ever blind-appends.
+>
+> **What this does and does NOT guarantee (read this before quoting it).** On a **hook-capable** host, a
+> worked session leaves a **non-empty** activity log regardless of what the agent does. On a
+> **hook-less** host there is **no** shell floor — there, `/synaptic-audit` Step 9b reports capture-yield
+> as **unknown** and the instruction-layer breadcrumb stays best-effort: low capture is made **VISIBLE,
+> not prevented**. The activity marker is **proof-of-life + the yield-audit denominator ONLY** — it is
+> **not** semantic capture, and it is **not** the artifact a future Cortex MemoryLog mirrors (that is the
+> semantic breadcrumb in `journal/_current.md` — see the dual-write note below).
+>
+> **Migration (v1.4.0 → v1.5.0).** The v1.4.0 boot heartbeat wrote `- boot: …` **into
+> `journal/_current.md`**. v1.5.0 moves the boot event into the activity log so there is **ONE
+> authoritative boot ledger**; `/synaptic-upgrade` deploys the (a0) hooks, creates `journal/_activity/`,
+> and stops emitting the in-body boot line (existing `- boot:` lines in `_current.md` are harmless
+> history — `/synaptic-consolidate` prunes them on its next Journal-Trim pass). `_current.md` keeps only
+> its curated Resume Anchor / Watch List / Log + semantic breadcrumbs, protecting its ≤80-line budget.
+>
+> *(Host coverage for a shell-append-on-Stop is UNVERIFIED beyond Claude Code — see "Per-host activity
+> marker support" below. Author-complete; first real runtime validation is a real (Robinson) run.)*
 
 > **Structured session-summary capture protocol (v1.4.0 — inspired by Engram-class memory-log
 > protocols; fully file-based, zero-runtime).** The per-turn `Stop` breadcrumb (layer a) is one terse
@@ -561,6 +612,10 @@ gracefully** — never fail if a layer is unavailable.
    same discipline as the AGENTS.md fragment: replace a `BEGIN:SYNAPTIC-HOOKS` … `END:SYNAPTIC-HOOKS`
    block if present, else add it; never touch unmarked user hooks). The hook command invokes the
    skill via the host runtime (append-breadcrumb for `Stop`; `/synaptic-consolidate` for the rest).
+2b. **Deploy the layer-(a0) activity marker (v1.5.0) wherever the host runs a shell command on a
+   hook** — create `journal/_activity/` and wire the pinned platform-appropriate one-liner (UTF-8
+   no-BOM) to `Stop` (`stop`) and `SessionStart` (`boot`). This is the only layer that does not depend
+   on the agent complying, so deploy it first and report whether the host accepted it.
 3. **Always deploy `Stop`** (universal). Deploy `PreCompact` / `SessionStart` / `SessionEnd` only
    where the detected host supports them.
 4. **Degrade gracefully:** if the host exposes **no usable hooks**, deploy nothing and fall back to
@@ -569,9 +624,16 @@ gracefully** — never fail if a layer is unavailable.
    with zero automation. Tell the user plainly: *"This host has no capture hooks — the agent still
    writes per-turn breadcrumbs as an instruction; run `/synaptic-consolidate` manually at the end of
    meaningful work (and `/synaptic-maintain` periodically)."* The brain still works fully; only the
-   automation degrades — the instruction-layer breadcrumb is what closes issue #2 on hook-less hosts.
-5. **Per-host degradation floor (what stays when a layer is missing).** On **every** host the
-   instruction-layer breadcrumb is the floor, so no host is ever breadcrumb-empty:
+   automation degrades. **Be honest about what remains:** with no hooks there is **no mechanical
+   floor** — the instruction-layer breadcrumb is *best-effort*, so a session CAN end with nothing
+   captured. What the brain still guarantees on such a host is **visibility**, not prevention:
+   `/synaptic-audit` Step 9b reports capture-yield as *unknown (no activity floor on this host)* and
+   the half-done/rescue checks still surface abandoned work. *(This supersedes the pre-v1.5.0 claim
+   that the instruction-layer breadcrumb "closes issue #2 on hook-less hosts" — it does not; issue
+   #2a's floor half is closed by the layer-(a0) activity marker, and only on hook-capable hosts.)*
+5. **Per-host degradation floor (what stays when a layer is missing).** The **mechanical** non-empty
+   floor is layer (a0) on hook-capable hosts; the instruction-layer breadcrumb is the **best-effort
+   semantic** layer everywhere (never a guarantee):
    - **Claude Code** — full set (Stop, PreCompact, SessionStart, SessionEnd).
    - **Copilot** — Stop + PreCompact + SessionStart; no SessionEnd → clean-exit consolidation falls
      back to the SessionStart-rescue net (below) or a manual `/synaptic-consolidate`.
@@ -585,19 +647,50 @@ gracefully** — never fail if a layer is unavailable.
 > **PreCompact not fired? SessionStart-rescue is the net.** On any host where `PreCompact` is absent
 > or silently fails to fire, the next-boot `SessionStart` rescue detects the unconsolidated
 > breadcrumbs / active playgrounds and offers to consolidate (see `references/audit.md`'s half-done
-> check). Because the instruction-layer breadcrumb wrote the trail regardless, nothing is lost — the
-> rescue simply consolidates it on the next session.
+> check). **Whatever the agent did write** — plus the layer-(a0) activity markers, which are written by
+> the host regardless — is still there for the rescue to consolidate on the next session. *(Do not claim
+> "nothing is lost": the semantic breadcrumb is best-effort, so an un-captured turn's detail can be
+> genuinely gone. What the activity log guarantees is that the session itself is never invisible.)*
 
-> **SessionStart boot heartbeat (capture-INDEPENDENT — the FIRST thing a session writes).** Before the
-> rescue detect and before any work, `SessionStart` appends a single **boot marker** line to
-> `journal/_current.md` (e.g. `- boot: 2026-07-02T09:14 (SessionStart)`). This is **decoupled from
-> capture**: it fires even when *nothing else* is captured, so "session opened" is counted separately
-> from "work captured." That separation is what lets `/synaptic-audit` (see `references/audit.md`)
-> distinguish **not-used** (0 boots — benign) from **used-but-capture-dead** (boots present, 0
-> captured — the actionable failure that points to the hook smoke-test). Like the breadcrumb, it is an
-> **instruction the agent follows** when the `SessionStart` hook fires (or by hand on a hook-less host)
-> — a one-line journal marker, no new schema. *(Author-complete; the heartbeat's actual firing is
-> verified on a real (Robinson) run.)*
+> **SessionStart boot marker (capture-INDEPENDENT — the FIRST thing a session writes).** Before the
+> rescue detect and before any work, `SessionStart` records a single **boot marker**. This is
+> **decoupled from capture**: it fires even when *nothing else* is captured, so "session opened" is
+> counted separately from "work captured." That separation is what lets `/synaptic-audit` (see
+> `references/audit.md` Step 9b) distinguish **not-used** (0 boots — benign) from
+> **used-but-capture-dead** (boots present, 0 captured — the actionable failure that points to the hook
+> smoke-test).
+>
+> **v1.5.0 changes WHO writes it.** It is no longer "an instruction the agent follows" into
+> `journal/_current.md` — it is the **layer-(a0) host shell append** (`<ts> boot`) into
+> `journal/_activity/<host>-<date>.log`, so the boot count no longer depends on agent compliance and
+> lives in **one authoritative ledger**. On a host with no usable hooks there is no boot marker at all
+> (the agent may still note a boot by hand, but Step 9b treats yield as *unknown* there rather than
+> inferring anything). No new schema. *(Author-complete; actual firing is verified on a real (Robinson)
+> run.)*
+
+> **Per-host activity marker support (v1.5.0 — UNVERIFIED except where stated).** Layer (a0) needs the
+> host to run a **shell command** on a hook (not merely surface a prompt to the agent). That capability
+> is confirmed only for Claude Code so far; treat the rest as open until a real host proves it — do
+> **not** assert parity:
+>
+> | Host | Shell command on `Stop` / `SessionStart` | Status |
+> |---|---|---|
+> | Claude Code | `settings.json` hooks run shell commands | **assumed yes** (verify on a real run) |
+> | VS Code Copilot | `.github/hooks/*.json` | **UNVERIFIED** |
+> | Cursor | `.cursor/hooks.json` | **UNVERIFIED** |
+> | Codex / `AGENTS.md` host | as available | **UNVERIFIED** |
+> | Gemini CLI | where exposed | **UNVERIFIED** |
+>
+> Where (a0) cannot be deployed, say so plainly in the wiring report and fall back to layer (a) as
+> best-effort semantic capture + the Step-9b *unknown-yield* posture.
+
+> **Dual-write note (forward contract for a future Cortex MemoryLog).** If a runtime working-memory
+> provider is ever wired (Cortex-tier; e.g. an Engram-class MemoryLog), the artifact it must **mirror
+> into the brain** is the **SEMANTIC session-summary breadcrumb in `journal/_current.md`** — the
+> structured Goal · Discoveries · Accomplished · Next-Steps · Files shape above — because that is what
+> makes the git-tracked record *complete* if the provider is deleted. The layer-(a0) activity log is
+> **not** a mirror target: it is content-free proof-of-life and mirroring it would preserve nothing.
+> This distinction is a CORE contract, not an implementation detail.
 
 > **Breadcrumb cadence is provisional (token-optimization to revisit).** The per-turn breadcrumb is
 > good for now, not a fixed rule: a future Cortex T2 Engram-style FTS journal index (`ROADMAP.md` →
@@ -609,8 +702,11 @@ gracefully** — never fail if a layer is unavailable.
   hosts + the per-turn journal as the universal fallback + `SessionStart`-rescue as the safety net —
   **never an unattended idle daemon at CORE**. (An OS-cron/background timer would be **Cortex**, not
   CORE, and is never required.)
-- **`PreCompact` / `SessionEnd` are host-conditional;** only the `Stop` breadcrumb is the universal
-  capture floor.
+- **`PreCompact` / `SessionEnd` are host-conditional;** the `Stop` breadcrumb is the universal
+  *semantic* layer — but it is an **instruction, so it is best-effort, not a guarantee**. The only
+  **mechanical** floor is the layer-(a0) activity marker, and only on hosts that run a shell command on
+  a hook (coverage confirmed for Claude Code; the rest UNVERIFIED). On a hook-less host there is **no**
+  mechanical floor — capture-yield is then reported as *unknown*, not assumed.
 - **Breadcrumbs vs promotion are orthogonal:** breadcrumbs are the always-on fixed-cost floor and
   are **not** governed by `capture_policy`. `capture_policy` (`selective | balanced | capture-all`)
   governs only **how much gets promoted into the wiki** during consolidation.

@@ -331,10 +331,11 @@ consolidate now or defer:
 The thesis verb is **capture**. This advisory answers *does daily work produce breadcrumbs/nodes, or is
 the brain silently empty?* — from files alone. **Advisory (exit-0 / never gates)**, like every check here.
 
-**The heartbeat decouples "session opened" from "work captured".** The `SessionStart` boot heartbeat
-(`SKILL.md` §d — the FIRST thing a session writes, a one-line `journal/` boot marker) is
-**capture-INDEPENDENT**, so boots are counted even when nothing else is captured. That lets this step
-distinguish two states the naive "zero artifacts" signal conflates:
+**The activity ledger decouples "session opened" from "work captured".** The **layer-(a0) activity
+marker** (`SKILL.md` §d — a **host-executed shell append** of `<ts> boot|stop` to
+`journal/_activity/<host>-<date>.log`) is **capture-INDEPENDENT** *and agent-independent*, so activity is
+counted even when nothing else is captured. That lets this step distinguish two states the naive "zero
+artifacts" signal conflates:
 
 - **`not-used`** — **0 boots** in the window → **benign** (nobody worked; not a capture problem). **No
   advisory.**
@@ -342,6 +343,25 @@ distinguish two states the naive "zero artifacts" signal conflates:
   window) → raise a **distinct "hooks-appear-dead" advisory** pointing to the per-host hook smoke-test.
   This is the actionable failure. *(This is the refined meaning of "silent-empty": used-but-capture-dead,
   NOT "empty brain".)*
+
+> **Denominator source (v1.5.0).** Count boots/stops from `journal/_activity/*.log` (the one
+> authoritative ledger). Pre-v1.5.0 brains recorded boots as `- boot:` lines inside
+> `journal/_current.md` — count those too while they exist, so the window spans the migration; never
+> double-count a boot that appears in both.
+>
+> **Do NOT cry wolf (binding — a false advisory costs more than a missed one).** The ONLY warning state
+> is **`used-but-capture-dead`** as defined above. In particular:
+> - **A read-only / Q&A session that leaves 0 breadcrumbs is a VALID, non-flagged outcome.** A breadcrumb
+>   records *"the meaningful change this turn"*; a session that changed nothing **should** leave none.
+>   Activity markers without breadcrumbs are therefore not, by themselves, a finding.
+> - **Never put consolidation events in the numerator** of a "since the last consolidation" window —
+>   consolidation is periodic, so a healthy mid-session state would read as a shortfall by construction.
+> - A **`selective` `capture_policy`** brain promotes little **by design** — judge it against its own
+>   policy, not against `capture-all`.
+> - **Hook-less host (no `journal/_activity/` and no boot lines):** there is no activity floor, so the
+>   denominator does not exist. Report **`capture-yield: unknown (no activity floor on this host)`** and
+>   the remediation (deploy hooks, or run `/synaptic-consolidate` manually). **Do not** infer
+>   capture-dead from absence — and do not claim a yield you cannot measure.
 
 **The expected artifact is a well-formed STRUCTURED summary, not just any text (v1.4.0).** The
 structured session-summary protocol (`SKILL.md` §d / `references/consolidate.md` — inspired by
@@ -373,8 +393,16 @@ the heartbeat, not a heuristic) and **nodes-per-week** (from frontmatter `update
 HOOKS-APPEAR-DEAD (used-but-capture-dead): capture is likely not firing on this host — run the per-host
 hook smoke-test."* A different brain: *"0 boots in 7 days → not-used (benign)"* — no advisory.
 
+**Activity-log hygiene (agent-owned, v1.5.0).** The layer-(a0) hook only ever **blind-appends** — it
+never prunes. So this step also reports when `journal/_activity/` has grown past a sane bound (e.g.
+> 30 day-files or any file > ~2k lines) and routes the **rollup/prune to `/synaptic-consolidate`**
+(collapse a day-file to a one-line `<date> boot=N stop=M` total, keeping the counts summable). Read the
+activity log **only** as this step's denominator — it is a `.log` under `journal/`, never knowledge, and
+never a node (the knowledge-scoped checks above never see it).
+
 **No runtime required.** Degree/count math over files (journal timestamps + frontmatter/git), LLM-free.
-*The heartbeat's actual firing is author-complete; verify on a real (Robinson) run.*
+*The activity marker's actual firing is author-complete; verify on a real (Robinson) run — and note its
+host coverage is confirmed only for Claude Code (see `SKILL.md` §d "Per-host activity marker support").*
 
 ---
 

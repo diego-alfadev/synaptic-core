@@ -1,5 +1,78 @@
 # Changelog
 
+## [1.5.0] - 2026-07-27
+
+> **"Capture you can actually trust."** A MINOR that closes the **floor half of issue #2a** — the
+> reported failure where a fully-worked session leaves an **empty journal**. Brain **schema unchanged
+> (still 1.0)**; no migration — reinstall the skill (or run `/synaptic-upgrade`, which now also deploys
+> the new floor). Additive, CORE-pure, zero-runtime. **NO Node on the authoring machine → runtime
+> acceptance is author-complete / by-inspection; actual hook firing is verified on the first real
+> (Robinson) run.**
+>
+> **The honest diagnosis.** Every capture layer we shipped was *"an instruction the agent follows"*, and
+> the one script that did write mechanically (`recipes/` `Stop` breadcrumb) only wrote **when `git diff`
+> reported touched files** — so it wrote **nothing** on a non-git workspace, a read-only session, or work
+> outside the git tree. That gate *is* the empty journal. We also **overclaimed** the fix in three places
+> in `SKILL.md` ("no host is ever breadcrumb-empty", "nothing is lost", "closes issue #2 on hook-less
+> hosts"). All three claims are retired.
+
+### Added
+- **Layer (a0) — the deterministic activity marker (the only *mechanical* non-empty floor).** A
+  **host-executed shell append** of one line (`<ISO-8601-UTC> boot|stop`) that the agent cannot skip.
+  **Unconditional**: no git dependency, no content gate, no LLM, no JSON parsing.
+  - **Destination `journal/_activity/<host>-<YYYY-MM-DD>.log`** — per host + per day, so two hosts or
+    concurrent sessions never contend. Safe on OneDrive/DFS-synced brains: many small **blind appends**,
+    never a shared read-modify-write (which is what spawns `*-<machine>` conflict copies).
+  - **Encoding pinned to UTF-8 no-BOM.** PowerShell 5.1's `>>` / `Add-Content` / `Out-File` default to
+    **UTF-16LE + BOM**, which would make the ledger non-grep-clean and produce binary-ish git diffs;
+    the recipe now uses `[IO.File]::AppendAllText` with `UTF8Encoding $false`.
+  - **The hook only ever appends** — rollup/prune is agent-owned (`/synaptic-consolidate`).
+- **Per-host activity-marker support table** (`SKILL.md` §d) — shell-command-on-hook is confirmed only
+  for **Claude Code**; every other host is marked **UNVERIFIED**. We no longer assert parity.
+- **`recipes/session-end-consolidate.md` §A.0** — the unconditional activity-marker scripts (sh + ps1),
+  registered to run **first** on `Stop` and `SessionStart`.
+- **Dual-write forward contract** (`SKILL.md` §d): if a Cortex-tier working-memory provider is ever
+  wired, the artifact it must mirror is the **semantic session-summary breadcrumb in
+  `journal/_current.md`** — *not* the content-free activity log (mirroring that would preserve nothing).
+
+### Changed
+- **Boot marker moved to one authoritative ledger.** The `SessionStart` boot marker is no longer an
+  agent instruction writing `- boot:` into `journal/_current.md`; it is the (a0) shell append into the
+  activity ledger. `_current.md` keeps only its curated Resume Anchor / Watch List / Log + semantic
+  breadcrumbs, protecting its ≤80-line budget. Legacy `- boot:` lines are harmless history and are
+  pruned by the Journal-Trim rollup.
+- **`/synaptic-audit` Step 9b hardened, not replaced.** Its `not-used` vs `used-but-capture-dead` logic
+  and bias-check are kept; the **denominator now reads the activity ledger** (counting legacy in-body
+  boot lines during migration, never double-counting). New binding anti-false-alarm rules: a
+  **read-only session with 0 breadcrumbs is a VALID, non-flagged outcome**; consolidation events must
+  never be in the numerator of a "since last consolidation" window; a `selective` `capture_policy` brain
+  is judged against its own policy. On a **hook-less host** it now reports **`capture-yield: unknown (no
+  activity floor on this host)`** instead of inferring capture-death.
+- **`/synaptic-consolidate` Journal Trim** gained the **activity-log rollup**: collapse day-files older
+  than ~7 days to a summable `<date> boot=N stop=M`, drop files older than ~90 days, prune legacy
+  in-body `- boot:` lines.
+- **`/synaptic-upgrade` + `/synaptic-init`** now create `journal/_activity/`, deploy the (a0) hooks, and
+  **report honestly** whether the host accepted them.
+- **Recipe `Stop` breadcrumb** is now labelled the *semantic* layer (conditional by design, may
+  legitimately write nothing) and its PowerShell variant writes `-Encoding utf8`.
+
+### Fixed
+- **Three shipped overclaims retired** (`SKILL.md`): "the instruction-layer breadcrumb closes issue #2
+  on hook-less hosts", "on every host the instruction-layer breadcrumb is the floor, so no host is ever
+  breadcrumb-empty", and "because the instruction-layer breadcrumb wrote the trail regardless, nothing
+  is lost". Matching claims in `references/consolidate.md` are corrected too.
+- **Recipe `Stop` breadcrumb PowerShell encoding** (`Add-Content` → UTF-16LE+BOM) — a real, shipped
+  corruption path for a git-tracked journal on Windows.
+
+### Honest scope (what this does NOT claim)
+- **"Never empty" holds on hook-capable hosts only.** On a hook-less host there is **no mechanical
+  floor**: low or zero capture is made **VISIBLE** (Step 9b) — **not prevented**. Saying otherwise would
+  repeat the very overclaim this release retires.
+- The activity marker is **proof-of-life + an audit denominator**, **not** semantic capture. Mechanical
+  *semantic* capture needs a runtime and is the **`#2a-runtime`** half, deferred to the Cortex MemoryLog
+  (v2.0). Issue #2a is therefore split: **`#2a-floor` (this release)** / `#2a-runtime` (v2.0).
+- Issue **#2b** (the `harness/setup/<host>.md` → `CLAUDE.md` case-collision) is **not** in this release.
+
 ## [1.4.0] - 2026-07-02
 
 > **"Brain REACH + Adoption."** One MINOR (`1.4.0`) that makes a brain **reach every folder** (wire the

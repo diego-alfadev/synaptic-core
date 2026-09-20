@@ -257,6 +257,14 @@ After routing all items:
    fact in both the journal and a node.
 3. Hard budget: **≤ 80 lines total**. If still over, trim the Log (oldest entries first).
 4. No archive directory — history lives in git and in consolidated knowledge nodes.
+5. **Activity-log rollup (v1.5.0 — agent-owned; the hook never prunes).** The layer-(a0) activity
+   marker (`SKILL.md` §d) only ever blind-appends to `journal/_activity/<host>-<date>.log`, so trimming
+   it is this step's job: collapse each day-file older than ~7 days to a **single summable total line**
+   `<date> boot=N stop=M`, and drop day-files older than ~90 days (git keeps the history). Keep the
+   counts **summable integers** — `/synaptic-audit` Step 9b uses them as its capture-yield denominator,
+   so a rollup that loses the count would break the audit. Also **prune any legacy `- boot:` lines** left
+   inside `journal/_current.md` by pre-v1.5.0 brains (the boot event now lives in the activity ledger
+   only) — once counted into the rollup, they are redundant history.
 
 ---
 
@@ -338,12 +346,13 @@ Consolidation is the *promotion* pass. It sits on top of a cheaper layer that ru
 is **not** governed by `capture_policy`:
 
 - **One terse line per meaningful turn** is written to `journal/_current.md`. This is an
-  **instruction the agent follows, not only a hook**: the per-turn `Stop` breadcrumb automates it
-  where wired (the universal capture floor across all hook-capable agents), but write it even when no
-  hook fires — hooks are host-specific and can silently fail, so the instruction is the floor
-  underneath the automation (closes issue #2: a session that neared recompact with no breadcrumbs
-  written). It is **fixed-cost**: a single line, never a full consolidation, regardless of the
-  capture-policy dial.
+  **instruction the agent follows, not only a hook**: the per-turn `Stop` breadcrumb prompts it where
+  wired, but write it even when no hook fires — hooks are host-specific and can silently fail. **Be
+  precise about what this is (v1.5.0):** because it is an instruction, it is **best-effort semantic
+  capture, NOT the non-empty guarantee** — an agent that does not comply writes nothing, which is
+  exactly issue #2a. The **mechanical** floor is the separate layer-(a0) activity marker (`SKILL.md` §d
+  — a host-run shell append, agent-independent, hook-capable hosts only). This breadcrumb is
+  **fixed-cost**: a single line, never a full consolidation, regardless of the capture-policy dial.
 - Breadcrumbs **live on disk so they survive a crash** — what only lived in the context window dies;
   what reached the journal can still be consolidated later (including by `SessionStart`-rescue on the
   next boot — see `references/audit.md`).

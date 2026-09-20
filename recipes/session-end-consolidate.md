@@ -46,7 +46,8 @@ bonuses that strengthen capture where the host exposes them.
 
 | Layer | Hook event | Role | Cost | Availability |
 |---|---|---|---|---|
-| **(a) Breadcrumb** | `Stop` (per turn) | One terse journal line per meaningful turn — the workhorse | Fixed, tiny; **not** governed by `capture_policy` | **Universal** — all 5 agents |
+| **(a0) Activity marker** | `Stop` + `SessionStart` | **UNCONDITIONAL** one-line proof-of-life to `journal/_activity/` — no git, no gate, no LLM. **The only mechanical non-empty floor**; also the capture-yield denominator | Fixed, one short append | Any host that runs a **shell command** on a hook (confirmed: Claude Code; others UNVERIFIED) |
+| **(a) Breadcrumb** | `Stop` (per turn) | One terse *semantic* journal line per meaningful turn — the workhorse. **Conditional by design** (reports what changed), so it can legitimately write nothing | Fixed, tiny; **not** governed by `capture_policy` | **Universal** — all 5 agents |
 | **(b) Flush** | `PreCompact` | Consolidate before the context window is compacted (the gem for long/abused sessions) | One consolidation pass when compaction is imminent | Where supported (Claude / Copilot / Codex) |
 | **(c) Rescue** | `SessionStart` | On next boot, detect unconsolidated breadcrumbs / open playgrounds and **offer** to consolidate | One check at boot | Where supported |
 | **(d) Bonus** | `SessionEnd` | Offer/remind to consolidate on a clean exit | One check at clean exit | Where present (**not** Copilot-IDE, **not** Cursor) |
@@ -76,10 +77,56 @@ Why this shape:
 Claude Code exposes all four events. Configure them in your project's `.claude/settings.json` plus
 small scripts under `.claude/hooks/`. The same shapes port to the other hosts (§4).
 
-### A.1 The breadcrumb script (the `Stop` workhorse)
+### A.0 The activity marker (v1.5.0 — the UNCONDITIONAL floor; fixes issue #2a)
+
+> **Why this exists (read it — it is the bug).** The A.1 breadcrumb script below only writes **when
+> `git diff` reports touched files**. So it writes **nothing** when: the brain/workspace is **not a git
+> repo at all**, the session was read-only / Q&A, or the work happened outside the git tree. That gate
+> is exactly how a fully-worked session ends with an **empty journal** (issue #2a). A.0 fixes it with an
+> **unconditional** append: no git dependency, no content gate, nothing to be skipped.
+
+Create `.claude/hooks/synaptic-activity.sh` (and `.ps1` on Windows). One line, always.
+
+```bash
+#!/usr/bin/env sh
+# synaptic-activity.sh — UNCONDITIONAL proof-of-life marker. Arg 1 = event (stop|boot).
+# No git, no LLM, no content gate. Blind append only: never reads or rewrites the file.
+BRAIN_DIR="${SYNAPTIC_BRAIN_DIR:-.synaptic}"
+[ -d "$BRAIN_DIR" ] || exit 0
+EVENT="${1:-stop}"
+DIR="$BRAIN_DIR/journal/_activity"
+mkdir -p "$DIR"
+printf '%s %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$EVENT" \
+  >> "$DIR/$(hostname)-$(date -u +%Y-%m-%d).log"
+```
+
+```powershell
+# synaptic-activity.ps1 — UNCONDITIONAL proof-of-life marker. Param = event (stop|boot).
+# UTF-8 NO BOM: PowerShell 5.1's >> / Add-Content / Out-File default to UTF-16LE+BOM, which would
+# make the ledger non-grep-clean and produce binary-ish git diffs. Do not "simplify" this line.
+param([string]$Event = "stop")
+$brainDir = if ($env:SYNAPTIC_BRAIN_DIR) { $env:SYNAPTIC_BRAIN_DIR } else { ".synaptic" }
+if (-not (Test-Path $brainDir)) { exit 0 }
+$dir = Join-Path $brainDir "journal\_activity"
+if (-not (Test-Path $dir)) { New-Item -ItemType Directory -Force -Path $dir | Out-Null }
+$utc  = (Get-Date).ToUniversalTime()
+$path = Join-Path $dir "$env:COMPUTERNAME-$($utc.ToString('yyyy-MM-dd')).log"
+[IO.File]::AppendAllText($path, "$($utc.ToString('yyyy-MM-ddTHH:mm:ssZ')) $Event`n", (New-Object Text.UTF8Encoding $false))
+```
+
+**Per host + per day** so two hosts (or concurrent sessions) never contend on one file — that is what
+keeps it safe on OneDrive/DFS-synced brains (many small appends, no shared rewrite). The hook **never
+prunes**; `/synaptic-consolidate` rolls up old day-files. This ledger is **proof-of-life + the
+capture-yield denominator only** — it is *not* semantic capture, and nothing should mirror it.
+
+### A.1 The breadcrumb script (the `Stop` semantic layer)
 
 Create `.claude/hooks/synaptic-breadcrumb.sh` (or `.ps1` on Windows). It appends one terse line to
 the journal on every meaningful turn — fixed cost, no LLM call, no promotion decision.
+
+> **This is the SEMANTIC layer, not the floor.** It is deliberately conditional (it reports *what
+> changed*), so **it can legitimately write nothing** — see A.0 for the unconditional floor. Do not
+> treat this script as a guarantee that the journal is non-empty.
 
 ```bash
 #!/usr/bin/env bash
@@ -111,7 +158,9 @@ if (-not (Test-Path $brainDir)) { exit 0 }
 $ts = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mmK")
 $touched = (git diff --name-only HEAD 2>$null | Select-Object -First 5) -join ','
 if ($touched) {
-    Add-Content -Path $journal -Value "- $ts breadcrumb: touched $touched"
+    # -Encoding utf8 is REQUIRED: PowerShell 5.1's Add-Content default is UTF-16LE+BOM, which
+    # corrupts a shared git-tracked journal (non-grep-clean, binary-ish diffs).
+    Add-Content -Path $journal -Value "- $ts breadcrumb: touched $touched" -Encoding utf8
 }
 ```
 
@@ -194,6 +243,7 @@ fi
       {
         "matcher": "",
         "hooks": [
+          { "type": "command", "command": "sh .claude/hooks/synaptic-activity.sh stop" },
           { "type": "command", "command": "bash .claude/hooks/synaptic-breadcrumb.sh" }
         ]
       }
@@ -210,6 +260,7 @@ fi
       {
         "matcher": "",
         "hooks": [
+          { "type": "command", "command": "sh .claude/hooks/synaptic-activity.sh boot" },
           { "type": "command", "command": "bash .claude/hooks/synaptic-rescue.sh" }
         ]
       }
@@ -226,7 +277,11 @@ fi
 }
 ```
 
-On Windows, swap each command for `pwsh -File .claude/hooks/<script>.ps1`.
+On Windows, swap each command for `pwsh -File .claude/hooks/<script>.ps1` (the activity marker takes
+its event as an argument: `pwsh -File .claude/hooks/synaptic-activity.ps1 stop` / `... boot`).
+
+> **Order matters:** the **activity marker runs FIRST** on both `Stop` and `SessionStart`. It is the
+> unconditional floor, so it must not be preceded by anything that can fail, gate, or exit early.
 
 ### Notes
 
@@ -257,8 +312,10 @@ The cadence to remember:
 | Weekly | `/synaptic-audit` | Diagnose orphans, broken links, stale nodes, MOC gaps, **half-done / unconsolidated** debt, pending breadcrumbs |
 | Monthly | `/synaptic-weave` | Retroactive graph-gardening: missing links, near-duplicates, theme promotion |
 
-Without hooks you lose the *automatic* breadcrumb floor and the rescue sweep — so consolidate more
-deliberately, especially before long sessions that may hit compaction.
+Without hooks you lose the *automatic* breadcrumb layer, the **activity-marker floor**, and the rescue
+sweep — so consolidate more deliberately, especially before long sessions that may hit compaction. With
+no activity floor there is nothing mechanical writing on your behalf, so `/synaptic-audit` reports
+capture-yield as **unknown** rather than pretending to measure it.
 
 ---
 
@@ -266,7 +323,8 @@ deliberately, especially before long sessions that may hit compaction.
 
 All five agents support **file-configured hooks**. The difference is *which lifecycle events each
 host fires* — so the layered model degrades gracefully: every host gets the universal `Stop`
-breadcrumb floor, and picks up `PreCompact` / `SessionStart` / `SessionEnd` where exposed.
+breadcrumb layer (and the **activity-marker floor** wherever the host runs a shell command on that
+event), and picks up `PreCompact` / `SessionStart` / `SessionEnd` where exposed.
 
 | Agent | Config file | `Stop` (breadcrumb) | `PreCompact` (flush) | `SessionStart` (rescue) | `SessionEnd` (bonus) |
 |---|---|---|---|---|---|

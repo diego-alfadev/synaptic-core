@@ -17,6 +17,28 @@
 > paste-to-your-agent form of all of this is **`docs/UPGRADE-v0.3-to-v1.AGENT.md`** — prefer driving a
 > real migration from there. Where this addendum and the older body differ, **the addendum wins.**
 
+## v1.5.0 addendum — deploy the activity marker (the mechanical capture floor)
+
+> Runs on **every** `/synaptic-upgrade` (and `/synaptic-init`), including the light already-schema-`1.0`
+> path. Closes the floor half of issue #2a. No schema bump.
+
+- **Create `journal/_activity/`** in the brain (the layer-(a0) append fails if the directory is absent).
+- **Deploy the layer-(a0) activity marker** per `SKILL.md` §d "Deterministic activity marker": wire the
+  pinned platform-appropriate one-liner (**UTF-8 no-BOM**; `[IO.File]::AppendAllText` on PowerShell —
+  never bare `>>`/`Add-Content`, which default to UTF-16LE+BOM) to `Stop` (`stop`) and `SessionStart`
+  (`boot`), writing to `journal/_activity/<host>-<YYYY-MM-DD>.log`. Marker-wrapped + idempotent like
+  every other hook write.
+- **Migrate the boot ledger:** stop emitting the old `- boot:` line into `journal/_current.md`; the boot
+  event now lives ONLY in the activity ledger. Existing `- boot:` lines are harmless history and are
+  pruned by `/synaptic-consolidate`'s Journal-Trim rollup (which also rolls up old day-files).
+- **Report honestly:** state whether the host accepted the (a0) hooks. If it did not (or the host has no
+  usable hooks), say plainly that there is **no mechanical floor** on this host, that the
+  instruction-layer breadcrumb is best-effort, and that `/synaptic-audit` will report capture-yield as
+  **unknown** rather than inferring capture-death. **Do not** repeat the retired pre-v1.5.0 claim that
+  the instruction-layer breadcrumb "closes issue #2" on a hook-less host.
+- **Host coverage is UNVERIFIED beyond Claude Code** (`SKILL.md` §d "Per-host activity marker support")
+  — detect, attempt, verify, and report; never assert parity.
+
 ## v1.4.0 addendum — host-setup detection is an ALWAYS-RUN step (not migration-only)
 
 > **This runs on EVERY `/synaptic-upgrade` and every `/synaptic-init`, including the light
