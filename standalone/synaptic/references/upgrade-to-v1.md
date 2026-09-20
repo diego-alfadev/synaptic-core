@@ -22,7 +22,11 @@
 > Runs on **every** `/synaptic-upgrade` (and `/synaptic-init`), including the light already-schema-`1.0`
 > path. Closes the floor half of issue #2a. No schema bump.
 
-- **Create `journal/_activity/`** in the brain (the layer-(a0) append fails if the directory is absent).
+- **Create `journal/_activity/`** (with a `.gitkeep`) in the brain. A bare append to a missing parent
+  fails on **both** shells, so a wired-but-never-writing hook would be a *false* floor. The shipped
+  one-liner is also self-creating (`mkdir -p` / `New-Item -Force`) — belt and braces, because this is
+  precisely the failure class v1.5.0 exists to remove. Resolve the brain root explicitly in the hook
+  command; never assume the host's cwd is the brain root.
 - **Deploy the layer-(a0) activity marker** per `SKILL.md` §d "Deterministic activity marker": wire the
   pinned platform-appropriate one-liner (**UTF-8 no-BOM**; `[IO.File]::AppendAllText` on PowerShell —
   never bare `>>`/`Add-Content`, which default to UTF-16LE+BOM) to `Stop` (`stop`) and `SessionStart`

@@ -257,14 +257,19 @@ After routing all items:
    fact in both the journal and a node.
 3. Hard budget: **≤ 80 lines total**. If still over, trim the Log (oldest entries first).
 4. No archive directory — history lives in git and in consolidated knowledge nodes.
-5. **Activity-log rollup (v1.5.0 — agent-owned; the hook never prunes).** The layer-(a0) activity
-   marker (`SKILL.md` §d) only ever blind-appends to `journal/_activity/<host>-<date>.log`, so trimming
-   it is this step's job: collapse each day-file older than ~7 days to a **single summable total line**
-   `<date> boot=N stop=M`, and drop day-files older than ~90 days (git keeps the history). Keep the
-   counts **summable integers** — `/synaptic-audit` Step 9b uses them as its capture-yield denominator,
-   so a rollup that loses the count would break the audit. Also **prune any legacy `- boot:` lines** left
-   inside `journal/_current.md` by pre-v1.5.0 brains (the boot event now lives in the activity ledger
-   only) — once counted into the rollup, they are redundant history.
+5. **Activity-log rollup (v1.5.0 — this is the step `/synaptic-audit` routes to; the hook never prunes,
+   and audit never writes).** The layer-(a0) activity marker (`SKILL.md` §d) only ever blind-appends to
+   `journal/_activity/<host>-<date>.log`, so trimming it is **this** step's job:
+   - **Retention contract (binding):** **never prune inside the audit window.** Keep **raw** per-day logs
+     covering at least Step 9b's window (default: the last ~30 days). Only beyond it may a day-file be
+     collapsed to a single line `<date> boot=N stop=M`, and the **per-day `boot` count must survive the
+     rollup as a summable integer** — `boot` is Step 9b's capture-yield *denominator*, so a rollup that
+     discards it would silently destroy the signal and mask a real capture-dead condition as
+     `not-used (benign)`.
+   - Drop rolled-up day-files older than ~90 days (git keeps the history).
+   - **Prune legacy `- boot:` lines** left inside `journal/_current.md` by pre-v1.5.0 brains — but only
+     **after** they have been counted into the rollup (the boot event now lives in the activity ledger
+     only); deleting them while Step 9b's window still straddles the upgrade would deflate boot counts.
 
 ---
 
@@ -351,7 +356,7 @@ is **not** governed by `capture_policy`:
   precise about what this is (v1.5.0):** because it is an instruction, it is **best-effort semantic
   capture, NOT the non-empty guarantee** — an agent that does not comply writes nothing, which is
   exactly issue #2a. The **mechanical** floor is the separate layer-(a0) activity marker (`SKILL.md` §d
-  — a host-run shell append, agent-independent, hook-capable hosts only). This breadcrumb is
+  — a host-run shell append, agent-independent, **shell**-hook-capable hosts only). This breadcrumb is
   **fixed-cost**: a single line, never a full consolidation, regardless of the capture-policy dial.
 - Breadcrumbs **live on disk so they survive a crash** — what only lived in the context window dies;
   what reached the journal can still be consolidated later (including by `SessionStart`-rescue on the

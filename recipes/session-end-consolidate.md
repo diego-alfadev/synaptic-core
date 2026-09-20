@@ -95,9 +95,11 @@ BRAIN_DIR="${SYNAPTIC_BRAIN_DIR:-.synaptic}"
 [ -d "$BRAIN_DIR" ] || exit 0
 EVENT="${1:-stop}"
 DIR="$BRAIN_DIR/journal/_activity"
-mkdir -p "$DIR"
+mkdir -p "$DIR" 2>/dev/null
+# Swallow failures: a missed marker is acceptable, a broken turn is not.
 printf '%s %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$EVENT" \
-  >> "$DIR/$(hostname)-$(date -u +%Y-%m-%d).log"
+  >> "$DIR/$(hostname)-$(date -u +%Y-%m-%d).log" 2>/dev/null || true
+exit 0
 ```
 
 ```powershell
@@ -105,19 +107,25 @@ printf '%s %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$EVENT" \
 # UTF-8 NO BOM: PowerShell 5.1's >> / Add-Content / Out-File default to UTF-16LE+BOM, which would
 # make the ledger non-grep-clean and produce binary-ish git diffs. Do not "simplify" this line.
 param([string]$Event = "stop")
-$brainDir = if ($env:SYNAPTIC_BRAIN_DIR) { $env:SYNAPTIC_BRAIN_DIR } else { ".synaptic" }
-if (-not (Test-Path $brainDir)) { exit 0 }
-$dir = Join-Path $brainDir "journal\_activity"
-if (-not (Test-Path $dir)) { New-Item -ItemType Directory -Force -Path $dir | Out-Null }
-$utc  = (Get-Date).ToUniversalTime()
-$path = Join-Path $dir "$env:COMPUTERNAME-$($utc.ToString('yyyy-MM-dd')).log"
-[IO.File]::AppendAllText($path, "$($utc.ToString('yyyy-MM-ddTHH:mm:ssZ')) $Event`n", (New-Object Text.UTF8Encoding $false))
+try {
+    $brainDir = if ($env:SYNAPTIC_BRAIN_DIR) { $env:SYNAPTIC_BRAIN_DIR } else { ".synaptic" }
+    if (-not (Test-Path $brainDir)) { exit 0 }
+    $dir = Join-Path $brainDir "journal\_activity"
+    if (-not (Test-Path $dir)) { New-Item -ItemType Directory -Force -Path $dir | Out-Null }
+    $utc  = (Get-Date).ToUniversalTime()
+    $path = Join-Path $dir "$env:COMPUTERNAME-$($utc.ToString('yyyy-MM-dd')).log"
+    [IO.File]::AppendAllText($path, "$($utc.ToString('yyyy-MM-ddTHH:mm:ssZ')) $Event`n", (New-Object Text.UTF8Encoding $false))
+} catch { }   # two concurrent same-host sessions can hit a transient lock; never block the turn
+exit 0
 ```
 
-**Per host + per day** so two hosts (or concurrent sessions) never contend on one file — that is what
-keeps it safe on OneDrive/DFS-synced brains (many small appends, no shared rewrite). The hook **never
-prunes**; `/synaptic-consolidate` rolls up old day-files. This ledger is **proof-of-life + the
-capture-yield denominator only** — it is *not* semantic capture, and nothing should mirror it.
+**Per host + per day** so each machine owns its own file — that is what keeps it safe on
+OneDrive/DFS-synced brains (many small appends, **no shared rewrite**, so no cross-host conflict
+copies). It does **not** eliminate same-host concurrency: two sessions on one host+day share a file, so
+both scripts swallow failures and `exit 0` rather than ever blocking a turn. The hook **never prunes** —
+`/synaptic-consolidate` (Journal Trim) rolls up old day-files, and must keep per-day `boot` counts
+because they are the capture-yield denominator. This ledger is **proof-of-life + the capture-yield
+denominator only** — it is *not* semantic capture, and nothing should mirror it.
 
 ### A.1 The breadcrumb script (the `Stop` semantic layer)
 

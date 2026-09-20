@@ -344,24 +344,51 @@ artifacts" signal conflates:
   This is the actionable failure. *(This is the refined meaning of "silent-empty": used-but-capture-dead,
   NOT "empty brain".)*
 
-> **Denominator source (v1.5.0).** Count boots/stops from `journal/_activity/*.log` (the one
-> authoritative ledger). Pre-v1.5.0 brains recorded boots as `- boot:` lines inside
-> `journal/_current.md` — count those too while they exist, so the window spans the migration; never
-> double-count a boot that appears in both.
+> **Denominator source (v1.5.0) — `boot` ONLY, scoped to THIS host.**
+> - **Sessions = `boot` events.** Read them from **this host's** files only:
+>   `journal/_activity/<current-host>-*.log`. **`stop` events are NOT part of the session denominator** —
+>   `Stop` fires *per assistant turn*, so one session emits 1 `boot` + N `stop`. Summing them would turn
+>   breadcrumbs-per-**session** into breadcrumbs-per-**turn** and deflate yield by the turn count (a
+>   40-turn session with one good summary would score 1/41 instead of 1/1). Keep `stop` as a separate
+>   **work-intensity** signal only.
+> - **Per-host scoping is mandatory, not cosmetic.** The ledger is per host by design, and a brain can be
+>   shared across machines. Globbing every host would (a) let a host with **no** floor compute a yield
+>   against another machine's boots, and (b) let one host's healthy capture **mask** another host's dead
+>   capture. The numerator (breadcrumbs/nodes) is brain-wide and **cannot** be attributed per host — say
+>   so when reporting, or report per-host rows.
+> - **Migration window.** Pre-v1.5.0 brains recorded boots as `- boot:` lines inside
+>   `journal/_current.md`. Count those **exactly once** while they exist; for any window that
+>   **straddles** the v1.4.0→v1.5.0 upgrade, report `capture-yield: unknown (window straddles upgrade)`
+>   rather than a number the two mechanisms cannot jointly support.
 >
 > **Do NOT cry wolf (binding — a false advisory costs more than a missed one).** The ONLY warning state
-> is **`used-but-capture-dead`** as defined above. In particular:
-> - **A read-only / Q&A session that leaves 0 breadcrumbs is a VALID, non-flagged outcome.** A breadcrumb
->   records *"the meaningful change this turn"*; a session that changed nothing **should** leave none.
->   Activity markers without breadcrumbs are therefore not, by themselves, a finding.
-> - **Never put consolidation events in the numerator** of a "since the last consolidation" window —
->   consolidation is periodic, so a healthy mid-session state would read as a shortfall by construction.
-> - A **`selective` `capture_policy`** brain promotes little **by design** — judge it against its own
->   policy, not against `capture-all`.
-> - **Hook-less host (no `journal/_activity/` and no boot lines):** there is no activity floor, so the
->   denominator does not exist. Report **`capture-yield: unknown (no activity floor on this host)`** and
->   the remediation (deploy hooks, or run `/synaptic-consolidate` manually). **Do not** infer
->   capture-dead from absence — and do not claim a yield you cannot measure.
+> is **`used-but-capture-dead`**, and it needs **two** conditions, not one:
+> 1. **zero well-formed structured capture across the ENTIRE window** (window-aggregate — never
+>    per-session), **AND**
+> 2. a **work signal** in that window: evidence of real work derivable from files — modifications under
+>    `knowledge/**` or `journal/`, frontmatter `updated:` dates, or git log activity.
+>
+> **Why condition 2 is required (v1.5.0 regression guard).** Before v1.5.0 a pure-Q&A agent often never
+> wrote the instruction-heartbeat, so the brain read as `not-used` → benign *by accident*. Now the host
+> writes activity markers **unconditionally**, so activity is **always** present — without a work signal,
+> a legitimate read-only week would fire `HOOKS-APPEAR-DEAD`. So:
+> - **Activity present + NO work signal = read-only / idle → benign, NO advisory.** A read-only or Q&A
+>   session that leaves 0 breadcrumbs is a **VALID, expected** outcome: a breadcrumb records *"the
+>   meaningful change this turn"*, and a session that changed nothing **should** leave none.
+> - **Capture must never be gated on a consolidation having occurred.** A healthy mid-session state has
+>   zero consolidation events by construction and must not flag. (Consolidation events are not the
+>   numerator either — counting them would *raise* yield, not lower it.)
+> - **`capture_policy` is NOT a factor for breadcrumbs** (it governs only how much gets *promoted* into
+>   the wiki). Apply the policy caveat to **`nodes-added-per-week`** only, never to the breadcrumb signal.
+>
+> **Distinguish "no floor" from "DEAD floor" (this is the actionable case).** An absent/empty activity
+> log is ambiguous across three states — discriminate using the **host's hook config**:
+> - hook config contains the deployed `BEGIN:SYNAPTIC-HOOKS` block **but** no activity lines for this
+>   host in the window → **`shell floor DEPLOYED but DEAD`** → *"run the per-host hook smoke-test"*. **This
+>   is exactly the issue-#2a failure this floor exists to catch — never report it as merely 'unknown'.**
+> - **no** shell hook deployed (or the host cannot run one) → **`capture-yield: unknown (no activity
+>   floor on this host)`** + the remediation (deploy hooks, or run `/synaptic-consolidate` manually).
+>   **Do not** infer capture-death from absence, and do not claim a yield you cannot measure.
 
 **The expected artifact is a well-formed STRUCTURED summary, not just any text (v1.4.0).** The
 structured session-summary protocol (`SKILL.md` §d / `references/consolidate.md` — inspired by
@@ -386,19 +413,25 @@ a captured summary.
 an accuracy claim. The **%-meaningful metric is NON-comparable across hosts** (its "meaningful session"
 heuristic resolves differently per host; hook-less hosts have no reliable session boundary, OneDrive
 placeholder state skews file-touch counts). For any cross-host or trend reading, **prefer the two robust
-counts**: **breadcrumbs per artifact-counted session** (denominator = boots we can actually count via
-the heartbeat, not a heuristic) and **nodes-per-week** (from frontmatter `updated` / git log).
+counts**: **breadcrumbs per artifact-counted session** (denominator = `boot` events we can actually count
+via **this host's** activity ledger, not a heuristic) and **nodes-per-week** (from frontmatter `updated` /
+git log). *(The reasoning is unchanged from v1.4.0; only the mechanism moved — the countable denominator
+is now the host-written activity ledger instead of the agent-written heartbeat.)*
 
 **Report example:** *"12 sessions BOOTED, 0 new breadcrumbs, 0 nodes added in 7 days →
 HOOKS-APPEAR-DEAD (used-but-capture-dead): capture is likely not firing on this host — run the per-host
 hook smoke-test."* A different brain: *"0 boots in 7 days → not-used (benign)"* — no advisory.
 
-**Activity-log hygiene (agent-owned, v1.5.0).** The layer-(a0) hook only ever **blind-appends** — it
-never prunes. So this step also reports when `journal/_activity/` has grown past a sane bound (e.g.
-> 30 day-files or any file > ~2k lines) and routes the **rollup/prune to `/synaptic-consolidate`**
-(collapse a day-file to a one-line `<date> boot=N stop=M` total, keeping the counts summable). Read the
-activity log **only** as this step's denominator — it is a `.log` under `journal/`, never knowledge, and
-never a node (the knowledge-scoped checks above never see it).
+**Activity-log hygiene (v1.5.0) — diagnose here, TREAT elsewhere.** The layer-(a0) hook only ever
+**blind-appends** — it never prunes. So this step **reports** when `journal/_activity/` has grown past a
+sane bound (e.g. > 30 day-files, or any file > ~2k lines) and **routes the rollup/prune to
+`/synaptic-consolidate`** (Journal Trim) or `/synaptic-maintain`. **Audit itself writes nothing** — it
+never prunes the ledger, consistent with this file's diagnose-only contract. **Retention contract:**
+rollup MUST keep raw per-day logs covering at least this step's audit window, and any rollup summary MUST
+preserve **per-day `boot` counts** — a rollup that discards them would silently destroy the denominator
+and mask a real capture-dead condition as `not-used (benign)`. Read the activity log **only** as this
+step's denominator — it is a `.log` under `journal/`, never knowledge, and never a node (the
+knowledge-scoped checks above never see it).
 
 **No runtime required.** Degree/count math over files (journal timestamps + frontmatter/git), LLM-free.
 *The activity marker's actual firing is author-complete; verify on a real (Robinson) run — and note its

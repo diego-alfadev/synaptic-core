@@ -20,9 +20,18 @@
 - **Layer (a0) — the deterministic activity marker (the only *mechanical* non-empty floor).** A
   **host-executed shell append** of one line (`<ISO-8601-UTC> boot|stop`) that the agent cannot skip.
   **Unconditional**: no git dependency, no content gate, no LLM, no JSON parsing.
-  - **Destination `journal/_activity/<host>-<YYYY-MM-DD>.log`** — per host + per day, so two hosts or
-    concurrent sessions never contend. Safe on OneDrive/DFS-synced brains: many small **blind appends**,
-    never a shared read-modify-write (which is what spawns `*-<machine>` conflict copies).
+  - **Destination `journal/_activity/<host>-<YYYY-MM-DD>.log`** — per host + per day, so each machine
+    owns its own file. Safe on OneDrive/DFS-synced brains: many small **blind appends**, never a shared
+    read-modify-write (which is what spawns `*-<machine>` conflict copies). **It does NOT eliminate
+    same-host concurrency** — two sessions on one host+day share a file, so the one-liner **swallows its
+    own failures and `exit 0`s**: a missed marker is acceptable, a broken turn is not.
+  - **Self-creating + explicitly rooted.** A bare append to a missing parent fails on both shells, which
+    would be a *false* floor; the one-liner does `mkdir -p` / `New-Item -Force` (still read-free) and
+    `init`/`upgrade` also create `journal/_activity/.gitkeep`. The hook resolves the brain root
+    explicitly rather than assuming the host's cwd.
+  - **Scoping term is `shell-hook-capable`, not "hook-capable".** A host whose hooks merely *surface a
+    prompt* to the agent is still the instruction layer and gets **no** mechanical floor — same honesty
+    as a hook-less host. Three classes, three honest answers (table in `SKILL.md` §d).
   - **Encoding pinned to UTF-8 no-BOM.** PowerShell 5.1's `>>` / `Add-Content` / `Out-File` default to
     **UTF-16LE + BOM**, which would make the ledger non-grep-clean and produce binary-ish git diffs;
     the recipe now uses `[IO.File]::AppendAllText` with `UTF8Encoding $false`.
@@ -32,8 +41,13 @@
 - **`recipes/session-end-consolidate.md` §A.0** — the unconditional activity-marker scripts (sh + ps1),
   registered to run **first** on `Stop` and `SessionStart`.
 - **Dual-write forward contract** (`SKILL.md` §d): if a Cortex-tier working-memory provider is ever
-  wired, the artifact it must mirror is the **semantic session-summary breadcrumb in
-  `journal/_current.md`** — *not* the content-free activity log (mirroring that would preserve nothing).
+  wired, what it must mirror is the **semantic journal in `journal/_current.md`** — at **BOTH
+  granularities**: each `append()` as a terse per-turn breadcrumb, **plus** the structured 5-field
+  summary at a session/context boundary. Boundary-only mirroring is insufficient (a session can make
+  dozens of appends and die before any boundary is due → nothing mirrored → the delete-test fails).
+  The content-free activity log is **never** a mirror target. Promotion state (`promoted`/`promoted_at`)
+  stays **explicit only in the provider's RAM tier**; in CORE it is **implicit** — an entry is promoted
+  once `/synaptic-consolidate` trims it from `_current.md`. **No new journal field, no schema bump.**
 
 ### Changed
 - **Boot marker moved to one authoritative ledger.** The `SessionStart` boot marker is no longer an
@@ -42,15 +56,37 @@
   breadcrumbs, protecting its ≤80-line budget. Legacy `- boot:` lines are harmless history and are
   pruned by the Journal-Trim rollup.
 - **`/synaptic-audit` Step 9b hardened, not replaced.** Its `not-used` vs `used-but-capture-dead` logic
-  and bias-check are kept; the **denominator now reads the activity ledger** (counting legacy in-body
-  boot lines during migration, never double-counting). New binding anti-false-alarm rules: a
-  **read-only session with 0 breadcrumbs is a VALID, non-flagged outcome**; consolidation events must
-  never be in the numerator of a "since last consolidation" window; a `selective` `capture_policy` brain
-  is judged against its own policy. On a **hook-less host** it now reports **`capture-yield: unknown (no
-  activity floor on this host)`** instead of inferring capture-death.
-- **`/synaptic-consolidate` Journal Trim** gained the **activity-log rollup**: collapse day-files older
-  than ~7 days to a summable `<date> boot=N stop=M`, drop files older than ~90 days, prune legacy
-  in-body `- boot:` lines.
+  and bias-check are kept (only the *mechanism* reference moved). Specifically:
+  - **Denominator = `boot` events ONLY, scoped to THIS host.** `Stop` fires per assistant *turn*, so one
+    session emits 1 `boot` + N `stop`; summing them would turn breadcrumbs-per-**session** into
+    breadcrumbs-per-**turn** (a healthy 40-turn session would score 1/41). `stop` is kept as a separate
+    work-intensity signal. Per-host scoping is **mandatory** on a shared brain — globbing every host
+    would let one machine's healthy capture **mask** another's dead capture, or let a floor-less host
+    compute a yield against someone else's boots.
+  - **`used-but-capture-dead` now requires TWO conditions:** zero well-formed capture across the
+    **entire window** (never per-session) **AND** a **work signal** derivable from files
+    (`knowledge/**`/`journal/` modifications, frontmatter `updated:`, git log). **This closes a
+    regression v1.5.0 would otherwise introduce:** pre-v1.5.0 a pure-Q&A session often wrote no
+    heartbeat → `not-used` → benign *by accident*; now markers are written unconditionally, so without
+    a work signal a legitimate read-only week would fire `HOOKS-APPEAR-DEAD`. **Activity + no work
+    signal = read-only/idle → benign, no advisory.**
+  - **Capture is never gated on a consolidation having occurred** (a healthy mid-session has zero by
+    construction). `capture_policy` is **not** a factor for breadcrumbs (it governs promotion only) —
+    the policy caveat applies to `nodes-added-per-week` alone.
+  - **"No floor" vs "DEAD floor" are now distinguished** via the host's hook config: deployed
+    `BEGIN:SYNAPTIC-HOOKS` **but** no activity lines → **`shell floor DEPLOYED but DEAD → run the
+    per-host hook smoke-test`** (this *is* the #2a failure, never reported as merely "unknown"); no
+    shell hook deployed → **`capture-yield: unknown (no activity floor on this host)`**. A window that
+    **straddles** the v1.4.0→v1.5.0 upgrade also reports `unknown`.
+  - Audit stays **diagnose-only**: it *reports* an over-bound ledger and routes the rollup to
+    `/synaptic-consolidate` / `/synaptic-maintain` — it never prunes.
+- **`/synaptic-consolidate` Journal Trim** gained the **activity-log rollup** (the treat-side step audit
+  routes to), with a **binding retention contract**: **never prune inside the audit window** (keep raw
+  per-day logs for ~30 days), and any rollup **must preserve the per-day `boot` count** as a summable
+  integer — discarding it would silently destroy Step 9b's denominator and mask a real capture-dead
+  condition as `not-used (benign)`. Beyond the window, collapse a day-file to `<date> boot=N stop=M`;
+  drop rolled-up files older than ~90 days; prune legacy in-body `- boot:` lines **only after** they are
+  counted.
 - **`/synaptic-upgrade` + `/synaptic-init`** now create `journal/_activity/`, deploy the (a0) hooks, and
   **report honestly** whether the host accepted them.
 - **Recipe `Stop` breadcrumb** is now labelled the *semantic* layer (conditional by design, may
@@ -65,9 +101,12 @@
   corruption path for a git-tracked journal on Windows.
 
 ### Honest scope (what this does NOT claim)
-- **"Never empty" holds on hook-capable hosts only.** On a hook-less host there is **no mechanical
-  floor**: low or zero capture is made **VISIBLE** (Step 9b) — **not prevented**. Saying otherwise would
-  repeat the very overclaim this release retires.
+- **"Never empty" holds on `shell`-hook-capable hosts only** — hosts that demonstrably *execute a shell
+  command* on `Stop`/`SessionStart` (confirmed: Claude Code; all others **UNVERIFIED**). On a hook-less
+  host — **or a host whose hooks only surface a prompt** — there is **no mechanical floor**: low or zero
+  capture is made **VISIBLE** (Step 9b) — **not prevented**. Saying otherwise would repeat the very
+  overclaim this release retires.
+- **Same-host concurrency is not solved**, only cross-host sync conflicts are.
 - The activity marker is **proof-of-life + an audit denominator**, **not** semantic capture. Mechanical
   *semantic* capture needs a runtime and is the **`#2a-runtime`** half, deferred to the Cortex MemoryLog
   (v2.0). Issue #2a is therefore split: **`#2a-floor` (this release)** / `#2a-runtime` (v2.0).
