@@ -109,14 +109,17 @@ exit 0
 param([string]$Event = "stop")
 try {
     $brainDir = if ($env:SYNAPTIC_BRAIN_DIR) { $env:SYNAPTIC_BRAIN_DIR } else { ".synaptic" }
-    if (-not (Test-Path $brainDir)) { exit 0 }
+    if (-not (Test-Path -LiteralPath $brainDir)) { exit 0 }   # -LiteralPath: [ ] in a path is not a wildcard
     # Absolute path: .NET methods resolve a relative path against the PROCESS directory, not $PWD, so
     # run in-process after a Set-Location a relative path writes nowhere and still exits 0.
     $brainDir = (Resolve-Path -LiteralPath $brainDir).ProviderPath
     $dir = Join-Path $brainDir "journal/_activity"
-    if (-not (Test-Path $dir)) { New-Item -ItemType Directory -Force -Path $dir | Out-Null }
+    [IO.Directory]::CreateDirectory($dir) | Out-Null   # idempotent; no provider wildcard semantics
     $utc  = (Get-Date).ToUniversalTime()
-    $path = Join-Path $dir "$([Environment]::MachineName)-$($utc.ToString('yyyy-MM-dd')).log"
+    # Host token: %COMPUTERNAME% on Windows (unchanged), else the full host name, which is what `hostname`
+    # prints for the sh marker ([Environment]::MachineName would truncate at the first dot on Unix).
+    $h    = if ($env:COMPUTERNAME) { $env:COMPUTERNAME } else { [Net.Dns]::GetHostName() }
+    $path = Join-Path $dir "$h-$($utc.ToString('yyyy-MM-dd')).log"
     [IO.File]::AppendAllText($path, "$($utc.ToString('yyyy-MM-ddTHH:mm:ssZ')) $Event`n", (New-Object Text.UTF8Encoding $false))
 } catch { }   # two concurrent same-host sessions can hit a transient lock; never block the turn
 exit 0
@@ -164,7 +167,7 @@ PowerShell equivalent (`.claude/hooks/synaptic-breadcrumb.ps1`):
 ```powershell
 # synaptic-breadcrumb.ps1
 $brainDir = if ($env:SYNAPTIC_BRAIN_DIR) { $env:SYNAPTIC_BRAIN_DIR } else { ".synaptic" }
-if (-not (Test-Path $brainDir)) { exit 0 }
+if (-not (Test-Path -LiteralPath $brainDir)) { exit 0 }
 try {
     $journal = Join-Path (Resolve-Path -LiteralPath $brainDir).ProviderPath "journal/_current.md"
     $ts = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mmK")
@@ -295,14 +298,18 @@ fi
 On Windows, swap each command for
 `powershell -NoProfile -ExecutionPolicy Bypass -File .claude/hooks/<script>.ps1` (the activity marker
 takes its event as an argument: `... -File .claude/hooks/synaptic-activity.ps1 stop` / `... boot`).
+Only A.0, A.1 and A.2 have a PowerShell variant. The A.3 rescue does not yet: on Windows keep it as
+`bash .claude/hooks/synaptic-rescue.sh` (needs Git Bash) or leave it out; registering a `.ps1` that does
+not exist fails on every `SessionStart`.
 Use `powershell` (Windows PowerShell 5.1, present on every Windows install), **not** `pwsh` (PowerShell
 7, which is not installed by default, so the hook would fail to start and write nothing). `-ExecutionPolicy
 Bypass` is needed because the Windows client default policy (`Restricted`) refuses to run any `.ps1`; if
 your organisation enforces a policy through Group Policy, that policy wins and the hooks must be signed
 or allowed. `-NoProfile` keeps a user profile from changing error handling or encoding under the hook.
 
-> **Order matters:** the **activity marker runs FIRST** on both `Stop` and `SessionStart`. It is the
-> unconditional floor, so it must not be preceded by anything that can fail, gate, or exit early.
+> **Keep the marker its own hook entry.** Claude Code runs the hooks of one event in parallel, so the
+> activity marker does not depend on its siblings — provided it is a separate entry and never chained
+> after another command in the same command string, where an earlier failure could stop it.
 
 ### Notes
 

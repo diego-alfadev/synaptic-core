@@ -4,42 +4,74 @@
 
 > **First runtime verification of the capture floor.** Everything in [1.5.0] was accepted by inspection
 > ("actual hook firing is verified on the first real run" — that run never happened). `tests/capture-floor/`
-> now executes the published hook scripts under Windows PowerShell 5.1 and Git Bash. The POSIX floor
-> passed unchanged; the PowerShell side surfaced four defects, fixed here, and two inaccurate claims in
-> [1.5.0], corrected below.
+> now executes the published hook scripts — the recipe's and the one-liners `SKILL.md` deploys — and
+> `.github/workflows/` runs them on every push. The recipe's POSIX scripts passed unchanged. The
+> PowerShell side surfaced five defects and the deployed one-liners two more (the ghost-directory one
+> in both shells). All are fixed here; every one a test can observe went red → green in its own commit.
+>
+> **Scope of the verification — read before quoting it.** Executed locally: **Windows PowerShell 5.1 and
+> Git Bash on Windows 11 only** (bash 22/22, PowerShell 5.1 30/30). PowerShell 7, Linux and macOS are
+> first exercised by CI; `tools/*.js` and their new tests have **never been executed** yet. Behaviour
+> described below for those platforms is reasoned from source, not observed.
 
 ### Fixed
 - **Recipe `Stop` breadcrumb (A.1, PowerShell) still wrote a BOM.** The [1.5.0] fix switched
   `Add-Content` to `-Encoding utf8`, which on Windows PowerShell 5.1 means UTF-8 **with** a BOM, written
   whenever the journal is new or empty. It now uses `[IO.File]::AppendAllText` with `UTF8Encoding $false`
-  and LF (the same pattern as the activity marker), resolves the brain path, and never breaks a turn on a
-  write failure.
+  and LF (the activity marker's pattern), resolves the brain path, and never breaks a turn on a write
+  failure.
 - **Activity marker (A.0, PowerShell) silently missed when run in-process.** A relative path handed to
   `[IO.File]::AppendAllText` resolves against the .NET process directory, not `$PWD`, so run from a
   terminal after `cd` — how a user checks that a hook works — it wrote nothing and still exited 0. The
-  brain path is now resolved to an absolute path first. Also: `journal/_activity` uses `/`, and the file
-  is named with `[Environment]::MachineName` (`$env:COMPUTERNAME` is empty off Windows, which produced a
-  `-<date>.log` file).
+  brain path is now resolved to an absolute path first.
+- **Brain paths containing `[ ]` were silently skipped** (A.0, A.1, and the deployed PowerShell
+  one-liner). `Test-Path` without `-LiteralPath` treats brackets as a wildcard, so a brain in, say,
+  `proj[1]\` was reported missing and the hook exited 0 having written nothing. Now `-LiteralPath`, and
+  the directory is created with `[IO.Directory]::CreateDirectory`.
+- **Host token in the PowerShell activity marker.** It is `%COMPUTERNAME%` on Windows — unchanged, so
+  existing Windows ledger filenames stay the same — and the full host name elsewhere, matching what
+  `hostname` prints for the sh marker. (Off Windows, `$env:COMPUTERNAME` is unset, so the [1.5.0]
+  script would name the file `-<date>.log`; `[Environment]::MachineName` would truncate at the first dot
+  and split the ledger from the sh marker's. Neither has been run off Windows yet.)
 - **The Windows hook registration pointed at `pwsh`** (PowerShell 7), which a stock Windows install does
   not have, so the hook never started. The recipe now documents
-  `powershell -NoProfile -ExecutionPolicy Bypass -File …` and what each flag is for.
+  `powershell -NoProfile -ExecutionPolicy Bypass -File …` and what each flag is for, and says plainly
+  that the A.3 rescue has no PowerShell variant yet (keep it on Git Bash or leave it out — registering
+  a `.ps1` that does not exist fails on every `SessionStart`).
 - **A.2's PowerShell reminder** had a non-ASCII `·` inside a string, rendered as mojibake under 5.1 when
-  the block is pasted into a BOM-less file. Recipe PowerShell blocks are now ASCII outside comments, and a
-  test enforces it (an em dash or arrow there would break parsing outright: their cp1252 bytes include a
-  typographic quote that PowerShell treats as a string delimiter).
+  the block is pasted into a BOM-less file. Recipe and `SKILL.md` PowerShell blocks are now ASCII outside
+  comments, enforced by a test (an em dash or arrow there would break parsing outright: their cp1252
+  bytes include a typographic quote that PowerShell treats as a string delimiter).
+- **The deployed activity-marker one-liners in `SKILL.md`** — the copies `/synaptic-init` and
+  `/synaptic-upgrade` actually wire into the host — **recreated a ghost brain directory** when the brain
+  had been moved or deleted: neither had the recipe's brain-exists guard. Both now no-op when `<brain>`
+  is absent, and the PowerShell one makes `<brain>` absolute before the .NET call. With an absolute
+  `<brain>`, as the SKILL instructs, both already worked; these were edge cases, not the main path.
+- **`docs/UPGRADE-v0.3-to-v1.AGENT.md` recommended `Set-Content -Encoding utf8`,** which on 5.1 writes a
+  BOM in front of every rewritten node's frontmatter. It now names the ANSI read as the corrupter and
+  the BOM-free `[IO.File]` read/write pair as the fix.
+- **`tools/migrate.js`'s header promised a confirmation prompt that does not exist.** Without
+  `--dry-run` it executes immediately; the header now says so.
+- **"Order matters" in the hook registration was wrong.** Claude Code runs the hooks of one event in
+  parallel. The guarantee that holds is different: the marker is its own hook entry, so a failing
+  sibling cannot stop it.
 
-- **The deployed activity-marker one-liners in `SKILL.md`** (the copies `/synaptic-init` and
-  `/synaptic-upgrade` actually wire into the host) **recreated a ghost brain directory** when the brain had
-  been moved or deleted: neither had the recipe's brain-exists guard. Both now no-op when `<brain>` is
-  absent. The PowerShell one also resolves `<brain>` to an absolute path before the .NET call, so a
-  relative fill run in-process no longer misses silently. With an absolute `<brain>`, as the SKILL
-  instructs, both already worked — the instructed form was correct, the edge cases were not.
 ### Corrected claims in [1.5.0]
 - *"PowerShell 5.1's `>>` / `Add-Content` / `Out-File` default to UTF-16LE + BOM"* — true of `>>` and
   `Out-File`. **`Add-Content` defaults to the ANSI code page** (measured on 5.1: `café` is written as
   `63 61 66 E9`). The original A.1 defect was therefore invalid UTF-8 for non-ASCII paths, not UTF-16.
 - *"Recipe `Stop` breadcrumb PowerShell encoding"* under **Fixed** — it was only partly fixed; see above.
 
+### Upgrade notes
+Every fix lives in files that were **copied into your project**; nothing updates them for you.
+- **Re-copy** `synaptic-activity.ps1` and `synaptic-breadcrumb.ps1` from the recipe if you use the
+  PowerShell variants.
+- **Change Windows hook commands** from `pwsh -File …` to `powershell -NoProfile -ExecutionPolicy Bypass
+  -File …` unless PowerShell 7 is actually installed.
+- **Strip a leading BOM** from `journal/_current.md` if one is there (first bytes `EF BB BF`).
+- **Re-run `/synaptic-upgrade` (or `/synaptic-init`)** to re-wire the guarded one-liners. For its drift
+  check to notice, the release must bump `SKILL.md`'s `version:`.
+- **No ledger rename on Windows:** the activity-ledger filename is unchanged there.
 ## [1.5.0] - 2026-07-27
 
 > **"Capture you can actually trust."** A MINOR that closes the **floor half of issue #2a** — the

@@ -507,10 +507,12 @@ going — none of them means the migration or the brain is broken. Four known go
      copy, or make a conflict-copy. Move the backup + work copy + all migration artifacts to a LOCAL,
      non-synced path first (this is the Step 2 SYNC GUARD — cross-reference it), or pause sync for the
      window. This is also WHY the cutover prefers `git merge --ff-only` over a live-folder rename.
-  4. PowerShell `Get-Content` / `[IO.File]::WriteAllText` ROUND-TRIPS CORRUPT NON-ASCII characters
-     (em-dash `—`, curly quotes, arrows `→`, etc.): the default encoding mangles them on read-back /
-     re-write. PREFER UTF-8-aware writes (your agent's direct write tool, or `Set-Content -Encoding
-     utf8` / `[IO.File]::WriteAllText($p,$t,[Text.UTF8Encoding]::new($false))`), and keep any tool
+  4. PowerShell ROUND-TRIPS CORRUPT NON-ASCII characters (em-dash `—`, curly quotes, arrows `→`, etc.).
+     On Windows PowerShell 5.1 `Get-Content` without `-Encoding UTF8` reads a BOM-less file as ANSI and
+     mangles them, and `Set-Content` / `Out-File -Encoding utf8` write a BOM in front of the frontmatter.
+     Read with `[IO.File]::ReadAllText($p,[Text.Encoding]::UTF8)` and write with
+     `[IO.File]::WriteAllText($p,$t,(New-Object Text.UTF8Encoding $false))` (or your agent's direct write
+     tool); `[Text.UTF8Encoding]::new()` needs PowerShell 5+, `New-Object` works everywhere. Keep any tool
      source you touch ASCII-safe. If you must round-trip a file through PowerShell, verify the non-ASCII
      glyphs survived — a silently mangled `—`/`→` in a node is an ENV artifact, not authored content.
 ```

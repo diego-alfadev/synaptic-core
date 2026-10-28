@@ -551,12 +551,16 @@ gracefully** — never fail if a layer is unavailable.
 > # -Encoding utf8 adds a BOM). No-op if the brain is gone. The path is made absolute before the .NET call,
 > # which would otherwise resolve it against the process directory instead of $PWD and silently miss.
 > try {
->   $b = "<brain>"; if (-not (Test-Path $b)) { exit 0 }
->   $d = Join-Path (Resolve-Path -LiteralPath $b).ProviderPath "journal\_activity"; if (-not (Test-Path $d)) { New-Item -ItemType Directory -Force -Path $d | Out-Null }
+>   $b = "<brain>"; if (-not (Test-Path -LiteralPath $b)) { exit 0 }
+>   $d = Join-Path (Resolve-Path -LiteralPath $b).ProviderPath "journal\_activity"; [IO.Directory]::CreateDirectory($d) | Out-Null
 >   $u = (Get-Date).ToUniversalTime()
 >   [IO.File]::AppendAllText("$d\$env:COMPUTERNAME-$($u.ToString('yyyy-MM-dd')).log", "$($u.ToString('yyyy-MM-ddTHH:mm:ssZ')) stop`n", (New-Object Text.UTF8Encoding $false))
 > } catch { }   # a missed marker is acceptable; a broken turn is not
 > ```
+>
+> These are **hook commands**. To test one by hand, save it as a script and run it (`sh marker.sh` /
+> `powershell -NoProfile -File marker.ps1`): pasted into an interactive shell, its `exit 0` closes that
+> shell when the brain is absent.
 >
 > **Bound / rollup is AGENT-owned, never the hook.** `/synaptic-consolidate` (Journal Trim) — or
 > `/synaptic-maintain` — prunes and rolls up old per-day activity logs. **Not `/synaptic-audit`**: audit

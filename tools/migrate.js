@@ -8,7 +8,8 @@
 //   - Moves inventory/ → registries/ (if inventory/ exists)
 //   - Stages v0.x boot files into _migration-staging/ (NEVER deletes knowledge content)
 //   - Copies bundled v1 templates if a templates source dir is given
-//   - Prints a dry-run preview first; acts after confirmation (or immediately with --dry-run)
+//   - Prints the plan, then EXECUTES it immediately - there is no confirmation prompt.
+//     Run with --dry-run first: it prints the plan only and modifies nothing.
 //
 // WHAT IT NEVER DOES:
 //   - Never rewrites file content
