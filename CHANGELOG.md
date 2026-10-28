@@ -1,5 +1,39 @@
 # Changelog
 
+## [Unreleased]
+
+> **First runtime verification of the capture floor.** Everything in [1.5.0] was accepted by inspection
+> ("actual hook firing is verified on the first real run" — that run never happened). `tests/capture-floor/`
+> now executes the published hook scripts under Windows PowerShell 5.1 and Git Bash. The POSIX floor
+> passed unchanged; the PowerShell side surfaced four defects, fixed here, and two inaccurate claims in
+> [1.5.0], corrected below.
+
+### Fixed
+- **Recipe `Stop` breadcrumb (A.1, PowerShell) still wrote a BOM.** The [1.5.0] fix switched
+  `Add-Content` to `-Encoding utf8`, which on Windows PowerShell 5.1 means UTF-8 **with** a BOM, written
+  whenever the journal is new or empty. It now uses `[IO.File]::AppendAllText` with `UTF8Encoding $false`
+  and LF (the same pattern as the activity marker), resolves the brain path, and never breaks a turn on a
+  write failure.
+- **Activity marker (A.0, PowerShell) silently missed when run in-process.** A relative path handed to
+  `[IO.File]::AppendAllText` resolves against the .NET process directory, not `$PWD`, so run from a
+  terminal after `cd` — how a user checks that a hook works — it wrote nothing and still exited 0. The
+  brain path is now resolved to an absolute path first. Also: `journal/_activity` uses `/`, and the file
+  is named with `[Environment]::MachineName` (`$env:COMPUTERNAME` is empty off Windows, which produced a
+  `-<date>.log` file).
+- **The Windows hook registration pointed at `pwsh`** (PowerShell 7), which a stock Windows install does
+  not have, so the hook never started. The recipe now documents
+  `powershell -NoProfile -ExecutionPolicy Bypass -File …` and what each flag is for.
+- **A.2's PowerShell reminder** had a non-ASCII `·` inside a string, rendered as mojibake under 5.1 when
+  the block is pasted into a BOM-less file. Recipe PowerShell blocks are now ASCII outside comments, and a
+  test enforces it (an em dash or arrow there would break parsing outright: their cp1252 bytes include a
+  typographic quote that PowerShell treats as a string delimiter).
+
+### Corrected claims in [1.5.0]
+- *"PowerShell 5.1's `>>` / `Add-Content` / `Out-File` default to UTF-16LE + BOM"* — true of `>>` and
+  `Out-File`. **`Add-Content` defaults to the ANSI code page** (measured on 5.1: `café` is written as
+  `63 61 66 E9`). The original A.1 defect was therefore invalid UTF-8 for non-ASCII paths, not UTF-16.
+- *"Recipe `Stop` breadcrumb PowerShell encoding"* under **Fixed** — it was only partly fixed; see above.
+
 ## [1.5.0] - 2026-07-27
 
 > **"Capture you can actually trust."** A MINOR that closes the **floor half of issue #2a** — the

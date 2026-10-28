@@ -104,16 +104,19 @@ exit 0
 
 ```powershell
 # synaptic-activity.ps1 — UNCONDITIONAL proof-of-life marker. Param = event (stop|boot).
-# UTF-8 NO BOM: PowerShell 5.1's >> / Add-Content / Out-File default to UTF-16LE+BOM, which would
-# make the ledger non-grep-clean and produce binary-ish git diffs. Do not "simplify" this line.
+# UTF-8 NO BOM: PowerShell 5.1's >> and Out-File default to UTF-16LE+BOM, and Add-Content to the ANSI
+# code page; either makes the ledger non-grep-clean with binary-ish git diffs. Do not "simplify" this line.
 param([string]$Event = "stop")
 try {
     $brainDir = if ($env:SYNAPTIC_BRAIN_DIR) { $env:SYNAPTIC_BRAIN_DIR } else { ".synaptic" }
     if (-not (Test-Path $brainDir)) { exit 0 }
-    $dir = Join-Path $brainDir "journal\_activity"
+    # Absolute path: .NET methods resolve a relative path against the PROCESS directory, not $PWD, so
+    # run in-process after a Set-Location a relative path writes nowhere and still exits 0.
+    $brainDir = (Resolve-Path -LiteralPath $brainDir).ProviderPath
+    $dir = Join-Path $brainDir "journal/_activity"
     if (-not (Test-Path $dir)) { New-Item -ItemType Directory -Force -Path $dir | Out-Null }
     $utc  = (Get-Date).ToUniversalTime()
-    $path = Join-Path $dir "$env:COMPUTERNAME-$($utc.ToString('yyyy-MM-dd')).log"
+    $path = Join-Path $dir "$([Environment]::MachineName)-$($utc.ToString('yyyy-MM-dd')).log"
     [IO.File]::AppendAllText($path, "$($utc.ToString('yyyy-MM-ddTHH:mm:ssZ')) $Event`n", (New-Object Text.UTF8Encoding $false))
 } catch { }   # two concurrent same-host sessions can hit a transient lock; never block the turn
 exit 0
@@ -161,15 +164,19 @@ PowerShell equivalent (`.claude/hooks/synaptic-breadcrumb.ps1`):
 ```powershell
 # synaptic-breadcrumb.ps1
 $brainDir = if ($env:SYNAPTIC_BRAIN_DIR) { $env:SYNAPTIC_BRAIN_DIR } else { ".synaptic" }
-$journal  = Join-Path $brainDir "journal/_current.md"
 if (-not (Test-Path $brainDir)) { exit 0 }
-$ts = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mmK")
-$touched = (git diff --name-only HEAD 2>$null | Select-Object -First 5) -join ','
-if ($touched) {
-    # -Encoding utf8 is REQUIRED: PowerShell 5.1's Add-Content default is UTF-16LE+BOM, which
-    # corrupts a shared git-tracked journal (non-grep-clean, binary-ish diffs).
-    Add-Content -Path $journal -Value "- $ts breadcrumb: touched $touched" -Encoding utf8
-}
+try {
+    $journal = Join-Path (Resolve-Path -LiteralPath $brainDir).ProviderPath "journal/_current.md"
+    $ts = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mmK")
+    $touched = (git diff --name-only HEAD 2>$null | Select-Object -First 5) -join ','
+    if ($touched) {
+        # NOT Add-Content. On Windows PowerShell 5.1 its default is the ANSI code page (a non-ASCII path
+        # becomes invalid UTF-8), and `-Encoding utf8` means UTF-8 WITH a BOM, written whenever the
+        # journal is new or empty. This writes UTF-8 without a BOM, and LF, on every version.
+        [IO.File]::AppendAllText($journal, "- $ts breadcrumb: touched $touched`n", (New-Object Text.UTF8Encoding $false))
+    }
+} catch { }   # a missed breadcrumb is acceptable; a broken turn is not
+exit 0
 ```
 
 ### A.2 The consolidation-reminder script (`PreCompact` / `SessionEnd`)
@@ -209,7 +216,7 @@ if ($changed) {
     Write-Output "=== Synaptic: consolidation reminder ==="
     Write-Output "journal/ or playgrounds/ changed and is not yet consolidated."
     Write-Output "Run /synaptic-consolidate to distil durable conclusions before context is lost."
-    Write-Output "Cadence: consolidate at flush/exit · /synaptic-audit weekly · /synaptic-weave monthly"
+    Write-Output "Cadence: consolidate at flush/exit | /synaptic-audit weekly | /synaptic-weave monthly"
     Write-Output "========================================"
 }
 ```
@@ -285,8 +292,14 @@ fi
 }
 ```
 
-On Windows, swap each command for `pwsh -File .claude/hooks/<script>.ps1` (the activity marker takes
-its event as an argument: `pwsh -File .claude/hooks/synaptic-activity.ps1 stop` / `... boot`).
+On Windows, swap each command for
+`powershell -NoProfile -ExecutionPolicy Bypass -File .claude/hooks/<script>.ps1` (the activity marker
+takes its event as an argument: `... -File .claude/hooks/synaptic-activity.ps1 stop` / `... boot`).
+Use `powershell` (Windows PowerShell 5.1, present on every Windows install), **not** `pwsh` (PowerShell
+7, which is not installed by default, so the hook would fail to start and write nothing). `-ExecutionPolicy
+Bypass` is needed because the Windows client default policy (`Restricted`) refuses to run any `.ps1`; if
+your organisation enforces a policy through Group Policy, that policy wins and the hooks must be signed
+or allowed. `-NoProfile` keeps a user profile from changing error handling or encoding under the hook.
 
 > **Order matters:** the **activity marker runs FIRST** on both `Stop` and `SessionStart`. It is the
 > unconditional floor, so it must not be preceded by anything that can fail, gate, or exit early.
