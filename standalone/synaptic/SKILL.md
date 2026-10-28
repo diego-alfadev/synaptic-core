@@ -534,19 +534,25 @@ gracefully** — never fail if a layer is unavailable.
 >   **self-creating** (`mkdir -p` / `New-Item -Force`, still read-free) **and** `/synaptic-init` /
 >   `/synaptic-upgrade` create `journal/_activity/` (with a `.gitkeep`). Resolve the brain root
 >   explicitly — never assume the host's cwd is the brain root.
-> - **Encoding PINNED: UTF-8, no BOM.** Windows PowerShell 5.1's `>>` / `Add-Content` / `Out-File`
->   default to **UTF-16LE + BOM**, which would make the shared ledger non-grep-clean and produce
->   binary-ish git diffs. Use the pinned forms below.
+> - **Encoding PINNED: UTF-8, no BOM.** On Windows PowerShell 5.1, `>>` and `Out-File` default to
+>   **UTF-16LE + BOM**, `Add-Content` to the **ANSI code page**, and `Add-Content -Encoding utf8` writes a
+>   **BOM** whenever the file is new or empty (all measured). Each breaks the ledger as clean UTF-8: a
+>   stray BOM defeats `^` anchors, ANSI turns non-ASCII into invalid UTF-8, and UTF-16 makes git treat
+>   the file as binary. Use the pinned forms below, which `tests/capture-floor/` executes.
 >
 > ```sh
 > # POSIX sh (Linux/macOS) — Stop; use `boot` for SessionStart. Self-creating; never blocks the turn.
-> D="<brain>/journal/_activity"; mkdir -p "$D" 2>/dev/null
+> # No-op if the brain is gone: a stale hook must not recreate a ghost <brain>/journal/_activity.
+> B="<brain>"; [ -d "$B" ] || exit 0; D="$B/journal/_activity"; mkdir -p "$D" 2>/dev/null
 > printf '%s stop\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$D/$(hostname)-$(date -u +%F).log" 2>/dev/null || true
 > ```
 > ```powershell
-> # Windows PowerShell 5.1 — UTF-8 no BOM (do NOT use >> / Add-Content / Out-File defaults: UTF-16LE+BOM)
+> # Windows PowerShell 5.1 — UTF-8 no BOM. Never >> / Out-File (UTF-16LE+BOM) or Add-Content (ANSI;
+> # -Encoding utf8 adds a BOM). No-op if the brain is gone. The path is made absolute before the .NET call,
+> # which would otherwise resolve it against the process directory instead of $PWD and silently miss.
 > try {
->   $d = "<brain>\journal\_activity"; if (-not (Test-Path $d)) { New-Item -ItemType Directory -Force -Path $d | Out-Null }
+>   $b = "<brain>"; if (-not (Test-Path $b)) { exit 0 }
+>   $d = Join-Path (Resolve-Path -LiteralPath $b).ProviderPath "journal\_activity"; if (-not (Test-Path $d)) { New-Item -ItemType Directory -Force -Path $d | Out-Null }
 >   $u = (Get-Date).ToUniversalTime()
 >   [IO.File]::AppendAllText("$d\$env:COMPUTERNAME-$($u.ToString('yyyy-MM-dd')).log", "$($u.ToString('yyyy-MM-ddTHH:mm:ssZ')) stop`n", (New-Object Text.UTF8Encoding $false))
 > } catch { }   # a missed marker is acceptable; a broken turn is not

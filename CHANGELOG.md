@@ -28,6 +28,12 @@
   test enforces it (an em dash or arrow there would break parsing outright: their cp1252 bytes include a
   typographic quote that PowerShell treats as a string delimiter).
 
+- **The deployed activity-marker one-liners in `SKILL.md`** (the copies `/synaptic-init` and
+  `/synaptic-upgrade` actually wire into the host) **recreated a ghost brain directory** when the brain had
+  been moved or deleted: neither had the recipe's brain-exists guard. Both now no-op when `<brain>` is
+  absent. The PowerShell one also resolves `<brain>` to an absolute path before the .NET call, so a
+  relative fill run in-process no longer misses silently. With an absolute `<brain>`, as the SKILL
+  instructs, both already worked — the instructed form was correct, the edge cases were not.
 ### Corrected claims in [1.5.0]
 - *"PowerShell 5.1's `>>` / `Add-Content` / `Out-File` default to UTF-16LE + BOM"* — true of `>>` and
   `Out-File`. **`Add-Content` defaults to the ANSI code page** (measured on 5.1: `café` is written as

@@ -29,7 +29,7 @@
   command; never assume the host's cwd is the brain root.
 - **Deploy the layer-(a0) activity marker** per `SKILL.md` §d "Deterministic activity marker": wire the
   pinned platform-appropriate one-liner (**UTF-8 no-BOM**; `[IO.File]::AppendAllText` on PowerShell —
-  never bare `>>`/`Add-Content`, which default to UTF-16LE+BOM) to `Stop` (`stop`) and `SessionStart`
+  never `>>` (UTF-16LE+BOM) or `Add-Content` (ANSI by default; a BOM with `-Encoding utf8` on 5.1)) to `Stop` (`stop`) and `SessionStart`
   (`boot`), writing to `journal/_activity/<host>-<YYYY-MM-DD>.log`. Marker-wrapped + idempotent like
   every other hook write.
 - **Migrate the boot ledger:** stop emitting the old `- boot:` line into `journal/_current.md`; the boot
