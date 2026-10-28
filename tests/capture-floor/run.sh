@@ -136,6 +136,44 @@ esac
 has_bom "$ws/.synaptic/journal/_current.md" && nok "A.1 (bash) leaves the journal BOM-free" \
   || ok "A.1 (bash) leaves the journal BOM-free"
 
+# --- The DEPLOYED copy: SKILL.md's pinned one-liner --------------------------------------------
+# /synaptic-init and /synaptic-upgrade wire THIS block into the host, not the recipe's script, so it is
+# the copy users actually run. It lives inside a blockquote; <brain> is a placeholder the agent fills.
+SKILL="$ROOT/standalone/synaptic/SKILL.md"
+extract_quoted() {   # like extract(), but strips the blockquote prefix and anchors on a list item
+  awk -v h="$1" -v lang="$2" '
+    { sub(/\r$/, ""); sub(/^> ?/, "") }
+    !inh && index($0, h) == 1 { inh = 1; next }
+    inh && !inb && $0 == "```" lang { inb = 1; next }
+    inb && $0 == "```"        { exit }
+    inb                       { print }
+  ' "$SKILL" > "$3"
+  [ -s "$3" ]
+}
+SK="$WORK/skill-oneliner.sh"
+if extract_quoted "- **Encoding PINNED" sh "$SK"; then
+  ok "extract SKILL.md's deployed sh one-liner"
+  # 8. Filled with an ABSOLUTE brain path (what the SKILL instructs), run from an unrelated directory.
+  ws="$WORK/skill-abs"; mkdir -p "$ws/.synaptic" "$WORK/elsewhere"
+  sed "s#<brain>#$ws/.synaptic#g" "$SK" > "$WORK/skill-abs.sh"
+  ( cd "$WORK/elsewhere" && sh "$WORK/skill-abs.sh" ); rc=$?
+  f="$(ledger "$ws")"
+  if [ "$rc" -eq 0 ] && [ -n "$f" ] && grep -Eq "$LINE_RE" "$f"; then
+    ok "SKILL.md sh one-liner writes a well-formed marker into an absolute brain path"
+  else
+    nok "SKILL.md sh one-liner writes a well-formed marker into an absolute brain path" "rc=$rc ledger=${f:-none}"
+  fi
+  # 9. Contract parity with the recipe's A.0: a stale hook pointing at a brain that no longer exists must
+  #    not recreate it. Otherwise moving or deleting a brain leaves a ghost .synaptic/journal/_activity.
+  gone="$WORK/skill-gone/.synaptic"
+  sed "s#<brain>#$gone#g" "$SK" > "$WORK/skill-gone.sh"
+  ( cd "$WORK/elsewhere" && sh "$WORK/skill-gone.sh" ); rc=$?
+  if [ "$rc" -eq 0 ] && [ ! -e "$gone" ]; then ok "SKILL.md sh one-liner with an absent brain: exit 0 and recreates nothing"
+  else nok "SKILL.md sh one-liner with an absent brain: exit 0 and recreates nothing" "rc=$rc; it created $gone (a ghost brain directory)"; fi
+else
+  nok "extract SKILL.md's deployed sh one-liner" "anchor '- **Encoding PINNED' or the sh fence moved"
+fi
+
 # --- Cross-shell consistency (Windows) --------------------------------------------------------
 # The bash marker names its file with `hostname`, the PowerShell one with $env:COMPUTERNAME. If they
 # differ, a machine running both variants splits one day's ledger into two files.

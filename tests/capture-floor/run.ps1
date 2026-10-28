@@ -18,6 +18,7 @@ $Label   = "PS $($PSVersionTable.PSVersion) $($PSVersionTable.PSEdition)"
 $PsExe   = (Get-Process -Id $PID).Path
 $Root    = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).ProviderPath
 $Recipe  = Join-Path $Root 'recipes/session-end-consolidate.md'
+$Skill   = Join-Path $Root 'standalone/synaptic/SKILL.md'
 $Work    = Join-Path ([IO.Path]::GetTempPath()) ('syncf-' + [guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $Work | Out-Null
 # Any write that wrongly resolves against the .NET process directory lands here, never in a real brain.
@@ -131,17 +132,20 @@ try {
     #    BOM-less script as ANSI (cp1252). A non-ASCII character inside CODE then changes meaning: the
     #    em dash (E2 80 94) becomes three characters whose last one is a typographic double quote, which
     #    PowerShell accepts as a string delimiter, so the hook stops parsing. Comments are harmless.
-    $all = [IO.File]::ReadAllLines($Recipe, [Text.Encoding]::UTF8)
-    $inB = $false; $blk = 0; $ln = 0; $bad = @()
-    foreach ($raw in $all) {
-        $ln++; $l = $raw.TrimEnd("`r")
-        if (-not $inB) { if ($l -eq '```powershell') { $inB = $true; $blk++ }; continue }
-        if ($l -eq '```') { $inB = $false; continue }
-        $code = $l -replace '(^|\s)#.*$', ''
-        if ($code -match '[^\x00-\x7F]') { $bad += "line ${ln}: $($l.Trim())" }
+    #    Covers the recipe AND SKILL.md, whose blocks sit inside a blockquote (`> ` prefix stripped).
+    $blk = 0; $bad = @()
+    foreach ($src in @($Recipe, $Skill)) {
+        $inB = $false; $ln = 0
+        foreach ($raw in [IO.File]::ReadAllLines($src, [Text.Encoding]::UTF8)) {
+            $ln++; $l = ($raw.TrimEnd("`r")) -replace '^> ?', ''
+            if (-not $inB) { if ($l -eq '```powershell') { $inB = $true; $blk++ }; continue }
+            if ($l -eq '```') { $inB = $false; continue }
+            $code = $l -replace '(^|\s)#.*$', ''
+            if ($code -match '[^\x00-\x7F]') { $bad += "$(Split-Path $src -Leaf):${ln}: $($l.Trim())" }
+        }
     }
-    if ($bad.Count -eq 0) { Ok "recipe PowerShell blocks are ASCII outside comments ($blk blocks)" }
-    else { Nok "recipe PowerShell blocks are ASCII outside comments ($blk blocks)" "non-ASCII in code breaks or garbles BOM-less scripts under 5.1 -> $($bad -join ' ; ')" }
+    if ($bad.Count -eq 0) { Ok "recipe + SKILL.md PowerShell blocks are ASCII outside comments ($blk blocks)" }
+    else { Nok "recipe + SKILL.md PowerShell blocks are ASCII outside comments ($blk blocks)" "non-ASCII in code breaks or garbles BOM-less scripts under 5.1 -> $($bad -join ' ; ')" }
 
     $a0Body = Get-Block '### A.0' 'powershell'
     $a1Body = Get-Block '### A.1' 'powershell'
@@ -282,6 +286,49 @@ try {
     $null = Invoke-Hook $A1 '' $ws
     if (Test-Bom $jf) { Nok 'A.1 appending to an empty journal writes no BOM' '-Encoding utf8 writes a BOM at offset 0 on Windows PowerShell 5.1' }
     else { Ok 'A.1 appending to an empty journal writes no BOM' }
+
+    # --- The DEPLOYED copy: SKILL.md's pinned one-liner -------------------------------------------
+    # /synaptic-init and /synaptic-upgrade wire THIS block into the host, so it is what users run.
+    # It sits in a blockquote, and <brain> is a placeholder the agent fills.
+    $skillBlock = @(); $inH = $false; $inB = $false
+    foreach ($raw in [IO.File]::ReadAllLines($Skill, [Text.Encoding]::UTF8)) {
+        $l = ($raw.TrimEnd("`r")) -replace '^> ?', ''
+        if (-not $inH) { if ($l.StartsWith('- **Encoding PINNED')) { $inH = $true }; continue }
+        if (-not $inB) { if ($l -eq '```powershell') { $inB = $true }; continue }
+        if ($l -eq '```') { break }
+        $skillBlock += $l
+    }
+    if ($skillBlock.Count -eq 0) { Nok "extract SKILL.md's deployed PowerShell one-liner" "anchor '- **Encoding PINNED' or the powershell fence moved" }
+    else {
+        Ok "extract SKILL.md's deployed PowerShell one-liner"
+        $elsewhere = New-Workspace 'skill-elsewhere'
+
+        # 11. Filled with an ABSOLUTE brain path (what the SKILL instructs), launched from elsewhere.
+        $ws = New-Workspace 'skill-abs' -Brain
+        $sk = Save-Script 'skill-abs.ps1' ($skillBlock | ForEach-Object { $_.Replace('<brain>', (Join-Path $ws '.synaptic')) })
+        $rc = Invoke-Hook $sk '' $elsewhere
+        $led = Get-Ledger (Join-Path $ws '.synaptic')
+        if ($rc -eq 0 -and $led -and ((Get-Lines $led.FullName)[0] -match $LineRe) -and -not (Test-Bom $led.FullName)) {
+            Ok 'SKILL.md PowerShell one-liner writes a well-formed, BOM-free marker into an absolute brain path'
+        } else { Nok 'SKILL.md PowerShell one-liner writes a well-formed, BOM-free marker into an absolute brain path' "rc=$rc ledger=$(if ($led) { $led.Name } else { 'none' })" }
+
+        # 12. Filled with a RELATIVE path (".synaptic" - what "resolve the brain root explicitly" can
+        #     plausibly be read as) and run in-process after Set-Location, as a user checking a hook does.
+        $ws = New-Workspace 'skill-rel' -Brain
+        $sk = Save-Script 'skill-rel.ps1' ($skillBlock | ForEach-Object { $_.Replace('<brain>', '.synaptic') })
+        Push-Location -LiteralPath $ws
+        try { & $sk } catch { } finally { Pop-Location }
+        if (Get-Ledger (Join-Path $ws '.synaptic')) { Ok 'SKILL.md PowerShell one-liner with a relative brain path, run in-process, writes to the right brain' }
+        else { Nok 'SKILL.md PowerShell one-liner with a relative brain path, run in-process, writes to the right brain' 'relative path resolved against the process directory: nothing written, exit 0' }
+
+        # 13. Contract parity with the recipe's A.0: a stale hook for a brain that no longer exists must
+        #     not recreate it (moving or deleting a brain would otherwise leave a ghost directory).
+        $gone = Join-Path $Work 'skill-gone/.synaptic'
+        $sk = Save-Script 'skill-gone.ps1' ($skillBlock | ForEach-Object { $_.Replace('<brain>', $gone) })
+        $rc = Invoke-Hook $sk '' $elsewhere
+        if ($rc -eq 0 -and -not (Test-Path -LiteralPath $gone)) { Ok 'SKILL.md PowerShell one-liner with an absent brain: exit 0 and recreates nothing' }
+        else { Nok 'SKILL.md PowerShell one-liner with an absent brain: exit 0 and recreates nothing' "rc=$rc; it created $gone (a ghost brain directory)" }
+    }
 }
 catch {
     Nok 'harness completed without an unexpected exception' $_.Exception.Message
