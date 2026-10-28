@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# tests/capture-floor/run.sh — runtime tests for the v1.5.0 capture floor (issue #2a), POSIX side.
+# tests/capture-floor/run.sh - runtime tests for the v1.5.0 capture floor (issue #2a), POSIX side.
 #
 # Tests the hook scripts EXACTLY as published in recipes/session-end-consolidate.md: they are
 # extracted from the fenced blocks, not copied, so the documentation a user copy-pastes is what
@@ -18,15 +18,17 @@ export GIT_CEILING_DIRECTORIES="$WORK"
 unset SYNAPTIC_BRAIN_DIR
 
 n=0; fails=0
+# Workflow-command messages must encode %, CR and LF, or a multi-line detail is cut at its first line.
+gh_esc() { local m="$1"; m=${m//%/%25}; m=${m//$'\r'/%0D}; m=${m//$'\n'/%0A}; printf '%s' "$m"; }
 ok()   { n=$((n+1)); echo "ok $n - $1"; }
 nok()  { n=$((n+1)); fails=$((fails+1)); echo "not ok $n - $1"; [ -n "${2:-}" ] && echo "  # $2"
-         [ -n "${GITHUB_ACTIONS:-}" ] && echo "::error title=capture-floor (bash)::$1${2:+ — $2}"; }
-info() { echo "# info: $1"; [ -n "${GITHUB_ACTIONS:-}" ] && echo "::notice title=capture-floor (bash)::$1"; }
+         [ -n "${GITHUB_ACTIONS:-}" ] && echo "::error title=capture-floor (bash)::$(gh_esc "$1${2:+ - $2}")"; return 0; }
+info() { echo "# info: $1"; [ -n "${GITHUB_ACTIONS:-}" ] && echo "::notice title=capture-floor (bash)::$(gh_esc "$1")"; return 0; }
 
 # extract <heading-prefix> <fence-lang> <out-file>
 # First fenced block of <fence-lang> after the line starting with <heading-prefix>, stopping at the
 # next `### ` heading. Strips CR: on Windows checkouts the recipe is CRLF (core.autocrlf=true), and
-# a CRLF shell script does not run under bash — which is itself a user-facing hazard (see README).
+# a CRLF shell script does not run under bash - which is itself a user-facing hazard (see README).
 extract() {
   awk -v h="$1" -v lang="$2" '
     { sub(/\r$/, "") }
@@ -66,7 +68,7 @@ if [ -n "$f" ]; then
   has_nul "$f" && nok "A.0 ledger has no NUL bytes (not UTF-16)" || ok "A.0 ledger has no NUL bytes (not UTF-16)"
   has_cr  "$f" && nok "A.0 ledger uses LF line endings" || ok "A.0 ledger uses LF line endings"
   case "$(basename "$f")" in
-    -*) nok "A.0 ledger filename does not start with '-'" "$(basename "$f") — empty host name" ;;
+    -*) nok "A.0 ledger filename does not start with '-'" "$(basename "$f") - empty host name" ;;
     *)  ok "A.0 ledger filename is <host>-<date>.log ($(basename "$f"))" ;;
   esac
   first="$(head -n 1 "$f")"
@@ -99,7 +101,7 @@ ws="$WORK/a0-broken"; mkdir -p "$ws/.synaptic/journal"; : > "$ws/.synaptic/journ
 
 # 5. Concurrency: 20 parallel same-host appends. Corruption is a failure; a missed marker is not
 #    (the recipe documents it as acceptable), but the landed count is reported because the ledger
-#    is the capture-yield DENOMINATOR — lost boot markers bias /synaptic-audit Step 9b.
+#    is the capture-yield DENOMINATOR - lost boot markers bias /synaptic-audit Step 9b.
 ws="$WORK/a0-conc"; mkdir -p "$ws/.synaptic"
 for i in $(seq 1 20); do ( cd "$ws" && sh "$A0" stop ) & done; wait
 f="$(ledger "$ws")"
@@ -113,7 +115,7 @@ else
 fi
 
 # --- A.1: the conditional semantic layer -----------------------------------------------------
-# 6. Reproduce issue #2a: in a NON-git workspace A.1 writes NOTHING. Expected and documented —
+# 6. Reproduce issue #2a: in a NON-git workspace A.1 writes NOTHING. Expected and documented -
 #    this is precisely why A.0 exists. If this ever starts writing, the recipe text is stale.
 ws="$WORK/a1-nogit"; mkdir -p "$ws/.synaptic/journal"; printf '# Journal\n' > "$ws/.synaptic/journal/_current.md"
 before="$(cat "$ws/.synaptic/journal/_current.md")"
@@ -175,13 +177,15 @@ else
 fi
 
 # --- Cross-shell consistency (Windows) --------------------------------------------------------
-# The bash marker names its file with `hostname`, the PowerShell one with $env:COMPUTERNAME. If they
-# differ, a machine running both variants splits one day's ledger into two files.
+# The sh marker names its file with `hostname`; the PowerShell copies use $env:COMPUTERNAME on Windows.
+# NTFS is case-insensitive, so names that differ only in case share one file; a real split happens only
+# when they differ beyond case (e.g. a DNS name longer than the 15-character NetBIOS limit).
 if [ -n "${COMPUTERNAME:-}" ]; then
-  if [ "$(hostname)" = "$COMPUTERNAME" ]; then
-    ok "bash hostname matches \$COMPUTERNAME (one ledger file per host+day across shells)"
+  up() { printf '%s' "$1" | tr '[:lower:]' '[:upper:]'; }
+  if [ "$(up "$(hostname)")" = "$(up "$COMPUTERNAME")" ]; then
+    ok "bash hostname matches \$COMPUTERNAME up to case (one ledger file per host+day across shells)"
   else
-    info "bash 'hostname' ($(hostname)) != COMPUTERNAME ($COMPUTERNAME): mixed bash+PowerShell hooks split the ledger"
+    info "bash 'hostname' ($(hostname)) differs from COMPUTERNAME ($COMPUTERNAME) beyond case: mixed sh+PowerShell hooks split the ledger"
   fi
 fi
 

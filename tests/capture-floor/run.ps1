@@ -31,15 +31,18 @@ $InCi = [bool]$env:GITHUB_ACTIONS
 
 $script:n = 0; $script:fails = 0
 function Ok([string]$m)  { $script:n++; Write-Output "ok $($script:n) - [$Label] $m" }
+# Workflow-command messages must encode %, CR and LF, or a multi-line detail is cut at its first line.
+function Format-GhMessage([string]$s) { return $s.Replace('%', '%25').Replace("`r", '%0D').Replace("`n", '%0A') }
 function Nok([string]$m, [string]$d) {
     $script:n++; $script:fails++
     Write-Output "not ok $($script:n) - [$Label] $m"
     if ($d) { Write-Output "  # $d" }
-    if ($InCi) { Write-Output "::error title=capture-floor ($Label)::$m$(if ($d) { " - $d" })" }
+    $t = $m; if ($d) { $t = "$m - $d" }
+    if ($InCi) { Write-Output "::error title=capture-floor ($Label)::$(Format-GhMessage $t)" }
 }
 function Info([string]$m) {
     Write-Output "# info: [$Label] $m"
-    if ($InCi) { Write-Output "::notice title=capture-floor ($Label)::$m" }
+    if ($InCi) { Write-Output "::notice title=capture-floor ($Label)::$(Format-GhMessage $m)" }
 }
 
 function Get-Block([string]$Heading, [string]$Lang) {
@@ -116,8 +119,8 @@ function New-Workspace([string]$Name, [switch]$Brain) {
 
 $LineRe = '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z (stop|boot)$'
 
-# Context the findings depend on: the recipe registers Windows hooks as `pwsh -File ...` (PowerShell 7),
-# and a .ps1 only runs under the effective execution policy.
+# Context the findings depend on: the recipe registers Windows hooks as `powershell -File ...` (5.1, on
+# every Windows install; pwsh is optional), and a .ps1 only runs under the effective execution policy.
 if ($IsWindows -or $env:OS -eq 'Windows_NT') {
     $hasPwsh = [bool](Get-Command pwsh -ErrorAction SilentlyContinue)
     # Report the persistent scopes, not the effective one: this harness itself runs under -ExecutionPolicy
@@ -172,7 +175,7 @@ try {
         if (Test-Bom $f)       { Nok 'A.0 ledger has no UTF-8 BOM' }          else { Ok 'A.0 ledger has no UTF-8 BOM' }
         if (Test-Byte $f 0)    { Nok 'A.0 ledger has no NUL bytes (not UTF-16)' } else { Ok 'A.0 ledger has no NUL bytes (not UTF-16)' }
         if (Test-Byte $f 13)   { Nok 'A.0 ledger uses LF line endings' }      else { Ok 'A.0 ledger uses LF line endings' }
-        if ($led.Name.StartsWith('-')) { Nok "A.0 ledger filename does not start with '-'" "$($led.Name) - `$env:COMPUTERNAME is empty on this OS" }
+        if ($led.Name.StartsWith('-')) { Nok "A.0 ledger filename does not start with '-'" "$($led.Name) - the host-name expression returned empty on this OS" }
         else { Ok "A.0 ledger filename is <host>-<date>.log ($($led.Name))" }
         $first = $lines[0]
         $null = Invoke-Hook $A0 'boot' $ws
@@ -195,6 +198,14 @@ try {
     New-Item -ItemType Directory -Path (Join-Path $ws 'custom-brain') | Out-Null
     $null = Invoke-Hook $A0 'stop' $ws @{ SYNAPTIC_BRAIN_DIR = 'custom-brain' }
     if (Get-Ledger (Join-Path $ws 'custom-brain')) { Ok 'A.0 honours SYNAPTIC_BRAIN_DIR' } else { Nok 'A.0 honours SYNAPTIC_BRAIN_DIR' }
+
+    # 3b. A brain path containing [ ] (legal in a Windows folder name). Without -LiteralPath, Test-Path
+    #     treats the brackets as a wildcard, reports the brain missing, and the hook exits 0 silently.
+    $ws = New-Workspace 'a0-brackets'
+    [IO.Directory]::CreateDirectory((Join-Path $ws 'brain[1]')) | Out-Null
+    $null = Invoke-Hook $A0 'stop' $ws @{ SYNAPTIC_BRAIN_DIR = 'brain[1]' }
+    if (Get-Ledger (Join-Path $ws 'brain[1]')) { Ok 'A.0 handles a brain path containing [ ]' }
+    else { Nok 'A.0 handles a brain path containing [ ]' 'wildcard Test-Path reported the brain missing: nothing written, exit 0' }
 
     # 4. A write failure never blocks the turn.
     $ws = New-Workspace 'a0-broken' -Brain
@@ -233,7 +244,9 @@ try {
     }
 
     # --- A.1: the conditional semantic layer ------------------------------------------------------
-    function New-GitWorkspace([string]$Name, [string]$Journal) {
+    # $Journal is deliberately UNTYPED: a [string] parameter turns $null into '', which would make the
+    # "journal absent" case below silently create an empty journal instead.
+    function New-GitWorkspace([string]$Name, $Journal) {
         $ws = New-Workspace $Name -Brain
         New-Item -ItemType Directory -Path (Join-Path $ws '.synaptic/journal') | Out-Null
         if ($null -ne $Journal) { [IO.File]::WriteAllText((Join-Path $ws '.synaptic/journal/_current.md'), $Journal, (New-Object Text.UTF8Encoding $false)) }
@@ -275,6 +288,7 @@ try {
     # 9. Gate passes, journal does NOT exist yet (e.g. rotated by a consolidation): A.1 creates it.
     $ws = New-GitWorkspace 'a1-git-missing' $null
     $jf = Join-Path $ws '.synaptic/journal/_current.md'
+    if (Test-Path -LiteralPath $jf) { Nok 'fixture: the journal must be ABSENT before A.1 runs' 'otherwise this case silently duplicates the empty-journal case' }
     $null = Invoke-Hook $A1 '' $ws
     if (-not (Test-Path -LiteralPath $jf)) { Nok 'A.1 creates a missing journal' }
     elseif (Test-Bom $jf) { Nok 'A.1 creating a missing journal writes no BOM' '-Encoding utf8 means UTF-8 WITH BOM on Windows PowerShell 5.1' }
@@ -298,7 +312,13 @@ try {
         if ($l -eq '```') { break }
         $skillBlock += $l
     }
+    $onWindows = ($env:OS -eq 'Windows_NT')
     if ($skillBlock.Count -eq 0) { Nok "extract SKILL.md's deployed PowerShell one-liner" "anchor '- **Encoding PINNED' or the powershell fence moved" }
+    elseif (-not $onWindows) {
+        # The block is labelled "Windows PowerShell 5.1" (backslash paths, $env:COMPUTERNAME); off Windows
+        # the POSIX sh one-liner is the deployed copy, and run.sh covers it.
+        $script:n++; Write-Output "ok $($script:n) - [$Label] SKILL.md PowerShell one-liner # SKIP labelled Windows-only"
+    }
     else {
         Ok "extract SKILL.md's deployed PowerShell one-liner"
         $elsewhere = New-Workspace 'skill-elsewhere'
@@ -328,6 +348,14 @@ try {
         $rc = Invoke-Hook $sk '' $elsewhere
         if ($rc -eq 0 -and -not (Test-Path -LiteralPath $gone)) { Ok 'SKILL.md PowerShell one-liner with an absent brain: exit 0 and recreates nothing' }
         else { Nok 'SKILL.md PowerShell one-liner with an absent brain: exit 0 and recreates nothing' "rc=$rc; it created $gone (a ghost brain directory)" }
+
+        # 14. An absolute brain path containing [ ] - legal in a Windows folder name.
+        $ws = Join-Path $Work 'skill-proj[1]'
+        [IO.Directory]::CreateDirectory((Join-Path $ws '.synaptic')) | Out-Null
+        $sk = Save-Script 'skill-brackets.ps1' ($skillBlock | ForEach-Object { $_.Replace('<brain>', (Join-Path $ws '.synaptic')) })
+        $null = Invoke-Hook $sk '' $elsewhere
+        if (Get-Ledger (Join-Path $ws '.synaptic')) { Ok 'SKILL.md PowerShell one-liner handles a brain path containing [ ]' }
+        else { Nok 'SKILL.md PowerShell one-liner handles a brain path containing [ ]' 'wildcard Test-Path reported the brain missing: nothing written, exit 0' }
     }
 }
 catch {

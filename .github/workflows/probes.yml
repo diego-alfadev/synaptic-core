@@ -1,0 +1,60 @@
+# Probes: executable answers to open research questions, not product checks.
+#
+# Each job settles one claim from strategy/sota-delta-2026-09-20.md that was established by reading
+# sources rather than by running anything. Results surface as job annotations (::notice / ::error),
+# which are readable from the run page and the public checks API without downloading logs.
+#   fts5           - does node:sqlite ship FTS5 + bm25() from Node 22.16.0 (and not before)?
+#                    Decides the Phase 5 "build on node:sqlite, don't adopt QMD" call. ASSERTS.
+#   engram-export  - what does Engram's GET /export actually return, per major version?
+#                    Unblocks the Phase 6 promotion adapter. REPORTS ONLY (continue-on-error).
+
+name: probes
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ['ci/**']
+
+permissions:
+  contents: read
+
+jobs:
+  fts5:
+    name: node:sqlite FTS5 (node ${{ matrix.node }}, ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        node: ['22.15.0', '22.16.0', '24']
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ matrix.node }}
+      - name: FTS5 + bm25() through node:sqlite, zero npm dependencies
+        env:
+          EXPECT_FTS5: ${{ matrix.node == '22.15.0' && '0' || '1' }}
+        run: node tests/probes/fts5-probe.js
+
+  engram-export:
+    name: engram ${{ matrix.engram }} GET /export contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+      matrix:
+        engram: ['2.0.0', '3.6.0']
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - name: Download (checksum-verified), serve, seed, record /export
+        env:
+          ENGRAM_VERSION: ${{ matrix.engram }}
+          PROBE_OUT: ${{ runner.temp }}/engram-probe
+        run: bash tests/probes/engram-export-probe.sh
