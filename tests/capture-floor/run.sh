@@ -1,0 +1,152 @@
+#!/usr/bin/env bash
+# tests/capture-floor/run.sh — runtime tests for the v1.5.0 capture floor (issue #2a), POSIX side.
+#
+# Tests the hook scripts EXACTLY as published in recipes/session-end-consolidate.md: they are
+# extracted from the fenced blocks, not copied, so the documentation a user copy-pastes is what
+# gets verified. If a heading or fence in the recipe changes, extraction fails loudly.
+#
+# Usage:  bash tests/capture-floor/run.sh          exit 0 = every assertion passed
+# Output: TAP-style lines; failures are also emitted as GitHub `::error::` annotations.
+set -u
+
+ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+RECIPE="$ROOT/recipes/session-end-consolidate.md"
+WORK="$(mktemp -d 2>/dev/null || mktemp -d -t syncf)"
+trap 'rm -rf "$WORK"' EXIT
+# Never let a fixture discover a parent git repo (the A.1 gate depends on git).
+export GIT_CEILING_DIRECTORIES="$WORK"
+unset SYNAPTIC_BRAIN_DIR
+
+n=0; fails=0
+ok()   { n=$((n+1)); echo "ok $n - $1"; }
+nok()  { n=$((n+1)); fails=$((fails+1)); echo "not ok $n - $1"; [ -n "${2:-}" ] && echo "  # $2"
+         [ -n "${GITHUB_ACTIONS:-}" ] && echo "::error title=capture-floor (bash)::$1${2:+ — $2}"; }
+info() { echo "# info: $1"; [ -n "${GITHUB_ACTIONS:-}" ] && echo "::notice title=capture-floor (bash)::$1"; }
+
+# extract <heading-prefix> <fence-lang> <out-file>
+# First fenced block of <fence-lang> after the line starting with <heading-prefix>, stopping at the
+# next `### ` heading. Strips CR: on Windows checkouts the recipe is CRLF (core.autocrlf=true), and
+# a CRLF shell script does not run under bash — which is itself a user-facing hazard (see README).
+extract() {
+  awk -v h="$1" -v lang="$2" '
+    { sub(/\r$/, "") }
+    !inh && index($0, h) == 1 { inh = 1; next }
+    inh && /^### /            { exit }
+    inh && !inb && $0 == "```" lang { inb = 1; next }
+    inb && $0 == "```"        { exit }
+    inb                       { print }
+  ' "$RECIPE" > "$3"
+  [ -s "$3" ]
+}
+
+A0="$WORK/synaptic-activity.sh"
+A1="$WORK/synaptic-breadcrumb.sh"
+extract "### A.0" bash "$A0" && ok "extract A.0 activity-marker (bash) from the recipe" \
+  || { nok "extract A.0 activity-marker (bash) from the recipe" "heading or fence changed"; exit 1; }
+extract "### A.1" bash "$A1" && ok "extract A.1 breadcrumb (bash) from the recipe" \
+  || { nok "extract A.1 breadcrumb (bash) from the recipe" "heading or fence changed"; exit 1; }
+
+LINE_RE='^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z (stop|boot)$'
+ledger() { ls "$1"/.synaptic/journal/_activity/*.log 2>/dev/null | head -n 1; }
+has_bom() { [ "$(head -c 3 "$1" | od -An -tx1 | tr -d ' \n')" = "efbbbf" ]; }
+has_nul() { ! tr -d '\000' < "$1" | cmp -s - "$1"; }
+has_cr()  { grep -q "$(printf '\r')" "$1"; }
+
+# --- A.0: the unconditional floor -----------------------------------------------------------
+# 1. The #2a fix itself: a NON-git workspace still gets a marker.
+ws="$WORK/a0-nogit"; mkdir -p "$ws/.synaptic"
+( cd "$ws" && sh "$A0" stop ); rc=$?
+[ "$rc" -eq 0 ] && ok "A.0 exits 0" || nok "A.0 exits 0" "rc=$rc"
+f="$(ledger "$ws")"
+if [ -n "$f" ]; then
+  ok "A.0 writes a marker in a NON-git workspace (the issue #2a fix)"
+  [ "$(wc -l < "$f" | tr -d ' ')" -eq 1 ] && ok "A.0 writes exactly one line" || nok "A.0 writes exactly one line" "$(cat "$f")"
+  grep -Eq "$LINE_RE" "$f" && ok "A.0 line format is '<UTC ISO-8601> <event>'" || nok "A.0 line format" "got: $(head -n 1 "$f")"
+  has_bom "$f" && nok "A.0 ledger has no UTF-8 BOM" || ok "A.0 ledger has no UTF-8 BOM"
+  has_nul "$f" && nok "A.0 ledger has no NUL bytes (not UTF-16)" || ok "A.0 ledger has no NUL bytes (not UTF-16)"
+  has_cr  "$f" && nok "A.0 ledger uses LF line endings" || ok "A.0 ledger uses LF line endings"
+  case "$(basename "$f")" in
+    -*) nok "A.0 ledger filename does not start with '-'" "$(basename "$f") — empty host name" ;;
+    *)  ok "A.0 ledger filename is <host>-<date>.log ($(basename "$f"))" ;;
+  esac
+  first="$(head -n 1 "$f")"
+  ( cd "$ws" && sh "$A0" boot )
+  if [ "$(wc -l < "$f" | tr -d ' ')" -eq 2 ] && [ "$(head -n 1 "$f")" = "$first" ]; then
+    ok "A.0 is append-only: a second event appends and the first line is untouched"
+  else
+    nok "A.0 is append-only" "$(cat "$f")"
+  fi
+else
+  nok "A.0 writes a marker in a NON-git workspace (the issue #2a fix)" "no ledger file created"
+fi
+
+# 2. No brain present -> silent no-op, creates nothing.
+ws="$WORK/a0-nobrain"; mkdir -p "$ws"
+( cd "$ws" && sh "$A0" stop ); rc=$?
+[ "$rc" -eq 0 ] && [ ! -e "$ws/.synaptic" ] && ok "A.0 with no brain: exit 0 and creates nothing" \
+  || nok "A.0 with no brain: exit 0 and creates nothing" "rc=$rc"
+
+# 3. SYNAPTIC_BRAIN_DIR override is honoured.
+ws="$WORK/a0-override"; mkdir -p "$ws/custom-brain"
+( cd "$ws" && SYNAPTIC_BRAIN_DIR=custom-brain sh "$A0" stop )
+ls "$ws"/custom-brain/journal/_activity/*.log >/dev/null 2>&1 && ok "A.0 honours SYNAPTIC_BRAIN_DIR" \
+  || nok "A.0 honours SYNAPTIC_BRAIN_DIR"
+
+# 4. A write failure never blocks the turn (documented contract: a missed marker is acceptable).
+ws="$WORK/a0-broken"; mkdir -p "$ws/.synaptic/journal"; : > "$ws/.synaptic/journal/_activity"
+( cd "$ws" && sh "$A0" stop ) 2>/dev/null; rc=$?
+[ "$rc" -eq 0 ] && ok "A.0 swallows a write failure and still exits 0" || nok "A.0 swallows a write failure" "rc=$rc"
+
+# 5. Concurrency: 20 parallel same-host appends. Corruption is a failure; a missed marker is not
+#    (the recipe documents it as acceptable), but the landed count is reported because the ledger
+#    is the capture-yield DENOMINATOR — lost boot markers bias /synaptic-audit Step 9b.
+ws="$WORK/a0-conc"; mkdir -p "$ws/.synaptic"
+for i in $(seq 1 20); do ( cd "$ws" && sh "$A0" stop ) & done; wait
+f="$(ledger "$ws")"
+if [ -n "$f" ]; then
+  got="$(wc -l < "$f" | tr -d ' ')"; bad="$(grep -Evc "$LINE_RE" "$f" || true)"
+  [ "$bad" -eq 0 ] && ok "A.0 concurrency: no corrupted line across 20 parallel appends" \
+    || nok "A.0 concurrency: no corrupted line across 20 parallel appends" "$bad malformed of $got"
+  info "A.0 concurrency: $got/20 markers landed ($(uname -s 2>/dev/null))"
+else
+  nok "A.0 concurrency: ledger exists after 20 parallel appends"
+fi
+
+# --- A.1: the conditional semantic layer -----------------------------------------------------
+# 6. Reproduce issue #2a: in a NON-git workspace A.1 writes NOTHING. Expected and documented —
+#    this is precisely why A.0 exists. If this ever starts writing, the recipe text is stale.
+ws="$WORK/a1-nogit"; mkdir -p "$ws/.synaptic/journal"; printf '# Journal\n' > "$ws/.synaptic/journal/_current.md"
+before="$(cat "$ws/.synaptic/journal/_current.md")"
+( cd "$ws" && bash "$A1" ) 2>/dev/null
+[ "$(cat "$ws/.synaptic/journal/_current.md")" = "$before" ] \
+  && ok "A.1 writes nothing in a non-git workspace (reproduces the #2a gate; expected)" \
+  || nok "A.1 writes nothing in a non-git workspace" "recipe says it should not write here"
+
+# 7. When the gate passes (git repo + a modified tracked file), A.1 appends one breadcrumb.
+ws="$WORK/a1-git"; mkdir -p "$ws/.synaptic/journal"
+printf '# Journal\n' > "$ws/.synaptic/journal/_current.md"
+( cd "$ws" && git init -q && echo a > tracked.txt && git add tracked.txt \
+  && git -c user.name=ci -c user.email=ci@example.invalid commit -qm init && echo b >> tracked.txt ) >/dev/null 2>&1
+( cd "$ws" && bash "$A1" ) 2>/dev/null
+last="$(tail -n 1 "$ws/.synaptic/journal/_current.md")"
+case "$last" in
+  "- "*"Z breadcrumb: touched tracked.txt") ok "A.1 appends one breadcrumb when a tracked file changed" ;;
+  *) nok "A.1 appends one breadcrumb when a tracked file changed" "last line: $last" ;;
+esac
+has_bom "$ws/.synaptic/journal/_current.md" && nok "A.1 (bash) leaves the journal BOM-free" \
+  || ok "A.1 (bash) leaves the journal BOM-free"
+
+# --- Cross-shell consistency (Windows) --------------------------------------------------------
+# The bash marker names its file with `hostname`, the PowerShell one with $env:COMPUTERNAME. If they
+# differ, a machine running both variants splits one day's ledger into two files.
+if [ -n "${COMPUTERNAME:-}" ]; then
+  if [ "$(hostname)" = "$COMPUTERNAME" ]; then
+    ok "bash hostname matches \$COMPUTERNAME (one ledger file per host+day across shells)"
+  else
+    info "bash 'hostname' ($(hostname)) != COMPUTERNAME ($COMPUTERNAME): mixed bash+PowerShell hooks split the ledger"
+  fi
+fi
+
+echo "1..$n"
+[ "$fails" -eq 0 ] && echo "# all $n passed" || echo "# $fails of $n FAILED"
+exit $(( fails > 0 ? 1 : 0 ))
