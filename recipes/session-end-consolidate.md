@@ -184,24 +184,31 @@ exit 0
 
 ### A.2 The consolidation-reminder script (`PreCompact` / `SessionEnd`)
 
-Create `.claude/hooks/synaptic-consolidate-reminder.sh`. It checks whether `journal/` or
-`playgrounds/` changed and, if so, prints a reminder to consolidate. Use it on `PreCompact` (flush
-before context loss) and on `SessionEnd` (clean-exit bonus).
+Create `.claude/hooks/synaptic-consolidate-reminder.sh`. It prints a reminder to consolidate when the
+brain holds unconsolidated work: pending breadcrumbs in `journal/_current.md`, or open playgrounds.
+This is the same predicate as the A.3 rescue. It does not use git, so it also works for a brain
+outside git and sees new untracked playgrounds. `playgrounds/archive/` and the A.0 activity ledger do
+not count as work. Use it on `PreCompact` (flush before context loss) and on `SessionEnd` (clean-exit
+bonus).
 
 ```bash
 #!/usr/bin/env bash
 # synaptic-consolidate-reminder.sh
-# Prints a consolidation reminder if journal/ or playgrounds/ have uncommitted changes.
+# Prints a consolidation reminder if breadcrumbs are pending or playgrounds are open (git-free).
 # Wire to PreCompact (flush before compaction) and SessionEnd (clean-exit bonus).
 
 BRAIN_DIR="${SYNAPTIC_BRAIN_DIR:-.synaptic}"
+JOURNAL="${BRAIN_DIR}/journal/_current.md"
 
-changed=$(git -C "$(pwd)" diff --name-only HEAD 2>/dev/null | grep -E "^${BRAIN_DIR}/(journal|playgrounds)/" || true)
+[ -d "$BRAIN_DIR" ] || exit 0
 
-if [ -n "$changed" ]; then
+pending_crumbs=$(grep -c "breadcrumb:" "$JOURNAL" 2>/dev/null); pending_crumbs=${pending_crumbs:-0}
+open_playgrounds=$(find "${BRAIN_DIR}/playgrounds" -mindepth 1 -maxdepth 1 -type d ! -name archive 2>/dev/null | wc -l | tr -d ' ')
+
+if [ "$pending_crumbs" -gt 0 ] || [ "$open_playgrounds" -gt 0 ]; then
   echo ""
   echo "=== Synaptic: consolidation reminder ==="
-  echo "journal/ or playgrounds/ changed and is not yet consolidated."
+  echo "${pending_crumbs} pending breadcrumb(s) and ${open_playgrounds} open playground(s) are not yet consolidated."
   echo "Run /synaptic-consolidate to distil durable conclusions before context is lost."
   echo "Cadence: consolidate at flush/exit · /synaptic-audit weekly · /synaptic-weave monthly"
   echo "========================================"
@@ -212,12 +219,19 @@ PowerShell equivalent (`.claude/hooks/synaptic-consolidate-reminder.ps1`):
 
 ```powershell
 # synaptic-consolidate-reminder.ps1
+# Same git-free predicate as the bash script: pending breadcrumbs, or open playgrounds (not archive/).
 $brainDir = if ($env:SYNAPTIC_BRAIN_DIR) { $env:SYNAPTIC_BRAIN_DIR } else { ".synaptic" }
-$changed = git diff --name-only HEAD 2>$null | Where-Object { $_ -match "^$brainDir/(journal|playgrounds)/" }
-if ($changed) {
+if (-not (Test-Path -LiteralPath $brainDir)) { exit 0 }
+$journal = Join-Path $brainDir "journal/_current.md"
+$playgrounds = Join-Path $brainDir "playgrounds"
+$crumbs = 0
+if (Test-Path -LiteralPath $journal) { $crumbs = @(Select-String -LiteralPath $journal -SimpleMatch -Pattern "breadcrumb:").Count }
+$open = 0
+if (Test-Path -LiteralPath $playgrounds) { $open = @(Get-ChildItem -LiteralPath $playgrounds -Directory -Force | Where-Object { $_.Name -ne "archive" }).Count }
+if ($crumbs -gt 0 -or $open -gt 0) {
     Write-Output ""
     Write-Output "=== Synaptic: consolidation reminder ==="
-    Write-Output "journal/ or playgrounds/ changed and is not yet consolidated."
+    Write-Output "$crumbs pending breadcrumb(s) and $open open playground(s) are not yet consolidated."
     Write-Output "Run /synaptic-consolidate to distil durable conclusions before context is lost."
     Write-Output "Cadence: consolidate at flush/exit | /synaptic-audit weekly | /synaptic-weave monthly"
     Write-Output "========================================"
