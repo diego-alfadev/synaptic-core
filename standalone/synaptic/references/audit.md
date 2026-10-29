@@ -322,11 +322,10 @@ playground artifacts) but never reached the knowledge store. **Diagnose only —
   compute a hash yourself; with no shell or no git, every hash is unverifiable. **Unverifiable, not
   drifted:** a `TBD` hash, or a legacy `sha256:` value (written before 1.5.1; it may be a
   `git hash-object` prefix, a real SHA-256 prefix, or invented). If a legacy hex equals the recomputed
-  prefix, propose re-labelling it `git:`. If the brain sits in a git repo and
-  `git -C "<brain>" check-attr text filter ident working-tree-encoding -- "references/raw/<filename>"`
-  shows any value other than `unspecified`, still report a mismatch as drift, adding *"may come from the
-  repository (moved brain, changed attributes, git-lfs on some machines only), not an edit"*. Re-record
-  or re-distil only with the user's OK.
+  prefix, propose re-labelling it `git:`. If the brain sits in a git repo (`git -C "<brain>" rev-parse
+  --git-dir` succeeds), still report a mismatch as drift, adding *"may come from the repository (moved
+  brain, changed attributes, SHA-256 repo, git-lfs on some machines only), not an edit"*. Re-record or
+  re-distil only with the user's OK.
 
 **Warn (not error)** when a threshold is exceeded; present as advisory — the user decides whether to
 consolidate now or defer:

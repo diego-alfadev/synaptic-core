@@ -147,8 +147,9 @@ content_hash: "git:{first-12-hex}"   # the hash command below, on references/raw
   — always with `-C "<brain>"` and the forward-slash path relative to it, never from the host's cwd
   (another repo's `.gitattributes` would apply there). The two `-c` pins remove each machine's
   line-ending setting and user-level attributes. Attributes of a repo that holds the brain itself
-  (`-text`, an LFS filter, `ident`, `working-tree-encoding`) or a SHA-256 repo still change the
-  result. Store the first 12 hex characters. Never "compute" a hash yourself — a model cannot hash,
+  (e.g. `text`/`-text`, `eol`, `crlf`, a filter such as LFS, `ident`, `working-tree-encoding`) or a
+  SHA-256 repo still change the result. `<brain>` is the resolved brain root (the folder holding
+  `BRAIN.md`); on Windows pass it in drive form (`C:/…`), not `/c/…`. Store the first 12 hex characters. Never "compute" a hash yourself — a model cannot hash,
   so the value would be invented. No shell or no git → write `content_hash: TBD` and keep the source
   path — CORE never requires a runtime.
 
