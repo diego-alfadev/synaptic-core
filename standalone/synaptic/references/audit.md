@@ -318,6 +318,7 @@ playground artifacts) but never reached the knowledge store. **Diagnose only —
 - TODO/`{{placeholder}}`/`status: draft` markers left in otherwise-promoted nodes.
 - A `references/raw/` artifact whose distilled node carries a `content_hash` that **no longer matches**
   the raw file (the artifact drifted; re-distillation is pending — see consolidate.md Step 4).
+  Recompute with the same SHA-256 command; a `TBD` hash is unverifiable, not drifted.
 
 **Warn (not error)** when a threshold is exceeded; present as advisory — the user decides whether to
 consolidate now or defer:

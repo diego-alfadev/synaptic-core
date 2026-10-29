@@ -138,9 +138,12 @@ content_hash: "sha256:{first-12-hex}"   # of references/raw/{filename.ext} at ca
   value — it is **not** a generated index, never a must-sync cache, and nothing recomputes it
   automatically. It exists purely so a later consolidation/audit pass can notice "the raw file's
   hash no longer matches what the node recorded → the artifact drifted → re-distil."
-- Compute it however the host can (e.g. `git hash-object`, `sha256sum`, or the agent's own hash);
-  store a short prefix. If no hashing is available, record the source path alone and skip the hash —
-  CORE never requires a runtime.
+- Compute it as **SHA-256 over the file's raw bytes**, the one algorithm every shell has:
+  `sha256sum <file>` (Linux, Git Bash), `shasum -a 256 <file>` (macOS), or
+  `(Get-FileHash -Algorithm SHA256 -LiteralPath <file>).Hash.ToLower()` (PowerShell). Store the first
+  12 hex characters. Never use `git hash-object` (that is the SHA-1 of a git blob, not of the file),
+  and never "compute" a hash yourself — a model cannot hash, so the value would be invented. With no
+  shell available, write `content_hash: TBD` and keep the source path — CORE never requires a runtime.
 
 ---
 
