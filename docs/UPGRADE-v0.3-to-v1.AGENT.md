@@ -112,6 +112,9 @@ STEP 1 — Intake: identify the brain and its topology (ASK me; do not assume)  
 The MIGRATION itself (schema v0.3 → v1) does NOT depend on these answers — but the HARNESS WIRING
 and the SAFETY/COORDINATION steps do. Ask me these, record answers in the DECISION LOG, and branch
 the relevant later steps on them. Do not block the migration on them; block only the wiring/cutover.
+RESUME FIRST: if the decision log of an earlier autonomous run names a work copy whose
+_migration-staging/harness-pending.md still holds unapproved items, skip Steps 2–4: ask question 5
+from that file, then run Steps 5–7 on that work copy.
 
   1. Brain location + scope. Where is the brain folder? Is it scoped to ONE project (a `.synaptic/`
      nested inside a repo) or is it a SHARED / GLOBAL brain (a `.synaptic/` that sits BESIDE several
@@ -221,8 +224,10 @@ references/upgrade-to-v1.md, with these BINDING reinforcements (they close real 
     the map; verify each `[[target]]` points to the SAME physical file the old relative path did
     (not merely "resolves to something"). Never create an unresolvable link — log it as a gap.
   • Route per references/upgrade-to-v1.md: identity/boot → BRAIN.md Context Capsule + Capture
-    Contract; CONTACTS → knowledge/people-routing.md; PRINCIPLES/working-agreements → harness/
-    conventions.md + guardrails.md; brain-root context/bridge files → extract knowledge, then MOVE
+    Contract; CONTACTS → knowledge/people-routing.md; PRINCIPLES/working-agreements → DRAFT the
+    harness/ text and the behaviour placements only, for question 5 at Step 5 (autonomous: stage them
+    in _migration-staging/harness-pending.md) — do NOT write harness/ in Phase C; brain-root
+    context/bridge files → extract knowledge, then MOVE
     originals to HARNESS_ORIGINALS/ (they are harness material); inventory/ → registries/; worklines/
     → playgrounds or your task system; skills/ → harness/skills/; rebuild knowledge/INDEX.md + each
     cluster _index.md from real files only; journal → thin 3-section format.
@@ -245,8 +250,9 @@ references/upgrade-to-v1.md, with these BINDING reinforcements (they close real 
 ────────────────────────────────────────────────────────────────────────
 STEP 5 — Harness wiring (DETECT current → deploy desired)   [no Node]
 ────────────────────────────────────────────────────────────────────────
-First fill the shared harness source with the text approved under question 5 (autonomous: stage it in
-_migration-staging/harness-pending.md and do not write it): populate harness/conventions.md +
+First fill the shared harness source with the text approved under question 5 (autonomous: stage the
+text, the behaviour placements and the deploy in _migration-staging/harness-pending.md; write and
+deploy nothing): populate harness/conventions.md +
 harness/guardrails.md with NO {{placeholder}} tokens (any placeholder makes the deploy refuse). These are the SOURCE; they
 are DEPLOYED into the harnessing / system prompt (SYMLINK preferred over copy) and read from the brain
 only when edited / to verify sync — never at session start.
@@ -327,7 +333,9 @@ STEP 6 — Phase V (verify) on the work copy   [needs Node for check.js; [no Nod
    • GREPS: `grep -n "Top Guardrails" BRAIN.md` must be EMPTY (v1 BRAIN.md carries no rules block —
      rules are deployed to the harness/system prompt); grep the wired harness file(s) for a bare
      `.synaptic/BRAIN.md` → must be ZERO. BRAIN.md ≤110 lines with the harness deploy-source pointer present.
-   STOP and keep the original on any ERROR or gate failure.
+   STOP and keep the original on any ERROR or gate failure. Exception — autonomous, with unapproved
+   items in _migration-staging/harness-pending.md: report those harness items as `pending owner
+   approval`, not as a failure, and skip Step 7.
 
   RETRIEVAL DRILL (MANDATORY — check.js green is necessary but NOT sufficient).   [no Node]
   A brain can pass every structural check (0 errors) and still be un-retrievable (evidence: 0 errors
@@ -356,7 +364,8 @@ STEP 6 — Phase V (verify) on the work copy   [needs Node for check.js; [no Nod
 STEP 7 — Cut over to the v1 brain   [no Node]
 ────────────────────────────────────────────────────────────────────────
 7A — PRIVATE per-user brain (the TYPICAL case: one writer, one machine):
-  No team coordination needed. With Phase V green (structural + retrieval drill), cut over.
+  No team coordination needed. With Phase V green (structural + retrieval drill) and nothing in
+  _migration-staging/harness-pending.md awaiting approval, cut over. Autonomous mode never cuts over.
 
   PRIMARY — GIT FAST-FORWARD (the brain is a git repo; this is the Windows/OneDrive-safe path):
     You built the v1 copy on an upgrade branch (or a git worktree — see Step 2 / the note in

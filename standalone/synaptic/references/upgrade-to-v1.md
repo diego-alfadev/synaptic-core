@@ -234,11 +234,16 @@ then Phase C (mandatory content rearrange; requires judgment), then verify with 
 defined in the hardening addendum above (guided is the DEFAULT when a user IS present). Make the
 reasonable choice at every junction, never destroy ambiguous content (prefer staging/moving over
 deleting), and record every non-obvious judgment in a migration decision log delivered with the
-result. Everything question (5) would ask — rule text bound for `harness/` and personal
-agent-behaviour text (C1/C6) — goes to `_migration-staging/harness-pending.md` and that log, never
-written: Phase V reports its harness checks as `pending owner approval` (not failed), the brain is not
-cut over, staging is kept while that file holds unapproved text, and the next guided run asks (5)
-from it. Mode changes verbosity/prompting only — the safety gates run identically.
+result. Everything question (5) would ask — rule text bound for `harness/`, personal
+agent-behaviour text (C1/C6), and the SYNAPTIC-RULES deploy — goes to
+`_migration-staging/harness-pending.md` and that log; nothing is written or deployed. Phase V reports
+the Layout entries `harness/conventions.md` / `harness/guardrails.md` and the Harness (source /
+deployed / wiring) checks as `pending owner approval`, not failed; there is no cutover; staging is
+kept while that file holds unapproved text. The report ends: *"Unfinished — harness approval pending in
+`<work copy>/_migration-staging/harness-pending.md`; run `/synaptic-upgrade` (guided) to finish."*
+**Resume:** a guided `/synaptic-upgrade` first looks for that file (path from the decision log, or ask
+the owner). If it exists, skip Safeguard, M and C: ask (5) from it, write and deploy what is approved,
+re-run Phase V, then ask (4). Mode changes verbosity/prompting only — the safety gates run identically.
 
 ---
 
@@ -422,6 +427,9 @@ Phase C consumes `_migration-staging/` and **deletes it as its final step**.
 
 **From `identity/PRINCIPLES.md` (v0.4) — ownership test: "would a teammate inheriting this brain need it?":**
 
+Collect every item below for question (5); write `harness/` and run the Deploy step only after (5) is
+approved (autonomous: see the Autonomous mode note).
+
 - **Yes, team/project norm** (communication languages per channel, commit conventions, ticket etiquette, escalation rules) → `harness/conventions.md`. These travel with the brain.
 - **Yes, hard project rule** (security rules, architecture constraints, deployment gates) → `harness/guardrails.md`. These will be deployed to the outer harness by the Deploy step — do NOT mirror them in `BRAIN.md → Top Guardrails` (that block no longer exists in v1).
 - **No, personal agent behavior** (tone rules, chat-language with owner, output style) → offer to place in project `AGENTS.md` (outside the SYNAPTIC block) or the user's global harness. Do NOT place in the brain. If the user declines, discard with explicit consent.
@@ -473,7 +481,7 @@ For each node in `knowledge/`:
 **From v0.5 `knowledge/working-agreements.md`** (staged in `_migration-staging/`):
 
 - Route team/project norms → `harness/conventions.md` (merge or create from the skill bundle's `templates/harness/conventions.md`).
-- Route hard rules → `harness/guardrails.md`. Both files are the **deployable source** — after routing, run the Deploy step (Harness Self-Wire §c via `/synaptic-init`) to materialize them into the outer harness. Do NOT mirror rules in `BRAIN.md → Top Guardrails` (that block is dropped in v1).
+- Route hard rules → `harness/guardrails.md`. Both files are the **deployable source** — hold the routed text for question (5); write them and run the Deploy step (Harness Self-Wire §c via `/synaptic-init`) only after (5) is approved (autonomous: see the Autonomous mode note). Do NOT mirror rules in `BRAIN.md → Top Guardrails` (that block is dropped in v1).
 - Persona/agent behavior content → offer to place in AGENTS.md (user harness). Never into the brain.
 - Delete the staged file after routing is confirmed.
 

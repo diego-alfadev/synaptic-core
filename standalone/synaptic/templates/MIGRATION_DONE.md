@@ -46,7 +46,8 @@ Closed: `{{YYYY-MM-DD HH:MM}}`  ·  commit: `{{migrate: Phase M mechanical file 
 - [ ] Every cluster ticked in the Phase-C ledger (C3 links · C4 MOC · C5 consolidate · C11 frontmatter ·
       every-node-in-`_index`?).
 - [ ] Identity/boot, CONTACTS, PRINCIPLES/working-agreements, brain-root context files all routed per
-      the runbook (knowledge vs `harness/` vs `HARNESS_ORIGINALS/`).
+      the runbook (knowledge vs `harness/` vs `HARNESS_ORIGINALS/`; `harness/` text is held for
+      question 5, not written in this phase).
 - [ ] `inventory/` → `registries/`; `worklines/` → playgrounds/task system; `skills/` → `harness/skills/`.
 - [ ] `knowledge/INDEX.md` + every cluster `_index.md` rebuilt from real files only (no phantom entries).
 - [ ] Every `[[wikilink]]` resolves AND passes a link-IDENTITY spot-check (new target == old path's file).
@@ -73,6 +74,8 @@ Closed: `{{YYYY-MM-DD HH:MM}}`  ·  commit: `{{refactor: Phase C content rearran
       MOC-reachable `{{N}}`.
 - [ ] If the caveat line printed ("structural-green ≠ retrieval-green": orphan ratio > 20% OR
       edges-per-node < 0.5), the retrieval risk was reviewed and is acknowledged in the DECISION LOG.
+- [ ] Question 5 approved (harness text, behaviour placement, deploy diff) and deployed. Autonomous:
+      write `pending owner approval` here — Phase V is then not DONE and cutover does not run.
 - [ ] CONTENT-CONSERVATION GATE: every node in the Phase-C manifest is present, OR logged-merged
       (loser→winner), OR logged-split. Any node neither present nor logged = SILENT DROP = STOP.
 - [ ] No v0.x leftovers; `grep -n "Top Guardrails" BRAIN.md` empty; the wired harness file has ZERO
