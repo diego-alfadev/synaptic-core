@@ -228,7 +228,7 @@ if ($changed) {
 
 Create `.claude/hooks/synaptic-rescue.sh`. On the next boot it detects pending breadcrumbs or open
 playgrounds left by an abandoned session and offers to consolidate. This is the layer that recovers
-sessions where **no** end event ever fired.
+sessions where **no** end event ever fired. `playgrounds/archive/` is not counted as open.
 
 ```bash
 #!/usr/bin/env bash
@@ -242,7 +242,8 @@ JOURNAL="${BRAIN_DIR}/journal/_current.md"
 
 # grep -c already prints 0 when nothing matches (it just exits 1), so `|| echo 0` would yield "0\n0".
 pending_crumbs=$(grep -c "breadcrumb:" "$JOURNAL" 2>/dev/null); pending_crumbs=${pending_crumbs:-0}
-open_playgrounds=$(find "${BRAIN_DIR}/playgrounds" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l)
+# playgrounds/archive/ holds finished work kept on request - it is not an open playground.
+open_playgrounds=$(find "${BRAIN_DIR}/playgrounds" -mindepth 1 -maxdepth 1 -type d ! -name archive 2>/dev/null | wc -l | tr -d ' ')
 
 if [ "$pending_crumbs" -gt 0 ] || [ "$open_playgrounds" -gt 0 ]; then
   echo ""
