@@ -191,9 +191,9 @@ exit 0
 Create `.claude/hooks/synaptic-consolidate-reminder.sh`. It prints a reminder to consolidate when the
 brain holds unconsolidated work: breadcrumb lines the A.1 hook wrote (`breadcrumb:`) in
 `journal/_current.md`, or open playgrounds. This is the same predicate as the A.3 rescue. It reads no
-git itself, so it sees new untracked playgrounds and works for a brain outside git; there, only open
-playgrounds can trigger it, because A.1 needs git to write breadcrumbs. `playgrounds/archive/` is not
-counted. Use it on `PreCompact` (flush before context loss) and on `SessionEnd` (clean-exit bonus).
+git itself, so it sees new untracked playgrounds and works for a brain outside git. When the project
+itself is not a git repo, only open playgrounds can trigger it, because A.1 needs git to write
+breadcrumbs. `playgrounds/archive/` is not counted. Use it on `PreCompact` (flush before context loss) and on `SessionEnd` (clean-exit bonus).
 
 ```bash
 #!/usr/bin/env bash
@@ -333,8 +333,10 @@ or allowed. `-NoProfile` keeps a user profile from changing error handling or en
 
 ### Notes
 
-- The breadcrumb hook (A.1) fires on **every** `Stop`; it checks for changes internally and writes
-  nothing when no project file changed. The brain's own journal and A.0 ledger never count as changes.
+- The breadcrumb hook (A.1) fires on **every** `Stop`; it writes nothing while no tracked file differs
+  from `HEAD`, and the brain's own journal and A.0 ledger never count. It reports the uncommitted
+  state, not just this turn, so a consolidation that rewrites wiki nodes leaves one breadcrumb about
+  its own edits; the next consolidation (or a commit before the turn ends) clears it.
 - The reminder (A.2) and the rescue (A.3) report **standing state**: they fire while breadcrumbs are
   pending or any playground is open, whether or not this session touched the brain. An open
   playground stays "unconsolidated" until it is burned or archived — that is by design.

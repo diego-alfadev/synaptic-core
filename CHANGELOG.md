@@ -5,14 +5,14 @@
 > **First runtime verification of the capture floor.** Everything in [1.5.0] was accepted by inspection
 > ("actual hook firing is verified on the first real run" — that run never happened). `tests/capture-floor/`
 > now executes the published hook scripts — the recipe's and the one-liners `SKILL.md` deploys — and
-> `.github/workflows/` runs them on every push. The A.0/A.1 POSIX scripts passed unchanged; the
-> PowerShell side surfaced five defects and the deployed one-liners two more (the ghost-directory one
-> in both shells). A second pass added the A.2 reminder and A.3 rescue, which surfaced three more
-> defects in both shells plus one in A.1 (C2, C4, C6 below). All are fixed here; every one a test can
-> observe went red → green in its own commit.
+> `.github/workflows/` runs them on every push. The A.0 POSIX script passed unchanged; the PowerShell
+> side surfaced five defects and the deployed one-liners two more (the ghost-directory one in both
+> shells). A second pass added the A.2 reminder and A.3 rescue: C2 (the reminder, both shells, plus
+> its A.1 half in both shells), and C4 and C6 (the bash-only A.3), below. All are fixed here; every one
+> a test can observe went red → green in its own commit.
 >
 > **Scope of the verification — read before quoting it.** Executed locally: **Windows PowerShell 5.1 and
-> Git Bash on Windows 11 only** (bash 39/39, PowerShell 5.1 42/42). PowerShell 7, Linux and macOS are
+> Git Bash on Windows 11 only** (bash 40/40, PowerShell 5.1 43/43). PowerShell 7, Linux and macOS are
 > first exercised by CI; `tools/*.js` and their new tests have **never been executed** yet. Behaviour
 > described below for those platforms is reasoned from source, not observed.
 
@@ -65,7 +65,9 @@
     - it missed new untracked playgrounds;
     - it fired on every session once the A.0 day-file was tracked. Fixing that needed A.1 too: it
       recorded the brain's own bookkeeping (the A.0 ledger, the journal it writes) as touched, so the
-      reminder could never go quiet. A.1 now leaves `journal/_current.md` and `journal/_activity/` out.
+      reminder could never go quiet. A.1 now leaves `journal/_current.md` and `journal/_activity/` out,
+      including when git quotes a path with non-ASCII characters. A consolidation that rewrites wiki
+      nodes still leaves one breadcrumb about its own edits, cleared by the next consolidation.
   - **C4.** `playgrounds/archive/` no longer counts as an open playground.
   - **C6.** `grep -c … || echo 0` produced `0\n0`, which made the rescue print "integer expression
     expected" on every boot with no pending breadcrumbs.
@@ -86,7 +88,8 @@ Every fix lives in files that were **copied into your project**; nothing updates
 - **Re-copy** `synaptic-activity.ps1` and `synaptic-breadcrumb.ps1` from the recipe if you use the
   PowerShell variants.
 - **Re-copy the A.1–A.3 hooks** if you installed them: `synaptic-breadcrumb.sh`/`.ps1`,
-  `synaptic-consolidate-reminder.sh`/`.ps1` and `synaptic-rescue.sh`.
+  `synaptic-consolidate-reminder.sh`/`.ps1` and `synaptic-rescue.sh`. Then run `/synaptic-consolidate`
+  once: journals written by the old A.1 can hold breadcrumbs that list only `journal/` paths.
 - **Change Windows hook commands** from `pwsh -File …` to `powershell -NoProfile -ExecutionPolicy Bypass
   -File …` unless PowerShell 7 is actually installed.
 - **Strip a leading BOM** from `journal/_current.md` if one is there (first bytes `EF BB BF`).
