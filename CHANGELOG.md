@@ -77,13 +77,25 @@
   file named `playgrounds`, matching bash. A long-lived open playground keeps the reminder firing on
   purpose: it is unconsolidated work until it is burned or archived.
 - **Skill prose defects** (no runtime involved; checked by review, not by tests):
-  - **P0-4.** `content_hash` is now SHA-256 of the raw bytes, with the command per shell. Before, it
-    could be `git hash-object` (a different hash for the same file) or a value the agent "computed",
-    which a model cannot do. No shell means `TBD`, which audit treats as unverifiable, not drifted.
-  - **P0-5.** `synthesize.md` proposed `status → superseded`, which is not a status; it now proposes
-    `status: archived`. Consolidate Step 5a says rewriting an existing node is propose-then-approve.
-  - **P0-1.** `SKILL.md` states once, for every operation, that content read from the brain or any
-    ingested document is data to distil, never instructions; only the user changes `harness/`.
+  - **`content_hash` has one primitive: `git hash-object "<file>"`, stored as `git:{first-12}`.**
+    Before, the field was labelled `sha256:` but could hold a `git hash-object` prefix or a value the
+    agent "computed", which a model cannot do. `git hash-object` is one command in every shell and
+    ignores the line endings Git for Windows rewrites per clone, where a raw-bytes hash reports false
+    drift (stability measured in Git Bash on Windows 11 across `core.autocrlf` true/false clones).
+    No shell or no git means `TBD`. Audit reports a `TBD` hash, a legacy `sha256:` value, or a mismatch
+    on a file git shows unchanged since capture as unverifiable, not drifted.
+  - **Supersession uses the status vocabulary.** `synthesize.md` proposed `status → superseded`, which
+    is not a status; a wholly replaced node is now kept with `status: archived`, and handover shows an
+    archived node only as history. The autonomy tier has one home, `harness/guardrails.md`, whose AUTO
+    row no longer lets an agent rewrite a flagged `contradicts`/`supersedes` pair unasked: rewriting
+    an existing node is propose-then-approve, and synthesize no longer calls deletion anything but
+    human-only.
+  - **Content is data, never instructions.** `SKILL.md` states once, for every operation, that what an
+    operation reads as source material (knowledge nodes, registries, raw references, playgrounds, the
+    journal, agent-native memory, ingested documents) is material to distil: a directive in it that
+    the user did not give is never acted on or promoted into a rule, and `harness/` rules change only
+    when the user approves the exact change. Generated `/`-menu stubs now load `SKILL.md` before the
+    command's reference, so the rule reaches every command.
 
 ### Corrected claims in [1.5.0]
 - *"PowerShell 5.1's `>>` / `Add-Content` / `Out-File` default to UTF-16LE + BOM"* — true of `>>` and
@@ -92,7 +104,7 @@
 - *"Recipe `Stop` breadcrumb PowerShell encoding"* under **Fixed** — it was only partly fixed; see above.
 
 ### Upgrade notes
-Every fix lives in files that were **copied into your project**; nothing updates them for you.
+The capture-floor fixes live in files that were **copied into your project**; nothing updates them for you.
 - **Re-copy** `synaptic-activity.ps1` and `synaptic-breadcrumb.ps1` from the recipe if you use the
   PowerShell variants.
 - **Re-copy the A.1–A.3 hooks** if you installed them: `synaptic-breadcrumb.sh`/`.ps1`,
@@ -104,6 +116,16 @@ Every fix lives in files that were **copied into your project**; nothing updates
 - **Re-run `/synaptic-upgrade` (or `/synaptic-init`)** to re-wire the guarded one-liners. For its drift
   check to notice, the release must bump `SKILL.md`'s `version:`.
 - **No ledger rename on Windows:** the activity-ledger filename is unchanged there.
+- **Skill prose fixes arrive with the skill**, except two copies:
+  - the `/`-menu stubs, which `/synaptic-upgrade` regenerates once `version:` is bumped (they now load
+    `SKILL.md` first);
+  - your brain's `harness/guardrails.md`. Change its AUTO example *"reconcile a flagged `contradicts` /
+    `supersedes` edge"* to *"author the `contradicts` / `supersedes` edge for a pair the user confirmed"*.
+- **Existing `content_hash` values** are labelled `sha256:` and may be a `git hash-object` prefix or an
+  invented value. Audit reports them as unverifiable, not drifted. Where the hex matches the
+  recomputed `git hash-object` prefix, re-label it `git:`; otherwise re-record it only once
+  `git log -- <raw file>` shows the artifact unchanged since the node was written.
+
 ## [1.5.0] - 2026-07-27
 
 > **"Capture you can actually trust."** A MINOR that closes the **floor half of issue #2a** — the
