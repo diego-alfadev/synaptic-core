@@ -13,6 +13,9 @@ consolidation/wrap-up algorithm lives; other procedures call it, they do not re-
 > reconciles contradictions, and burns scratch — it does not merely add nodes at the end. If
 > the only effect of a consolidation run is "the wiki got longer," the run did it wrong.
 
+**Autonomy.** Every edit to an existing node (a rewrite, a supersession, a `contradicts` link) follows
+the tier table in `harness/guardrails.md`; the steps below name the action and never restate its tier.
+
 **Six-step formula** (the capture contract — same algorithm compressed in `BRAIN.md`):
 
 > **Capture policy.** Read `capture_policy:` from `BRAIN.md` frontmatter (`selective` | `balanced` | `capture-all`; default `balanced`, or a custom 1-line rule). It is the **PROMOTION axis** — how aggressively things reach the wiki — and is **orthogonal to the passivity dial** (when capture triggers). It tunes the *threshold* of Step 2 (promotion) and Step 6 (quality gate) — not the steps themselves:
@@ -171,10 +174,8 @@ For each item being consolidated, ask: **does this contradict an existing node?*
      reasoning survives, not just the new value.
    - Where the relationship is structural, record the typed edge `supersedes` on the new/current
      node (inverse `superseded_by` is grep-computed — author one direction only).
-   - If a **whole node** is replaced by a new one, keep the old file and mark it `status: archived`
-     (the status that pairs with the successor's `supersedes` edge); `superseded` is not a status.
-   - **Tier:** rewriting an existing node is PROPOSE-THEN-APPROVE (guardrails) — show the rewrite and
-     the edge, apply on a yes. Only a change the user stated explicitly this session is applied directly.
+   - **Instead**, if a **whole node** is replaced by a new one, keep the old file as it is and mark it
+     `status: archived`.
 4. **If both remain valid / the conflict is genuine and unresolved:**
    - Keep both, link them with the `contradicts` typed edge, and **document the tension in the
      node's `## bias-check` section** (the other side / contradicting evidence). This is epistemic

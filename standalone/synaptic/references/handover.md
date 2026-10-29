@@ -63,6 +63,7 @@ filter**. Assemble the five sections below.
 | include a `lifecycle: dormant` + `status: active` binding decision | **YES — MUST appear** (dormant scopes only the *default* load, not exports) |
 | include a `status: stale` but relevant node | **YES — flagged `⚠ stale`**, never hidden (`status` never omits) |
 | include a node whose `status:` is an unknown/mistyped value | **YES — marked `untriaged`**, never promoted to "current" (`status` is required; an unknown value reads as untriaged) |
+| include a `status: archived` node | **Only as history** — `(superseded by [[x]])` from the grep-computed `superseded_by`; never listed as a current key decision |
 | apply the default-working-set (`lifecycle`) filter | **NO** — handover reads ALL lifecycles and ALL statuses |
 
 ## Output shape (worked example — author-complete, by inspection)
