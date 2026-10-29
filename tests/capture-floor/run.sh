@@ -208,8 +208,15 @@ quiet && ok "chain: a turn that only wrote the activity ledger leaves no reminde
 ws=$(mkbrain chain-cons); echo "$crumb" >> "$ws/.synaptic/journal/_current.md"; gitinit "$ws"
 printf '# Journal\n- [2026-10-29] consolidated\n' > "$ws/.synaptic/journal/_current.md"
 ( cd "$ws" && bash "$A1" ) >/dev/null 2>&1; commitall "$ws"; hook "$ws" "$A2"
-quiet && ok "chain: the consolidating turn's own Stop does not re-arm the reminder" \
-  || nok "chain: the consolidating turn's own Stop does not re-arm the reminder" "journal: $(tail -n 1 "$ws/.synaptic/journal/_current.md")"
+quiet && ok "chain: a journal-only consolidation turn's own Stop does not re-arm the reminder" \
+  || nok "chain: a journal-only consolidation turn's own Stop does not re-arm the reminder" "journal: $(tail -n 1 "$ws/.synaptic/journal/_current.md")"
+nd=$'An\xc3\xa1lisis'   # a non-ASCII folder between the repo root and the brain: git prints the path "quoted"
+ws="$WORK/chain-quoted"; bw="$ws/$nd"; mkdir -p "$bw/.synaptic/journal" "$bw/.synaptic/playgrounds"
+printf '# Journal\n%s\n' "$crumb" > "$bw/.synaptic/journal/_current.md"; gitinit "$ws"
+printf '# Journal\n- [2026-10-29] consolidated\n' > "$bw/.synaptic/journal/_current.md"
+( cd "$bw" && bash "$A1" ) >/dev/null 2>&1; commitall "$ws"; hook "$bw" "$A2"
+quiet && ok "chain: the journal stays filtered when git quotes a non-ASCII path" \
+  || nok "chain: the journal stays filtered when git quotes a non-ASCII path" "journal: $(tail -n 1 "$bw/.synaptic/journal/_current.md")"
 ws=$(mkbrain chain-work); echo a > "$ws/app.txt"; gitinit "$ws"; echo b >> "$ws/app.txt"
 ( cd "$ws" && bash "$A1" ) >/dev/null 2>&1; hook "$ws" "$A2"
 said "1 pending breadcrumb(s)" && ok "chain: a real project edit becomes a breadcrumb and triggers the reminder" \

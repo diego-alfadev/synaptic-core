@@ -412,8 +412,19 @@ try {
     [IO.File]::WriteAllText((Join-Path $ws '.synaptic/journal/_current.md'), "# Journal`n- [2026-10-29] consolidated`n", (New-Object Text.UTF8Encoding $false))
     $null = Invoke-Hook $A1 '' $ws; Save-Commit $ws
     $r = Get-HookResult $A2 $ws
-    if (Test-Quiet $r) { Ok "chain (PS): the consolidating turn's own Stop does not re-arm the reminder" }
-    else { Nok "chain (PS): the consolidating turn's own Stop does not re-arm the reminder" "out='$($r.Out)'" }
+    if (Test-Quiet $r) { Ok "chain (PS): a journal-only consolidation turn's own Stop does not re-arm the reminder" }
+    else { Nok "chain (PS): a journal-only consolidation turn's own Stop does not re-arm the reminder" "out='$($r.Out)'" }
+
+    $nd = 'An' + [char]0x00E1 + 'lisis'   # non-ASCII folder between repo root and brain: git prints the path "quoted"
+    $ws = New-Workspace 'chainps-quoted'; $bw = Join-Path $ws $nd
+    foreach ($d in @('.synaptic/journal', '.synaptic/playgrounds')) { New-Item -ItemType Directory -Path (Join-Path $bw $d) -Force | Out-Null }
+    $jq = Join-Path $bw '.synaptic/journal/_current.md'
+    [IO.File]::WriteAllText($jq, "# Journal`n" + $crumb, (New-Object Text.UTF8Encoding $false)); Save-Commit $ws
+    [IO.File]::WriteAllText($jq, "# Journal`n- [2026-10-29] consolidated`n", (New-Object Text.UTF8Encoding $false))
+    $null = Invoke-Hook $A1 '' $bw; Save-Commit $ws
+    $r = Get-HookResult $A2 $bw
+    if (Test-Quiet $r) { Ok 'chain (PS): the journal stays filtered when git quotes a non-ASCII path' }
+    else { Nok 'chain (PS): the journal stays filtered when git quotes a non-ASCII path' "out='$($r.Out)'" }
 
     $ws = New-BrainWs 'chainps-work'
     [IO.File]::WriteAllText((Join-Path $ws 'app.txt'), "a`n"); Save-Commit $ws
