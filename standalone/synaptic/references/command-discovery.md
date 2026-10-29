@@ -55,8 +55,9 @@ stale and gets regenerated or pruned.
 **Native targets (generate for the hosts the deploy detects):**
 
 - **Claude Code** → `~/.claude/commands/synaptic-*.md`, one per command, with frontmatter
-  `description:` so the command surfaces in the `/` menu with its one-liner. Body: *"Run the synaptic
-  skill's `<cmd>` — follow `references/<cmd>.md`."*
+  `description:` so the command surfaces in the `/` menu with its one-liner. Body (every host's stub):
+  *"Run the synaptic skill's `<cmd>`: load the skill's `SKILL.md` first (its Operations preamble
+  applies to every command), then follow `references/<cmd>.md`."*
 - **VS Code Copilot** → `*.prompt.md` files (the Copilot prompt-file mechanism), one per command.
 - **Cursor** → its prompt-file mechanism (native equivalent).
 - **MCP-capable hosts** → MCP "prompts" can **also** surface the commands (complementary, not
