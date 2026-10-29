@@ -155,7 +155,9 @@ JOURNAL="${BRAIN_DIR}/journal/_current.md"
 [ -d "$BRAIN_DIR" ] || exit 0
 
 ts="$(date -u +%Y-%m-%dT%H:%MZ)"
-touched=$(git -C "$(pwd)" diff --name-only HEAD 2>/dev/null | head -n 5 | paste -sd ',' - || true)
+# The brain's own bookkeeping (this journal, the A.0 ledger) is not work: counting it would make
+# every later turn - and the A.2/A.3 predicate - see "pending" breadcrumbs forever.
+touched=$(git -C "$(pwd)" diff --name-only HEAD 2>/dev/null | grep -v -E '(^|/)journal/(_current\.md$|_activity/)' | head -n 5 | paste -sd ',' - || true)
 
 if [ -n "$touched" ]; then
   printf -- "- %s breadcrumb: touched %s\n" "$ts" "$touched" >> "$JOURNAL"
@@ -171,7 +173,8 @@ if (-not (Test-Path -LiteralPath $brainDir)) { exit 0 }
 try {
     $journal = Join-Path (Resolve-Path -LiteralPath $brainDir).ProviderPath "journal/_current.md"
     $ts = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mmK")
-    $touched = (git diff --name-only HEAD 2>$null | Select-Object -First 5) -join ','
+    # The brain's own bookkeeping (this journal, the A.0 ledger) is not work - same filter as bash.
+    $touched = (git diff --name-only HEAD 2>$null | Where-Object { $_ -cnotmatch '(^|/)journal/(_current\.md$|_activity/)' } | Select-Object -First 5) -join ','
     if ($touched) {
         # NOT Add-Content. On Windows PowerShell 5.1 its default is the ANSI code page (a non-ASCII path
         # becomes invalid UTF-8), and `-Encoding utf8` means UTF-8 WITH a BOM, written whenever the
