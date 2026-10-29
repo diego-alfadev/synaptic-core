@@ -63,7 +63,7 @@ filter**. Assemble the five sections below.
 | include a `lifecycle: dormant` + `status: active` binding decision | **YES — MUST appear** (dormant scopes only the *default* load, not exports) |
 | include a `status: stale` but relevant node | **YES — flagged `⚠ stale`**, never hidden (`status` never omits) |
 | include a node whose `status:` is an unknown/mistyped value | **YES — marked `untriaged`**, never promoted to "current" (`status` is required; an unknown value reads as untriaged) |
-| include a `status: archived` node | **YES — only as history**, never as a current decision: an indented `↳ replaces [[old]] (archived)` under its nearest non-archived successor (follow `supersedes` up the chain) when the brief lists that successor; otherwise named on a closing `Archived (history only): [[old]], …` line (omitted when there are none) |
+| include a `status: archived` node | **YES — only as history**, never as a current decision: an indented `↳ replaces [[old]] (archived)` under its nearest non-archived successor (grep for the node whose `supersedes` names it; repeat while that node is archived) — under the successor's Key decisions line if it has one, else under its first listing in the brief; several `↳` lines go nearest-first, then by name. If the brief lists no such successor, name it on a closing `Archived (history only): [[old]], …` line (omitted when there are none) |
 | apply the default-working-set (`lifecycle`) filter | **NO** — handover reads ALL lifecycles and ALL statuses |
 
 ## Output shape (worked example — author-complete, by inspection)
