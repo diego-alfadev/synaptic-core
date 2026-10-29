@@ -14,7 +14,8 @@ consolidation/wrap-up algorithm lives; other procedures call it, they do not re-
 > the only effect of a consolidation run is "the wiki got longer," the run did it wrong.
 
 **Autonomy.** Every edit to an existing node (a rewrite, a supersession, a `contradicts` link) follows
-the tier table in `harness/guardrails.md`; the steps below name the action and never restate its tier.
+the Autonomy Tiers table in your deployed rules (source: `harness/guardrails.md` — read it there if no
+deployed copy exists); the steps below name the action, and that table sets its tier.
 
 **Six-step formula** (the capture contract — same algorithm compressed in `BRAIN.md`):
 
@@ -175,8 +176,8 @@ For each item being consolidated, ask: **does this contradict an existing node?*
      reasoning survives, not just the new value.
    - Where the relationship is structural, record the typed edge `supersedes` on the new/current
      node (inverse `superseded_by` is grep-computed — author one direction only).
-   - **Instead**, if a **whole node** is replaced by a new one, keep the old file as it is and mark it
-     `status: archived`.
+   - **Instead of rewriting it**, if a **whole node** is replaced by a new one, leave its body
+     unchanged, set `status: archived`, and record `supersedes` on the successor (above).
 4. **If both remain valid / the conflict is genuine and unresolved:**
    - Keep both, link them with the `contradicts` typed edge, and **document the tension in the
      node's `## bias-check` section** (the other side / contradicting evidence). This is epistemic

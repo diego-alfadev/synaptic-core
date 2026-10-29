@@ -89,10 +89,10 @@ links or phantom nodes. Report what was diagnosed, what was treated, and what wa
 
 ## CORE-safety contract (binding)
 
-- **Approval-gated.** Maintain presents a plan; it applies only confirmed changes. Knowledge deletion
-  and persona content are **human-only**; structural changes are propose-then-approve.
-- **Every automated edit is diff-traced, git-reversible, archive-before-delete**, at the tier
-  `harness/guardrails.md` sets for it — never an autonomous unbounded rewriter.
+- **Approval-gated.** Maintain presents a plan and applies only confirmed changes, each at the tier
+  the Autonomy Tiers table sets for it (source: `harness/guardrails.md`).
+- **Every automated edit is diff-traced, git-reversible, archive-before-delete** — never an
+  autonomous unbounded rewriter.
 - **Deletion ledger (standing rule — not migration-only).** Any leg that deletes, moves, or archives a
   node records a one-line ledger entry (*what, why, loser→winner or destination, recoverable-via-git*),
   the same discipline `references/upgrade-to-v1.md` uses. It applies to every maintenance sweep, not

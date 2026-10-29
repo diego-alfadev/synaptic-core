@@ -73,7 +73,7 @@ Every automated edit is **diff-traced, git-reversible, and archive-before-delete
 | Tier | Scope | Examples |
 |---|---|---|
 | **AUTO** (bounded + reversible) | Act without asking; the change is small, reversible, and on record. | Append a journal breadcrumb · reindex / regenerate a derived cache · author the `contradicts` / `supersedes` edge for a pair the user confirmed · capture a decision EXPLICITLY stated in the session · fix a broken `[[wikilink]]`. |
-| **PROPOSE-THEN-APPROVE** | Draft the change and surface it; apply only on a yes. | Promote a node / merge or split nodes · restructure a cluster or MOC · rewrite an existing node during consolidation · change a registry's schema · supersede a page's substance. |
+| **PROPOSE-THEN-APPROVE** | Draft the change and surface it; apply only on a yes. | Promote a node / merge or split nodes · restructure a cluster or MOC · rewrite an existing node during consolidation · author a `contradicts` / `supersedes` edge the user has not confirmed · change a registry's schema · supersede a page's substance. |
 | **HUMAN-ONLY** | Never automate; the human does it (or explicitly directs it each time). | Delete knowledge · purge / burn anything beyond a consolidated playground · edit persona/behavior (lives in the harness, not the brain) · irreversible ops (force-push, schema migration, secret rotation). |
 
 > **Self-improving is bounded and reversible only** — the AUTO tier links confirmed pairs, captures explicitly-stated decisions, and reindexes. It is NOT an autonomous unbounded rewriter. Structural change is propose-then-approve; deletion and persona are human-only.

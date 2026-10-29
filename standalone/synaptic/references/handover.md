@@ -63,7 +63,7 @@ filter**. Assemble the five sections below.
 | include a `lifecycle: dormant` + `status: active` binding decision | **YES — MUST appear** (dormant scopes only the *default* load, not exports) |
 | include a `status: stale` but relevant node | **YES — flagged `⚠ stale`**, never hidden (`status` never omits) |
 | include a node whose `status:` is an unknown/mistyped value | **YES — marked `untriaged`**, never promoted to "current" (`status` is required; an unknown value reads as untriaged) |
-| include a `status: archived` node | **Only as history** — `(superseded by [[x]])` from the grep-computed `superseded_by`; never listed as a current key decision |
+| include a `status: archived` node | **Only as history** — an indented `↳ replaces [[old]]` under its successor in Key decisions (the successor's `supersedes` edge); never listed as a current decision. No successor → leave it out and end the brief with `N archived nodes not shown` |
 | apply the default-working-set (`lifecycle`) filter | **NO** — handover reads ALL lifecycles and ALL statuses |
 
 ## Output shape (worked example — author-complete, by inspection)
@@ -82,6 +82,7 @@ One paragraph: what this covers and the owner's role (from the Context Capsule +
 ## Key decisions
 - Risk-lead sign-off required before Friday cutoff [→ knowledge/ci-cd/signoff.md]
 - Chose FF-cutover over folder-rename on the sync share [→ …]  ⚠ stale — confirm still current
+  ↳ replaces [[cutover-folder-rename]] (archived)
 
 ## Where things live / where-to-look
 - Gating runbook [→ knowledge/ci-cd/deploy-playbook.md]
