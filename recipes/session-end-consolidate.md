@@ -228,9 +228,9 @@ if (-not (Test-Path -LiteralPath $brainDir)) { exit 0 }
 $journal = Join-Path $brainDir "journal/_current.md"
 $playgrounds = Join-Path $brainDir "playgrounds"
 $crumbs = 0
-if (Test-Path -LiteralPath $journal) { $crumbs = @(Select-String -LiteralPath $journal -SimpleMatch -Pattern "breadcrumb:").Count }
+if (Test-Path -LiteralPath $journal -PathType Leaf) { $crumbs = @(Select-String -LiteralPath $journal -SimpleMatch -CaseSensitive -Pattern "breadcrumb:").Count }
 $open = 0
-if (Test-Path -LiteralPath $playgrounds) { $open = @(Get-ChildItem -LiteralPath $playgrounds -Directory -Force | Where-Object { $_.Name -ne "archive" }).Count }
+if (Test-Path -LiteralPath $playgrounds -PathType Container) { $open = @(Get-ChildItem -LiteralPath $playgrounds -Directory -Force | Where-Object { $_.Name -cne "archive" }).Count }
 if ($crumbs -gt 0 -or $open -gt 0) {
     Write-Output ""
     Write-Output "=== Synaptic: consolidation reminder ==="
