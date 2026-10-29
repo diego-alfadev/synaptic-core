@@ -149,11 +149,12 @@ extract "### A.3" bash "$A3" && ok "extract A.3 rescue check (bash) from the rec
   || { nok "extract A.3 rescue check (bash) from the recipe" "heading or fence changed"; exit 1; }
 mkbrain() { mkdir -p "$WORK/$1/.synaptic/journal" "$WORK/$1/.synaptic/playgrounds"
             printf '# Journal\n' > "$WORK/$1/.synaptic/journal/_current.md"; echo "$WORK/$1"; }
-gitinit() { ( cd "$1" && git init -q && git add -A \
-              && git -c user.name=ci -c user.email=ci@example.invalid commit -qm init ) >/dev/null 2>&1; }
-hook() { ( cd "$1" && bash "$2" ) > "$WORK/out.txt" 2> "$WORK/err.txt"; }
-quiet() { [ ! -s "$WORK/out.txt" ] && [ ! -s "$WORK/err.txt" ]; }
-said()  { grep -q "$1" "$WORK/out.txt"; }
+commitall() { ( cd "$1" && git add -A \
+                && git -c user.name=ci -c user.email=ci@example.invalid -c commit.gpgsign=false commit -qm c ) >/dev/null 2>&1; }
+gitinit() { ( cd "$1" && git init -q ) >/dev/null 2>&1; commitall "$1"; }
+hook() { ( cd "$1" && bash "$2" ) > "$WORK/out.txt" 2> "$WORK/err.txt"; echo $? > "$WORK/rc.txt"; }
+quiet() { [ "$(cat "$WORK/rc.txt")" = 0 ] && [ ! -s "$WORK/out.txt" ] && [ ! -s "$WORK/err.txt" ]; }
+said()  { [ "$(cat "$WORK/rc.txt")" = 0 ] && grep -q "$1" "$WORK/out.txt"; }
 crumb='- 2026-10-29T10:00Z breadcrumb: touched a.md'
 
 ws=$(mkbrain a3-zero); hook "$ws" "$A3"                                                      # C6
@@ -184,6 +185,35 @@ said "consolidation reminder" && ok "A.2 reminds when breadcrumbs are pending" \
 ws=$(mkbrain a2-archive); mkdir -p "$ws/.synaptic/playgrounds/archive/old"; hook "$ws" "$A2"   # C4
 quiet && ok "A.2 does not count playgrounds/archive/ (silent, no stderr)" \
   || nok "A.2 does not count playgrounds/archive/" "$(tr '\n' ' ' < "$WORK/out.txt" | head -c 160)"
+ws=$(mkbrain a3-pg); mkdir -p "$ws/.synaptic/playgrounds/task"; hook "$ws" "$A3"   # each half of the OR alone
+said "0 pending breadcrumb(s) and 1 open playground(s)" && ok "A.3 reports an open playground on its own" \
+  || nok "A.3 reports an open playground on its own" "$(tr '\n' ' ' < "$WORK/out.txt" | head -c 160)"
+ws=$(mkbrain a3-crumb); echo "$crumb" >> "$ws/.synaptic/journal/_current.md"; hook "$ws" "$A3"
+said "1 pending breadcrumb(s) and 0 open playground(s)" && ok "A.3 reports a pending breadcrumb on its own" \
+  || nok "A.3 reports a pending breadcrumb on its own" "$(tr '\n' ' ' < "$WORK/out.txt" | head -c 160)"
+ws="$WORK/bare"; mkdir -p "$ws/.synaptic/knowledge"; hook "$ws" "$A2"; r2=$(quiet && echo y); hook "$ws" "$A3"
+[ "$r2" = y ] && quiet && ok "A.2 and A.3 are quiet with no journal and no playgrounds/ (exit 0)" \
+  || nok "A.2 and A.3 are quiet with no journal and no playgrounds/" "rc=$(cat "$WORK/rc.txt")"
+ws=$(mkbrain a2-case); echo '- 2026-10-29T10:00Z Breadcrumb: touched a.md' >> "$ws/.synaptic/journal/_current.md"
+hook "$ws" "$A2"; quiet && ok "A.2 counts only the lowercase hook token 'breadcrumb:'" \
+  || nok "A.2 counts only the lowercase hook token 'breadcrumb:'" "$(tr '\n' ' ' < "$WORK/out.txt" | head -c 160)"
+
+# --- End to end in the A.4 order (A.0 -> A.1 -> A.2) on a committed git brain [C2] ---------------
+# A.1 must not turn the brain's own bookkeeping (the A.0 ledger, the journal it writes) into breadcrumbs,
+# or the reminder can never go quiet.
+ws=$(mkbrain chain-qa); ( cd "$ws" && bash "$A0" boot ) >/dev/null 2>&1; gitinit "$ws"
+( cd "$ws" && bash "$A0" stop; bash "$A1" ) >/dev/null 2>&1; hook "$ws" "$A2"
+quiet && ok "chain: a turn that only wrote the activity ledger leaves no reminder" \
+  || nok "chain: a turn that only wrote the activity ledger leaves no reminder" "journal: $(tail -n 1 "$ws/.synaptic/journal/_current.md")"
+ws=$(mkbrain chain-cons); echo "$crumb" >> "$ws/.synaptic/journal/_current.md"; gitinit "$ws"
+printf '# Journal\n- [2026-10-29] consolidated\n' > "$ws/.synaptic/journal/_current.md"
+( cd "$ws" && bash "$A1" ) >/dev/null 2>&1; commitall "$ws"; hook "$ws" "$A2"
+quiet && ok "chain: the consolidating turn's own Stop does not re-arm the reminder" \
+  || nok "chain: the consolidating turn's own Stop does not re-arm the reminder" "journal: $(tail -n 1 "$ws/.synaptic/journal/_current.md")"
+ws=$(mkbrain chain-work); echo a > "$ws/app.txt"; gitinit "$ws"; echo b >> "$ws/app.txt"
+( cd "$ws" && bash "$A1" ) >/dev/null 2>&1; hook "$ws" "$A2"
+said "1 pending breadcrumb(s)" && ok "chain: a real project edit becomes a breadcrumb and triggers the reminder" \
+  || nok "chain: a real project edit becomes a breadcrumb and triggers the reminder" "$(tr '\n' ' ' < "$WORK/out.txt" | head -c 160)"
 
 # --- The DEPLOYED copy: SKILL.md's pinned one-liner --------------------------------------------
 # /synaptic-init and /synaptic-upgrade wire THIS block into the host, not the recipe's script, so it is

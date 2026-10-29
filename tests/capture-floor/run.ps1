@@ -362,6 +362,66 @@ try {
     if (-not $r.Out -and -not $r.Err) { Ok 'A.2 (PS) does not count playgrounds/archive/' }
     else { Nok 'A.2 (PS) does not count playgrounds/archive/' "out='$($r.Out)' err='$($r.Err)'" }
 
+    function Test-Quiet($r) { return ($r.Rc -eq 0 -and -not $r.Out -and -not $r.Err) }
+    function Save-Commit([string]$Ws) {
+        $eap = $ErrorActionPreference; $ErrorActionPreference = 'Continue'
+        Push-Location -LiteralPath $Ws
+        try {
+            if (-not (Test-Path -LiteralPath (Join-Path $Ws '.git'))) { git -c core.autocrlf=false init -q 2>$null | Out-Null }
+            git -c core.autocrlf=false add -A 2>$null | Out-Null
+            git -c core.autocrlf=false -c commit.gpgsign=false -c user.name=ci -c user.email=ci@example.invalid commit -qm c 2>$null | Out-Null
+        } finally { Pop-Location; $ErrorActionPreference = $eap }
+    }
+
+    $ws = New-BrainWs 'a2ps-case'                                                                   # parity
+    [IO.File]::AppendAllText((Join-Path $ws '.synaptic/journal/_current.md'), "- 2026-10-29T10:00Z Breadcrumb: touched a.md`n")
+    $r = Get-HookResult $A2 $ws
+    if (Test-Quiet $r) { Ok "A.2 (PS) counts only the lowercase hook token 'breadcrumb:' (parity with bash)" }
+    else { Nok "A.2 (PS) counts only the lowercase hook token 'breadcrumb:'" "out='$($r.Out)'" }
+
+    $ws = New-Workspace 'a2ps-pgfile' -Brain                                                        # parity
+    New-Item -ItemType Directory -Path (Join-Path $ws '.synaptic/journal') | Out-Null
+    [IO.File]::WriteAllText((Join-Path $ws '.synaptic/playgrounds'), "not a directory`n")
+    $r = Get-HookResult $A2 $ws
+    if (Test-Quiet $r) { Ok 'A.2 (PS) does not count a FILE named playgrounds (parity with bash)' }
+    else { Nok 'A.2 (PS) does not count a FILE named playgrounds' "out='$($r.Out)' err='$($r.Err)'" }
+
+    $ws = New-Workspace 'a2ps-bare' -Brain
+    New-Item -ItemType Directory -Path (Join-Path $ws '.synaptic/knowledge') | Out-Null
+    $r = Get-HookResult $A2 $ws
+    if (Test-Quiet $r) { Ok 'A.2 (PS) is quiet with no journal and no playgrounds/ (exit 0)' }
+    else { Nok 'A.2 (PS) is quiet with no journal and no playgrounds/' "rc=$($r.Rc) err='$($r.Err)'" }
+
+    $ws = New-BrainWs 'a2ps-untracked' -Git                                                         # C2
+    New-Item -ItemType Directory -Path (Join-Path $ws '.synaptic/playgrounds/new') | Out-Null
+    [IO.File]::WriteAllText((Join-Path $ws '.synaptic/playgrounds/new/notes.md'), "x`n")
+    $r = Get-HookResult $A2 $ws
+    if ($r.Rc -eq 0 -and $r.Out -match '0 pending breadcrumb\(s\) and 1 open playground\(s\)') { Ok 'A.2 (PS) reminds for an untracked new playground in a git repo' }
+    else { Nok 'A.2 (PS) reminds for an untracked new playground in a git repo' "out='$($r.Out)'" }
+
+    # End to end in the A.4 order (A.0 -> A.1 -> A.2) on a committed git brain. [C2]
+    $ws = New-BrainWs 'chainps-qa'
+    $null = Invoke-Hook $A0 'boot' $ws; Save-Commit $ws
+    $null = Invoke-Hook $A0 'stop' $ws; $null = Invoke-Hook $A1 '' $ws
+    $r = Get-HookResult $A2 $ws
+    if (Test-Quiet $r) { Ok 'chain (PS): a turn that only wrote the activity ledger leaves no reminder' }
+    else { Nok 'chain (PS): a turn that only wrote the activity ledger leaves no reminder' "out='$($r.Out)'" }
+
+    $ws = New-BrainWs 'chainps-cons'
+    [IO.File]::AppendAllText((Join-Path $ws '.synaptic/journal/_current.md'), $crumb); Save-Commit $ws
+    [IO.File]::WriteAllText((Join-Path $ws '.synaptic/journal/_current.md'), "# Journal`n- [2026-10-29] consolidated`n", (New-Object Text.UTF8Encoding $false))
+    $null = Invoke-Hook $A1 '' $ws; Save-Commit $ws
+    $r = Get-HookResult $A2 $ws
+    if (Test-Quiet $r) { Ok "chain (PS): the consolidating turn's own Stop does not re-arm the reminder" }
+    else { Nok "chain (PS): the consolidating turn's own Stop does not re-arm the reminder" "out='$($r.Out)'" }
+
+    $ws = New-BrainWs 'chainps-work'
+    [IO.File]::WriteAllText((Join-Path $ws 'app.txt'), "a`n"); Save-Commit $ws
+    [IO.File]::AppendAllText((Join-Path $ws 'app.txt'), "b`n"); $null = Invoke-Hook $A1 '' $ws
+    $r = Get-HookResult $A2 $ws
+    if ($r.Rc -eq 0 -and $r.Out -match '1 pending breadcrumb\(s\)') { Ok 'chain (PS): a real project edit becomes a breadcrumb and triggers the reminder' }
+    else { Nok 'chain (PS): a real project edit becomes a breadcrumb and triggers the reminder' "out='$($r.Out)'" }
+
     # --- The DEPLOYED copy: SKILL.md's pinned one-liner -------------------------------------------
     # /synaptic-init and /synaptic-upgrade wire THIS block into the host, so it is what users run.
     # It sits in a blockquote, and <brain> is a placeholder the agent fills.
