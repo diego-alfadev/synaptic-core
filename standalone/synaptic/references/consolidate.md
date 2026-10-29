@@ -135,18 +135,22 @@ content hash directly in the node's authored frontmatter:
 
 ```yaml
 source: "references/raw/{filename.ext}"
-content_hash: "git:{first-12-hex}"   # git hash-object of references/raw/{filename.ext} at capture time
+content_hash: "git:{first-12-hex}"   # the hash command below, on references/raw/{filename.ext} at capture time; TBD if no shell/git
 ```
 
 - This is an **authored fact written once at capture time**, the same as any other frontmatter
   value — it is **not** a generated index, never a must-sync cache, and nothing recomputes it
   automatically. It exists purely so a later consolidation/audit pass can notice "the raw file's
   hash no longer matches what the node recorded → the artifact drifted → re-distil."
-- Compute it with `git -c core.autocrlf=input hash-object "<file>"` — the same command in every shell,
-  inside or outside a repo; pinning `autocrlf=input` makes the result independent of each machine's
-  line-ending setting — and store the first 12 hex characters. Never "compute" a hash yourself — a
-  model cannot hash, so the value would be invented. No shell or no git → write `content_hash: TBD`
-  and keep the source path — CORE never requires a runtime.
+- **The hash command** (the same in every shell; the one place it is defined):
+  `git -C "<brain>" -c core.autocrlf=input -c core.attributesFile=/dev/null hash-object "references/raw/<filename>"`
+  — always with `-C "<brain>"` and the forward-slash path relative to it, never from the host's cwd
+  (another repo's `.gitattributes` would apply there). The two `-c` pins remove each machine's
+  line-ending setting and user-level attributes. Attributes of a repo that holds the brain itself
+  (`-text`, an LFS filter, `ident`, `working-tree-encoding`) or a SHA-256 repo still change the
+  result. Store the first 12 hex characters. Never "compute" a hash yourself — a model cannot hash,
+  so the value would be invented. No shell or no git → write `content_hash: TBD` and keep the source
+  path — CORE never requires a runtime.
 
 ---
 
