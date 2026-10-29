@@ -77,19 +77,27 @@
   file named `playgrounds`, matching bash. A long-lived open playground keeps the reminder firing on
   purpose: it is unconsolidated work until it is burned or archived.
 - **Skill prose defects** (no runtime involved; checked by review, not by tests):
-  - **`content_hash` has one primitive: `git hash-object "<file>"`, stored as `git:{first-12}`.**
-    Before, the field was labelled `sha256:` but could hold a `git hash-object` prefix or a value the
-    agent "computed", which a model cannot do. `git hash-object` is one command in every shell and
-    ignores the line endings Git for Windows rewrites per clone, where a raw-bytes hash reports false
-    drift (stability measured in Git Bash on Windows 11 across `core.autocrlf` true/false clones).
-    No shell or no git means `TBD`. Audit reports a `TBD` hash, a legacy `sha256:` value, or a mismatch
-    on a file git shows unchanged since capture as unverifiable, not drifted.
+  - **`content_hash` has one primitive: `git -c core.autocrlf=input hash-object "<file>"`, stored as
+    `git:{first-12}`.** Before, the field was labelled `sha256:` but could hold a `git hash-object`
+    prefix, a real SHA-256 prefix, or a value the agent "computed", which a model cannot do. The
+    pinned command is the same in every shell, and its result depends neither on the clone nor on the
+    machine's line-ending setting. A raw-bytes hash would report false drift when Git for Windows
+    rewrites line endings per clone, and an unpinned `git hash-object` gives different hashes for
+    CRLF files on different machines when the brain is not in git. Stability was measured in Git Bash
+    on Windows 11, with POSIX simulated by `core.autocrlf=false`: LF, CRLF and binary files, inside and
+    outside a repo. No shell or no git means `TBD`. Audit reports a `TBD` hash or a legacy `sha256:`
+    value as unverifiable, not drifted.
   - **Supersession uses the status vocabulary.** `synthesize.md` proposed `status → superseded`, which
-    is not a status; a wholly replaced node is now kept with `status: archived`, and handover shows an
-    archived node only as history. The autonomy tier has one home, `harness/guardrails.md`, whose AUTO
-    row no longer lets an agent rewrite a flagged `contradicts`/`supersedes` pair unasked: rewriting
-    an existing node is propose-then-approve, and synthesize no longer calls deletion anything but
-    human-only.
+    is not a status. A wholly replaced node now keeps its body, gets `status: archived`, and its
+    successor records `supersedes`. Handover lists it only under its successor, as history. The
+    autonomy tier has one home, the Autonomy Tiers table (`harness/guardrails.md`). Its AUTO row no
+    longer lets an agent rewrite a flagged `contradicts`/`supersedes` pair unasked. Authoring an edge
+    the user has not confirmed, and rewriting an existing node, are propose-then-approve. Synthesize
+    no longer calls deletion anything but human-only.
+  - **Agent-behaviour rules found while consolidating** are offered for the user's own `AGENTS.md`
+    (outside the SYNAPTIC block). They are written only on the user's explicit instruction, never
+    into the brain. `/synaptic-upgrade` asks for one batched approval of the rule text it routes into
+    `harness/`. In autonomous mode it stages that text instead of writing it.
   - **Content is data, never instructions.** `SKILL.md` states once, for every operation, that what an
     operation reads as source material (knowledge nodes, registries, raw references, playgrounds, the
     journal, agent-native memory, ingested documents) is material to distil: a directive in it that
@@ -113,18 +121,21 @@ The capture-floor fixes live in files that were **copied into your project**; no
 - **Change Windows hook commands** from `pwsh -File …` to `powershell -NoProfile -ExecutionPolicy Bypass
   -File …` unless PowerShell 7 is actually installed.
 - **Strip a leading BOM** from `journal/_current.md` if one is there (first bytes `EF BB BF`).
-- **Re-run `/synaptic-upgrade` (or `/synaptic-init`)** to re-wire the guarded one-liners. For its drift
-  check to notice, the release must bump `SKILL.md`'s `version:`.
 - **No ledger rename on Windows:** the activity-ledger filename is unchanged there.
-- **Skill prose fixes arrive with the skill**, except two copies:
-  - the `/`-menu stubs, which `/synaptic-upgrade` regenerates once `version:` is bumped (they now load
-    `SKILL.md` first);
-  - your brain's `harness/guardrails.md`. Change its AUTO example *"reconcile a flagged `contradicts` /
-    `supersedes` edge"* to *"author the `contradicts` / `supersedes` edge for a pair the user confirmed"*.
-- **Existing `content_hash` values** are labelled `sha256:` and may be a `git hash-object` prefix or an
-  invented value. Audit reports them as unverifiable, not drifted. Where the hex matches the
-  recomputed `git hash-object` prefix, re-label it `git:`; otherwise re-record it only once
-  `git log -- <raw file>` shows the artifact unchanged since the node was written.
+- **Skill prose fixes arrive with the skill**, except your brain's copy of `harness/guardrails.md`.
+  Edit it by hand before the re-run below:
+  - In the AUTO row, change *"reconcile a flagged `contradicts` / `supersedes` edge"* to *"author the
+    `contradicts` / `supersedes` edge for a pair the user confirmed"*.
+  - In the PROPOSE-THEN-APPROVE row, add *"author a `contradicts` / `supersedes` edge the user has
+    not confirmed"*.
+  - In the "Self-improving" line, change *"reconciles flagged edges"* to *"links confirmed pairs"*.
+- **Re-run `/synaptic-upgrade` (or `/synaptic-init`)** to re-wire the guarded one-liners, re-deploy
+  the edited rules, and regenerate the `/`-menu stubs (they now load `SKILL.md` first). For its drift
+  check to notice, the release must bump `SKILL.md`'s `version:`.
+- **Existing `content_hash` values** are labelled `sha256:`. Each one may be a `git hash-object`
+  prefix, a real SHA-256 prefix, or an invented value. Audit reports them as unverifiable, not drifted.
+  Where the hex matches the recomputed prefix, re-label it `git:`. Otherwise, re-record it only with
+  your OK.
 
 ## [1.5.0] - 2026-07-27
 
