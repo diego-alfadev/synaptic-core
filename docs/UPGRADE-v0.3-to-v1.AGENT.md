@@ -64,6 +64,9 @@ for Phase V — the Step-6 retrieval drill must also pass.
 │   2. Any DELETION / merge / split of knowledge content (the DELETIONS LEDGER items) — human-only.│
 │   3. Private-vs-shared (Step 1.4) — it selects the cutover path (7A simple swap vs 7B freeze).   │
 │   4. Cutover acknowledgement (Step 7) — the go/no-go before the brain is swapped/promoted.       │
+│   5. One batched approval (Step 5): the exact rule text for harness/conventions.md +             │
+│      guardrails.md, each personal agent-behaviour item's placement (your AGENTS.md outside       │
+│      the SYNAPTIC block, user-level instructions, or discard), and the deploy diff.              │
 │ Anything else (routine re-files, link conversions, MOC rebuilds, frontmatter fill) guided just   │
 │ DOES and reports at the end — it does not narrate each step or ask permission for it.            │
 │ `interactive` (advanced, opt-in) = surface EVERY step for confirmation. `autonomous` = no user   │
@@ -242,8 +245,9 @@ references/upgrade-to-v1.md, with these BINDING reinforcements (they close real 
 ────────────────────────────────────────────────────────────────────────
 STEP 5 — Harness wiring (DETECT current → deploy desired)   [no Node]
 ────────────────────────────────────────────────────────────────────────
-First fill the shared harness source fully: populate harness/conventions.md + harness/guardrails.md
-with NO {{placeholder}} tokens (any placeholder makes the deploy refuse). These are the SOURCE; they
+First fill the shared harness source with the text approved under question 5 (autonomous: stage it in
+_migration-staging/harness-pending.md and do not write it): populate harness/conventions.md +
+harness/guardrails.md with NO {{placeholder}} tokens (any placeholder makes the deploy refuse). These are the SOURCE; they
 are DEPLOYED into the harnessing / system prompt (SYMLINK preferred over copy) and read from the brain
 only when edited / to verify sync — never at session start.
 
