@@ -234,16 +234,28 @@ then Phase C (mandatory content rearrange; requires judgment), then verify with 
 defined in the hardening addendum above (guided is the DEFAULT when a user IS present). Make the
 reasonable choice at every junction, never destroy ambiguous content (prefer staging/moving over
 deleting), and record every non-obvious judgment in a migration decision log delivered with the
-result. Everything question (5) would ask — rule text bound for `harness/`, personal
-agent-behaviour text (C1/C6), and the SYNAPTIC-RULES deploy — goes to
-`_migration-staging/harness-pending.md` and that log; nothing is written or deployed. Phase V reports
-the Layout entries `harness/conventions.md` / `harness/guardrails.md` and the Harness (source /
-deployed / wiring) checks as `pending owner approval`, not failed; there is no cutover; staging is
-kept while that file holds unapproved text. The report ends: *"Unfinished — harness approval pending in
-`<work copy>/_migration-staging/harness-pending.md`; run `/synaptic-upgrade` (guided) to finish."*
-**Resume:** a guided `/synaptic-upgrade` first looks for that file (path from the decision log, or ask
-the owner). If it exists, skip Safeguard, M and C: ask (5) from it, write and deploy what is approved,
-re-run Phase V, then ask (4). Mode changes verbosity/prompting only — the safety gates run identically.
+result. Mode changes verbosity/prompting only — the safety gates run identically.
+
+**The question-5 file (every mode; the one definition).** Phase C writes everything question (5) will
+ask into `_migration-staging/harness-pending.md` in the work copy: each rule bound for
+`harness/conventions.md` / `harness/guardrails.md`, each personal agent-behaviour item, the
+SYNAPTIC-RULES deploy, and the intake answers (including whether (3) was asked or guessed). Every item
+carries a status line: `pending`, `approved → <destination>`, or `discarded`. Phase C never writes
+`harness/conventions.md` / `harness/guardrails.md` and never deploys (other `harness/` moves, such as
+`skills/` → `harness/skills/`, are unaffected).
+- **Guided:** (5) is asked from this file; record each answer as its status, then write and deploy the
+  approved items.
+- **Autonomous:** nothing is written or deployed; items stay `pending`. Phase V reports the Layout
+  entries `harness/conventions.md` / `harness/guardrails.md` and the Harness (source / deployed /
+  wiring) checks as `pending owner approval`, not failed; there is no cutover. The report ends:
+  *"Unfinished — harness approval pending in `<work copy>/_migration-staging/harness-pending.md`; run
+  `/synaptic-upgrade` (guided) to finish."*
+- **Resume:** a guided `/synaptic-upgrade` checks the work copy (the autonomous report's path, else the
+  default `./synaptic-v1-work/.synaptic/`) for that file. Only if the brain has a `pre-v1` tag and the
+  file is not found does it ask the owner for the work-copy path. If an item is still `pending`: skip
+  Safeguard, M and C; reuse the recorded intake, asking (3) only if it was guessed; ask (5) from the
+  file, write and deploy, re-run Phase V, then ask (4). With no `pending` item, proceed normally.
+- The staged sources (PRINCIPLES, working-agreements) are deleted only after every item has an outcome.
 
 ---
 
@@ -418,7 +430,7 @@ Phase C consumes `_migration-staging/` and **deletes it as its final step**.
 
 - Extract a 2–4-line summary of what the brain covers + the owner's role. Write as the **Context Capsule** block in `BRAIN.md`.
 - Extract the **Capture Contract** (consolidation formula) block into `BRAIN.md` using the v1 `templates/BRAIN.md` format.
-- **Do NOT write a Top Guardrails block in BRAIN.md.** Operating rules (guardrails + conventions) go to `harness/` as the **deployable source** — they are then deployed by the Deploy step in Harness Self-Wire (`/synaptic-init`), not left for runtime load from the brain. BRAIN.md carries only the 1-line deploy-source pointer.
+- **Do NOT write a Top Guardrails block in BRAIN.md.** Operating rules (guardrails + conventions) found here are collected in the question-5 file like the PRINCIPLES items below — `harness/` is the **deployable source**, written and then deployed by the Deploy step in Harness Self-Wire (`/synaptic-init`) only after (5) is approved, not left for runtime load from the brain. BRAIN.md carries only the 1-line deploy-source pointer.
 - Do NOT copy persona, tone, language preferences, or agent behavior rules into BRAIN.md.
 
 **From `identity/CONTACTS.md` (v0.4):**
@@ -427,8 +439,8 @@ Phase C consumes `_migration-staging/` and **deletes it as its final step**.
 
 **From `identity/PRINCIPLES.md` (v0.4) — ownership test: "would a teammate inheriting this brain need it?":**
 
-Collect every item below for question (5); write `harness/` and run the Deploy step only after (5) is
-approved (autonomous: see the Autonomous mode note).
+Collect every item below in the question-5 file (see "The question-5 file" above); write
+`harness/conventions.md` / `harness/guardrails.md` and run the Deploy step only after (5) is approved.
 
 - **Yes, team/project norm** (communication languages per channel, commit conventions, ticket etiquette, escalation rules) → `harness/conventions.md`. These travel with the brain.
 - **Yes, hard project rule** (security rules, architecture constraints, deployment gates) → `harness/guardrails.md`. These will be deployed to the outer harness by the Deploy step — do NOT mirror them in `BRAIN.md → Top Guardrails` (that block no longer exists in v1).
@@ -481,9 +493,9 @@ For each node in `knowledge/`:
 **From v0.5 `knowledge/working-agreements.md`** (staged in `_migration-staging/`):
 
 - Route team/project norms → `harness/conventions.md` (merge or create from the skill bundle's `templates/harness/conventions.md`).
-- Route hard rules → `harness/guardrails.md`. Both files are the **deployable source** — hold the routed text for question (5); write them and run the Deploy step (Harness Self-Wire §c via `/synaptic-init`) only after (5) is approved (autonomous: see the Autonomous mode note). Do NOT mirror rules in `BRAIN.md → Top Guardrails` (that block is dropped in v1).
+- Route hard rules → `harness/guardrails.md`. Both files are the **deployable source** — collect the routed text in the question-5 file; write them and run the Deploy step (Harness Self-Wire §c via `/synaptic-init`) only after (5) is approved. Do NOT mirror rules in `BRAIN.md → Top Guardrails` (that block is dropped in v1).
 - Persona/agent behavior content → offer to place in AGENTS.md (user harness). Never into the brain.
-- Delete the staged file after routing is confirmed.
+- Delete the staged file only after every item from it has an outcome in the question-5 file.
 
 ### C7 — Route playbooks (v0.5 source)
 

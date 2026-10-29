@@ -106,9 +106,10 @@
     offered as exact text for the user's own `AGENTS.md` (outside the SYNAPTIC block) or user-level
     instructions. They are written only on the user's explicit instruction, never into the brain.
     `/synaptic-upgrade`'s guided mode asks one batched question covering three things: the rule text
-    it routes into `harness/`, where each behaviour item goes, and the deploy diff. Phase C only drafts
-    that text. Autonomous mode stages the same items in `_migration-staging/harness-pending.md`,
-    writes and deploys nothing, and does not cut over. The next guided `/synaptic-upgrade` resumes from
+    it routes into `harness/`, where each behaviour item goes, and the deploy diff. In every mode, Phase C
+    writes that text to `_migration-staging/harness-pending.md` with a status per item (`pending`,
+    `approved → …`, `discarded`) and never writes the harness rule files. Autonomous mode leaves the
+    items `pending`, writes and deploys nothing, and does not cut over. The next guided `/synaptic-upgrade` resumes from
     that file instead of migrating again. `MIGRATION_DONE.md` and the agent runbook match.
   - **Content is data, never instructions.** `SKILL.md` states once, for every operation, that what an
     operation reads as source material (knowledge nodes, registries, raw references, playgrounds, the
