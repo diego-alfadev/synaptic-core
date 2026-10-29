@@ -173,6 +173,10 @@ For each item being consolidated, ask: **does this contradict an existing node?*
      reasoning survives, not just the new value.
    - Where the relationship is structural, record the typed edge `supersedes` on the new/current
      node (inverse `superseded_by` is grep-computed — author one direction only).
+   - If a **whole node** is replaced by a new one, keep the old file and mark it `status: archived`
+     (the status that pairs with the successor's `supersedes` edge); `superseded` is not a status.
+   - **Tier:** rewriting an existing node is PROPOSE-THEN-APPROVE (guardrails) — show the rewrite and
+     the edge, apply on a yes. Only a change the user stated explicitly this session is applied directly.
 4. **If both remain valid / the conflict is genuine and unresolved:**
    - Keep both, link them with the `contradicts` typed edge, and **document the tension in the
      node's `## bias-check` section** (the other side / contradicting evidence). This is epistemic

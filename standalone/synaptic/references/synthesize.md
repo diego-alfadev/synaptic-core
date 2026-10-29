@@ -97,7 +97,7 @@ Pass 1 — Cross-source patterns (N new nodes):
 
 Pass 2 — Concept evolution (N new nodes):
   - NEW [[auth-strategy-evolution]] ← [[auth-v1]] →(supersedes)→ [[auth-v2]] →(supersedes)→ [[auth-current]]
-    Proposes rewrite of [[auth-v1]] status → superseded (CONFIRM)
+    Proposes marking [[auth-v1]] `status: archived` (superseded by [[auth-current]]) (CONFIRM)
   - ...
 
 Pass 3 — Orphan rescue (N nodes):
