@@ -223,7 +223,7 @@ Tailor framing to the answer (e.g. "your stack" for project, "your domains" for 
 **Round 1 — Coverage + Owner role:**
 > "What should this brain cover? What is your role here — developer, lead, analyst?"
 
-These answers become the **Context Capsule** in `BRAIN.md` (2–4 lines: what it covers + owner's role in this project). This is *retrieval framing*, not persona. If the user describes tone, language preferences, or agent behavior: "Those belong in your harness (AGENTS.md / CLAUDE.md), not in the brain — I'll place them there instead."
+These answers become the **Context Capsule** in `BRAIN.md` (2–4 lines: what it covers + owner's role in this project). This is *retrieval framing*, not persona. If the user describes tone, language preferences, or agent behavior: "Those belong in your own `AGENTS.md` (outside the SYNAPTIC block) or your user-level instructions, not in the brain — here is the exact text; shall I add it there?"
 
 **Round 1b — Capture policy:**
 > "How selective should this brain be — crown-jewels only (`selective`), balanced (default), or capture almost everything (`capture-all`, good when you have no other memory layer)?"
