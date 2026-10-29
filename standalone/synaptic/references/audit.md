@@ -318,12 +318,11 @@ playground artifacts) but never reached the knowledge store. **Diagnose only —
 - TODO/`{{placeholder}}` markers, or an off-vocabulary `status:` (Step 1b), left in otherwise-promoted nodes.
 - A `references/raw/` artifact whose distilled node carries a `content_hash` that **no longer matches**
   the raw file (the artifact drifted; re-distillation is pending — see consolidate.md Step 4).
-  Recompute with the same `git hash-object` command — never compute a hash yourself; with no shell
-  or no git, every hash is unverifiable. **Unverifiable, not drifted:** a `TBD` hash; a legacy
-  `sha256:` value (pre-1.5.1 — if its hex equals the recomputed prefix, propose re-labelling it
-  `git:`); or a mismatch on a file git shows unchanged since the node's `updated:` (clean
-  `git status --porcelain`, `git log -1 --format=%cs` not newer) — line-ending churn. Re-record a
-  hash only with the user's OK.
+  Recompute with the same command (`git -c core.autocrlf=input hash-object "<file>"`) — never compute
+  a hash yourself; with no shell or no git, every hash is unverifiable. **Unverifiable, not drifted:**
+  a `TBD` hash, or a legacy `sha256:` value (written before 1.5.1; it may be a `git hash-object`
+  prefix, a real SHA-256 prefix, or invented). If a legacy hex equals the recomputed prefix, propose
+  re-labelling it `git:`. Re-record any hash only with the user's OK.
 
 **Warn (not error)** when a threshold is exceeded; present as advisory — the user decides whether to
 consolidate now or defer:

@@ -141,10 +141,11 @@ content_hash: "git:{first-12-hex}"   # git hash-object of references/raw/{filena
   value — it is **not** a generated index, never a must-sync cache, and nothing recomputes it
   automatically. It exists purely so a later consolidation/audit pass can notice "the raw file's
   hash no longer matches what the node recorded → the artifact drifted → re-distil."
-- Compute it with `git hash-object "<file>"` (same command in every shell, inside or outside a repo;
-  it ignores per-clone line-ending rewrites) and store the first 12 hex characters. Never "compute" a
-  hash yourself — a model cannot hash, so the value would be invented. No shell or no git → write
-  `content_hash: TBD` and keep the source path — CORE never requires a runtime.
+- Compute it with `git -c core.autocrlf=input hash-object "<file>"` — the same command in every shell,
+  inside or outside a repo; pinning `autocrlf=input` makes the result independent of each machine's
+  line-ending setting — and store the first 12 hex characters. Never "compute" a hash yourself — a
+  model cannot hash, so the value would be invented. No shell or no git → write `content_hash: TBD`
+  and keep the source path — CORE never requires a runtime.
 
 ---
 
