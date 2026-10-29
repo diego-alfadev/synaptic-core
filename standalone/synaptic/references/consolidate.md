@@ -407,7 +407,7 @@ is **not** governed by `capture_policy`:
   dead-ends, and superseded artifacts (the "email" lesson).
 - **Do not create orphan nodes:** every node must appear in its cluster `_index.md`.
 - **Do not duplicate:** search first; update existing nodes rather than creating parallel ones.
-- **Do not route persona content:** the brain has no identity directory. Hard project constraints → a knowledge node; agent behavior rules → propose the exact change for `harness/` (deployed into AGENTS.md / CLAUDE.md) and write it only on the user's approval; never into the wiki.
+- **Do not route persona content:** the brain has no identity directory. Hard project constraints → a knowledge node; agent behavior rules → offer the exact text for the user's own `AGENTS.md` (outside the SYNAPTIC block) or user-level instructions, and write it only on their explicit instruction; never into the brain.
 - **Do not embed verbatim artifacts inline:** large files go to `references/raw/`; knowledge nodes hold distilled facts + a link.
 - **Do not treat `content_hash` as a must-sync index:** it is an authored fact captured once; nothing recomputes it automatically.
 - **Do not skip the quality gate:** a node registered in the MOC but failing the gate is worse than no node.

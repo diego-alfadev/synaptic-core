@@ -155,7 +155,8 @@
   supervised-but-quiet: hide the internals, drive the migration, and ask the owner ONLY on genuine
   forks. The ONLY questions guided mode may ask: (1) topology intake (the brain-shape questions),
   (2) any knowledge deletion/merge/split (human-only), (3) private-vs-shared (it picks the cutover
-  path), (4) cutover acknowledgement (go/no-go). Everything else (re-files, link conversion, MOC
+  path), (4) cutover acknowledgement (go/no-go), (5) one batched approval of the exact rule text C1/C6
+  route into `harness/conventions.md` / `harness/guardrails.md`. Everything else (re-files, link conversion, MOC
   rebuilds, frontmatter fill) it just does and reports at the end. `interactive` (advanced, opt-in)
   surfaces every step; `autonomous` (no user available — see the "Autonomous mode" note below) makes
   the reasonable choice at each fork and logs it. **Guided vs interactive changes VERBOSITY / how much
@@ -230,7 +231,9 @@ then Phase C (mandatory content rearrange; requires judgment), then verify with 
 defined in the hardening addendum above (guided is the DEFAULT when a user IS present). Make the
 reasonable choice at every junction, never destroy ambiguous content (prefer staging/moving over
 deleting), and record every non-obvious judgment in a migration decision log delivered with the
-result. Mode changes verbosity/prompting only — the safety gates run identically.
+result. Rule text bound for `harness/` (C1/C6) is staged in `_migration-staging/` and listed in that
+log, never written — `harness/` rules change only on the user's approval. Mode changes
+verbosity/prompting only — the safety gates run identically.
 
 ---
 
