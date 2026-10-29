@@ -138,6 +138,53 @@ esac
 has_bom "$ws/.synaptic/journal/_current.md" && nok "A.1 (bash) leaves the journal BOM-free" \
   || ok "A.1 (bash) leaves the journal BOM-free"
 
+# --- A.2 reminder + A.3 rescue: one git-free "unconsolidated work?" predicate --------------------
+# Work = pending breadcrumb lines in journal/_current.md, or open playground directories.
+# playgrounds/archive/ is not open, and the A.0 activity ledger is not work. [C2 C4 C6]
+A2="$WORK/synaptic-consolidate-reminder.sh"
+A3="$WORK/synaptic-rescue.sh"
+extract "### A.2" bash "$A2" && ok "extract A.2 consolidation reminder (bash) from the recipe" \
+  || { nok "extract A.2 consolidation reminder (bash) from the recipe" "heading or fence changed"; exit 1; }
+extract "### A.3" bash "$A3" && ok "extract A.3 rescue check (bash) from the recipe" \
+  || { nok "extract A.3 rescue check (bash) from the recipe" "heading or fence changed"; exit 1; }
+mkbrain() { mkdir -p "$WORK/$1/.synaptic/journal" "$WORK/$1/.synaptic/playgrounds"
+            printf '# Journal\n' > "$WORK/$1/.synaptic/journal/_current.md"; echo "$WORK/$1"; }
+gitinit() { ( cd "$1" && git init -q && git add -A \
+              && git -c user.name=ci -c user.email=ci@example.invalid commit -qm init ) >/dev/null 2>&1; }
+hook() { ( cd "$1" && bash "$2" ) > "$WORK/out.txt" 2> "$WORK/err.txt"; }
+quiet() { [ ! -s "$WORK/out.txt" ] && [ ! -s "$WORK/err.txt" ]; }
+said()  { grep -q "$1" "$WORK/out.txt"; }
+crumb='- 2026-10-29T10:00Z breadcrumb: touched a.md'
+
+ws=$(mkbrain a3-zero); hook "$ws" "$A3"                                                      # C6
+quiet && ok "A.3 with zero breadcrumbs is silent (no shell error on every boot)" \
+  || nok "A.3 with zero breadcrumbs is silent" "stderr: $(head -c 160 "$WORK/err.txt")"
+ws=$(mkbrain a3-archive); mkdir -p "$ws/.synaptic/playgrounds/archive/old"; hook "$ws" "$A3"   # C4
+quiet && ok "A.3 does not count playgrounds/archive/ as an open playground" \
+  || nok "A.3 does not count playgrounds/archive/" "$(tr '\n' ' ' < "$WORK/out.txt" | head -c 160)"
+ws=$(mkbrain a3-pending); mkdir -p "$ws/.synaptic/playgrounds/task"
+printf '%s\n%s\n' "$crumb" "$crumb" >> "$ws/.synaptic/journal/_current.md"; hook "$ws" "$A3"
+said "2 pending breadcrumb(s) and 1 open playground(s)" && ok "A.3 reports pending breadcrumbs and open playgrounds" \
+  || nok "A.3 reports pending breadcrumbs and open playgrounds" "$(tr '\n' ' ' < "$WORK/out.txt" | head -c 160)"
+ws=$(mkbrain a2-nogit); mkdir -p "$ws/.synaptic/playgrounds/task"; hook "$ws" "$A2"            # C2
+said "consolidation reminder" && ok "A.2 reminds on a NON-git brain with an open playground" \
+  || nok "A.2 reminds on a NON-git brain with an open playground" "no reminder printed"
+ws=$(mkbrain a2-untracked); gitinit "$ws"; mkdir -p "$ws/.synaptic/playgrounds/new"           # C2
+echo x > "$ws/.synaptic/playgrounds/new/notes.md"; hook "$ws" "$A2"
+said "consolidation reminder" && ok "A.2 reminds for an untracked new playground in a git repo" \
+  || nok "A.2 reminds for an untracked new playground in a git repo" "no reminder printed"
+ws=$(mkbrain a2-marker); mkdir -p "$ws/.synaptic/journal/_activity"                            # C2
+echo "2026-10-29T10:00:00Z boot" > "$ws/.synaptic/journal/_activity/h-2026-10-29.log"; gitinit "$ws"
+echo "2026-10-29T10:05:00Z stop" >> "$ws/.synaptic/journal/_activity/h-2026-10-29.log"; hook "$ws" "$A2"
+quiet && ok "A.2 stays silent when only the activity ledger changed (no reminder every session)" \
+  || nok "A.2 stays silent when only the activity ledger changed" "false reminder"
+ws=$(mkbrain a2-crumbs); gitinit "$ws"; echo "$crumb" >> "$ws/.synaptic/journal/_current.md"; hook "$ws" "$A2"
+said "consolidation reminder" && ok "A.2 reminds when breadcrumbs are pending" \
+  || nok "A.2 reminds when breadcrumbs are pending" "no reminder printed"
+ws=$(mkbrain a2-archive); mkdir -p "$ws/.synaptic/playgrounds/archive/old"; hook "$ws" "$A2"   # C4
+quiet && ok "A.2 does not count playgrounds/archive/ (silent, no stderr)" \
+  || nok "A.2 does not count playgrounds/archive/" "$(tr '\n' ' ' < "$WORK/out.txt" | head -c 160)"
+
 # --- The DEPLOYED copy: SKILL.md's pinned one-liner --------------------------------------------
 # /synaptic-init and /synaptic-upgrade wire THIS block into the host, not the recipe's script, so it is
 # the copy users actually run. It lives inside a blockquote; <brain> is a placeholder the agent fills.

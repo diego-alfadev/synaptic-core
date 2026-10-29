@@ -301,6 +301,67 @@ try {
     if (Test-Bom $jf) { Nok 'A.1 appending to an empty journal writes no BOM' '-Encoding utf8 writes a BOM at offset 0 on Windows PowerShell 5.1' }
     else { Ok 'A.1 appending to an empty journal writes no BOM' }
 
+    # --- A.2 reminder: the same git-free "unconsolidated work?" predicate as the A.3 rescue ----------
+    # Work = pending breadcrumb lines, or open playground dirs; archive/ and the A.0 ledger are not. [C2 C4]
+    $a2Body = Get-Block '### A.2' 'powershell'
+    if ($a2Body.Count -gt 0) { Ok 'extract A.2 consolidation reminder (PowerShell) from the recipe' }
+    else { Nok 'extract A.2 consolidation reminder (PowerShell) from the recipe' 'heading or fence changed'; exit 1 }
+    $A2 = Save-Script 'synaptic-consolidate-reminder.ps1' $a2Body
+    function New-BrainWs([string]$Name, [switch]$Git) {
+        $ws = New-Workspace $Name -Brain
+        foreach ($d in @('.synaptic/journal', '.synaptic/playgrounds')) { New-Item -ItemType Directory -Path (Join-Path $ws $d) | Out-Null }
+        [IO.File]::WriteAllText((Join-Path $ws '.synaptic/journal/_current.md'), "# Journal`n", (New-Object Text.UTF8Encoding $false))
+        if ($Git) {
+            $eap = $ErrorActionPreference; $ErrorActionPreference = 'Continue'
+            Push-Location -LiteralPath $ws
+            try {
+                git -c core.autocrlf=false init -q 2>$null | Out-Null
+                git -c core.autocrlf=false add -A 2>$null | Out-Null
+                git -c core.autocrlf=false -c user.name=ci -c user.email=ci@example.invalid commit -qm init 2>$null | Out-Null
+            } finally { Pop-Location; $ErrorActionPreference = $eap }
+        }
+        return $ws
+    }
+    function Get-HookResult([string]$File, [string]$Cwd) {
+        $p = Start-Hook $File '' $Cwd $null
+        $o = $p.StandardOutput.ReadToEnd(); $e = $p.StandardError.ReadToEnd(); $p.WaitForExit()
+        return @{ Out = $o.Trim(); Err = $e.Trim(); Rc = $p.ExitCode }
+    }
+    $crumb = "- 2026-10-29T10:00Z breadcrumb: touched a.md`n"
+
+    $ws = New-BrainWs 'a2ps-nogit'                                                                  # C2
+    New-Item -ItemType Directory -Path (Join-Path $ws '.synaptic/playgrounds/task') | Out-Null
+    $r = Get-HookResult $A2 $ws
+    if ($r.Out -match 'consolidation reminder') { Ok 'A.2 (PS) reminds on a NON-git brain with an open playground' }
+    else { Nok 'A.2 (PS) reminds on a NON-git brain with an open playground' "out='$($r.Out)' err='$($r.Err)'" }
+
+    $ws = New-BrainWs 'a2ps-marker'                                                                 # C2
+    $ad = Join-Path $ws '.synaptic/journal/_activity'; New-Item -ItemType Directory -Path $ad | Out-Null
+    [IO.File]::WriteAllText((Join-Path $ad 'h-2026-10-29.log'), "2026-10-29T10:00:00Z boot`n")
+    $eap = $ErrorActionPreference; $ErrorActionPreference = 'Continue'
+    Push-Location -LiteralPath $ws
+    try {
+        git -c core.autocrlf=false init -q 2>$null | Out-Null
+        git -c core.autocrlf=false add -A 2>$null | Out-Null
+        git -c core.autocrlf=false -c user.name=ci -c user.email=ci@example.invalid commit -qm init 2>$null | Out-Null
+    } finally { Pop-Location; $ErrorActionPreference = $eap }
+    [IO.File]::AppendAllText((Join-Path $ad 'h-2026-10-29.log'), "2026-10-29T10:05:00Z stop`n")
+    $r = Get-HookResult $A2 $ws
+    if (-not $r.Out -and -not $r.Err) { Ok 'A.2 (PS) stays silent when only the activity ledger changed' }
+    else { Nok 'A.2 (PS) stays silent when only the activity ledger changed' "false reminder: out='$($r.Out)'" }
+
+    $ws = New-BrainWs 'a2ps-crumbs' -Git
+    [IO.File]::AppendAllText((Join-Path $ws '.synaptic/journal/_current.md'), $crumb)
+    $r = Get-HookResult $A2 $ws
+    if ($r.Out -match 'consolidation reminder') { Ok 'A.2 (PS) reminds when breadcrumbs are pending' }
+    else { Nok 'A.2 (PS) reminds when breadcrumbs are pending' "out='$($r.Out)' err='$($r.Err)'" }
+
+    $ws = New-BrainWs 'a2ps-archive'                                                                # C4
+    New-Item -ItemType Directory -Path (Join-Path $ws '.synaptic/playgrounds/archive/old') -Force | Out-Null
+    $r = Get-HookResult $A2 $ws
+    if (-not $r.Out -and -not $r.Err) { Ok 'A.2 (PS) does not count playgrounds/archive/' }
+    else { Nok 'A.2 (PS) does not count playgrounds/archive/' "out='$($r.Out)' err='$($r.Err)'" }
+
     # --- The DEPLOYED copy: SKILL.md's pinned one-liner -------------------------------------------
     # /synaptic-init and /synaptic-upgrade wire THIS block into the host, so it is what users run.
     # It sits in a blockquote, and <brain> is a placeholder the agent fills.
