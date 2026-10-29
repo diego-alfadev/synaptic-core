@@ -315,10 +315,15 @@ playground artifacts) but never reached the knowledge store. **Diagnose only —
 **(c) Half-done / protocolary signals:**
 
 - A `## bias-check` or note that records an **unresolved** `contradicts` pair never reconciled.
-- TODO/`{{placeholder}}`/`status: draft` markers left in otherwise-promoted nodes.
+- TODO/`{{placeholder}}` markers, or an off-vocabulary `status:` (Step 1b), left in otherwise-promoted nodes.
 - A `references/raw/` artifact whose distilled node carries a `content_hash` that **no longer matches**
   the raw file (the artifact drifted; re-distillation is pending — see consolidate.md Step 4).
-  Recompute with the same SHA-256 command; a `TBD` hash is unverifiable, not drifted.
+  Recompute with the same `git hash-object` command — never compute a hash yourself; with no shell
+  or no git, every hash is unverifiable. **Unverifiable, not drifted:** a `TBD` hash; a legacy
+  `sha256:` value (pre-1.5.1 — if its hex equals the recomputed prefix, propose re-labelling it
+  `git:`); or a mismatch on a file git shows unchanged since the node's `updated:` (clean
+  `git status --porcelain`, `git log -1 --format=%cs` not newer) — line-ending churn. Re-record a
+  hash only with the user's OK.
 
 **Warn (not error)** when a threshold is exceeded; present as advisory — the user decides whether to
 consolidate now or defer:

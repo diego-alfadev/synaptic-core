@@ -55,7 +55,7 @@ single file, identify type and size:
    - **Provenance + drift marker in frontmatter** (an authored fact, not an index — see consolidate.md Step 4):
      ```yaml
      source: "references/raw/{filename.ext}"
-     content_hash: "sha256:{first-12-hex}"   # SHA-256 of the raw file's bytes (consolidate.md Step 4); TBD if no shell
+     content_hash: "git:{first-12-hex}"   # git hash-object of the raw file (consolidate.md Step 4); TBD if no shell/git
      ```
    - A source pointer at the bottom:
      ```

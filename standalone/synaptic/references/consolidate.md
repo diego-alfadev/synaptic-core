@@ -131,19 +131,17 @@ content hash directly in the node's authored frontmatter:
 
 ```yaml
 source: "references/raw/{filename.ext}"
-content_hash: "sha256:{first-12-hex}"   # of references/raw/{filename.ext} at capture time
+content_hash: "git:{first-12-hex}"   # git hash-object of references/raw/{filename.ext} at capture time
 ```
 
 - This is an **authored fact written once at capture time**, the same as any other frontmatter
   value — it is **not** a generated index, never a must-sync cache, and nothing recomputes it
   automatically. It exists purely so a later consolidation/audit pass can notice "the raw file's
   hash no longer matches what the node recorded → the artifact drifted → re-distil."
-- Compute it as **SHA-256 over the file's raw bytes**, the one algorithm every shell has:
-  `sha256sum <file>` (Linux, Git Bash), `shasum -a 256 <file>` (macOS), or
-  `(Get-FileHash -Algorithm SHA256 -LiteralPath <file>).Hash.ToLower()` (PowerShell). Store the first
-  12 hex characters. Never use `git hash-object` (that is the SHA-1 of a git blob, not of the file),
-  and never "compute" a hash yourself — a model cannot hash, so the value would be invented. With no
-  shell available, write `content_hash: TBD` and keep the source path — CORE never requires a runtime.
+- Compute it with `git hash-object "<file>"` (same command in every shell, inside or outside a repo;
+  it ignores per-clone line-ending rewrites) and store the first 12 hex characters. Never "compute" a
+  hash yourself — a model cannot hash, so the value would be invented. No shell or no git → write
+  `content_hash: TBD` and keep the source path — CORE never requires a runtime.
 
 ---
 
