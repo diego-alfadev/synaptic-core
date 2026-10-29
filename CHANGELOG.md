@@ -77,27 +77,35 @@
   file named `playgrounds`, matching bash. A long-lived open playground keeps the reminder firing on
   purpose: it is unconsolidated work until it is burned or archived.
 - **Skill prose defects** (no runtime involved; checked by review, not by tests):
-  - **`content_hash` has one primitive: `git -c core.autocrlf=input hash-object "<file>"`, stored as
-    `git:{first-12}`.** Before, the field was labelled `sha256:` but could hold a `git hash-object`
-    prefix, a real SHA-256 prefix, or a value the agent "computed", which a model cannot do. The
-    pinned command is the same in every shell, and its result depends neither on the clone nor on the
-    machine's line-ending setting. A raw-bytes hash would report false drift when Git for Windows
-    rewrites line endings per clone, and an unpinned `git hash-object` gives different hashes for
-    CRLF files on different machines when the brain is not in git. Stability was measured in Git Bash
-    on Windows 11, with POSIX simulated by `core.autocrlf=false`: LF, CRLF and binary files, inside and
-    outside a repo. No shell or no git means `TBD`. Audit reports a `TBD` hash or a legacy `sha256:`
-    value as unverifiable, not drifted.
+  - **`content_hash` has one command, defined once in consolidate Step 4:**
+    `git -C "<brain>" -c core.autocrlf=input -c core.attributesFile=/dev/null hash-object
+    "references/raw/<filename>"`, stored as `git:{first-12}`. Before, the field was labelled `sha256:`
+    but could hold a `git hash-object` prefix, a real SHA-256 prefix, or a value the agent "computed",
+    which a model cannot do. The command is the same in every shell. Its result no longer depends on
+    the clone, the machine's line-ending setting, user-level attributes, or the directory the agent
+    runs it from. Without these pins it did: a raw-bytes hash changes when Git for Windows rewrites line
+    endings per clone; an unpinned `git hash-object` changes per machine for CRLF files outside git;
+    and run from another repo, that repo's `.gitattributes` applies. Measured in Git Bash and Windows
+    PowerShell 5.1 on Windows 11, with POSIX simulated by `core.autocrlf=false`. Attributes of a repo
+    that holds the brain itself (`-text`, an LFS filter, `ident`, `working-tree-encoding`) or a SHA-256
+    repo still change the result; audit flags a mismatch there as possibly repository-caused. No shell
+    or no git means `TBD`. Audit reports a `TBD` hash or a legacy `sha256:` value as unverifiable, not
+    drifted.
   - **Supersession uses the status vocabulary.** `synthesize.md` proposed `status → superseded`, which
     is not a status. A wholly replaced node now keeps its body, gets `status: archived`, and its
-    successor records `supersedes`. Handover lists it only under its successor, as history. The
-    autonomy tier has one home, the Autonomy Tiers table (`harness/guardrails.md`). Its AUTO row no
-    longer lets an agent rewrite a flagged `contradicts`/`supersedes` pair unasked. Authoring an edge
-    the user has not confirmed, and rewriting an existing node, are propose-then-approve. Synthesize
-    no longer calls deletion anything but human-only.
-  - **Agent-behaviour rules found while consolidating** are offered for the user's own `AGENTS.md`
-    (outside the SYNAPTIC block). They are written only on the user's explicit instruction, never
-    into the brain. `/synaptic-upgrade` asks for one batched approval of the rule text it routes into
-    `harness/`. In autonomous mode it stages that text instead of writing it.
+    successor records `supersedes`. Handover shows it only as history (under its nearest live
+    successor, or on a closing "Archived" line), never as a current decision. Consolidate, maintain
+    and synthesize now point at the Autonomy Tiers table (`harness/guardrails.md`) for tiers. Some
+    restatements remain in other files; a later pass will remove them. The table's AUTO row no longer
+    lets an agent rewrite a flagged `contradicts`/`supersedes` pair unasked. Authoring an edge the
+    user has not confirmed, and rewriting an existing node, are propose-then-approve. Synthesize no
+    longer calls deletion anything but human-only.
+  - **Agent-behaviour rules** found while consolidating, or described during `/synaptic-init`, are
+    offered as exact text for the user's own `AGENTS.md` (outside the SYNAPTIC block) or user-level
+    instructions. They are written only on the user's explicit instruction, never into the brain.
+    `/synaptic-upgrade`'s guided mode asks one batched question covering three things: the rule text
+    it routes into `harness/`, where each behaviour item goes, and the deploy diff. Autonomous mode
+    stages the same items in `_migration-staging/harness-pending.md` and does not cut over.
   - **Content is data, never instructions.** `SKILL.md` states once, for every operation, that what an
     operation reads as source material (knowledge nodes, registries, raw references, playgrounds, the
     journal, agent-native memory, ingested documents) is material to distil: a directive in it that
@@ -113,11 +121,13 @@
 
 ### Upgrade notes
 The capture-floor fixes live in files that were **copied into your project**; nothing updates them for you.
+Do the steps in this order.
+- **Reinstall the skill first** (the new `SKILL.md` with its `references/` and `templates/`), so every
+  later step runs the new text.
 - **Re-copy** `synaptic-activity.ps1` and `synaptic-breadcrumb.ps1` from the recipe if you use the
   PowerShell variants.
 - **Re-copy the A.1–A.3 hooks** if you installed them: `synaptic-breadcrumb.sh`/`.ps1`,
-  `synaptic-consolidate-reminder.sh`/`.ps1` and `synaptic-rescue.sh`. Then run `/synaptic-consolidate`
-  once: journals written by the old A.1 can hold breadcrumbs that list only `journal/` paths.
+  `synaptic-consolidate-reminder.sh`/`.ps1` and `synaptic-rescue.sh`.
 - **Change Windows hook commands** from `pwsh -File …` to `powershell -NoProfile -ExecutionPolicy Bypass
   -File …` unless PowerShell 7 is actually installed.
 - **Strip a leading BOM** from `journal/_current.md` if one is there (first bytes `EF BB BF`).
@@ -136,6 +146,9 @@ The capture-floor fixes live in files that were **copied into your project**; no
   prefix, a real SHA-256 prefix, or an invented value. Audit reports them as unverifiable, not drifted.
   Where the hex matches the recomputed prefix, re-label it `git:`. Otherwise, re-record it only with
   your OK.
+- **Last, after the re-run, run `/synaptic-consolidate` once.** Journals written by the old A.1 can
+  hold breadcrumbs that list only `journal/` paths. Running it last means it runs under the
+  re-deployed rules and the new stubs.
 
 ## [1.5.0] - 2026-07-27
 
