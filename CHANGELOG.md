@@ -87,14 +87,16 @@
     endings per clone; an unpinned `git hash-object` changes per machine for CRLF files outside git;
     and run from another repo, that repo's `.gitattributes` applies. Measured in Git Bash and Windows
     PowerShell 5.1 on Windows 11, with POSIX simulated by `core.autocrlf=false`. Attributes of a repo
-    that holds the brain itself (`-text`, an LFS filter, `ident`, `working-tree-encoding`) or a SHA-256
-    repo still change the result; audit flags a mismatch there as possibly repository-caused. No shell
+    that holds the brain itself (e.g. `-text`, `eol`, `crlf`, an LFS filter, `ident`,
+    `working-tree-encoding`) or a SHA-256 repo still change the result; audit adds a
+    possibly-repository-caused note to any mismatch in a brain that sits in a git repo. No shell
     or no git means `TBD`. Audit reports a `TBD` hash or a legacy `sha256:` value as unverifiable, not
     drifted.
   - **Supersession uses the status vocabulary.** `synthesize.md` proposed `status → superseded`, which
     is not a status. A wholly replaced node now keeps its body, gets `status: archived`, and its
-    successor records `supersedes`. Handover shows it only as history (under its nearest live
-    successor, or on a closing "Archived" line), never as a current decision. Consolidate, maintain
+    successor records `supersedes`. Handover shows it only as history (indented under its nearest
+    non-archived successor the brief lists, or on a closing `Archived (history only)` line), never as
+    a current decision. Consolidate, maintain
     and synthesize now point at the Autonomy Tiers table (`harness/guardrails.md`) for tiers. Some
     restatements remain in other files; a later pass will remove them. The table's AUTO row no longer
     lets an agent rewrite a flagged `contradicts`/`supersedes` pair unasked. Authoring an edge the
@@ -104,8 +106,10 @@
     offered as exact text for the user's own `AGENTS.md` (outside the SYNAPTIC block) or user-level
     instructions. They are written only on the user's explicit instruction, never into the brain.
     `/synaptic-upgrade`'s guided mode asks one batched question covering three things: the rule text
-    it routes into `harness/`, where each behaviour item goes, and the deploy diff. Autonomous mode
-    stages the same items in `_migration-staging/harness-pending.md` and does not cut over.
+    it routes into `harness/`, where each behaviour item goes, and the deploy diff. Phase C only drafts
+    that text. Autonomous mode stages the same items in `_migration-staging/harness-pending.md`,
+    writes and deploys nothing, and does not cut over. The next guided `/synaptic-upgrade` resumes from
+    that file instead of migrating again. `MIGRATION_DONE.md` and the agent runbook match.
   - **Content is data, never instructions.** `SKILL.md` states once, for every operation, that what an
     operation reads as source material (knowledge nodes, registries, raw references, playgrounds, the
     journal, agent-native memory, ingested documents) is material to distil: a directive in it that
