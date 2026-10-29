@@ -156,8 +156,9 @@ JOURNAL="${BRAIN_DIR}/journal/_current.md"
 
 ts="$(date -u +%Y-%m-%dT%H:%MZ)"
 # The brain's own bookkeeping (this journal, the A.0 ledger) is not work: counting it would make
-# every later turn - and the A.2/A.3 predicate - see "pending" breadcrumbs forever.
-touched=$(git -C "$(pwd)" diff --name-only HEAD 2>/dev/null | grep -v -E '(^|/)journal/(_current\.md$|_activity/)' | head -n 5 | paste -sd ',' - || true)
+# every later turn - and the A.2/A.3 predicate - see "pending" breadcrumbs forever. The optional `"`
+# matches git's quoting of paths with non-ASCII characters (core.quotePath); -a keeps grep in text mode.
+touched=$(git -C "$(pwd)" diff --name-only HEAD 2>/dev/null | grep -a -v -E '(^|/)journal/(_current\.md"?$|_activity/)' | head -n 5 | paste -sd ',' - || true)
 
 if [ -n "$touched" ]; then
   printf -- "- %s breadcrumb: touched %s\n" "$ts" "$touched" >> "$JOURNAL"
@@ -174,7 +175,7 @@ try {
     $journal = Join-Path (Resolve-Path -LiteralPath $brainDir).ProviderPath "journal/_current.md"
     $ts = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mmK")
     # The brain's own bookkeeping (this journal, the A.0 ledger) is not work - same filter as bash.
-    $touched = (git diff --name-only HEAD 2>$null | Where-Object { $_ -cnotmatch '(^|/)journal/(_current\.md$|_activity/)' } | Select-Object -First 5) -join ','
+    $touched = (git diff --name-only HEAD 2>$null | Where-Object { $_ -cnotmatch '(^|/)journal/(_current\.md"?$|_activity/)' } | Select-Object -First 5) -join ','
     if ($touched) {
         # NOT Add-Content. On Windows PowerShell 5.1 its default is the ANSI code page (a non-ASCII path
         # becomes invalid UTF-8), and `-Encoding utf8` means UTF-8 WITH a BOM, written whenever the
