@@ -240,7 +240,8 @@ JOURNAL="${BRAIN_DIR}/journal/_current.md"
 
 [ -d "$BRAIN_DIR" ] || exit 0
 
-pending_crumbs=$(grep -c "breadcrumb:" "$JOURNAL" 2>/dev/null || echo 0)
+# grep -c already prints 0 when nothing matches (it just exits 1), so `|| echo 0` would yield "0\n0".
+pending_crumbs=$(grep -c "breadcrumb:" "$JOURNAL" 2>/dev/null); pending_crumbs=${pending_crumbs:-0}
 open_playgrounds=$(find "${BRAIN_DIR}/playgrounds" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l)
 
 if [ "$pending_crumbs" -gt 0 ] || [ "$open_playgrounds" -gt 0 ]; then
