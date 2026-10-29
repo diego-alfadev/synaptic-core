@@ -55,6 +55,17 @@
 - **"Order matters" in the hook registration was wrong.** Claude Code runs the hooks of one event in
   parallel. The guarantee that holds is different: the marker is its own hook entry, so a failing
   sibling cannot stop it.
+- **The A.2 reminder and the A.3 rescue now share one git-free predicate.** The predicate: pending
+  breadcrumbs, or open playgrounds. Three defects are fixed:
+  - **C2.** The reminder's `git diff --name-only HEAD` gate had three faults:
+    - it never fired on a brain outside git;
+    - it missed new untracked playgrounds;
+    - it fired on every session once the A.0 day-file was tracked.
+  - **C4.** `playgrounds/archive/` no longer counts as an open playground.
+  - **C6.** `grep -c … || echo 0` produced `0\n0`, which made the rescue print "integer expression
+    expected" on every boot with no pending breadcrumbs.
+
+  Both now have runtime tests, in bash and PowerShell (A.2) and in bash (A.3).
 
 ### Corrected claims in [1.5.0]
 - *"PowerShell 5.1's `>>` / `Add-Content` / `Out-File` default to UTF-16LE + BOM"* — true of `>>` and
