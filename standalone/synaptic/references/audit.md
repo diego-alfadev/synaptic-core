@@ -298,10 +298,12 @@ playground artifacts) but never reached the knowledge store. **Diagnose only —
 
 **(a) Open / unconsolidated playgrounds:**
 
-- Count all directories directly under `playgrounds/` that contain at least one `.md` file. These are
-  **open playgrounds** — task workspaces not yet consolidated into the wiki or explicitly closed.
+- Count all directories directly under `playgrounds/` that contain at least one `.md` file, **excluding
+  `playgrounds/archive/`** (finished work kept on request). These are **open playgrounds** — task
+  workspaces not yet consolidated into the wiki or explicitly closed.
 - Cross-check against the journal's **Active playgrounds** list: flag playgrounds **present on disk
   but missing from the list** (untracked) and entries **listed but with no directory** (stale entry).
+  `archive/` is never in that list and is never flagged.
 
 **(b) Pending journal breadcrumbs (unconsolidated `Stop` lines):**
 

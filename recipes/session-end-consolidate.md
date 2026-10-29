@@ -188,11 +188,11 @@ exit 0
 ### A.2 The consolidation-reminder script (`PreCompact` / `SessionEnd`)
 
 Create `.claude/hooks/synaptic-consolidate-reminder.sh`. It prints a reminder to consolidate when the
-brain holds unconsolidated work: pending breadcrumbs in `journal/_current.md`, or open playgrounds.
-This is the same predicate as the A.3 rescue. It does not use git, so it also works for a brain
-outside git and sees new untracked playgrounds. `playgrounds/archive/` and the A.0 activity ledger do
-not count as work. Use it on `PreCompact` (flush before context loss) and on `SessionEnd` (clean-exit
-bonus).
+brain holds unconsolidated work: breadcrumb lines the A.1 hook wrote (`breadcrumb:`) in
+`journal/_current.md`, or open playgrounds. This is the same predicate as the A.3 rescue. It reads no
+git itself, so it sees new untracked playgrounds and works for a brain outside git; there, only open
+playgrounds can trigger it, because A.1 needs git to write breadcrumbs. `playgrounds/archive/` is not
+counted. Use it on `PreCompact` (flush before context loss) and on `SessionEnd` (clean-exit bonus).
 
 ```bash
 #!/usr/bin/env bash
@@ -332,9 +332,12 @@ or allowed. `-NoProfile` keeps a user profile from changing error handling or en
 
 ### Notes
 
-- The breadcrumb hook fires on **every** `Stop`; the scripts check for changes internally and stay
-  silent when nothing relevant happened — no noise on sessions that did not touch the brain.
-- If the project does not use git, replace the `git diff` check with a
+- The breadcrumb hook (A.1) fires on **every** `Stop`; it checks for changes internally and writes
+  nothing when no project file changed. The brain's own journal and A.0 ledger never count as changes.
+- The reminder (A.2) and the rescue (A.3) report **standing state**: they fire while breadcrumbs are
+  pending or any playground is open, whether or not this session touched the brain. An open
+  playground stays "unconsolidated" until it is burned or archived — that is by design.
+- If the project does not use git, A.1 writes nothing; replace its `git diff` check with a
   `find .synaptic/journal .synaptic/playgrounds -newer .synaptic/BRAIN.md` heuristic.
 - The reminders are **informational** — they do not auto-run `/synaptic-consolidate`. Consolidation
   is propose-then-approve (bounded, reversible). The breadcrumb write is the only thing that happens

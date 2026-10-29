@@ -6,7 +6,7 @@ acceptance criterion in the CHANGELOG was by-inspection.
 
 | Suite | What it verifies | Runs on | Run locally |
 |---|---|---|---|
-| `capture-floor/run.sh` | the v1.5.0 capture floor (issue #2a): the recipe's A.0–A.3 hooks (marker, breadcrumb, reminder, rescue) **and** the one-liners `SKILL.md` deploys, POSIX side | Linux, macOS, Windows (Git Bash) | `bash tests/capture-floor/run.sh` |
+| `capture-floor/run.sh` | the v1.5.0 capture floor (issue #2a): the recipe's A.0–A.3 hooks (marker, breadcrumb, reminder, rescue), alone and chained in the A.4 order, **and** the one-liners `SKILL.md` deploys, POSIX side | Linux, macOS, Windows (Git Bash) | `bash tests/capture-floor/run.sh` |
 | `capture-floor/run.ps1` | the same for the PowerShell scripts the recipe ships (A.0–A.2; there is no PowerShell A.3). Runs under whichever engine executes it | Windows PowerShell 5.1, PowerShell 7 | `powershell -NoProfile -ExecutionPolicy Bypass -File tests/capture-floor/run.ps1` |
 | `tools.test.js` | `tools/*.js` behaviour: `check.js` rules and regressions, `graph.js` offline output, `export.js`, `deploy.js`, `vault-open.js`, `migrate.js --dry-run` | Node 18 / 22 / 24 on Linux and Windows | `node tests/tools.test.js` |
 | `probes/` | open research questions, not product checks — see `.github/workflows/probes.yml` | CI only | — |
