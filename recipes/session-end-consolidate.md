@@ -1,7 +1,7 @@
 # Recipe — Layered Capture Hooks (breadcrumbs + consolidation)
 
 **Purpose:** wire the **layered capture mechanism** so knowledge survives a session even when you
-forget to consolidate — a universal per-turn breadcrumb to the journal, a flush before context is
+forget to consolidate — a universal per-turn breadcrumb to the journal, a reminder before context is
 lost, and a rescue sweep on the next boot. Consolidation-at-session-end is one layer of this, not
 the whole story.
 
@@ -48,7 +48,7 @@ bonuses that strengthen capture where the host exposes them.
 |---|---|---|---|---|
 | **(a0) Activity marker** | `Stop` + `SessionStart` | **UNCONDITIONAL** one-line proof-of-life to `journal/_activity/` — no git, no gate, no LLM. **The only mechanical non-empty floor**; also the capture-yield denominator | Fixed, one short append | Any host that runs a **shell command** on a hook (confirmed: Claude Code; others UNVERIFIED) |
 | **(a) Breadcrumb** | `Stop` (per turn) | One terse *semantic* journal line per meaningful turn — the workhorse. **Conditional by design** (reports what changed), so it can legitimately write nothing | Fixed, tiny; **not** governed by `capture_policy` | **Universal** — all 5 agents |
-| **(b) Flush** | `PreCompact` | Consolidate before the context window is compacted (the gem for long/abused sessions) | One consolidation pass when compaction is imminent | Where supported (Claude / Copilot / Codex) |
+| **(b) Flush reminder** | `PreCompact` | Print a reminder to consolidate before the context window is compacted (A.2; a shell hook cannot run `/synaptic-consolidate` itself) | One check when compaction is imminent | Where supported (Claude / Copilot / Codex) |
 | **(c) Rescue** | `SessionStart` | On next boot, detect unconsolidated breadcrumbs / open playgrounds and **offer** to consolidate | One check at boot | Where supported |
 | **(d) Bonus** | `SessionEnd` | Offer/remind to consolidate on a clean exit | One check at clean exit | Where present (**not** Copilot-IDE, **not** Cursor) |
 
@@ -68,7 +68,7 @@ Why this shape:
 
 > **Capture is a dial, not a switch.** *When* capture triggers runs from manual → event-driven hooks
 > → where-supported automation; *how much* reaches the wiki is the separate `capture_policy` axis
-> (`selective | balanced | capture-all`). Breadcrumbs are the always-on, fixed-cost floor under both.
+> (`selective | balanced | capture-all`). Breadcrumbs are an always-on, fixed-cost, best-effort instruction under both; the mechanical floor is the A.0 marker.
 
 ---
 
@@ -193,7 +193,7 @@ brain holds unconsolidated work: breadcrumb lines the A.1 hook wrote (`breadcrum
 `journal/_current.md`, or open playgrounds. This is the same predicate as the A.3 rescue. It reads no
 git itself, so it sees new untracked playgrounds and works for a brain outside git. When the project
 itself is not a git repo, only open playgrounds can trigger it, because A.1 needs git to write
-breadcrumbs. `playgrounds/archive/` is not counted. Use it on `PreCompact` (flush before context loss) and on `SessionEnd` (clean-exit bonus).
+breadcrumbs. `playgrounds/archive/` is not counted. Use it on `PreCompact` (a reminder before context loss) and on `SessionEnd` (clean-exit bonus).
 
 ```bash
 #!/usr/bin/env bash
@@ -379,7 +379,7 @@ host fires* — so the layered model degrades gracefully: every host gets the un
 breadcrumb layer (and the **activity-marker floor** wherever the host runs a shell command on that
 event), and picks up `PreCompact` / `SessionStart` / `SessionEnd` where exposed.
 
-| Agent | Config file | `Stop` (breadcrumb) | `PreCompact` (flush) | `SessionStart` (rescue) | `SessionEnd` (bonus) |
+| Agent | Config file | `Stop` (breadcrumb) | `PreCompact` (reminder) | `SessionStart` (rescue) | `SessionEnd` (bonus) |
 |---|---|---|---|---|---|
 | **Claude Code** | `.claude/settings.json` | yes | yes | yes | yes |
 | **GitHub Copilot** | `.github/hooks/*.json` (config-driven) | yes (stop/turn-end) | yes (pre-compaction) | yes (session-start) | **no** (Copilot-IDE has no clean SessionEnd) |

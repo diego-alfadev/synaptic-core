@@ -628,7 +628,8 @@ Question-selection recipe (deterministic — pick the same way every run):
 **Phase → commit mapping (one commit per phase — mirror of the AGENT runbook):**
 
 The migration lands as **≥3 distinct, independently-revertible commits** on the upgrade branch, each
-passing `check.js` before the next begins — never one blended mega-commit:
+passing the structural check (`check.js`, or the manual Phase V greps where Node is absent; record
+which ran) before the next begins — never one blended mega-commit. "check.js" below means either:
 
 - [ ] `migrate: Phase M mechanical file moves` — deterministic moves + staging only (check.js **may
       still ERROR** here — expected).

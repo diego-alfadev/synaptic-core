@@ -54,7 +54,13 @@ stale and gets regenerated or pruned.
 
 **Native targets (generate for the hosts the deploy detects):**
 
-- **Claude Code** → `~/.claude/commands/synaptic-*.md`, one per command, with frontmatter
+- **Claude Code** → `<scope>/.claude/commands/synaptic-*.md`, where `<scope>` matches **where the
+  skill is installed**: a project-level skill (`<project>/.claude/skills/synaptic/`, the default) gets
+  project-level stubs in `<project>/.claude/commands/`; only a user-level skill (global or seat brain,
+  `~/.claude/skills/synaptic/`) gets user-level stubs in `~/.claude/commands/`. A user-level stub
+  loads in every workspace on the machine, so it must never point at a project-only skill. Project
+  stubs live in the repo next to the project skill and are committed with it, like the skill; a
+  user who does not want them shared gitignores both. One stub per command, with frontmatter
   `description:` so the command surfaces in the `/` menu with its one-liner. Body (every host's stub):
   *"Run the synaptic skill's `<cmd>`: load the skill's `SKILL.md` first (its Operations preamble
   applies to every command), then follow `references/<cmd>.md`."*
@@ -70,7 +76,7 @@ cost the only way available: one SOT, N generated stubs (hub-and-spoke), never h
 ## Recorded per host — `harness/setup/<host>.md` is the ONLY inventory
 
 Generating and placing stubs is part of **deploying the harness** (not a brain-content concern). Host
-command dirs (`~/.claude/commands/`, the Copilot/Cursor prompt-file locations) sit **OUTSIDE
+command dirs (`<project>/.claude/commands/` or `~/.claude/commands/`, the Copilot/Cursor prompt-file locations) sit **OUTSIDE
 `.synaptic/`** — nothing inside the brain can see or clean them. So `harness/setup/<host>.md` is the
 **authoritative inventory** and MUST record:
 
@@ -89,7 +95,11 @@ When `/synaptic-upgrade` runs host-setup detection, it MUST perform a **stub-dri
 3. **REGENERATE** stubs for added/changed commands and **PRUNE** stale stubs — stubs for commands **no
    longer in the SOT** are deleted (not left orphaned in the `/` menu pointing at a gone command).
 4. **Regenerate the Layer-1 bridge descriptions** from the current SOT summaries in the same pass.
-5. Update `harness/setup/<host>.md` to the new stub set + version.
+4b. **Check placement, not only set and version.** If the recorded Claude Code stubs sit in
+   `~/.claude/commands/` but the skill is installed at project level (stubs placed before v1.6), show
+   the move and, with the user's OK, regenerate them in `<project>/.claude/commands/` and remove the
+   user-level copies listed in the host record. Remove only stubs the record lists; never guess.
+5. Update `harness/setup/<host>.md` to the new stub set + version + placement dir.
 
 **OneDrive KFM conflict-copy cleanup.** Host command dirs under OneDrive Known-Folder-Move can
 accumulate **`*-DESKTOP-XXX` conflict copies** (e.g. `synaptic-audit-DESKTOP-AB12CD.md`) when sync

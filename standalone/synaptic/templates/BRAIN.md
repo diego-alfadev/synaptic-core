@@ -14,9 +14,7 @@ updated: "{{YYYY-MM-DD}}"
 
 # {{BRAIN_NAME}} — Synaptic Brain
 
-> The only mandatory read at session start. Everything else loads on demand.
-
-> This brain conforms to **synaptic-core schema `1.0`** (see `schema_version:` above). A skill-less agent can read it directly — no skill, runtime, or version check is required to boot. The synaptic skill's engine version is separate (`SKILL.md`); a skill update never migrates this brain.
+> The only mandatory read at session start. Everything else loads on demand. This brain conforms to **synaptic-core schema `1.0`** (see `schema_version:` above). A skill-less agent can read it directly — no skill, runtime, or version check is required to boot. The synaptic skill's engine version is separate (`SKILL.md`); a skill update never migrates this brain.
 
 ## Context Capsule
 
@@ -38,22 +36,21 @@ updated: "{{YYYY-MM-DD}}"
   - `capture-all` — promote liberally; rely on later consolidation to prune.
 - **The passivity dial = WHEN capture triggers** (manual ↔ event-driven hooks ↔ where-supported automation). This is set in the harness/hook config, not here.
 
-> Breadcrumbs (below) are the always-on, fixed-cost floor and are **NOT** governed by `capture_policy`. Do not add a second policy for breadcrumbs.
-
 ### Incremental journal breadcrumbs (the safety net)
 
-One terse line appended to `journal/_current.md → ## Log` per meaningful turn. **Fixed cost, always on, policy-independent.** They live on disk so they survive a crash; what only lived in context dies. Breadcrumbs are not promotion — they are the raw trail that consolidation later distills.
+One terse line appended to `journal/_current.md → ## Log` per meaningful turn. **Fixed cost, always on, and NOT governed by `capture_policy`** (do not add a second policy for breadcrumbs). They live on disk so they survive a crash; what only lived in context dies. Breadcrumbs are not promotion — they are the raw trail that consolidation later distills.
 
-> **This is an instruction you follow, not only a hook.** Append the breadcrumb per meaningful turn yourself; the `Stop` hook automates it where wired, but write it even when no hook fires. Hooks are host-specific and can silently fail to fire — the instruction is the floor underneath the automation, so a session that reaches compaction is **never breadcrumb-empty** (this closes issue #2: a session neared recompact with no breadcrumbs written). Nothing fires without you acting; there is no idle daemon (see the honest limit below).
+> **This is an instruction you follow, not only a hook.** Append the breadcrumb per meaningful turn yourself; the `Stop` hook automates it where wired, but write it even when no hook fires — hooks are host-specific and can silently fail to fire. An instruction can still be skipped, so breadcrumbs are **best-effort, not a guarantee**. The only mechanical non-empty floor is the host-run activity marker in `journal/_activity/`, and only where a shell hook is wired. Nothing fires without you acting; there is no idle daemon (see the honest limit below).
 
 ### Layered capture (does NOT depend on SessionEnd)
 
 | Layer | Trigger | Availability |
 |---|---|---|
+| Activity marker (mechanical floor) | `Stop` + `SessionStart` — host shell appends one content-free line to `journal/_activity/` | Shell-hook-capable hosts only |
 | Breadcrumb (workhorse) | `Stop` — per-turn cheap line to the journal | UNIVERSAL across agents |
-| Flush before context loss | `PreCompact` — consolidate before compaction | Host-conditional (Claude / Copilot / Codex) |
+| Reminder before context loss | `PreCompact` — the hook prints a reminder to consolidate (a shell hook cannot run a command for you) | Host-conditional (Claude / Copilot / Codex) |
 | Rescue net | `SessionStart` — detect unconsolidated breadcrumbs/active playgrounds, OFFER to consolidate | Universal on next boot |
-| Clean-exit bonus | `SessionEnd` — consolidate on graceful close | Bonus only where present (not Copilot-IDE, not Cursor) |
+| Clean-exit bonus | `SessionEnd` — remind to consolidate on graceful close | Bonus only where present (not Copilot-IDE, not Cursor) |
 
 > Honest limit: **no agent has native idle detection.** Capture is event-driven + journal fallback + `SessionStart`-rescue — never an unattended idle daemon at CORE.
 
@@ -104,12 +101,7 @@ Run on consolidation (manual `/synaptic-consolidate`, or offered at session end 
 **Resuming work:** read `journal/_current.md` (active playgrounds + next step), then proceed.
 **Starting fresh:** just work; load knowledge on demand through `knowledge/INDEX.md`.
 **Load trigger examples:** "before CI work → read `harness/guardrails.md`"; "for a domain insight → INDEX → cluster `_index` → 1–2 nodes."
-
----
-
-## Commands
-
-Commands are provided by the `synaptic` skill (installed in `.claude/skills/` or `.agents/skills/`) — see the bridge command listing (the `BEGIN:SYNAPTIC` block in AGENTS.md) or the `SKILL.md` Operations table for the full, current set. This file keeps no separate command list, so nothing here can drift out of sync with the skill.
+**Commands:** provided by the `synaptic` skill (installed in `.claude/skills/` or `.agents/skills/`) — see the bridge command listing (the `BEGIN:SYNAPTIC` block in AGENTS.md) or the `SKILL.md` Operations table for the full, current set. This file keeps no separate command list, so nothing here can drift out of sync with the skill.
 
 ---
 

@@ -155,6 +155,33 @@ Do the steps in this order.
   hold breadcrumbs that list only `journal/` paths. Running it last means it runs under the
   re-deployed rules and the new stubs.
 
+### Simplification round (branch `feat/v1.6.0-simplify`, not released)
+
+> Optimisation and simplification pass. Every move or removal is recorded in
+> `docs/maintenance/simplification-ledger.md`.
+
+#### Fixed (simplification round)
+- **The BRAIN.md template no longer claims a breadcrumb floor.** It said the agent-written breadcrumbs
+  were "the always-on, fixed-cost floor" and that a session is "never breadcrumb-empty". Since 1.5.0
+  the only mechanical floor is the activity marker. The template now calls breadcrumbs best-effort,
+  names the marker, adds it to the layered-capture table, and fits its own ≤110-line budget (116 → 108
+  lines). `SKILL.md`, `consolidate.md`, the recipe and the capture concept doc carry the same
+  correction. Existing brains keep their wording; nothing is migrated.
+- **`PreCompact` and `SessionEnd` no longer "run `/synaptic-consolidate`" or "flush".** No shell hook
+  can run a slash command; the shipped A.2 hook prints a reminder. `SKILL.md`, the template, the
+  recipe and the concept doc now say "reminder".
+- **The migration gates accept the manual check.** MIGRATION_DONE Phases M, C and V.1, and the
+  phase-commit list in `upgrade-to-v1.md`, required `tools/check.js`, which a normal skill install
+  does not ship. They now allow the manual greps from `upgrade-to-v1.md` Phase V and ask which check
+  ran.
+- **Claude Code command stubs follow the skill's install scope.** They always went to
+  `~/.claude/commands/`, so a project-installed skill's stubs loaded in every workspace and pointed at
+  a path that existed in one project only. A project skill now gets project-level stubs. Existing
+  stubs stay where they are until `/synaptic-upgrade`, whose stub-drift check now also checks
+  placement and offers the move.
+- **The self-install check no longer always fails.** It required every manifest file to be non-empty,
+  but the manifest lists a 0-byte `.gitkeep`. Placeholders are exempt.
+
 ## [1.5.0] - 2026-07-27
 
 > **"Capture you can actually trust."** A MINOR that closes the **floor half of issue #2a** — the

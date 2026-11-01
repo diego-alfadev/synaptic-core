@@ -1,8 +1,8 @@
 # Capture is a dial — and the consolidation formula behind it
 
-*What this is: how a Synaptic brain grows — two orthogonal dials that control when and how much gets captured, the always-on breadcrumb floor underneath them, the six-step consolidation formula that turns raw work into navigable knowledge, the honest manual trade, and a suggested cadence.*
+*What this is: how a Synaptic brain grows — two orthogonal dials that control when and how much gets captured, the always-on breadcrumbs underneath them (and the one mechanical floor), the six-step consolidation formula that turns raw work into navigable knowledge, the honest manual trade, and a suggested cadence.*
 
-The #1 question people ask is *"do I have to babysit this?"* The answer is **no — capture is a dial, and the default leans passive.** You decide how much the agent does for you versus how much you do by hand. There are **two orthogonal dials**, plus an always-on floor underneath them.
+The #1 question people ask is *"do I have to babysit this?"* The answer is **no — capture is a dial, and the default leans passive.** You decide how much the agent does for you versus how much you do by hand. There are **two orthogonal dials**, plus always-on breadcrumbs underneath them.
 
 ## Dial 1 — the passivity dial: *when* capture triggers
 
@@ -11,16 +11,16 @@ Set it where you like:
 | Setting | What happens | Good for |
 |---|---|---|
 | **Manual** | You run `/synaptic-consolidate` when you choose | Maximum control |
-| **Event-driven (recommended)** | Hooks fire on agent events — a one-line journal breadcrumb every turn, a flush before the context window compacts, a rescue sweep on next session start | Most people; the agent does the remembering |
+| **Event-driven (recommended)** | Hooks fire on agent events — a one-line journal breadcrumb every turn, a reminder to consolidate before the context window compacts, a rescue sweep on next session start | Most people; the agent does the remembering |
 | **Where-supported automation** | On hosts that support it, more of the lifecycle runs without prompting | Long or heavy sessions |
 
-### The always-on breadcrumb floor
+### The always-on breadcrumbs (and the one mechanical floor)
 
-Underneath all settings is an **always-on, fixed-cost floor**: a terse one-line **breadcrumb to the journal** on each meaningful turn. It lives on disk, so it survives a crash — what only lived in the context window dies; what hit the journal does not. This floor is *not* governed by `capture_policy`; it is the safety net.
+Underneath all settings is an **always-on, fixed-cost instruction**: a terse one-line **breadcrumb to the journal** on each meaningful turn. It lives on disk, so it survives a crash — what only lived in the context window dies; what hit the journal does not. It is *not* governed by `capture_policy`; it is the safety net. It is **best-effort**: an instruction can be skipped. The only mechanical non-empty floor is the activity marker, a content-free line the host itself appends to `journal/_activity/` on hosts that run a shell command on a hook.
 
 ### The honest limit on "passive"
 
-**No agent has native idle detection.** "Passive" here means *event-driven on hook-capable hosts* (a per-turn `Stop` breadcrumb on all agents; a pre-compaction flush and a next-session rescue where the host supports them) — plus the journal as the universal fallback. It is **not** an unattended daemon watching you work. We say this plainly so the dial is not mistaken for magic.
+**No agent has native idle detection.** "Passive" here means *event-driven on hook-capable hosts* (a per-turn `Stop` breadcrumb on all agents; a pre-compaction reminder and a next-session rescue where the host supports them) — plus the journal as the universal fallback. It is **not** an unattended daemon watching you work. We say this plainly so the dial is not mistaken for magic.
 
 ## Dial 2 — the `capture_policy` dial: *how much* reaches the wiki
 
@@ -32,7 +32,7 @@ A separate, orthogonal valve set in `BRAIN.md`. Where the passivity dial control
 | `balanced` *(default)* | Wiki-first with generous journaling — promote at 2+ instances or clearly-reusable knowledge. | Most projects. |
 | `capture-all` | Capture almost everything — durable-ish notes promoted on first sight. | This brain is your **only** memory layer (no separate searchable store). |
 
-Same 6-step formula, one tunable valve — it changes *how much* gets promoted, never *how* the graph is built. A custom 1-line policy overrides the presets. (The journal breadcrumb floor is unaffected — `capture_policy` governs promotion to the wiki, not the breadcrumbs.)
+Same 6-step formula, one tunable valve — it changes *how much* gets promoted, never *how* the graph is built. A custom 1-line policy overrides the presets. (The journal breadcrumbs are unaffected — `capture_policy` governs promotion to the wiki, not the breadcrumbs.)
 
 The two dials are genuinely **orthogonal**: passivity decides *when* the formula fires (manual / hooks / more automation), `capture_policy` decides *how much* survives the formula into the wiki. You can run fully manual with `capture-all`, or fully event-driven with `selective` — any combination is valid.
 
@@ -67,7 +67,7 @@ Not "zero overhead" — a deliberate trade of a little write-time cost for large
 
 Without some cadence the brain drifts. With it, quality compounds.
 
-> **Tip:** the optional host-run hook config that wires the event-driven setting (the breadcrumb floor, a pre-compaction flush where supported, and a next-session rescue sweep) ships as a recipe in the repo. Hooks are plain host-run config — they are CORE, not a runtime we ship.
+> **Tip:** the optional host-run hook config that wires the event-driven setting (the breadcrumbs, the activity marker, a pre-compaction reminder where supported, and a next-session rescue sweep) ships as a recipe in the repo. Hooks are plain host-run config — they are CORE, not a runtime we ship.
 
 ---
 

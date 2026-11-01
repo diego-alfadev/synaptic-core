@@ -25,7 +25,8 @@ fetch leaves gaps even when `references/` and `templates/` exist) — the user l
    `.agents/skills/synaptic/<path>` (create directories as needed). This SKILL.md is in the
    manifest, so both copies get it too.
 4. **Verify the install before proceeding.** Confirm the count of files written equals the number
-   of manifest entries. Confirm each written file is non-empty and does NOT start with `<!DOCTYPE`
+   of manifest entries. Confirm each written file is non-empty (except `.gitkeep` placeholders,
+   which are 0 bytes by design) and does NOT start with `<!DOCTYPE`
    or `<html` (GitHub raw can return an HTML error page on rate-limit). Re-fetch only the paths that
    failed either check; if any still fail after a retry, report the failed paths and fall back to
    the HONEST fallback below.
@@ -231,8 +232,8 @@ These answers become the **Context Capsule** in `BRAIN.md` (2–4 lines: what it
 Write the answer to `capture_policy:` in `BRAIN.md` frontmatter (default `balanced` if unsure).
 `capture_policy` is the **PROMOTION axis** — how aggressively the capture contract promotes work
 *into the wiki*. It does **not** change the six-step formula, and it does **not** govern the
-always-on per-turn journal breadcrumbs (those are a fixed-cost floor — see Harness Self-Wire,
-capture mechanism). Reassurance if they hesitate: "You can change this one word later;
+always-on per-turn journal breadcrumbs (those are a fixed-cost, best-effort instruction — see
+Harness Self-Wire, capture mechanism). Reassurance if they hesitate: "You can change this one word later;
 `/synaptic-weave` can also prune a `capture-all` brain back toward `selective`."
 
 **Round 2 — Main clusters:**
@@ -434,7 +435,8 @@ Create directories if absent. If a target already contains a `SKILL.md` with the
   command with a one-line description **derived from each `references/<cmd>.md` `summary:`** — works on
   any host with no menu mechanism; the agent can invoke by name.
 - **Layer 2 (per-host `/`-menu stubs):** for hosts with a slash/prompt menu, generate thin **pointer
-  files** from the ONE SOT (Claude Code `~/.claude/commands/synaptic-*.md` with `description:`; VS Code
+  files** from the ONE SOT (Claude Code `.claude/commands/synaptic-*.md` with `description:`, at the same
+  scope as the skill install — project skill → project stubs, user-level skill → `~/.claude/commands/`; VS Code
   Copilot `*.prompt.md`; Cursor's prompt-file mechanism). **NOT symlinks** (fragile on Windows/OneDrive —
   they break on sync/copy). Each stub carries a provenance line
   `generated-from: synaptic-skill@<engine-version> <sot-hash>`. Body: load this `SKILL.md` first, then
@@ -509,9 +511,9 @@ gracefully** — never fail if a layer is unavailable.
 |---|---|---|---|
 | **(a0) Activity marker** | per `Stop` + `SessionStart` | **shell**-hook-capable hosts (see the support table below — "fires hooks" is not enough) | **Host-executed shell append** of ONE deterministic line to `journal/_activity/<host>-<date>.log` — see "Deterministic activity marker" below. **The mechanical proof-of-life floor: it fires whether or not the agent does anything.** Content-free; not semantic capture. |
 | **(a) Stop breadcrumb** | per assistant turn (`Stop`) | **UNIVERSAL — all 5 agents** | Append **one terse line** to `journal/_current.md` (the meaningful change/decision this turn). The **semantic workhorse** — best-effort: it is an instruction the agent follows, so it is NOT the non-empty guarantee (a0 is). **Fixed cost; NOT governed by `capture_policy`.** |
-| **(b) PreCompact flush** | before context compaction (`PreCompact`) | **Claude / Copilot / Codex** | Run `/synaptic-consolidate` (or flush breadcrumbs) **before context is lost** — the gem for long/abused sessions. |
+| **(b) PreCompact reminder** | before context compaction (`PreCompact`) | **Claude / Copilot / Codex** | The hook **prints a reminder** to consolidate (recipe A.2) **before context is lost**. A shell hook cannot run a slash command; consolidation itself is the agent's or the user's step. |
 | **(c) SessionStart heartbeat + rescue** | on next boot (`SessionStart`) | most hook-capable hosts | **FIRST**, the capture-INDEPENDENT **boot marker** is written by the layer-(a0) shell append into `journal/_activity/<host>-<date>.log` (v1.5.0 — moved out of `journal/_current.md`; see the migration note below) so boots are counted even when nothing else is captured. **THEN** detect **unconsolidated breadcrumbs / active playgrounds** and **offer to consolidate** — recovers abandoned sessions. Pairs with `/synaptic-audit`'s half-done check = the abandonment safety sweep. |
-| **(d) SessionEnd bonus** | clean exit (`SessionEnd`) | **bonus where present** (NOT Copilot-IDE, NOT Cursor) | On clean exit, offer/run consolidation. A bonus only — capture must **never depend on it**. |
+| **(d) SessionEnd bonus** | clean exit (`SessionEnd`) | **bonus where present** (NOT Copilot-IDE, NOT Cursor) | On clean exit, print a reminder to consolidate (recipe A.2). A bonus only — capture must **never depend on it**. |
 
 > **Deterministic activity marker (v1.5.0 — the mechanical non-empty floor; layer a0).** Layers (a)–(d)
 > are **instructions the agent follows** when a hook fires. If the agent does not follow them (long or
@@ -597,7 +599,7 @@ gracefully** — never fail if a layer is unavailable.
 
 > **Structured session-summary capture protocol (v1.4.0 — inspired by Engram-class memory-log
 > protocols; fully file-based, zero-runtime).** The per-turn `Stop` breadcrumb (layer a) is one terse
-> line; **at a session/context boundary** — a `PreCompact` flush, a `SessionEnd`, or a manual wrap —
+> line; **at a session/context boundary** — when the agent acts on a `PreCompact` or `SessionEnd` reminder, or at a manual wrap —
 > the agent additionally writes a **short STRUCTURED session summary** into `journal/_current.md`, so
 > what survives a context loss is a legible handoff, not a raw scroll. The shape maps onto the journal's
 > existing three sections (do not invent a fourth):
@@ -643,8 +645,9 @@ gracefully** — never fail if a layer is unavailable.
    Gemini CLI → Stop + SessionStart where exposed.
 2. For each supported layer, **write the host's native hook config** (marker-wrapped / idempotent,
    same discipline as the AGENTS.md fragment: replace a `BEGIN:SYNAPTIC-HOOKS` … `END:SYNAPTIC-HOOKS`
-   block if present, else add it; never touch unmarked user hooks). The hook command invokes the
-   skill via the host runtime (append-breadcrumb for `Stop`; `/synaptic-consolidate` for the rest).
+   block if present, else add it; never touch unmarked user hooks). The hook command is a shell
+   script (recipe A: append-breadcrumb for `Stop`; a printed reminder or offer for the rest). No
+   shell hook can run a slash command such as `/synaptic-consolidate`.
 2b. **Deploy the layer-(a0) activity marker (v1.5.0) wherever the host runs a shell command on a
    hook** — create `journal/_activity/` and wire the pinned platform-appropriate one-liner (UTF-8
    no-BOM) to `Stop` (`stop`) and `SessionStart` (`boot`). This is the only layer that does not depend
@@ -674,7 +677,7 @@ gracefully** — never fail if a layer is unavailable.
      back to the SessionStart-rescue net (below) or a manual `/synaptic-consolidate`.
    - **Codex / `AGENTS.md` host** — Stop + PreCompact + SessionStart + SessionEnd as available; any
      absent layer → instruction-only breadcrumbs + manual `/synaptic-consolidate`.
-   - **Cursor** — Stop + SessionStart only; **no PreCompact** → flush-before-compaction falls back to
+   - **Cursor** — Stop + SessionStart only; **no PreCompact** → the before-compaction reminder falls back to
      the SessionStart-rescue net + instruction-only breadcrumbs.
    - **Gemini CLI** — Stop + SessionStart where exposed; anything not exposed →
      instruction-only breadcrumbs + manual `/synaptic-consolidate`.
@@ -761,9 +764,9 @@ gracefully** — never fail if a layer is unavailable.
   **mechanical** floor is the layer-(a0) activity marker, and only on hosts that run a shell command on
   a hook (coverage confirmed for Claude Code; the rest UNVERIFIED). On a hook-less host there is **no**
   mechanical floor — capture-yield is then reported as *unknown*, not assumed.
-- **Breadcrumbs vs promotion are orthogonal:** breadcrumbs are the always-on fixed-cost floor and
-  are **not** governed by `capture_policy`. `capture_policy` (`selective | balanced | capture-all`)
-  governs only **how much gets promoted into the wiki** during consolidation.
+- **Breadcrumbs vs promotion are orthogonal:** breadcrumbs are an always-on, fixed-cost,
+  best-effort instruction (the mechanical floor is a0) and are **not** governed by
+  `capture_policy`. `capture_policy` (`selective | balanced | capture-all`) governs only **how much gets promoted into the wiki** during consolidation.
 
 ### e. Cursor shim (optional)
 

@@ -25,7 +25,7 @@ deployed copy exists); the steps below name the action, and that table sets its 
 > - `capture-all` → promote durable-ish notes on first sight; lenient gate; prune later via `/synaptic-weave`.
 >
 > Capture policy does **NOT** govern journal breadcrumbs — the per-turn `Stop` breadcrumb is a
-> fixed-cost safety net that always runs, regardless of this dial.
+> fixed-cost, best-effort safety net that always applies, regardless of this dial.
 
 ---
 
