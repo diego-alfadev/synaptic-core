@@ -759,10 +759,9 @@ gracefully** — never fail if a layer is unavailable.
 > The layer-(a0) activity log is **not** a mirror target: it is content-free proof-of-life and mirroring
 > it would preserve nothing. This distinction is a CORE contract, not an implementation detail.
 
-> **Breadcrumb cadence is provisional (token-optimization to revisit).** The per-turn breadcrumb is
-> good for now, not a fixed rule: a future Cortex T2 Engram-style FTS journal index (`ROADMAP.md` →
-> "Engram-style searchable journal — Cortex") may make it partly redundant as a search surface.
-> Revisit the cadence when that layer lands — never a CORE dependency.
+> **Breadcrumb cadence (decided, v1.6).** Where the `Stop` hook writes breadcrumbs, the agent writes
+> only at decision points plus the session-boundary summary; with no hook, one line per meaningful
+> turn. The rule's single home is `templates/BRAIN.md` → "Incremental journal breadcrumbs".
 
 **Honest limits (do not overclaim — v1-final §5.9, §9.1):**
 - **No agent has native idle detection.** This is **passive, event-driven** capture on hook-capable

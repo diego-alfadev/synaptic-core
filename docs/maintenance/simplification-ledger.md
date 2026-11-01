@@ -45,3 +45,6 @@
   bullet (`git rm --cached` offer, with OK). Boundary doc gains a capture-hooks row. Tests: bash
   43 → 45, PS 46 → 48 (+ 4 changed assertions per shell, + a real sh↔PS same-file test); red first
   (bash 7/45, PS 6/48 failed). SKILL.md 60555 → 61642 B.
+- **Q3-X12:** cadence rule written once in `templates/BRAIN.md` (decision points + boundary summary
+  where the hook writes breadcrumbs; per meaningful turn otherwise). The two "provisional cadence"
+  notes in `SKILL.md` (§d honest limits) and `consolidate.md` replaced by a 3-line pointer each.

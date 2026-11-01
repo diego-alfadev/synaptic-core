@@ -363,7 +363,8 @@ trimmed to 22 lines; `BRAIN.md` `updated:` stamped.
 Consolidation is the *promotion* pass. It sits on top of a cheaper layer that runs continuously and
 is **not** governed by `capture_policy`:
 
-- **One terse line per meaningful turn** is written to `journal/_current.md`. This is an
+- **One terse line per meaningful turn** is written to `journal/_current.md` (where the hook writes
+  them, the agent adds only decision points + the boundary summary — cadence note below). This is an
   **instruction the agent follows, not only a hook**: the per-turn `Stop` breadcrumb prompts it where
   wired, but write it even when no hook fires — hooks are host-specific and can silently fail. **Be
   precise about what this is (v1.5.0):** because it is an instruction, it is **best-effort semantic
@@ -394,11 +395,9 @@ is **not** governed by `capture_policy`:
 > surface small. This is the CORE floor; a future **Cortex-mode Engram MemoryLog backend (v2.0)** would
 > supersede the file-journal where a runtime is present — this protocol needs **none**.
 
-> **Provisional — revisit as a token-optimization.** The per-turn breadcrumb is *good for now*, not a
-> fixed rule. A future Cortex T2 Engram-style FTS journal index (a derived SQLite/FTS5 layer over the
-> journal — see `ROADMAP.md` → "Engram-style searchable journal — Cortex") may make the per-turn
-> breadcrumb partly redundant as a search surface. Treat the breadcrumb cadence as a **token-optimization
-> item to revisit** when that layer lands — not a change to make now, and never a CORE dependency on it.
+> **Cadence (decided, v1.6):** where the `Stop` hook writes breadcrumbs, the agent writes only at
+> decision points plus the session-boundary summary. Single home: `templates/BRAIN.md` →
+> "Incremental journal breadcrumbs".
 
 ---
 

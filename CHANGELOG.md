@@ -200,6 +200,14 @@ Do the steps in this order.
 - **The self-install check no longer always fails.** It required every manifest file to be non-empty,
   but the manifest lists a 0-byte `.gitkeep`. Placeholders are exempt.
 
+#### Changed (simplification round)
+- **Fewer agent-written breadcrumbs where the hook is wired.** Where the `Stop` hook already records
+  which files changed, the agent now writes only at decision points (a decision, a lesson, a blocker,
+  a change of plan) plus the session-boundary summary. Without hooks, nothing changes: one line per
+  meaningful turn. This replaces the "provisional cadence" notes. It saves an agent line per turn
+  (an estimated 150–200 tokens), at the cost of losing in-between context if a crash comes before
+  the boundary summary. The rule lives once, in `templates/BRAIN.md`.
+
 #### Removed (simplification round)
 - **Project skills (`harness/skills/`) are no longer part of CORE.** Deploy used to copy a brain's
   `harness/skills/*` into the host's skill folders at boot, with no per-item approval. That made a
