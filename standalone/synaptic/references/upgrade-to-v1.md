@@ -481,7 +481,7 @@ Scan all files in `knowledge/` for Markdown path-style links `[text](../path/fil
 **Per-cluster `_index.md`:**
 
 - For each cluster directory, create or rebuild `_index.md` from the skill bundle's `templates/` pattern.
-- Add a 1-line entry per node: `[[node-name]] — {description copied from node's frontmatter}`.
+- Add one MOC line per node: `- [[node-name]] — <routing text>` (non-empty, ≤120 characters; written for routing, not copied from `description:` — `references/consolidate.md` Step 4).
 - Migrate content from old `_overview.md` files: split into atomic kebab-case nodes (≤150 lines each); each gets full D1 frontmatter; listed in `_index.md`. After verifying, delete the empty source directory.
 
 ### C5 — Apply consolidation formula retroactively

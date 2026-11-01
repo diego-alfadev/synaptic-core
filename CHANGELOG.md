@@ -229,6 +229,22 @@ Do the steps in this order.
   (an estimated 150–200 tokens), at the cost of losing in-between context if a crash comes before
   the boundary summary. The hook sees only uncommitted changes, so the agent still writes a line for
   a turn whose work it committed. The rule lives once, in `templates/BRAIN.md`.
+- **CORE is stated in two tiers, once.** `docs/concepts/architecture-matrioshka.md` defines both.
+  **CORE-floor** needs only an agent that reads, writes and searches files; every guarantee holds
+  there. **CORE-host** is the optional shell, git, grep and hooks, under one rule: absent → unknown,
+  never invented. In `SKILL.md` §d, one repeated honesty note was removed (the per-host table
+  already says it) and two passages were shortened. The always-loaded `SKILL.md` drops ~1.1 KB; the
+  repo total grows slightly, because the statement and the audit check are new text.
+- **`lifecycle` is a label, not a load filter.** The "default working set / lazy-pull" wording is gone
+  from `SKILL.md`, the node and playbook templates, consolidate, audit, handover, day-one, upgrade,
+  ROADMAP and the concept doc. No agent load path ever filtered on it (the optional graph tool's
+  visual filter is separate). The field, its four values and its absent → `area` default are
+  unchanged. The concept doc's combined-value table no longer uses `archived` as a `lifecycle` value.
+- **MOC lines are routing text.** `- [[node]] — <routing text>` is written for the next agent deciding
+  whether to open the node. It is non-empty, at most 120 characters, and no longer a copy of
+  `description:`. Consolidate Step 4, day-one and both MOC templates say so. `/synaptic-audit` Step 4
+  flags empty or over-long lines (advisory), with optional grep one-liners. Existing MOCs need no
+  change unless the audit flags them.
 
 #### Removed (simplification round)
 - **Project skills (`harness/skills/`) are no longer part of CORE.** Deploy used to copy a brain's

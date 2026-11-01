@@ -65,3 +65,26 @@
   PS 48 → 55, including a real sh = PS parity loop over 6 fixtures and a fixed known answer
   (`911169ddaaf1`). Review: NO-GO (day-granular `updated:` rule, missing tracked-check command,
   leftover docs, quoting); all fixed.
+- **Q5-X6:** CORE-floor / CORE-host stated once (new subsection in the matrioshka doc, 13,171 →
+  14,421 B). **Collapsed to pointers** in `SKILL.md` §d: the "(Host coverage … UNVERIFIED …)" note
+  (removed; the per-host table already says it), the Self-Wire step-4 honesty paragraph and the
+  honest-limits bullets 2–3 (shortened). Nothing parked.
+- **Q5-X11:** "default-load set / lazy-pull / load-priority" wording removed from SKILL.md Lifecycle
+  axis, `templates/templates/node.md`, consolidate (status/lifecycle table + interaction rules),
+  audit (Step 1a note, typo step), handover, day-one, BRAIN.md step 4, the concept doc (rewritten
+  middle; also fixes the carried defect "status-vs-lifecycle.md:68 uses `archived` as a lifecycle
+  value") and the concepts index line. SKILL.md keeps a one-line "dropped — X11" note.
+- **Q5-Δ8:** MOC routing-text rule written once in consolidate Step 4; templates (`INDEX.md`,
+  `example-cluster/_index.md`) and day-one point to it; audit Step 4 gains an advisory check with
+  two CORE-host grep one-liners.
+- **Q5 sizes (LF):** SKILL.md 61,843 → 60,725 (−1,118, always-loaded); handover 7,210 → 7,079;
+  concept doc 7,437 → 7,153; audit 33,345 → 33,795 (+ the Δ8 check); consolidate 28,218 → 28,469.
+- **Q5 review:** NO-GO → fixed. Leftover X11 phrases (consolidate, handover table, ROADMAP);
+  Δ8 contradictions in `templates/templates/node.md`, `playbook.md`, upgrade C-step MOC rebuild,
+  ROADMAP, PITCH (factual: `description` no longer feeds the MOC line), matrioshka table; CORE-floor
+  row no longer claims the non-empty-capture guarantee (that one is CORE-host, the (a0) "mechanical
+  floor"); audit greps restricted to `INDEX.md`/`_index.md`, backtick and `-`/`*` bullet forms,
+  UTF-8 locale note, tested on a fixture; concept-doc corner row `dormant`+`archived`; SKILL.md
+  pointer self-contained (docs/ is not in the bundle). A person's name used as a codename for "a real
+  run" removed from the bundle and from two `tools/check.js` comments (historical CHANGELOG entries
+  left as they are). **Net bytes:** always-loaded SKILL.md −~1.1 KB; repo total slightly up.

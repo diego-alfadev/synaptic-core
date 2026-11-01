@@ -199,4 +199,4 @@ folder + project-level bridge/rules + all touched user-level instruction/hook/sk
 Placement + wiring change, zero-runtime, no schema bump. Every gate is grep + file-existence + hash by
 hand. The safety discipline mirrors `references/upgrade-to-v1.md`'s addendum. Runtime confirmation
 (second-folder resolution, OneDrive hydration behavior) is author-complete; verify on a real
-(Robinson) run.
+run.

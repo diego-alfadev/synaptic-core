@@ -106,7 +106,7 @@ When `/synaptic-upgrade` runs host-setup detection, it MUST perform a **stub-dri
 accumulate **`*-DESKTOP-XXX` conflict copies** (e.g. `synaptic-audit-DESKTOP-AB12CD.md`) when sync
 collides across machines. They are not real stubs — they shadow the canonical one and can surface a
 stale duplicate in the `/` menu. The drift sweep MUST **detect and clean these `*-DESKTOP-*` variants**.
-*(Author-complete; verify on a real (Robinson) run — actual filesystem/sync behavior needs a real host.)*
+*(Author-complete; verify on a real run — actual filesystem/sync behavior needs a real host.)*
 
 ## Cleanup — uninstall / downgrade / convert-to-global
 
@@ -128,4 +128,4 @@ using the `harness/setup/<host>.md` inventory (never guess):
 - **No schema bump** — stubs are generated pointer files outside the brain; no symlink dependency.
 
 Runtime confirmation that a given host actually renders the `/` menu from the stubs — and the
-drift/cleanup filesystem behavior — is author-complete; verify on a real (Robinson) / Node host.
+drift/cleanup filesystem behavior — is author-complete; verify on a real / Node host.

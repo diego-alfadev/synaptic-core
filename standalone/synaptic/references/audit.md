@@ -60,15 +60,14 @@ live projects. Skip any node with no `lifecycle:` field (absent → `area`, noth
   *"area gone silent — still a live responsibility?"* (Reuses the Step 1 staleness threshold.)
 
 > **`lifecycle: dormant` / `resource` are NOT orphans.** A node cooled to `dormant` (or tagged
-> `resource`) is still registered in its cluster `_index.md` — cooling is a load-priority signal,
+> `resource`) is still registered in its cluster `_index.md` — cooling is an actionability label,
 > not de-registration. It **must not** trigger the Step 2 orphan check, and its `updated:` staleness
 > is expected (Step 1 may still note age, but it is not a lifecycle-cadence finding).
 
-> **The audit reads ALL statuses and ALL lifecycles.** `lifecycle: dormant` scopes only the **default
-> working set** (the load-priority signal), **NOT** what the audit inspects. The audit (like
-> `/synaptic-handover`) reads **every** node regardless of `lifecycle` or `status` — a `dormant` or
-> `resource` node is still audited; a `status: stale` node is **flagged, not hidden**. Only `lifecycle`
-> ever scopes the *default* load; `status` **never** causes omission.
+> **The audit reads ALL statuses and ALL lifecycles.** `lifecycle` is a label, never a filter: the audit
+> (like `/synaptic-handover`) reads **every** node regardless of `lifecycle` or `status` — a `dormant`
+> or `resource` node is still audited; a `status: stale` node is **flagged, not hidden**. Neither field
+> ever causes omission.
 
 **No runtime required.** Grep `lifecycle:` values and compare `updated:` — same by-hand posture as
 every other check here.
@@ -95,7 +94,7 @@ check) but is an **unknown token** — it would otherwise be read as an unknown 
   `check.js` **ERROR** (missing required field), not a default; surface it as a hard finding. An
   **unknown/mistyped** `status` value (present but off-vocabulary) is neither trusted-current nor stale —
   read it as `untriaged` and **never silently promote it to `active`.**
-- **`lifecycle` absent → `area`** — a benign role default (loads by default). Not a finding.
+- **`lifecycle` absent → `area`** — a benign role default. Not a finding.
 
 **No runtime required.** Pure grep over frontmatter values.
 
@@ -135,6 +134,16 @@ Read `knowledge/INDEX.md`. For each cluster entry:
 Flag: missing `_index.md` files; nodes in a cluster directory not listed in the sub-MOC.
 
 Also check: is every cluster directory listed in `knowledge/INDEX.md`? Flag unlisted cluster directories.
+
+**Routing-text check (WARN, advisory).** Every MOC entry line (`- [[target]] — <routing text>`, in
+`INDEX.md` and each `_index.md`) must carry routing text that is **non-empty and ≤120 characters**
+(rule: `references/consolidate.md` Step 4, "Register"). Flag an empty one (the MOC can no longer route
+without opening the node) or an over-long one (it costs tokens on every navigation). You see these
+lines anyway while reading the MOCs; CORE-host shortcut (run in a UTF-8 locale, e.g.
+`LC_ALL=C.UTF-8`, or the length count is in bytes and approximate):
+`` grep -rnE --include=INDEX.md --include=_index.md '^[-*] `?\[\[[^]]+\]\]`?( —| -)?[[:space:]]*$' knowledge/ registries/ references/ `` (empty) and
+`` grep -rnE --include=INDEX.md --include=_index.md '^[-*] `?\[\[[^]]+\]\]`?( —| -) .{121,}' knowledge/ registries/ references/ `` (too long).
+Route fixes to `/synaptic-consolidate` (rewrite the routing text); report them under "MOC coverage gaps".
 
 ---
 
@@ -441,7 +450,7 @@ step's denominator — it is a `.log` under `journal/`, never knowledge, and nev
 knowledge-scoped checks above never see it).
 
 **No runtime required.** Degree/count math over files (journal timestamps + frontmatter/git), LLM-free.
-*The activity marker's actual firing is author-complete; verify on a real (Robinson) run — and note its
+*The activity marker's actual firing is author-complete; verify on a real run — and note its
 host coverage is confirmed only for Claude Code (see `SKILL.md` §d "Per-host activity marker support").*
 
 ---

@@ -463,7 +463,7 @@ function checkFrontmatter() {
     // visible instead of failing open. Mirrors the lifecycle WARN below; parseFrontmatter
     // already .trim()s scalar values, so a trailing-space value is normalised before the
     // set test (an author who wrote `Active ` sees "Active", the real defect).
-    // author-complete; verify with Node on Robinson's run.
+    // author-complete; verify with Node on a real run.
     const status = fm.status;
     if (status !== undefined && status !== null) {
       if (Array.isArray(status)) {
@@ -490,7 +490,7 @@ function checkFrontmatter() {
     // one of the closed enum values (module-level LIFECYCLE_ENUM, shared with the status advisory
     // above); an out-of-enum value is a WARN (typo/near-collision), never a gate. Absent → legal
     // (treated as `area`; no schema bump). (v1.4.0 §5.5(c) — the lifecycle half of the typo-advisory.)
-    // author-complete; verify with Node on Robinson's run.
+    // author-complete; verify with Node on a real run.
     const lifecycle = fm.lifecycle;
     if (lifecycle !== undefined && lifecycle !== null) {
       if (Array.isArray(lifecycle)) {

@@ -19,12 +19,10 @@ reconstruction, less tribal-knowledge dependency).
 - **Reproducible from files alone.** Run twice on an unchanged brain → the same brief. It is a
   read/grep + MOC-navigation pass; no runtime, no tool required (a tool may only *tabulate* what is
   already in the files).
-- **Reads ALL statuses and ALL lifecycles — no default-working-set scoping.** A handover is an
-  export-class read: it does **NOT** apply the `lifecycle`-scoped default-load filter. A
-  `lifecycle: dormant` node whose decision is still binding (`status: active`) **MUST appear**;
-  omitting it would defeat the whole handover thesis. See `SKILL.md` "Lifecycle axis" and the
-  `status`-vs-`lifecycle` interaction rules — only `lifecycle` scopes the *default* working set, and
-  handover/audit deliberately ignore that scoping.
+- **Reads ALL statuses and ALL lifecycles.** A handover is an export-class read. `lifecycle` only
+  labels actionability (e.g. a `project` node is an open thread); it never
+  hides a node. A `lifecycle: dormant` node whose decision is still binding (`status: active`) **MUST
+  appear**; omitting it would defeat the whole handover thesis. See `SKILL.md` "Lifecycle axis".
 - **`status` never hides, it flags.** A stale-but-relevant node is included and **flagged** (`⚠ stale`),
   not dropped. `status` is **required** on knowledge nodes; a node whose `status:` is an unknown/mistyped
   value reads as **untriaged** (neither trusted-current nor stale) — surface it as such, never silently
@@ -60,11 +58,11 @@ filter**. Assemble the five sections below.
 
 | The brief must… | Rule |
 |---|---|
-| include a `lifecycle: dormant` + `status: active` binding decision | **YES — MUST appear** (dormant scopes only the *default* load, not exports) |
+| include a `lifecycle: dormant` + `status: active` binding decision | **YES — MUST appear** (`lifecycle` is a label; it never hides a node) |
 | include a `status: stale` but relevant node | **YES — flagged `⚠ stale`**, never hidden (`status` never omits) |
 | include a node whose `status:` is an unknown/mistyped value | **YES — marked `untriaged`**, never promoted to "current" (`status` is required; an unknown value reads as untriaged) |
 | include a `status: archived` node | **YES — only as history**, never as a current decision: an indented `↳ replaces [[old]] (archived)` under its nearest non-archived successor (grep for the node whose `supersedes` names it; repeat while that node is archived) — under the successor's Key decisions line if it has one, else under its first listing in the brief; several `↳` lines go nearest-first, then by name. If the brief lists no such successor, name it on a closing `Archived (history only): [[old]], …` line (omitted when there are none) |
-| apply the default-working-set (`lifecycle`) filter | **NO** — handover reads ALL lifecycles and ALL statuses |
+| hide a node by its `lifecycle` | **NO** — handover reads ALL lifecycles and ALL statuses |
 
 ## Output shape (worked example — author-complete, by inspection)
 
@@ -102,4 +100,4 @@ they want to keep iterating on it) — never commit/sync it into a foreign repo.
 Files-first synthesis (every claim derivable from disk). Prose-CORE: an agent produces it by reading
 the MOC + frontmatter — the grep/MOC floor, zero-runtime. Optional tool assist (e.g. reusing the
 god-node degree math) is never required. Runtime confirmation of the exact output is author-complete;
-verify on a real (Robinson) run.
+verify on a real run.

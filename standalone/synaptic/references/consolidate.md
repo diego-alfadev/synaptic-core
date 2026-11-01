@@ -76,7 +76,7 @@ Before writing:
 
 - Strip the anecdote; keep the reusable principle.
 - Name the file after the *concept*, not the ticket (e.g. `retry-policy.md`, not `FEAT-123-fix.md`).
-- The `description:` frontmatter field should read as a self-contained 1-line summary a cold agent can understand without opening the file — it feeds directly into the cluster `_index.md`.
+- The `description:` frontmatter field should read as a self-contained 1-line summary a cold agent can understand without opening the file (the MOC line carries its own routing text; see Step 4).
 
 ---
 
@@ -91,39 +91,37 @@ Before writing:
 1. **Place** the node in the correct cluster under `knowledge/{cluster}/`.
 2. **Frontmatter (D1):** fill `description`, `type`, `status: active`, `updated: {today}`, `tags: [cluster-tag, topic-tags]`. No placeholders.
 3. **`[[wikilinks]]`:** add wikilinks to related nodes at first mention. One link per target page per source page is sufficient.
-3a. **Lifecycle (OPTIONAL):** set `lifecycle:` **only** if the node is a live project (`lifecycle: project`) or clearly a lazy-pull resource (`lifecycle: resource`); otherwise **leave it absent** (absent → treated as `area`, loads by default). Enum: `project | area | resource | dormant`. It is **orthogonal to `status`** — see the table below. A `project` node SHOULD link OUT to a durable `area`/`resource` node so its knowledge survives when it later cools to `dormant`.
-4. **Register** the node in `knowledge/{cluster}/_index.md` (one-line entry: `[[node-name]] — {description}`). If the cluster does not exist, create the `_index.md` from `templates/node.md` pattern and add the cluster to `knowledge/INDEX.md`.
+3a. **Lifecycle (OPTIONAL):** set `lifecycle:` **only** if the node is a live project (`lifecycle: project`) or clearly someday reference material (`lifecycle: resource`); otherwise **leave it absent** (absent → treated as `area`). Enum: `project | area | resource | dormant`. It is **orthogonal to `status`** — see the table below. A `project` node SHOULD link OUT to a durable `area`/`resource` node so its knowledge survives when it later cools to `dormant`.
+4. **Register** the node in `knowledge/{cluster}/_index.md` with one MOC line: `- [[node-name]] — <routing text>`. **Routing text** is written for the next agent deciding whether to open the node: what it answers or when to reach for it. It is **non-empty, ≤120 characters**, and independent of `description:` (it may say the same thing, but it is not a copy and is not kept in sync with it). `/synaptic-audit` Step 4 checks both limits. If the cluster does not exist, create the `_index.md` from `templates/node.md` pattern and add the cluster to `knowledge/INDEX.md`.
 5. **Tabular data** → update or create the relevant `registries/{table}.md`; register in `registries/_index.md`.
 6. **Large verbatim artifact** → copy to `references/raw/`; add one-line entry to `references/_index.md`; create a distilled knowledge node with `type: reference` that links to the artifact entry. **Record its `source`** on the distilled node, plus a `content_hash` when the brain is outside git (see below), so future runs can detect that the raw artifact changed.
 
 **`status` vs `lifecycle` — two orthogonal fields (do not conflate):**
 
 `status` and `lifecycle` are independent and both may appear. `status` answers *is this content
-current and correct?*; `lifecycle` answers *is this in the current working set?* The literal
+current and correct?*; `lifecycle` answers *what kind of attention does it need (live, standing, reference, parked)?* The literal
 `archived`/`dormant` tokens are deliberately different so the two enums never collide.
 
 | Field | Question it answers | Enum | Change it when… |
 |---|---|---|---|
 | `status` | Editorial / trust — is the content current & correct? | `active` \| `stale` \| `archived` | The content is superseded/dead (pair with a `supersedes`/`superseded_by` edge). |
-| `lifecycle` | Actionability — is this LIVE / in the working set? | `project` \| `area` \| `resource` \| `dormant` | A project ends or an area cools (flip to `dormant`); it re-activates (flip back). |
+| `lifecycle` | Actionability — is this live, standing, reference or parked? (a label, never a filter) | `project` \| `area` \| `resource` \| `dormant` | A project ends or an area cools (flip to `dormant`); it re-activates (flip back). |
 
 > **Combined example:** a node may be `status: active` + `lifecycle: dormant` — the content is
-> **true**, but the project is over, so it does **not** load by default. Perfectly valid. Prefer
-> flipping `lifecycle` for actionability changes; reserve `status: archived` for "this content is
-> superseded/dead."
+> **true**, but the project is over (labelled parked; still read and handed over). Perfectly valid.
+> Prefer flipping `lifecycle` for actionability changes; reserve `status: archived` for "this content
+> is superseded/dead."
 
 **Interaction rules (which axis governs what — the part users get wrong):**
 
-- **Only `lifecycle` scopes the DEFAULT working set.** A `dormant` node drops out of the *default* load
-  once a brain grows. **`status` NEVER causes omission** — a stale-but-relevant node is **flagged
-  (`⚠ stale`), not hidden.**
-- **The `lifecycle: dormant` scoping applies to the DEFAULT working set ONLY.** `/synaptic-handover` and
-  `/synaptic-audit` read **ALL statuses and ALL lifecycles** — a binding `lifecycle: dormant` +
+- **Neither field hides a node.** `lifecycle` labels actionability; **`status` flags** — a
+  stale-but-relevant node is **flagged (`⚠ stale`), not hidden.**
+- `/synaptic-handover` and `/synaptic-audit` read **ALL statuses and ALL lifecycles** — a binding `lifecycle: dormant` +
   `status: active` decision **MUST still appear** in a handover brief (else it defeats the knowledge-tax
   thesis). See `references/handover.md` and `references/audit.md`.
 - **Required vs optional + value semantics:** `status` is **REQUIRED** (a missing `status:` is a
-  `check.js` ERROR, never a default); `lifecycle` is **OPTIONAL** and absent → `area` (benign, loads by
-  default). An **unknown/mistyped** `status` value (present but off-vocabulary) reads as **`untriaged`** —
+  `check.js` ERROR, never a default); `lifecycle` is **OPTIONAL** and absent → `area` (a benign
+  default; a label only). An **unknown/mistyped** `status` value (present but off-vocabulary) reads as **`untriaged`** —
   neither trusted-current nor stale; surfaced as `untriaged` in audits, **never silently promoted to
   `active`.** A hand-edit typo (`Active`, `dorment`) surfaces via the `/synaptic-audit` typo advisory
   rather than failing open.

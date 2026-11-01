@@ -10,18 +10,18 @@ tags: [moc, index]
 
 Hub map of content clusters. Navigate here first; load only the cluster and nodes relevant to your task.
 
-**How to use:** each cluster entry links to a sub-MOC (`_index.md`) that lists every node with a 1-line summary. Open only the 1–2 nodes you actually need.
+**How to use:** each cluster entry links to a sub-MOC (`_index.md`) that lists every node with one line of routing text (non-empty, ≤120 characters). Open only the 1–2 nodes you actually need.
 
 ---
 
 ## {{Cluster}}
 
-- [[{{example-cluster}}/_index]] — {{1-line description of what this cluster covers}}
+- [[{{example-cluster}}/_index]] — {{routing text: what this cluster covers (≤120 characters)}}
 
 <!-- Add a new cluster block here each time a new `knowledge/{cluster}/` folder is created.
      Format:
      ## {Cluster display name}
-     - [[{cluster}/_index]] — {{1-line scope summary}}
+     - [[{cluster}/_index]] — {{routing text, ≤120 characters}}
 -->
 
 ---

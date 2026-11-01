@@ -24,7 +24,7 @@ A six-step agent-agnostic consolidation formula is embedded in every `BRAIN.md` 
 
 ### D1 frontmatter + tags
 
-Every knowledge node and registry carries: `description` (1 line, feeds the `_index` summary), `type`, `status`, `updated`, `tags`. Tags are the deliberate indexable surface for future FTS/RAG — present in v1 so the format never needs forking.
+Every knowledge node and registry carries: `description` (1 line, a self-contained summary; MOC lines carry their own routing text), `type`, `status`, `updated`, `tags`. Tags are the deliberate indexable surface for future FTS/RAG — present in v1 so the format never needs forking.
 
 ### Registries as first-class citizens
 
@@ -46,7 +46,7 @@ The skill now ships with a bootstrap header in `SKILL.md` plus a `MANIFEST.txt` 
 
 The combined `1.3.0` release folds the migration-&-upgrade-hardening work (per-phase `MIGRATION_DONE` gate + mandatory retrieval drill + one-commit-per-phase; git fast-forward cutover with the folder-rename demoted to a non-git, Windows/OneDrive-safe fallback; the instruction-first breadcrumb floor that closes issue #2 on hook-less hosts; the standing deletion/move/archive ledger; retrieval-readiness reporting and non-live-artifact checks in `check`) together with additive structural improvements. The **brain schema is unchanged (still 1.0)** — an existing v1 brain has nothing to migrate; reinstall the skill for the new engine behavior. Structural additions, all CORE and backward-compatible:
 
-- **Optional PARA lifecycle axis** — knowledge nodes MAY carry `lifecycle: project | area | resource | dormant`, an actionability axis orthogonal to `status`, scoping the active working set (`project` + `area` + absent load by default; `resource` + `dormant` lazy-pull). Absence behaves exactly as a pre-1.3.0 node, so **no schema bump**; a skill-less agent ignores the unknown key. Demotion is reversible archive-don't-delete (flip to `dormant`, keep file/index/edges).
+- **Optional PARA lifecycle axis** — knowledge nodes MAY carry `lifecycle: project | area | resource | dormant`, an actionability label orthogonal to `status` (since v1.6 a label only; the earlier "default working set" scoping had no consumer and was dropped). Absence behaves exactly as a pre-1.3.0 node, so **no schema bump**; a skill-less agent ignores the unknown key. Demotion is reversible archive-don't-delete (flip to `dormant`, keep file/index/edges).
 - **God-node + surprising-edge audit heuristics** — `/synaptic-audit` gains two diagnose-only, prose-CORE graph-health passes (over-connected hub detection; cross-cluster authored-edge listing), routing to `/synaptic-weave`, computed over the same knowledge-scoped edge universe as `check`/`graph`. No auto-discovery claim; edges stay authored.
 - **Local-vs-remote data-boundary governance doc** and a **verb-contract note** (`docs/concepts/`) — the explicit local/remote boundary (host LLM context = the sole egress point; Synaptic adds no server/DB/telemetry), and the four-verb contract mapped against Cognee's, with `memify` deferred to a P4 usage-signal-gated direction (no present-tense self-improvement claim).
 

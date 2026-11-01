@@ -55,10 +55,10 @@ Take their answer and capture it as **one real knowledge node** — genuinely us
    If no cluster fits yet, create a sensible cluster (e.g. `knowledge/handover/`) — this is the
    brain's first cluster and that is fine. Fill real frontmatter, **no placeholders**: a self-contained
    one-line `description:`, `status: active`, `updated: {today}`, 1–2 `tags`. Leave `lifecycle:` absent
-   (→ `area`, loads by default) unless the thing is clearly a live time-boxed effort (then
+   (→ `area`) unless the thing is clearly a live time-boxed effort (then
    `lifecycle: project`). Body = their answer, lightly cleaned into durable prose (strip the anecdote,
    keep the reusable fact — the Step-3 generalize discipline from `references/consolidate.md`).
-3. **Register it in the MOC** — add a one-line entry `[[node-name]] — {description}` to the cluster
+3. **Register it in the MOC** — add a MOC line `- [[node-name]] — <routing text>` (non-empty, ≤120 characters) to the cluster
    `knowledge/{cluster}/_index.md`, and ensure that cluster is listed in `knowledge/INDEX.md`
    (create the `_index.md` if the cluster is new). *A node not reachable from the index does not
    exist* — registration is what makes Beat 2 work.

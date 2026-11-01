@@ -36,6 +36,21 @@ Each inner layer is independent of the outer ones. **CORE vs Cortex is one conce
 
 > The CORE/Cortex boundary is never drawn at "with/without MCP". **MCP is Cortex** — a tool over the files, alongside the other optional utilities. A brain works fully without it, and it degrades away cleanly.
 
+### CORE has two tiers: floor and host (the one statement of it)
+
+CORE splits once more, by what the *host* already provides:
+
+| Tier | Needs | What holds there |
+|---|---|---|
+| **CORE-floor** | an agent that can **read, write and search files**. Nothing else. | **Every file-format and retrieval guarantee:** boot from `BRAIN.md`, capture into the journal (best-effort: it is an instruction), retrieve via the MOCs, consolidate, audit by reading, hand over. A brain on this tier is complete. |
+| **CORE-host** | optional tools the host may already have: a **shell** (sh or PowerShell), **git**, **grep**, **hooks** that run a shell command. | **One extra guarantee, plus signals.** The guarantee is the **non-empty activity log**: the host-run marker writes it whether or not the agent complies. It exists only on shell-hook hosts, and capture docs call it the "mechanical floor" (not to be confused with CORE-floor). The signals are the Stop breadcrumb, the fingerprint and git drift check (`references/fingerprint.md`), and the pinned one-liners in audit. |
+
+**One rule for CORE-host: absent → unknown, never invented.** When the shell, git or a hook is not
+there, the answer the tool would have given is reported as **unknown** (or `TBD` in a field). It is
+never guessed, never computed "in the head" (a model cannot hash), and never treated as a failure.
+Every per-feature note that says "UNVERIFIED", "TBD with no shell" or "reported as unknown" is this rule
+applied; it is stated here once and the feature docs only point to it.
+
 ## Built on proven ideas (and why)
 
 Synaptic-core did not invent its substrate — it converged on patterns that the PKM and agent-skills community had already validated, then applied a specific **direction**: purpose-built to accrete a role's knowledge and encode the explicit formula (intention + inertia) that makes it grow correctly. The value-add is that direction, not the format.
@@ -47,7 +62,7 @@ Synaptic-core did not invent its substrate — it converged on patterns that the
 | **Bidirectional `[[wikilinks]]` — wiki / Obsidian** | Every node uses `[[page-name]]` links written at capture time; backlinks resolved via `grep -r "[[node]]"` (CORE) or an optional FTS5 index (horizon Cortex); opens natively in Obsidian / Foam / Logseq | Emergent link-graph: structure comes from links, not rigid folder hierarchy. A concept can belong to multiple clusters simultaneously. Multi-dimensional without duplication. |
 | **LLM-wiki / "compile knowledge" — Karpathy** | Curated narrative pages an agent reasons over whole (no chunking); `references/raw/` holds verbatim payloads as schema-on-read fallback; consolidation formula = write-time curation discipline | Curate once, read cheap forever. Agents re-read the same context constantly; schema-on-write means retrieval is near-deterministic. Coherent curated context beats reassembled chunks for reliability and auditability. |
 | **Progressive disclosure — Anthropic Agent Skills** | `BRAIN.md` (≤110 lines, ~500 tokens) is the only boot read; skill metadata surfaces in Level 1 (~100 tokens); full skill body loads on trigger; reference files and the bundle templates load only at brain-init | Token economy: awareness costs ~100 tokens per skill; full depth costs only when needed. The same principle governs the brain: one boot file, everything else on demand. |
-| **Frontmatter + tags — PKM metadata standard** | Every node carries `description`, `type`, `status`, `updated`, `tags` (D1 decision, SPEC §4.3); `description` feeds the `_index.md` 1-liner and any future embedding input | Machine-readable surface for `/synaptic-audit`, faceted search, and future FTS / semantic search — without forking the format when those layers are added. |
+| **Frontmatter + tags — PKM metadata standard** | Every node carries `description`, `type`, `status`, `updated`, `tags` (D1 decision, SPEC §4.3); `description` feeds search and any future embedding input (MOC lines carry their own routing text) | Machine-readable surface for `/synaptic-audit`, faceted search, and future FTS / semantic search — without forking the format when those layers are added. |
 | **Explicit contribution protocol — spec-driven mindset** | The 6-step consolidation formula (classify → atomicity test → generalize → place & link → dedupe/SSOT → quality gate) is embedded in every `BRAIN.md` as the capture contract | Agent-agnostic, consistent: any agent that runs this formula produces a navigable graph, not a pile of notes. The formula encodes both intention (what belongs) and inertia (how it grows). |
 | **Files-authoritative / local-first — Engram-inspired governance** | Files are the single source of truth; agent-native memory (auto-memory, etc.) is treated as a cache; tools (`check`, `migrate`, `export`) are derived readers, never writers of truth | Portable, auditable, git-native. The brain works on a locked-down laptop, air-gapped server, or any future agent platform. No runtime dependency can become a single point of failure. |
 

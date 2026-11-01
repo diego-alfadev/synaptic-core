@@ -317,10 +317,13 @@ Use real data — no `{{placeholder}}` values in generated files. Report the ful
 
 ---
 
-## Lifecycle axis (optional actionability scoping)
+## Lifecycle axis (optional actionability label)
 
 Knowledge nodes (and registries, where meaningful) MAY carry one optional frontmatter field —
-`lifecycle:` — that scopes the **active working set**. It applies to `knowledge/**` and
+`lifecycle:` — that labels **what kind of attention a node needs** (live effort, standing
+responsibility, someday reference, cooled off). Audit and handover read it. It is **not a load
+filter**: retrieval always goes through the MOCs, and a node's lifecycle never decides whether it is
+read. It applies to `knowledge/**` and
 `registries/` only; it is **never** used on `playgrounds/` or `journal/` (those are the separate
 raw/working layer, governed by consolidation, not by a lifecycle field). Adding it does **not** bump
 the brain schema — it is additive optional frontmatter, the same class as typed edges and provenance.
@@ -334,25 +337,21 @@ lifecycle: project | area | resource | dormant
 - `project` — a disposable **hot node**: a live, time-boxed effort. Links OUT to durable nodes.
 - `area` — an ongoing responsibility / durable domain node with no end date. **The default for
   un-tagged nodes.**
-- `resource` — reference material relevant *someday*, not part of the current working set.
-- `dormant` — cooled off: kept for the record, not loading by default. Reversible (see below).
+- `resource` — reference material relevant *someday*, not current work.
+- `dormant` — cooled off: kept for the record. Reversible (see below).
 
-**Default / absent (backward-compatible).** A node **without** `lifecycle:` is treated as **`area`**
-for scoping — it default-loads, exactly as every pre-v1.3.0 node did. Absence is legal, never an
-error; a skill-less or older-skill agent that does not understand the field simply ignores it.
+**Default / absent (backward-compatible).** A node **without** `lifecycle:` is treated as **`area`**.
+Absence is legal, never an error; a skill-less or older-skill agent that does not understand the field
+simply ignores it.
 
-**Active-set scoping rule (the convention the agent follows — no index, no runtime):**
-
-- **Default working context (default-load set) = `project` + `area` + (absent → area).**
-- **Lazy-pull set = `resource` + `dormant`** — loaded only when a query / MOC path explicitly
-  points at them, or the user asks.
-- **MOC visibility is unaffected:** a node's lifecycle never removes it from its cluster `_index.md`.
-  Cooling a node is a load-priority signal, not de-registration (de-registration would orphan it).
+**MOC visibility is unaffected:** a node's lifecycle never removes it from its cluster `_index.md`
+(de-registration would orphan it). *(Before v1.6 this section also defined a "default-load set";
+nothing ever consumed it, so it was dropped — decision X11.)*
 
 **Archive-don't-delete demotion (reversible cooling, never a delete).**
 
 - **Demote:** flip `lifecycle: dormant`. Keep the file in place; keep its `_index.md` entry
-  (optionally append " (dormant)" to the one-line summary so the MOC stays honest); keep all its
+  (optionally append " (dormant)" to its routing text so the MOC stays honest); keep all its
   `[[wikilinks]]` and typed edges intact. Archiving must not sever the graph.
 - This is **decoupled from `status`** — demotion flips `lifecycle` **only**; do NOT also set
   `status: archived`. `status` stays the orthogonal editorial-trust field (a node can be
@@ -604,9 +603,6 @@ gracefully** — never fail if a layer is unavailable.
 > and stops emitting the in-body boot line (existing `- boot:` lines in `_current.md` are harmless
 > history — `/synaptic-consolidate` prunes them on its next Journal-Trim pass). `_current.md` keeps only
 > its curated Resume Anchor / Watch List / Log + semantic breadcrumbs, protecting its ≤80-line budget.
->
-> *(Host coverage for a shell-append-on-Stop is UNVERIFIED beyond Claude Code — see "Per-host activity
-> marker support" below. Author-complete; first real runtime validation is a real (Robinson) run.)*
 
 > **Structured session-summary capture protocol (v1.4.0 — inspired by Engram-class memory-log
 > protocols; fully file-based, zero-runtime).** The per-turn `Stop` breadcrumb (layer a) is one terse
@@ -671,14 +667,11 @@ gracefully** — never fail if a layer is unavailable.
    not a floor** (an instruction can simply not be followed). Tell the user plainly: *"This host has no capture hooks — the agent still
    writes per-turn breadcrumbs as an instruction; run `/synaptic-consolidate` manually at the end of
    meaningful work (and `/synaptic-maintain` periodically)."* The brain still works fully; only the
-   automation degrades. **Be honest about what remains:** with no hooks there is **no mechanical
-   floor** — the instruction-layer breadcrumb is *best-effort*, so a session CAN end with nothing
-   captured. What the brain still guarantees on such a host is **visibility**, not prevention:
-   `/synaptic-audit` Step 9b reports capture-yield as *unknown (no activity floor on this host)* and
-   the half-done/rescue checks still surface abandoned work. *(This supersedes the pre-v1.5.0 claim
-   that the instruction-layer breadcrumb "closes issue #2 on hook-less hosts" — it does not; issue
-   #2a's floor half is closed by the layer-(a0) activity marker, and only on **shell**-hook-capable
-   hosts.)*
+   automation degrades. **Be honest about what remains:** no mechanical floor, so a session CAN end
+   with nothing captured; the brain still gives **visibility, not prevention** (Step 9b reports yield
+   *unknown*; the half-done/rescue checks still surface abandoned work). That is the CORE-host rule —
+   absent → unknown (CORE-host = the optional shell, git, grep and hooks; the repo's matrioshka doc
+   states the two tiers).
 5. **Per-host degradation floor (what stays when a layer is missing).** The **mechanical** non-empty
    floor is layer (a0) on **shell**-hook-capable hosts only — a host whose hooks merely surface a prompt
    to the agent has **no** mechanical floor, exactly like a hook-less host. The instruction-layer
@@ -714,7 +707,7 @@ gracefully** — never fail if a layer is unavailable.
 > `journal/_activity/<host-token>-<date>.log`, so the boot count no longer depends on agent compliance and
 > lives in **one authoritative ledger**. On a host with no usable hooks there is no boot marker at all
 > (the agent may still note a boot by hand, but Step 9b treats yield as *unknown* there rather than
-> inferring anything). No new schema. *(Author-complete; actual firing is verified on a real (Robinson)
+> inferring anything). No new schema. *(Author-complete; actual firing is verified on a real
 > run.)*
 
 > **Per-host activity marker support (v1.5.0 — UNVERIFIED except where stated).** Layer (a0) needs the
@@ -769,14 +762,10 @@ gracefully** — never fail if a layer is unavailable.
   hosts + the per-turn journal as the universal fallback + `SessionStart`-rescue as the safety net —
   **never an unattended idle daemon at CORE**. (An OS-cron/background timer would be **Cortex**, not
   CORE, and is never required.)
-- **`PreCompact` / `SessionEnd` are host-conditional;** the `Stop` breadcrumb is the universal
-  *semantic* layer — but it is an **instruction, so it is best-effort, not a guarantee**. The only
-  **mechanical** floor is the layer-(a0) activity marker, and only on hosts that run a shell command on
-  a hook (coverage confirmed for Claude Code; the rest UNVERIFIED). On a hook-less host there is **no**
-  mechanical floor — capture-yield is then reported as *unknown*, not assumed.
-- **Breadcrumbs vs promotion are orthogonal:** breadcrumbs are an always-on, fixed-cost,
-  best-effort instruction (the mechanical floor is a0) and are **not** governed by
-  `capture_policy`. `capture_policy` (`selective | balanced | capture-all`) governs only **how much gets promoted into the wiki** during consolidation.
+- **`PreCompact` / `SessionEnd` are host-conditional;** the `Stop` breadcrumb is best-effort; the only
+  mechanical floor is (a0), on the hosts the per-host table marks. Elsewhere: absent → unknown.
+- **Breadcrumbs vs promotion are orthogonal:** `capture_policy` governs only how much gets promoted
+  into the wiki, never the breadcrumbs.
 
 ### e. Cursor shim (optional)
 
