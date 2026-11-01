@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [1.5.1] - 2026-11-01
 
 > **First runtime verification of the capture floor.** Everything in [1.5.0] was accepted by inspection
 > ("actual hook firing is verified on the first real run" — that run never happened). `tests/capture-floor/`
