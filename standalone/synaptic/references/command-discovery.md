@@ -131,6 +131,10 @@ using the `harness/setup/<host>.md` inventory (never guess):
 - **On convert-to-global** — remove the **project-level** stubs (scoped to the old project location)
   so they don't linger after reach moves to the user level; the user-level stubs replace them (see
   `references/convert-to-global.md` step 6).
+- **The Claude Code boot block** (`references/init.md` §a2) — on uninstall, on a downgrade below 1.6,
+  and on convert-to-global, delete the `BEGIN:SYNAPTIC-BOOT` … `END:SYNAPTIC-BOOT` lines from the file
+  the record names (`boot: claude-md-import`) and clear the `boot:` lines. Never remove a `boot:
+  user-import` line: the user wrote it.
 
 ## CORE-safety (Simplicity Guardrail — passes)
 

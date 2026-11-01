@@ -71,7 +71,9 @@ Does a brain resolve?
 ├── YES → Read BRAIN.md frontmatter schema/format version.
 │         Run COMPAT-CHECK (warn-not-gate — see below). Booting NEVER waits on it.
 │         schema ≥ 1.0 → Boot: read BRAIN.md, follow it.
-│           Is harness wired? (BEGIN:SYNAPTIC bridge AND BEGIN:SYNAPTIC-RULES present AND skill dir present)
+│           Is harness wired? (BEGIN:SYNAPTIC bridge AND BEGIN:SYNAPTIC-RULES present AND skill dir present
+│             AND, on Claude Code with a project CLAUDE.md, an @AGENTS.md import — or a recorded
+│             `boot: declined`, which is respected and never re-asked)
 │           ├── All present → normal boot.
 │           └── Any missing → run Harness Self-Wire (`references/init.md`; wire + deploy; no interview), then boot.
 │         schema < 1.0 (0.4, 0.5) → offer /synaptic-upgrade: "Found a v{X} brain — run /synaptic-upgrade to migrate."

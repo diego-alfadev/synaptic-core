@@ -286,6 +286,24 @@ Do the steps in this order.
   init stub as changed, because its source file is now `references/init.md`; it is regenerated. The test suites now
   extract the deployed one-liners from `references/capture-hooks.md`. Manifest: 30 → 33 entries.
 
+- **Claude Code boot adapter: closes the silent freeze for Claude Code with a project `CLAUDE.md`.** Per
+  the Claude Code memory docs, a project `AGENTS.md` is not loaded when a `CLAUDE.md` exists. The bridge
+  then never reached the agent and the brain stopped receiving writes, with nothing reporting it.
+  `/synaptic-init` (and the upgrade routine) now handles this for **project-reach brains only**: it
+  detects `CLAUDE.md` / `.claude/CLAUDE.md` / `CLAUDE.local.md`, respects an `@AGENTS.md` import the
+  user already wrote, and otherwise, **only with your approval**, appends one marker-wrapped
+  `SYNAPTIC-BOOT` block containing `@AGENTS.md` (`references/init.md` §a2).
+  - The block is idempotent, removable by deleting four lines (uninstall, downgrade and
+    convert-to-global do it from the setup record), and a "no" is remembered.
+  - The prompt states the cost: the whole `AGENTS.md`, 1–2k tokens, becomes resident in every session.
+  - ADR-002's "never touch `CLAUDE.md`" becomes "at most one marker-wrapped block, only with
+    approval".
+  - The bridge gains a `Boot check:` line carrying a per-install nonce. `/synaptic-audit` **Step 10b**
+    checks the import statically (`wired: expected`). Only a new session whose first answer to
+    `synaptic status` carries the nonce counts as `proven`.
+
+  Global, seat and private brains, user-level `CLAUDE.md` and every other host are not covered yet.
+
 #### Removed (simplification round)
 - **Project skills (`harness/skills/`) are no longer part of CORE.** Deploy used to copy a brain's
   `harness/skills/*` into the host's skill folders at boot, with no per-item approval. That made a

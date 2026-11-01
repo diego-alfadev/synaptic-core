@@ -124,7 +124,8 @@ repo, plus the history warning above.
      host-setup detection uses: the project's `AGENTS.md`, `.github/copilot-instructions.md`, Copilot
      workspace/user `*.instructions.md` + `*.chatmode.md`, Cursor rules (`.cursor/rules/*` / `.mdc`
      shim), `CLAUDE.md`. Removing from only `AGENTS.md` leaves a resolvable duplicate bridge in
-     another carrier (double-bridge limbo).
+     another carrier (double-bridge limbo). A project `CLAUDE.md` `SYNAPTIC-BOOT` block
+     (`references/init.md` §a2) goes too, when the setup record lists it.
 6. **Move hooks + skill install to user level** so they fire from every folder; write the skill's
    **absolute path** into the user-level bridge so it is grep-recoverable on hosts that do not
    discover user-level skill dirs. **Remove the project-level command-discovery stubs** (recorded in

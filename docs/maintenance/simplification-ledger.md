@@ -196,3 +196,25 @@
   row (restores lost PS coverage), row-count assertion + unknown-expect failure in both suites, an A.1
   `[ ]` git case; A.1's `Set-Location` only when the fallback brain exists. No separate refuter: the
   blockers were text gaps verified line by line.
+- **Q10-X1a/H1 (Claude Code only):** new `references/init.md` §a2 (detect project `CLAUDE.md` /
+  `CLAUDE.local.md`; ask; write or replace the 4-line `SYNAPTIC-BOOT` block; record; removable),
+  replacing the "Do not touch CLAUDE.md" line there and in `upgrade-to-v1.md` (which also gains step 4
+  of the v1.6 hook bullet). Bridge template (init §a + upgrade's canonical copy) gains one
+  `Boot check:` line (8 → 9 lines). New audit **Step 10b** (boot proof: mechanical precondition +
+  fresh-session check; `wired: proven|unproven`). SKILL.md Detect-on-Load "wired?" condition includes
+  the boot block. ADR-002 guarantee amended in place (two italic notes; original text kept).
+  convert-to-global removes the block. Sizes: init 19,638 → 21,774; audit 33,405 → 34,488; SKILL.md
+  12,076 → 12,168. The canary answers from the bridge alone (brain path), not the design note's
+  "schema_version + journal path" (that needs a file read, which defeats the test) — flagged for Diego.
+- **Q10 review (contract NO-GO, host GO-with-fixes → fixed):** the canary carried a brain path any
+  file read could supply → now a per-install **nonce** (`SYNAPTIC-BOOT-OK <nonce>`), proven only by a
+  first message in a new session (or `claude -p`), never inside the audit session; **reach gate**
+  (project-reach brains only; global/seat/private skipped, leak rule respected); detection covers
+  `CLAUDE.md`, `.claude/CLAUDE.md`, `CLAUDE.local.md` and respects an existing `@AGENTS.md` import
+  (`boot: user-import`, this workspace's own case); no CLAUDE file → `boot: native, wired: expected`;
+  cost disclosed in the approval prompt; append mechanics (trailing newline, blank line, keep EOL);
+  `boot: declined` remembered; record schema in init "Record the wiring"; cleanup bullet in
+  command-discovery (uninstall / downgrade / convert); double-load note; premise hedged and sourced
+  (Claude Code memory docs, read 2026-11-01; the host lens could not confirm it from memory). Audit
+  Step 10b: static check first (`expected`), then the new-session probe. CHANGELOG/ADR overclaims
+  narrowed to "Claude Code with a project CLAUDE.md". No separate refuter: both lenses agreed.

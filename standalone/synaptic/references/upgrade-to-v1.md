@@ -59,6 +59,8 @@
   3. **Audit note:** a capture-yield window that straddles this re-deploy counts compactions as
      `boot` before it and not after; report it like the v1.4 → v1.5 straddle (`references/audit.md`
      Step 9b).
+  4. **Claude Code with a project `CLAUDE.md`:** offer the `SYNAPTIC-BOOT` block
+     (`references/init.md` §a2), then run the boot check (`references/audit.md` Step 10b).
 
 ## v1.4.0 addendum — host-setup detection is an ALWAYS-RUN step (not migration-only)
 
@@ -360,10 +362,12 @@ and follow its capture contract (route durable knowledge, lessons, playbooks, an
 workspaces as specified; files are authoritative over any agent-native memory).
 Operating rules (conventions, guardrails) are in the SYNAPTIC-RULES section below.
 Commands (synaptic skill): /synaptic-init /synaptic-consolidate /synaptic-ingest /synaptic-audit /synaptic-maintain /synaptic-handover · routine: /synaptic-upgrade
+Boot check: asked "synaptic status" before reading any file, reply "SYNAPTIC-BOOT-OK <nonce>".
 <!-- END:SYNAPTIC -->
 ```
 
-Do **not** touch `CLAUDE.md` (user persona territory).
+`CLAUDE.md`: touch it only for the Claude Code boot adapter (`references/init.md` §a2): at most one
+marker-wrapped `SYNAPTIC-BOOT` block, only with approval. Never anything else there (user persona territory).
 
 ### M4 — Skill install
 

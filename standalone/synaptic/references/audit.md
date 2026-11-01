@@ -455,6 +455,27 @@ This check closes the silent drift vector where a user edits the deployed block 
 
 ---
 
+## Step 10b — Boot proof: is the bridge actually loaded? (v1.6)
+
+"Wired" means **observed loaded**, not files present. Read `harness/setup/<host>.md` first; its
+`boot:` / `wired:` lines are what this step checks and updates.
+
+1. **Static check (CORE-floor, by reading files).** On Claude Code, for a project-reach brain: if any
+   of `CLAUDE.md`, `.claude/CLAUDE.md`, `CLAUDE.local.md` exists and none carries an `@AGENTS.md` line
+   outside a code fence, the bridge is **not loaded** → finding *"Claude Code skips AGENTS.md here; add
+   the boot block (`references/init.md` §a2)"*. If the import is there (or no CLAUDE file exists) and
+   `AGENTS.md` holds the `BEGIN:SYNAPTIC` bridge, report `wired: expected`. A record that says
+   `boot: declined` is reported once, not re-asked.
+2. **The live proof (a new session only).** It cannot run inside this audit: this session has already
+   read brain and skill files. Tell the user to open a new session and, as the first message, ask
+   `synaptic status` (Claude Code: `claude -p "synaptic status"`). A reply with
+   `SYNAPTIC-BOOT-OK <nonce>` matching the record → `wired: proven` with the date. Anything else, or a
+   reply after the agent first opened files → stays `unproven`. An agent never upgrades `unproven` to
+   `proven` from file evidence or self-report.
+3. A setup record that says "fully wired" with no `wired: proven` line is reported as **unproven**.
+
+---
+
 ## Step 11 — Report
 
 Present findings as a prioritised actionable checklist, grouped by category. Cap at **10 highest-impact findings**; note the total count if more exist. Each finding names the **procedure that treats it** (audit diagnoses, it does not fix).

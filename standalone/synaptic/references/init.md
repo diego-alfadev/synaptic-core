@@ -186,6 +186,7 @@ and follow its capture contract (route durable knowledge, lessons, playbooks, an
 workspaces as specified; files are authoritative over any agent-native memory).
 Operating rules (conventions, guardrails) are in the SYNAPTIC-RULES section below.
 Commands (synaptic skill): /synaptic-init /synaptic-consolidate /synaptic-ingest /synaptic-audit /synaptic-maintain /synaptic-handover · routine: /synaptic-upgrade
+Boot check: asked "synaptic status" before reading any file, reply "SYNAPTIC-BOOT-OK <nonce>".
 <!-- END:SYNAPTIC -->
 ```
 
@@ -209,7 +210,55 @@ wired file for a bare CWD-relative `.synaptic/BRAIN.md` MUST be ZERO for a globa
 > the SOT** (each command's `references/<cmd>.md` `summary:` line), regenerated on every deploy — see
 > `references/command-discovery.md`. There is no hand-authored command description anywhere but the SOT.
 
-Do **not** touch `CLAUDE.md` (user persona territory). If the user explicitly asks to add a brain pointer there, do so only on their explicit instruction.
+> **Boot check (the canary line).** "Wired" must mean *observed loaded*, not *files present*. Init
+> replaces `<nonce>` in the `Boot check:` line with a fresh 6-character token (letters and digits; any
+> value that appears nowhere else in the project) and writes the same token into
+> `harness/setup/<host>.md`. The proof: in a **new** session, before any file is read, the user asks
+> `synaptic status` (or runs `claude -p "synaptic status"` on Claude Code). The reply carries the token
+> only if the bridge is in the loaded instructions. `/synaptic-audit` Step 10b compares the reply
+> with the record.
+
+### a2. Claude Code boot adapter (the `SYNAPTIC-BOOT` block — v1.6, decision X1a)
+
+Per the Claude Code memory docs (read 2026-11-01): Claude Code loads a project `AGENTS.md` only when
+the project has no `CLAUDE.md`; otherwise an `@AGENTS.md` import in `CLAUDE.md` is the route. Without
+it the bridge is not loaded and the brain freezes silently (this workspace's own brain had no writes for
+weeks). Treat this as a claim the boot check verifies on each install, not as settled.
+
+1. **Reach gate.** Only for a **project-reach** brain in a repo the user owns. Skip for a global, seat
+   or private brain whose bridge lives at user level, and never write into a foreign committed or synced
+   repo (the leak rule above). Those cases are specified separately; record `boot: skipped (reach)`.
+2. **Detect** Claude Code (`.claude/` present, or the user says so) and its project memory files:
+   `CLAUDE.md`, `.claude/CLAUDE.md`, `CLAUDE.local.md`.
+   - **Already wired by the user:** any of them carries an `@AGENTS.md` line outside a code fence →
+     write nothing; record `boot: user-import` (never removed by Synaptic).
+   - **None exists** → write nothing (native `AGENTS.md` loading should apply); record `boot: native`,
+     `wired: expected`, and rely on the boot check.
+   - **Otherwise** the target is the committed `CLAUDE.md` (else `.claude/CLAUDE.md`). If only
+     `CLAUDE.local.md` exists it may be used, recorded as `personal` (it wires this user only).
+3. **Ask first.** Show the exact block, the target file, and the cost: it makes the whole `AGENTS.md`
+   (bridge + deployed rules, typically 3–8 KB, about 1–2k tokens) resident in every Claude Code session.
+   Write only on a yes; on a no, record `boot: declined` and do not ask again on later boots.
+4. **Write or replace, idempotent:** if a `BEGIN:SYNAPTIC-BOOT` … `END:SYNAPTIC-BOOT` block exists,
+   replace it whole; otherwise append it after making sure the file ends with a newline and adding one
+   blank line. Keep the file's line endings (CRLF stays CRLF). Change nothing else.
+
+   ```
+   <!-- BEGIN:SYNAPTIC-BOOT -->
+   <!-- Synaptic boot: Claude Code skips AGENTS.md when a CLAUDE.md exists, so import it. Remove this block to unwire. -->
+   @AGENTS.md
+   <!-- END:SYNAPTIC-BOOT -->
+   ```
+5. **Record** in `harness/setup/claude-code.md`: `boot: claude-md-import`, the file written, the boot
+   nonce, and `wired: unproven` until the boot check passes (then `proven` and the date).
+6. **Removable:** delete the four lines. Uninstall, downgrade and convert-to-global remove it from the
+   record (`references/command-discovery.md` "Cleanup"). If a future Claude Code also reads `AGENTS.md`
+   natively next to a `CLAUDE.md`, the import loads the bridge twice (identical text, double cost):
+   remove the block then.
+
+The guarantee is therefore **"at most one marker-wrapped block (one `@AGENTS.md` import line) in a
+project `CLAUDE.md`, only with approval"** (ADR-002, amended in v1.6). User-level `~/.claude/CLAUDE.md`
+for a global brain, and every other host's adapter, are specified separately and not done here.
 
 ### b. Skill install
 
@@ -242,7 +291,10 @@ Create directories if absent. If a target already contains a `SKILL.md` with the
 `harness/setup/vscode.md`) capturing what was deployed where for this host: the bridge location + brain
 pointer (+ **absolute skill path** for a global brain), the rules target, the hook config, and — because
 stubs live **OUTSIDE** the brain and this record is the **only** map to them — the **command-stub set,
-the exact placement dir(s), and the generating engine-version** (matching the stub provenance line). This
+the exact placement dir(s), and the generating engine-version** (matching the stub provenance line); on
+Claude Code also the boot lines (`boot: claude-md-import | user-import | native | declined | skipped
+(reach)`, the file written, the boot nonce, `wired: expected | unproven | proven <date>`), which audit
+Step 10b reads and updates. This
 documents the setup, is the **re-deploy recipe when you move machines**, and travels in the backup.
 
 ### c. Deploy operating rules (idempotent)
