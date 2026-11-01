@@ -1,2 +1,3 @@
 *.svg text eol=lf
 standalone/synaptic/MANIFEST.txt text eol=lf
+*.sh text eol=lf

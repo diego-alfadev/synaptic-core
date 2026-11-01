@@ -13,6 +13,10 @@ consolidation/wrap-up algorithm lives; other procedures call it, they do not re-
 > reconciles contradictions, and burns scratch — it does not merely add nodes at the end. If
 > the only effect of a consolidation run is "the wiki got longer," the run did it wrong.
 
+**Autonomy.** Every edit to an existing node (a rewrite, a supersession, a `contradicts` link) follows
+the Autonomy Tiers table in your deployed rules (source: `harness/guardrails.md` — read it there if no
+deployed copy exists); the steps below name the action, and that table sets its tier.
+
 **Six-step formula** (the capture contract — same algorithm compressed in `BRAIN.md`):
 
 > **Capture policy.** Read `capture_policy:` from `BRAIN.md` frontmatter (`selective` | `balanced` | `capture-all`; default `balanced`, or a custom 1-line rule). It is the **PROMOTION axis** — how aggressively things reach the wiki — and is **orthogonal to the passivity dial** (when capture triggers). It tunes the *threshold* of Step 2 (promotion) and Step 6 (quality gate) — not the steps themselves:
@@ -131,16 +135,23 @@ content hash directly in the node's authored frontmatter:
 
 ```yaml
 source: "references/raw/{filename.ext}"
-content_hash: "sha256:{first-12-hex}"   # of references/raw/{filename.ext} at capture time
+content_hash: "git:{first-12-hex}"   # the hash command below, on references/raw/{filename.ext} at capture time; TBD if no shell/git
 ```
 
 - This is an **authored fact written once at capture time**, the same as any other frontmatter
   value — it is **not** a generated index, never a must-sync cache, and nothing recomputes it
   automatically. It exists purely so a later consolidation/audit pass can notice "the raw file's
   hash no longer matches what the node recorded → the artifact drifted → re-distil."
-- Compute it however the host can (e.g. `git hash-object`, `sha256sum`, or the agent's own hash);
-  store a short prefix. If no hashing is available, record the source path alone and skip the hash —
-  CORE never requires a runtime.
+- **The hash command** (the same in every shell; the one place it is defined):
+  `git -C "<brain>" -c core.autocrlf=input -c core.attributesFile=/dev/null hash-object "references/raw/<filename>"`
+  — always with `-C "<brain>"` and the forward-slash path relative to it, never from the host's cwd
+  (another repo's `.gitattributes` would apply there). The two `-c` pins remove each machine's
+  line-ending setting and user-level attributes. Attributes of a repo that holds the brain itself
+  (e.g. `text`/`-text`, `eol`, `crlf`, a filter such as LFS, `ident`, `working-tree-encoding`) or a
+  SHA-256 repo still change the result. `<brain>` is the resolved brain root (the folder holding
+  `BRAIN.md`); on Windows pass it in drive form (`C:/…`), not `/c/…`. Store the first 12 hex characters. Never "compute" a hash yourself — a model cannot hash,
+  so the value would be invented. No shell or no git → write `content_hash: TBD` and keep the source
+  path — CORE never requires a runtime.
 
 ---
 
@@ -170,6 +181,8 @@ For each item being consolidated, ask: **does this contradict an existing node?*
      reasoning survives, not just the new value.
    - Where the relationship is structural, record the typed edge `supersedes` on the new/current
      node (inverse `superseded_by` is grep-computed — author one direction only).
+   - **Instead of rewriting it**, if a **whole node** is replaced by a new one, leave its body
+     unchanged, set `status: archived`, and record `supersedes` on the successor (above).
 4. **If both remain valid / the conflict is genuine and unresolved:**
    - Keep both, link them with the `contradicts` typed edge, and **document the tension in the
      node's `## bias-check` section** (the other side / contradicting evidence). This is epistemic
@@ -257,6 +270,19 @@ After routing all items:
    fact in both the journal and a node.
 3. Hard budget: **≤ 80 lines total**. If still over, trim the Log (oldest entries first).
 4. No archive directory — history lives in git and in consolidated knowledge nodes.
+5. **Activity-log rollup (v1.5.0 — this is the step `/synaptic-audit` routes to; the hook never prunes,
+   and audit never writes).** The layer-(a0) activity marker (`SKILL.md` §d) only ever blind-appends to
+   `journal/_activity/<host>-<date>.log`, so trimming it is **this** step's job:
+   - **Retention contract (binding):** **never prune inside the audit window.** Keep **raw** per-day logs
+     covering at least Step 9b's window (default: the last ~30 days). Only beyond it may a day-file be
+     collapsed to a single line `<date> boot=N stop=M`, and the **per-day `boot` count must survive the
+     rollup as a summable integer** — `boot` is Step 9b's capture-yield *denominator*, so a rollup that
+     discards it would silently destroy the signal and mask a real capture-dead condition as
+     `not-used (benign)`.
+   - Drop rolled-up day-files older than ~90 days (git keeps the history).
+   - **Prune legacy `- boot:` lines** left inside `journal/_current.md` by pre-v1.5.0 brains — but only
+     **after** they have been counted into the rollup (the boot event now lives in the activity ledger
+     only); deleting them while Step 9b's window still straddles the upgrade would deflate boot counts.
 
 ---
 
@@ -338,12 +364,13 @@ Consolidation is the *promotion* pass. It sits on top of a cheaper layer that ru
 is **not** governed by `capture_policy`:
 
 - **One terse line per meaningful turn** is written to `journal/_current.md`. This is an
-  **instruction the agent follows, not only a hook**: the per-turn `Stop` breadcrumb automates it
-  where wired (the universal capture floor across all hook-capable agents), but write it even when no
-  hook fires — hooks are host-specific and can silently fail, so the instruction is the floor
-  underneath the automation (closes issue #2: a session that neared recompact with no breadcrumbs
-  written). It is **fixed-cost**: a single line, never a full consolidation, regardless of the
-  capture-policy dial.
+  **instruction the agent follows, not only a hook**: the per-turn `Stop` breadcrumb prompts it where
+  wired, but write it even when no hook fires — hooks are host-specific and can silently fail. **Be
+  precise about what this is (v1.5.0):** because it is an instruction, it is **best-effort semantic
+  capture, NOT the non-empty guarantee** — an agent that does not comply writes nothing, which is
+  exactly issue #2a. The **mechanical** floor is the separate layer-(a0) activity marker (`SKILL.md` §d
+  — a host-run shell append, agent-independent, **shell**-hook-capable hosts only). This breadcrumb is
+  **fixed-cost**: a single line, never a full consolidation, regardless of the capture-policy dial.
 - Breadcrumbs **live on disk so they survive a crash** — what only lived in the context window dies;
   what reached the journal can still be consolidated later (including by `SessionStart`-rescue on the
   next boot — see `references/audit.md`).
@@ -386,7 +413,7 @@ is **not** governed by `capture_policy`:
   dead-ends, and superseded artifacts (the "email" lesson).
 - **Do not create orphan nodes:** every node must appear in its cluster `_index.md`.
 - **Do not duplicate:** search first; update existing nodes rather than creating parallel ones.
-- **Do not route persona content:** the brain has no identity directory. Hard project constraints → a knowledge node; agent behavior rules → harness (AGENTS.md / CLAUDE.md), never the brain.
+- **Do not route persona content:** the brain has no identity directory. Hard project constraints → a knowledge node; agent behavior rules → offer the exact text for the user's own `AGENTS.md` (outside the SYNAPTIC block) or user-level instructions, and write it only on their explicit instruction; never into the brain.
 - **Do not embed verbatim artifacts inline:** large files go to `references/raw/`; knowledge nodes hold distilled facts + a link.
 - **Do not treat `content_hash` as a must-sync index:** it is an authored fact captured once; nothing recomputes it automatically.
 - **Do not skip the quality gate:** a node registered in the MOC but failing the gate is worse than no node.

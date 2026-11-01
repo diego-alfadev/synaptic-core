@@ -1,0 +1,68 @@
+# CI: the first executable verification of what synaptic-core ships.
+#
+# CORE (the skill) is prose and needs no runtime; these jobs verify the two things that ARE code:
+#   - tools/*.js, on every Node the tools claim to support (">= 18"), on Linux and Windows
+#   - the capture-floor hook scripts, exactly as published in the recipe and SKILL.md, under every
+#     shell they are documented for, including Windows PowerShell 5.1 (the engine of the issue #2a
+#     PowerShell bug, and the only PowerShell a stock Windows install has)
+# See tests/README.md. Probes that settle open research questions live in probes.yml.
+
+name: ci
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tools:
+    name: tools (node ${{ matrix.node }}, ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        node: ['18', '22', '24']
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ matrix.node }}
+      - name: Syntax-check every tool
+        shell: bash
+        run: |
+          set -euo pipefail
+          for f in tools/*.js tools/lib/*.js; do node --check "$f"; echo "ok $f"; done
+      - name: Behavioural tests
+        if: ${{ !cancelled() }}
+        run: node tests/tools.test.js
+
+  capture-floor:
+    name: capture floor (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v5
+      - name: POSIX shell (sh + bash)
+        shell: bash
+        run: bash tests/capture-floor/run.sh
+      - name: PowerShell 7
+        if: ${{ !cancelled() }}
+        shell: pwsh
+        run: ./tests/capture-floor/run.ps1
+      - name: Windows PowerShell 5.1
+        if: ${{ !cancelled() && runner.os == 'Windows' }}
+        shell: powershell
+        run: ./tests/capture-floor/run.ps1

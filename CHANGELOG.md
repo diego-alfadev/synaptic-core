@@ -1,5 +1,272 @@
 # Changelog
 
+## [1.5.1] - 2026-11-01
+
+> **First runtime verification of the capture floor.** Everything in [1.5.0] was accepted by inspection
+> ("actual hook firing is verified on the first real run" — that run never happened). `tests/capture-floor/`
+> now executes the published hook scripts — the recipe's and the one-liners `SKILL.md` deploys — and
+> `.github/workflows/` runs them on every push. The A.0 POSIX script passed unchanged; the PowerShell
+> side surfaced five defects and the deployed one-liners two more (the ghost-directory one in both
+> shells). A second pass added the A.2 reminder and A.3 rescue: C2 (the reminder, both shells, plus
+> its A.1 half in both shells), and C4 and C6 (the bash-only A.3), below. All are fixed here; every one
+> a test can observe went red → green in its own commit.
+>
+> **Scope of the verification — read before quoting it.** Executed locally: **Windows PowerShell 5.1 and
+> Git Bash on Windows 11 only** (bash 40/40, PowerShell 5.1 43/43). PowerShell 7, Linux and macOS are
+> first exercised by CI; `tools/*.js` and their new tests have **never been executed** yet. Behaviour
+> described below for those platforms is reasoned from source, not observed.
+
+### Fixed
+- **Recipe `Stop` breadcrumb (A.1, PowerShell) still wrote a BOM.** The [1.5.0] fix switched
+  `Add-Content` to `-Encoding utf8`, which on Windows PowerShell 5.1 means UTF-8 **with** a BOM, written
+  whenever the journal is new or empty. It now uses `[IO.File]::AppendAllText` with `UTF8Encoding $false`
+  and LF (the activity marker's pattern), resolves the brain path, and never breaks a turn on a write
+  failure.
+- **Activity marker (A.0, PowerShell) silently missed when run in-process.** A relative path handed to
+  `[IO.File]::AppendAllText` resolves against the .NET process directory, not `$PWD`, so run from a
+  terminal after `cd` — how a user checks that a hook works — it wrote nothing and still exited 0. The
+  brain path is now resolved to an absolute path first.
+- **Brain paths containing `[ ]` were silently skipped** (A.0, A.1, and the deployed PowerShell
+  one-liner). `Test-Path` without `-LiteralPath` treats brackets as a wildcard, so a brain in, say,
+  `proj[1]\` was reported missing and the hook exited 0 having written nothing. Now `-LiteralPath`, and
+  the directory is created with `[IO.Directory]::CreateDirectory`.
+- **Host token in the PowerShell activity marker.** It is `%COMPUTERNAME%` on Windows — unchanged, so
+  existing Windows ledger filenames stay the same — and the full host name elsewhere, matching what
+  `hostname` prints for the sh marker. (Off Windows, `$env:COMPUTERNAME` is unset, so the [1.5.0]
+  script would name the file `-<date>.log`; `[Environment]::MachineName` would truncate at the first dot
+  and split the ledger from the sh marker's. Neither has been run off Windows yet.)
+- **The Windows hook registration pointed at `pwsh`** (PowerShell 7), which a stock Windows install does
+  not have, so the hook never started. The recipe now documents
+  `powershell -NoProfile -ExecutionPolicy Bypass -File …` and what each flag is for, and says plainly
+  that the A.3 rescue has no PowerShell variant yet (keep it on Git Bash or leave it out — registering
+  a `.ps1` that does not exist fails on every `SessionStart`).
+- **A.2's PowerShell reminder** had a non-ASCII `·` inside a string, rendered as mojibake under 5.1 when
+  the block is pasted into a BOM-less file. Recipe and `SKILL.md` PowerShell blocks are now ASCII outside
+  comments, enforced by a test (an em dash or arrow there would break parsing outright: their cp1252
+  bytes include a typographic quote that PowerShell treats as a string delimiter).
+- **The deployed activity-marker one-liners in `SKILL.md`** — the copies `/synaptic-init` and
+  `/synaptic-upgrade` actually wire into the host — **recreated a ghost brain directory** when the brain
+  had been moved or deleted: neither had the recipe's brain-exists guard. Both now no-op when `<brain>`
+  is absent, and the PowerShell one makes `<brain>` absolute before the .NET call. With an absolute
+  `<brain>`, as the SKILL instructs, both already worked; these were edge cases, not the main path.
+- **`docs/UPGRADE-v0.3-to-v1.AGENT.md` recommended `Set-Content -Encoding utf8`,** which on 5.1 writes a
+  BOM in front of every rewritten node's frontmatter. It now names the ANSI read as the corrupter and
+  the BOM-free `[IO.File]` read/write pair as the fix.
+- **`tools/migrate.js`'s header promised a confirmation prompt that does not exist.** Without
+  `--dry-run` it executes immediately; the header now says so.
+- **"Order matters" in the hook registration was wrong.** Claude Code runs the hooks of one event in
+  parallel. The guarantee that holds is different: the marker is its own hook entry, so a failing
+  sibling cannot stop it.
+- **The A.2 reminder and the A.3 rescue now share one predicate, in every shell:** breadcrumb lines
+  the A.1 hook wrote (`breadcrumb:`, lowercase), or open playground directories. Three defects are fixed:
+  - **C2.** The reminder's `git diff --name-only HEAD` gate had three faults:
+    - it never fired on a brain outside git (now an open playground triggers it; the breadcrumb half
+      still depends on A.1, which needs git);
+    - it missed new untracked playgrounds;
+    - it fired on every session once the A.0 day-file was tracked. Fixing that needed A.1 too: it
+      recorded the brain's own bookkeeping (the A.0 ledger, the journal it writes) as touched, so the
+      reminder could never go quiet. A.1 now leaves `journal/_current.md` and `journal/_activity/` out,
+      including when git quotes a path with non-ASCII characters. A consolidation that rewrites wiki
+      nodes still leaves one breadcrumb about its own edits, cleared by the next consolidation.
+  - **C4.** `playgrounds/archive/` no longer counts as an open playground.
+  - **C6.** `grep -c … || echo 0` produced `0\n0`, which made the rescue print "integer expression
+    expected" on every boot with no pending breadcrumbs.
+
+  Runtime tests cover each script alone and the A.0 → A.1 → A.2 chain in the A.4 order, in bash and
+  PowerShell (there is no PowerShell A.3). The PowerShell predicate is now case-sensitive and ignores a
+  file named `playgrounds`, matching bash. A long-lived open playground keeps the reminder firing on
+  purpose: it is unconsolidated work until it is burned or archived.
+- **Skill prose defects** (no runtime involved; checked by review, not by tests):
+  - **`content_hash` has one command, defined once in consolidate Step 4:**
+    `git -C "<brain>" -c core.autocrlf=input -c core.attributesFile=/dev/null hash-object
+    "references/raw/<filename>"`, stored as `git:{first-12}`. Before, the field was labelled `sha256:`
+    but could hold a `git hash-object` prefix, a real SHA-256 prefix, or a value the agent "computed",
+    which a model cannot do. The command is the same in every shell. Its result no longer depends on
+    the clone, the machine's line-ending setting, user-level attributes, or the directory the agent
+    runs it from. Without these pins it did: a raw-bytes hash changes when Git for Windows rewrites line
+    endings per clone; an unpinned `git hash-object` changes per machine for CRLF files outside git;
+    and run from another repo, that repo's `.gitattributes` applies. Measured in Git Bash and Windows
+    PowerShell 5.1 on Windows 11, with POSIX simulated by `core.autocrlf=false`. Attributes of a repo
+    that holds the brain itself (e.g. `-text`, `eol`, `crlf`, an LFS filter, `ident`,
+    `working-tree-encoding`) or a SHA-256 repo still change the result; audit adds a
+    possibly-repository-caused note to any mismatch in a brain that sits in a git repo. No shell
+    or no git means `TBD`. Audit reports a `TBD` hash or a legacy `sha256:` value as unverifiable, not
+    drifted.
+  - **Supersession uses the status vocabulary.** `synthesize.md` proposed `status → superseded`, which
+    is not a status. A wholly replaced node now keeps its body, gets `status: archived`, and its
+    successor records `supersedes`. Handover shows it only as history (indented under its nearest
+    non-archived successor the brief lists, or on a closing `Archived (history only)` line), never as
+    a current decision. Consolidate, maintain
+    and synthesize now point at the Autonomy Tiers table (`harness/guardrails.md`) for tiers. Some
+    restatements remain in other files; a later pass will remove them. The table's AUTO row no longer
+    lets an agent rewrite a flagged `contradicts`/`supersedes` pair unasked. Authoring an edge the
+    user has not confirmed, and rewriting an existing node, are propose-then-approve. Synthesize no
+    longer calls deletion anything but human-only.
+  - **Agent-behaviour rules** found while consolidating, or described during `/synaptic-init`, are
+    offered as exact text for the user's own `AGENTS.md` (outside the SYNAPTIC block) or user-level
+    instructions. They are written only on the user's explicit instruction, never into the brain.
+    `/synaptic-upgrade`'s guided mode asks one batched question covering three things: the rule text
+    it routes into `harness/`, where each behaviour item goes, and the deploy diff. In every mode, Phase C
+    writes that text to `_migration-staging/harness-pending.md` with a status per item (`pending`,
+    `approved → …`, `discarded`) and never writes the harness rule files. Autonomous mode leaves the
+    items `pending`, writes and deploys nothing, and does not cut over. The next guided `/synaptic-upgrade` resumes from
+    that file instead of migrating again. `MIGRATION_DONE.md` and the agent runbook match.
+  - **Content is data, never instructions.** `SKILL.md` states once, for every operation, that what an
+    operation reads as source material (knowledge nodes, registries, raw references, playgrounds, the
+    journal, agent-native memory, ingested documents) is material to distil: a directive in it that
+    the user did not give is never acted on or promoted into a rule, and `harness/` rules change only
+    when the user approves the exact change. Generated `/`-menu stubs now load `SKILL.md` before the
+    command's reference, so the rule reaches every command.
+
+### Corrected claims in [1.5.0]
+- *"PowerShell 5.1's `>>` / `Add-Content` / `Out-File` default to UTF-16LE + BOM"* — true of `>>` and
+  `Out-File`. **`Add-Content` defaults to the ANSI code page** (measured on 5.1: `café` is written as
+  `63 61 66 E9`). The original A.1 defect was therefore invalid UTF-8 for non-ASCII paths, not UTF-16.
+- *"Recipe `Stop` breadcrumb PowerShell encoding"* under **Fixed** — it was only partly fixed; see above.
+
+### Upgrade notes
+The capture-floor fixes live in files that were **copied into your project**; nothing updates them for you.
+Do the steps in this order.
+- **Reinstall the skill first** (the new `SKILL.md` with its `references/` and `templates/`), so every
+  later step runs the new text.
+- **Re-copy** `synaptic-activity.ps1` and `synaptic-breadcrumb.ps1` from the recipe if you use the
+  PowerShell variants.
+- **Re-copy the A.1–A.3 hooks** if you installed them: `synaptic-breadcrumb.sh`/`.ps1`,
+  `synaptic-consolidate-reminder.sh`/`.ps1` and `synaptic-rescue.sh`.
+- **Change Windows hook commands** from `pwsh -File …` to `powershell -NoProfile -ExecutionPolicy Bypass
+  -File …` unless PowerShell 7 is actually installed.
+- **Strip a leading BOM** from `journal/_current.md` if one is there (first bytes `EF BB BF`).
+- **No ledger rename on Windows:** the activity-ledger filename is unchanged there.
+- **Skill prose fixes arrive with the skill**, except your brain's copy of `harness/guardrails.md`.
+  Edit it by hand before the re-run below:
+  - In the AUTO row, change *"reconcile a flagged `contradicts` / `supersedes` edge"* to *"author the
+    `contradicts` / `supersedes` edge for a pair the user confirmed"*.
+  - In the PROPOSE-THEN-APPROVE row, add *"author a `contradicts` / `supersedes` edge the user has
+    not confirmed"*.
+  - In the "Self-improving" line, change *"reconciles flagged edges"* to *"links confirmed pairs"*.
+- **Re-run `/synaptic-upgrade` (or `/synaptic-init`)** to re-wire the guarded one-liners, re-deploy
+  the edited rules, and regenerate the `/`-menu stubs (they now load `SKILL.md` first). For its drift
+  check to notice, the release must bump `SKILL.md`'s `version:`.
+- **Existing `content_hash` values** are labelled `sha256:`. Each one may be a `git hash-object`
+  prefix, a real SHA-256 prefix, or an invented value. Audit reports them as unverifiable, not drifted.
+  Where the hex matches the recomputed prefix, re-label it `git:`. Otherwise, re-record it only with
+  your OK.
+- **Last, after the re-run, run `/synaptic-consolidate` once.** Journals written by the old A.1 can
+  hold breadcrumbs that list only `journal/` paths. Running it last means it runs under the
+  re-deployed rules and the new stubs.
+
+## [1.5.0] - 2026-07-27
+
+> **"Capture you can actually trust."** A MINOR that closes the **floor half of issue #2a** — the
+> reported failure where a fully-worked session leaves an **empty journal**. Brain **schema unchanged
+> (still 1.0)**; no migration — reinstall the skill (or run `/synaptic-upgrade`, which now also deploys
+> the new floor). Additive, CORE-pure, zero-runtime. **NO Node on the authoring machine → runtime
+> acceptance is author-complete / by-inspection; actual hook firing is verified on the first real
+> (Robinson) run.**
+>
+> **The honest diagnosis.** Every capture layer we shipped was *"an instruction the agent follows"*, and
+> the one script that did write mechanically (`recipes/` `Stop` breadcrumb) only wrote **when `git diff`
+> reported touched files** — so it wrote **nothing** on a non-git workspace, a read-only session, or work
+> outside the git tree. That gate *is* the empty journal. We also **overclaimed** the fix in three places
+> in `SKILL.md` ("no host is ever breadcrumb-empty", "nothing is lost", "closes issue #2 on hook-less
+> hosts"). All three claims are retired.
+
+### Added
+- **Layer (a0) — the deterministic activity marker (the only *mechanical* non-empty floor).** A
+  **host-executed shell append** of one line (`<ISO-8601-UTC> boot|stop`) that the agent cannot skip.
+  **Unconditional**: no git dependency, no content gate, no LLM, no JSON parsing.
+  - **Destination `journal/_activity/<host>-<YYYY-MM-DD>.log`** — per host + per day, so each machine
+    owns its own file. Safe on OneDrive/DFS-synced brains: many small **blind appends**, never a shared
+    read-modify-write (which is what spawns `*-<machine>` conflict copies). **It does NOT eliminate
+    same-host concurrency** — two sessions on one host+day share a file, so the one-liner **swallows its
+    own failures and `exit 0`s**: a missed marker is acceptable, a broken turn is not.
+  - **Self-creating + explicitly rooted.** A bare append to a missing parent fails on both shells, which
+    would be a *false* floor; the one-liner does `mkdir -p` / `New-Item -Force` (still read-free) and
+    `init`/`upgrade` also create `journal/_activity/.gitkeep`. The hook resolves the brain root
+    explicitly rather than assuming the host's cwd.
+  - **Scoping term is `shell-hook-capable`, not "hook-capable".** A host whose hooks merely *surface a
+    prompt* to the agent is still the instruction layer and gets **no** mechanical floor — same honesty
+    as a hook-less host. Three classes, three honest answers (table in `SKILL.md` §d).
+  - **Encoding pinned to UTF-8 no-BOM.** PowerShell 5.1's `>>` / `Add-Content` / `Out-File` default to
+    **UTF-16LE + BOM**, which would make the ledger non-grep-clean and produce binary-ish git diffs;
+    the recipe now uses `[IO.File]::AppendAllText` with `UTF8Encoding $false`.
+  - **The hook only ever appends** — rollup/prune is agent-owned (`/synaptic-consolidate`).
+- **Per-host activity-marker support table** (`SKILL.md` §d) — shell-command-on-hook is confirmed only
+  for **Claude Code**; every other host is marked **UNVERIFIED**. We no longer assert parity.
+- **`recipes/session-end-consolidate.md` §A.0** — the unconditional activity-marker scripts (sh + ps1),
+  registered to run **first** on `Stop` and `SessionStart`.
+- **Dual-write forward contract** (`SKILL.md` §d): if a Cortex-tier working-memory provider is ever
+  wired, what it must mirror is the **semantic journal in `journal/_current.md`** — at **BOTH
+  granularities**: each `append()` as a terse per-turn breadcrumb, **plus** the structured 5-field
+  summary at a session/context boundary. Boundary-only mirroring is insufficient (a session can make
+  dozens of appends and die before any boundary is due → nothing mirrored → the delete-test fails).
+  The content-free activity log is **never** a mirror target. Promotion state (`promoted`/`promoted_at`)
+  stays **explicit only in the provider's RAM tier**; in CORE it is **implicit** — an entry is promoted
+  once `/synaptic-consolidate` trims it from `_current.md`. **No new journal field, no schema bump.**
+
+### Changed
+- **Boot marker moved to one authoritative ledger.** The `SessionStart` boot marker is no longer an
+  agent instruction writing `- boot:` into `journal/_current.md`; it is the (a0) shell append into the
+  activity ledger. `_current.md` keeps only its curated Resume Anchor / Watch List / Log + semantic
+  breadcrumbs, protecting its ≤80-line budget. Legacy `- boot:` lines are harmless history and are
+  pruned by the Journal-Trim rollup.
+- **`/synaptic-audit` Step 9b hardened, not replaced.** Its `not-used` vs `used-but-capture-dead` logic
+  and bias-check are kept (only the *mechanism* reference moved). Specifically:
+  - **Denominator = `boot` events ONLY, scoped to THIS host.** `Stop` fires per assistant *turn*, so one
+    session emits 1 `boot` + N `stop`; summing them would turn breadcrumbs-per-**session** into
+    breadcrumbs-per-**turn** (a healthy 40-turn session would score 1/41). `stop` is kept as a separate
+    work-intensity signal. Per-host scoping is **mandatory** on a shared brain — globbing every host
+    would let one machine's healthy capture **mask** another's dead capture, or let a floor-less host
+    compute a yield against someone else's boots.
+  - **`used-but-capture-dead` now requires TWO conditions:** zero well-formed capture across the
+    **entire window** (never per-session) **AND** a **work signal** derivable from files
+    (`knowledge/**`/`journal/` modifications, frontmatter `updated:`, git log). **This closes a
+    regression v1.5.0 would otherwise introduce:** pre-v1.5.0 a pure-Q&A session often wrote no
+    heartbeat → `not-used` → benign *by accident*; now markers are written unconditionally, so without
+    a work signal a legitimate read-only week would fire `HOOKS-APPEAR-DEAD`. **Activity + no work
+    signal = read-only/idle → benign, no advisory.**
+  - **Capture is never gated on a consolidation having occurred** (a healthy mid-session has zero by
+    construction). `capture_policy` is **not** a factor for breadcrumbs (it governs promotion only) —
+    the policy caveat applies to `nodes-added-per-week` alone.
+  - **"No floor" vs "DEAD floor" are now distinguished** via the host's hook config: deployed
+    `BEGIN:SYNAPTIC-HOOKS` **but** no activity lines → **`shell floor DEPLOYED but DEAD → run the
+    per-host hook smoke-test`** (this *is* the #2a failure, never reported as merely "unknown"); no
+    shell hook deployed → **`capture-yield: unknown (no activity floor on this host)`**. A window that
+    **straddles** the v1.4.0→v1.5.0 upgrade also reports `unknown`.
+  - Audit stays **diagnose-only**: it *reports* an over-bound ledger and routes the rollup to
+    `/synaptic-consolidate` / `/synaptic-maintain` — it never prunes.
+- **`/synaptic-consolidate` Journal Trim** gained the **activity-log rollup** (the treat-side step audit
+  routes to), with a **binding retention contract**: **never prune inside the audit window** (keep raw
+  per-day logs for ~30 days), and any rollup **must preserve the per-day `boot` count** as a summable
+  integer — discarding it would silently destroy Step 9b's denominator and mask a real capture-dead
+  condition as `not-used (benign)`. Beyond the window, collapse a day-file to `<date> boot=N stop=M`;
+  drop rolled-up files older than ~90 days; prune legacy in-body `- boot:` lines **only after** they are
+  counted.
+- **`/synaptic-upgrade` + `/synaptic-init`** now create `journal/_activity/`, deploy the (a0) hooks, and
+  **report honestly** whether the host accepted them.
+- **Recipe `Stop` breadcrumb** is now labelled the *semantic* layer (conditional by design, may
+  legitimately write nothing) and its PowerShell variant writes `-Encoding utf8`.
+
+### Fixed
+- **Three shipped overclaims retired** (`SKILL.md`): "the instruction-layer breadcrumb closes issue #2
+  on hook-less hosts", "on every host the instruction-layer breadcrumb is the floor, so no host is ever
+  breadcrumb-empty", and "because the instruction-layer breadcrumb wrote the trail regardless, nothing
+  is lost". Matching claims in `references/consolidate.md` are corrected too.
+- **Recipe `Stop` breadcrumb PowerShell encoding** (`Add-Content` → UTF-16LE+BOM) — a real, shipped
+  corruption path for a git-tracked journal on Windows.
+
+### Honest scope (what this does NOT claim)
+- **"Never empty" holds on `shell`-hook-capable hosts only** — hosts that demonstrably *execute a shell
+  command* on `Stop`/`SessionStart` (confirmed: Claude Code; all others **UNVERIFIED**). On a hook-less
+  host — **or a host whose hooks only surface a prompt** — there is **no mechanical floor**: low or zero
+  capture is made **VISIBLE** (Step 9b) — **not prevented**. Saying otherwise would repeat the very
+  overclaim this release retires.
+- **Same-host concurrency is not solved**, only cross-host sync conflicts are.
+- The activity marker is **proof-of-life + an audit denominator**, **not** semantic capture. Mechanical
+  *semantic* capture needs a runtime and is the **`#2a-runtime`** half, deferred to the Cortex MemoryLog
+  (v2.0). Issue #2a is therefore split: **`#2a-floor` (this release)** / `#2a-runtime` (v2.0).
+- Issue **#2b** (the `harness/setup/<host>.md` → `CLAUDE.md` case-collision) is **not** in this release.
+
 ## [1.4.0] - 2026-07-02
 
 > **"Brain REACH + Adoption."** One MINOR (`1.4.0`) that makes a brain **reach every folder** (wire the

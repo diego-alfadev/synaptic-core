@@ -17,6 +17,32 @@
 > paste-to-your-agent form of all of this is **`docs/UPGRADE-v0.3-to-v1.AGENT.md`** — prefer driving a
 > real migration from there. Where this addendum and the older body differ, **the addendum wins.**
 
+## v1.5.0 addendum — deploy the activity marker (the mechanical capture floor)
+
+> Runs on **every** `/synaptic-upgrade` (and `/synaptic-init`), including the light already-schema-`1.0`
+> path. Closes the floor half of issue #2a. No schema bump.
+
+- **Create `journal/_activity/`** (with a `.gitkeep`) in the brain. A bare append to a missing parent
+  fails on **both** shells, so a wired-but-never-writing hook would be a *false* floor. The shipped
+  one-liner is also self-creating (`mkdir -p` / `New-Item -Force`) — belt and braces, because this is
+  precisely the failure class v1.5.0 exists to remove. Resolve the brain root explicitly in the hook
+  command; never assume the host's cwd is the brain root.
+- **Deploy the layer-(a0) activity marker** per `SKILL.md` §d "Deterministic activity marker": wire the
+  pinned platform-appropriate one-liner (**UTF-8 no-BOM**; `[IO.File]::AppendAllText` on PowerShell —
+  never `>>` (UTF-16LE+BOM) or `Add-Content` (ANSI by default; a BOM with `-Encoding utf8` on 5.1)) to `Stop` (`stop`) and `SessionStart`
+  (`boot`), writing to `journal/_activity/<host>-<YYYY-MM-DD>.log`. Marker-wrapped + idempotent like
+  every other hook write.
+- **Migrate the boot ledger:** stop emitting the old `- boot:` line into `journal/_current.md`; the boot
+  event now lives ONLY in the activity ledger. Existing `- boot:` lines are harmless history and are
+  pruned by `/synaptic-consolidate`'s Journal-Trim rollup (which also rolls up old day-files).
+- **Report honestly:** state whether the host accepted the (a0) hooks. If it did not (or the host has no
+  usable hooks), say plainly that there is **no mechanical floor** on this host, that the
+  instruction-layer breadcrumb is best-effort, and that `/synaptic-audit` will report capture-yield as
+  **unknown** rather than inferring capture-death. **Do not** repeat the retired pre-v1.5.0 claim that
+  the instruction-layer breadcrumb "closes issue #2" on a hook-less host.
+- **Host coverage is UNVERIFIED beyond Claude Code** (`SKILL.md` §d "Per-host activity marker support")
+  — detect, attempt, verify, and report; never assert parity.
+
 ## v1.4.0 addendum — host-setup detection is an ALWAYS-RUN step (not migration-only)
 
 > **This runs on EVERY `/synaptic-upgrade` and every `/synaptic-init`, including the light
@@ -129,7 +155,11 @@
   supervised-but-quiet: hide the internals, drive the migration, and ask the owner ONLY on genuine
   forks. The ONLY questions guided mode may ask: (1) topology intake (the brain-shape questions),
   (2) any knowledge deletion/merge/split (human-only), (3) private-vs-shared (it picks the cutover
-  path), (4) cutover acknowledgement (go/no-go). Everything else (re-files, link conversion, MOC
+  path), (4) cutover acknowledgement (go/no-go), (5) one batched approval, shown together: the exact
+  rule text C1/C6 route into `harness/conventions.md` / `harness/guardrails.md`; each personal
+  agent-behaviour item's placement (the user's own `AGENTS.md` outside the SYNAPTIC block, user-level
+  instructions, or discard); and the SYNAPTIC-RULES deploy diff (asked even when C1/C6 routed
+  nothing). Everything else (re-files, link conversion, MOC
   rebuilds, frontmatter fill) it just does and reports at the end. `interactive` (advanced, opt-in)
   surfaces every step; `autonomous` (no user available — see the "Autonomous mode" note below) makes
   the reasonable choice at each fork and logs it. **Guided vs interactive changes VERBOSITY / how much
@@ -205,6 +235,27 @@ defined in the hardening addendum above (guided is the DEFAULT when a user IS pr
 reasonable choice at every junction, never destroy ambiguous content (prefer staging/moving over
 deleting), and record every non-obvious judgment in a migration decision log delivered with the
 result. Mode changes verbosity/prompting only — the safety gates run identically.
+
+**The question-5 file (every mode; the one definition).** Phase C writes everything question (5) will
+ask into `_migration-staging/harness-pending.md` in the work copy: each rule bound for
+`harness/conventions.md` / `harness/guardrails.md`, each personal agent-behaviour item, the
+SYNAPTIC-RULES deploy, and the intake answers (including whether (3) was asked or guessed). Every item
+carries a status line: `pending`, `approved → <destination>`, or `discarded`. Phase C never writes
+`harness/conventions.md` / `harness/guardrails.md` and never deploys (other `harness/` moves, such as
+`skills/` → `harness/skills/`, are unaffected).
+- **Guided:** (5) is asked from this file; record each answer as its status, then write and deploy the
+  approved items.
+- **Autonomous:** nothing is written or deployed; items stay `pending`. Phase V reports the Layout
+  entries `harness/conventions.md` / `harness/guardrails.md` and the Harness (source / deployed /
+  wiring) checks as `pending owner approval`, not failed; there is no cutover. The report ends:
+  *"Unfinished — harness approval pending in `<work copy>/_migration-staging/harness-pending.md`; run
+  `/synaptic-upgrade` (guided) to finish."*
+- **Resume:** a guided `/synaptic-upgrade` checks the work copy (the autonomous report's path, else the
+  default `./synaptic-v1-work/.synaptic/`) for that file. Only if the brain has a `pre-v1` tag and the
+  file is not found does it ask the owner for the work-copy path. If an item is still `pending`: skip
+  Safeguard, M and C; reuse the recorded intake, asking (3) only if it was guessed; ask (5) from the
+  file, write and deploy, re-run Phase V, then ask (4). With no `pending` item, proceed normally.
+- The staged sources (PRINCIPLES, working-agreements) are deleted only after every item has an outcome.
 
 ---
 
@@ -379,7 +430,7 @@ Phase C consumes `_migration-staging/` and **deletes it as its final step**.
 
 - Extract a 2–4-line summary of what the brain covers + the owner's role. Write as the **Context Capsule** block in `BRAIN.md`.
 - Extract the **Capture Contract** (consolidation formula) block into `BRAIN.md` using the v1 `templates/BRAIN.md` format.
-- **Do NOT write a Top Guardrails block in BRAIN.md.** Operating rules (guardrails + conventions) go to `harness/` as the **deployable source** — they are then deployed by the Deploy step in Harness Self-Wire (`/synaptic-init`), not left for runtime load from the brain. BRAIN.md carries only the 1-line deploy-source pointer.
+- **Do NOT write a Top Guardrails block in BRAIN.md.** Operating rules (guardrails + conventions) found here are collected in the question-5 file like the PRINCIPLES items below — `harness/` is the **deployable source**, written and then deployed by the Deploy step in Harness Self-Wire (`/synaptic-init`) only after (5) is approved, not left for runtime load from the brain. BRAIN.md carries only the 1-line deploy-source pointer.
 - Do NOT copy persona, tone, language preferences, or agent behavior rules into BRAIN.md.
 
 **From `identity/CONTACTS.md` (v0.4):**
@@ -387,6 +438,9 @@ Phase C consumes `_migration-staging/` and **deletes it as its final step**.
 - Create `knowledge/people-routing.md` — a knowledge node listing go-to contacts per topic area. `type: knowledge`. Register in `knowledge/INDEX.md` (create a cluster or add to a relevant one).
 
 **From `identity/PRINCIPLES.md` (v0.4) — ownership test: "would a teammate inheriting this brain need it?":**
+
+Collect every item below in the question-5 file (see "The question-5 file" above); write
+`harness/conventions.md` / `harness/guardrails.md` and run the Deploy step only after (5) is approved.
 
 - **Yes, team/project norm** (communication languages per channel, commit conventions, ticket etiquette, escalation rules) → `harness/conventions.md`. These travel with the brain.
 - **Yes, hard project rule** (security rules, architecture constraints, deployment gates) → `harness/guardrails.md`. These will be deployed to the outer harness by the Deploy step — do NOT mirror them in `BRAIN.md → Top Guardrails` (that block no longer exists in v1).
@@ -439,9 +493,9 @@ For each node in `knowledge/`:
 **From v0.5 `knowledge/working-agreements.md`** (staged in `_migration-staging/`):
 
 - Route team/project norms → `harness/conventions.md` (merge or create from the skill bundle's `templates/harness/conventions.md`).
-- Route hard rules → `harness/guardrails.md`. Both files are the **deployable source** — after routing, run the Deploy step (Harness Self-Wire §c via `/synaptic-init`) to materialize them into the outer harness. Do NOT mirror rules in `BRAIN.md → Top Guardrails` (that block is dropped in v1).
+- Route hard rules → `harness/guardrails.md`. Both files are the **deployable source** — collect the routed text in the question-5 file; write them and run the Deploy step (Harness Self-Wire §c via `/synaptic-init`) only after (5) is approved. Do NOT mirror rules in `BRAIN.md → Top Guardrails` (that block is dropped in v1).
 - Persona/agent behavior content → offer to place in AGENTS.md (user harness). Never into the brain.
-- Delete the staged file after routing is confirmed.
+- Delete the staged file only after every item from it has an outcome in the question-5 file.
 
 ### C7 — Route playbooks (v0.5 source)
 

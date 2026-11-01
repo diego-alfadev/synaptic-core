@@ -30,8 +30,8 @@ Synthesize **generates; it never silently mutates the SSOT.**
   `knowledge/INDEX.md`) **at write time** — no phantom nodes, ever. A node that cannot be made
   MOC-reachable is not written.
 - **Propose / confirm for merges and promotions.** Generating a *new* synthesis node is the routine
-  output. **Merging, rewriting, or deleting existing nodes is propose-then-approve** — synthesize
-  surfaces the proposal and waits for confirmation; it does not collapse SSOT on its own.
+  output. **Merging or rewriting existing nodes is propose-then-approve; deleting one is human-only**
+  (`harness/guardrails.md`) — synthesize surfaces the proposal and waits; it does not collapse SSOT on its own.
 - **Diff-traced, git-reversible, archive-before-delete** for anything that touches existing content.
 - **No auto-discovery claim (C5).** Synthesis is the agent reasoning over **authored** edges and
   content; it does not infer hidden links from embeddings. GraphRAG is cited only as *the direction*.
@@ -96,8 +96,8 @@ Pass 1 — Cross-source patterns (N new nodes):
   - ...
 
 Pass 2 — Concept evolution (N new nodes):
-  - NEW [[auth-strategy-evolution]] ← [[auth-v1]] →(supersedes)→ [[auth-v2]] →(supersedes)→ [[auth-current]]
-    Proposes rewrite of [[auth-v1]] status → superseded (CONFIRM)
+  - NEW [[auth-strategy-evolution]] ← [[auth-current]] supersedes [[auth-v2]] supersedes [[auth-v1]]
+    Proposes `status: archived` on [[auth-v1]] and [[auth-v2]] (each superseded by its successor) (CONFIRM)
   - ...
 
 Pass 3 — Orphan rescue (N nodes):
@@ -137,7 +137,7 @@ rescued. The brain is now more *connected*, with no SSOT mutated without approva
 ## Anti-Patterns
 
 - **Do not write a phantom node:** no synthesis node without `[[wikilinks]]` + MOC registration at write time.
-- **Do not silently merge or delete:** merges, rewrites, and deletions are propose-then-approve.
+- **Do not silently merge or delete:** merges and rewrites are propose-then-approve; deletion is human-only.
 - **Do not claim auto-discovery:** synthesis reasons over authored edges/content; it does not infer hidden links.
 - **Do not duplicate consolidation:** synthesize runs over the *curated* brain; routing raw session/playground material is `/synaptic-consolidate`'s job.
 - **Do not invent a home for a true orphan:** rescue where a real cluster fits; otherwise flag for `/synaptic-weave`. Deletion is human-only.
