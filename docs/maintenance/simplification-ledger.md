@@ -37,4 +37,11 @@
 - **Q3-D1:** A.1 dedup — one `awk` (sh) / one `[regex]::Matches` (PS) read of the journal, skip when the
   last `breadcrumb: touched` line lists the same files. Tests: bash 40 → 43, PS 43 → 46; the 3 new
   cases per shell fail against the pre-fix recipe (PS checked by running the new suite against
-  `git show HEAD:recipes/…` in a scratch tree). Recipe 23,042 → 23,697 B (LF).
+  `git show HEAD:recipes/…` in a scratch tree). Recipe 23,042 → 23,722 B (LF).
+- **Q3-X3:** A.0 ledger privacy. Line shape `<ts> <event>` → `<event>`; file name `<host>-<date>` →
+  `<12-hex SHA-256 of the lower-cased host>-<date>`; hooks write `_activity/.gitignore` (`*`,
+  `!.gitignore`), replacing init's `.gitkeep`. Readers (audit Step 9b, consolidate Journal Trim,
+  SKILL §d) count the last field, so pre-1.6 files stay valid. Upgrade v1.5.0 addendum gains a v1.6
+  bullet (`git rm --cached` offer, with OK). Boundary doc gains a capture-hooks row. Tests: bash
+  43 → 45, PS 46 → 48 (+ 4 changed assertions per shell, + a real sh↔PS same-file test); red first
+  (bash 7/45, PS 6/48 failed). SKILL.md 60555 → 61642 B.

@@ -167,6 +167,18 @@ Do the steps in this order.
   breadcrumb lists the same files; an agent-written line in between does not reset it. Re-copy the
   A.1 script from the recipe to pick this up. Tests: 3 new cases per shell, red against the old
   script.
+- **The activity ledger (A.0) no longer records the machine name or a per-turn timeline, and is not
+  committed by default.** Files were `<hostname>-<date>.log` with one timestamp per turn, in a folder
+  init tracked with a `.gitkeep`, while three docs said there was no telemetry. Now:
+  - the file name uses a 12-hex host token (SHA-256 of the lower-cased host name; pseudonymous, not
+    anonymous);
+  - each line is just `boot` or `stop`, so a day-file holds per-day counts;
+  - the hooks write `journal/_activity/.gitignore` (`*`, `!.gitignore`); delete it to opt in.
+
+  Audit and consolidate read old and new files (they count the last field). sh and PowerShell on one
+  host still share one file: a new test runs both into the same brain. Re-deploy the hooks with
+  `/synaptic-upgrade`. If your brain already committed the ledger, upgrade offers `git rm --cached`.
+  A synced folder (OneDrive) still syncs the ledger.
 - **The BRAIN.md template no longer claims a breadcrumb floor.** It said the agent-written breadcrumbs
   were "the always-on, fixed-cost floor" and that a session is "never breadcrumb-empty". Since 1.5.0
   the only mechanical floor is the activity marker. The template now calls breadcrumbs best-effort,

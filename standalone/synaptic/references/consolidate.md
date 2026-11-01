@@ -272,7 +272,7 @@ After routing all items:
 4. No archive directory — history lives in git and in consolidated knowledge nodes.
 5. **Activity-log rollup (v1.5.0 — this is the step `/synaptic-audit` routes to; the hook never prunes,
    and audit never writes).** The layer-(a0) activity marker (`SKILL.md` §d) only ever blind-appends to
-   `journal/_activity/<host>-<date>.log`, so trimming it is **this** step's job:
+   `journal/_activity/<host-token>-<date>.log` (one `boot` or `stop` per line; pre-1.6 files are `<host>-<date>.log` with `<ts> <event>` lines — count the last field), so trimming it is **this** step's job:
    - **Retention contract (binding):** **never prune inside the audit window.** Keep **raw** per-day logs
      covering at least Step 9b's window (default: the last ~30 days). Only beyond it may a day-file be
      collapsed to a single line `<date> boot=N stop=M`, and the **per-day `boot` count must survive the

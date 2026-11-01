@@ -342,8 +342,8 @@ The thesis verb is **capture**. This advisory answers *does daily work produce b
 the brain silently empty?* — from files alone. **Advisory (exit-0 / never gates)**, like every check here.
 
 **The activity ledger decouples "session opened" from "work captured".** The **layer-(a0) activity
-marker** (`SKILL.md` §d — a **host-executed shell append** of `<ts> boot|stop` to
-`journal/_activity/<host>-<date>.log`) is **capture-INDEPENDENT** *and agent-independent*, so activity is
+marker** (`SKILL.md` §d — a **host-executed shell append** of one `boot` or `stop` line to
+`journal/_activity/<host-token>-<date>.log`; pre-1.6 files: `<host>-<date>.log`, `<ts> <event>` lines — count the last field) is **capture-INDEPENDENT** *and agent-independent*, so activity is
 counted even when nothing else is captured. That lets this step distinguish two states the naive "zero
 artifacts" signal conflates:
 
@@ -356,7 +356,7 @@ artifacts" signal conflates:
 
 > **Denominator source (v1.5.0) — `boot` ONLY, scoped to THIS host.**
 > - **Sessions = `boot` events.** Read them from **this host's** files only:
->   `journal/_activity/<current-host>-*.log`. **`stop` events are NOT part of the session denominator** —
+>   `journal/_activity/<this-host-token>-*.log` (compute the token with the one-liner's formula in `SKILL.md` §d; CORE-host: with no shell to hash, report per-file rows instead of guessing which is this host), plus this host's pre-1.6 `<host>-*.log` files while they exist. **`stop` events are NOT part of the session denominator** —
 >   `Stop` fires *per assistant turn*, so one session emits 1 `boot` + N `stop`. Summing them would turn
 >   breadcrumbs-per-**session** into breadcrumbs-per-**turn** and deflate yield by the turn count (a
 >   40-turn session with one good summary would score 1/41 instead of 1/1). Keep `stop` as a separate

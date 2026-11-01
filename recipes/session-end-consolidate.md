@@ -96,9 +96,15 @@ BRAIN_DIR="${SYNAPTIC_BRAIN_DIR:-.synaptic}"
 EVENT="${1:-stop}"
 DIR="$BRAIN_DIR/journal/_activity"
 mkdir -p "$DIR" 2>/dev/null
+# Local data, not committed by default: the folder ignores everything but this file (a synced folder
+# such as OneDrive still syncs it; delete the .gitignore to opt in to committing the ledger).
+[ -e "$DIR/.gitignore" ] || { printf '*\n!.gitignore\n' > "$DIR/.gitignore"; } 2>/dev/null
+# Host token, never the raw name: the first 12 hex of SHA-256 over the lower-cased host name. It hides
+# the name from a casual reader; it is not anonymous (anyone who knows the name can recompute it).
+H=$(printf '%s' "$(hostname | tr '[:upper:]' '[:lower:]')" | { sha256sum 2>/dev/null || shasum -a 256 2>/dev/null; } | cut -c1-12)
+# The line is the event only: the file is per day, so its line counts ARE the per-day counts.
 # Swallow failures: a missed marker is acceptable, a broken turn is not.
-printf '%s %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$EVENT" \
-  >> "$DIR/$(hostname)-$(date -u +%Y-%m-%d).log" 2>/dev/null || true
+{ printf '%s\n' "$EVENT" >> "$DIR/${H:-host}-$(date -u +%Y-%m-%d).log"; } 2>/dev/null || true
 exit 0
 ```
 
@@ -115,12 +121,19 @@ try {
     $brainDir = (Resolve-Path -LiteralPath $brainDir).ProviderPath
     $dir = Join-Path $brainDir "journal/_activity"
     [IO.Directory]::CreateDirectory($dir) | Out-Null   # idempotent; no provider wildcard semantics
-    $utc  = (Get-Date).ToUniversalTime()
-    # Host token: %COMPUTERNAME% on Windows (unchanged), else the full host name, which is what `hostname`
-    # prints for the sh marker ([Environment]::MachineName would truncate at the first dot on Unix).
+    $utf8 = New-Object Text.UTF8Encoding $false
+    # Local data, not committed by default (same .gitignore as the sh marker). Its own try: a race with a
+    # concurrent session must not cost the marker.
+    $gi = Join-Path $dir ".gitignore"
+    try { if (-not [IO.File]::Exists($gi)) { [IO.File]::WriteAllText($gi, "*`n!.gitignore`n", $utf8) } } catch { }
+    # Host token, never the raw name: first 12 hex of SHA-256 over the lower-cased host name, the same
+    # token the sh marker computes. %COMPUTERNAME% on Windows, else the full host name (what `hostname`
+    # prints; [Environment]::MachineName would truncate at the first dot on Unix).
     $h    = if ($env:COMPUTERNAME) { $env:COMPUTERNAME } else { [Net.Dns]::GetHostName() }
-    $path = Join-Path $dir "$h-$($utc.ToString('yyyy-MM-dd')).log"
-    [IO.File]::AppendAllText($path, "$($utc.ToString('yyyy-MM-ddTHH:mm:ssZ')) $Event`n", (New-Object Text.UTF8Encoding $false))
+    $tok  = -join ([Security.Cryptography.SHA256]::Create().ComputeHash([Text.Encoding]::UTF8.GetBytes($h.ToLowerInvariant()))[0..5] | ForEach-Object { $_.ToString('x2') })
+    $path = Join-Path $dir "$tok-$((Get-Date).ToUniversalTime().ToString('yyyy-MM-dd')).log"
+    # The line is the event only: the file is per day, so its line counts ARE the per-day counts.
+    [IO.File]::AppendAllText($path, "$Event`n", $utf8)
 } catch { }   # two concurrent same-host sessions can hit a transient lock; never block the turn
 exit 0
 ```
@@ -132,6 +145,13 @@ both scripts swallow failures and `exit 0` rather than ever blocking a turn. The
 `/synaptic-consolidate` (Journal Trim) rolls up old day-files, and must keep per-day `boot` counts
 because they are the capture-yield denominator. This ledger is **proof-of-life + the capture-yield
 denominator only** — it is *not* semantic capture, and nothing should mirror it.
+
+**Privacy (v1.6).** The file name carries a 12-hex **host token**, not the machine's name, and each line
+is just `boot` or `stop`: no time of day, so the ledger holds per-day counts, not a per-turn work
+profile. `_activity/.gitignore` keeps it out of git by default; delete that file to commit the ledger
+(for a shared brain where per-host yield matters). A synced folder (OneDrive, Dropbox) still syncs it.
+Nothing is ever sent anywhere: this is local data the audit reads. Ledgers from before v1.6
+(`<hostname>-<date>.log`, `<timestamp> <event>` lines) stay readable: count the last field of each line.
 
 ### A.1 The breadcrumb script (the `Stop` semantic layer)
 

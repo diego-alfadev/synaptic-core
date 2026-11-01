@@ -22,7 +22,7 @@
 > Runs on **every** `/synaptic-upgrade` (and `/synaptic-init`), including the light already-schema-`1.0`
 > path. Closes the floor half of issue #2a. No schema bump.
 
-- **Create `journal/_activity/`** (with a `.gitkeep`) in the brain. A bare append to a missing parent
+- **Create `journal/_activity/`** in the brain, with a `.gitignore` of `*` + `!.gitignore` (v1.6: the ledger is not committed by default). A bare append to a missing parent
   fails on **both** shells, so a wired-but-never-writing hook would be a *false* floor. The shipped
   one-liner is also self-creating (`mkdir -p` / `New-Item -Force`) — belt and braces, because this is
   precisely the failure class v1.5.0 exists to remove. Resolve the brain root explicitly in the hook
@@ -30,7 +30,7 @@
 - **Deploy the layer-(a0) activity marker** per `SKILL.md` §d "Deterministic activity marker": wire the
   pinned platform-appropriate one-liner (**UTF-8 no-BOM**; `[IO.File]::AppendAllText` on PowerShell —
   never `>>` (UTF-16LE+BOM) or `Add-Content` (ANSI by default; a BOM with `-Encoding utf8` on 5.1)) to `Stop` (`stop`) and `SessionStart`
-  (`boot`), writing to `journal/_activity/<host>-<YYYY-MM-DD>.log`. Marker-wrapped + idempotent like
+  (`boot`), writing to `journal/_activity/<host-token>-<YYYY-MM-DD>.log`. Marker-wrapped + idempotent like
   every other hook write.
 - **Migrate the boot ledger:** stop emitting the old `- boot:` line into `journal/_current.md`; the boot
   event now lives ONLY in the activity ledger. Existing `- boot:` lines are harmless history and are
@@ -42,6 +42,12 @@
   the instruction-layer breadcrumb "closes issue #2" on a hook-less host.
 - **Host coverage is UNVERIFIED beyond Claude Code** (`SKILL.md` §d "Per-host activity marker support")
   — detect, attempt, verify, and report; never assert parity.
+- **v1.6 privacy of the ledger (re-deploy the hooks).** The new one-liners write `<host-token>-<date>.log`
+  with `boot`/`stop`-only lines and add `journal/_activity/.gitignore`. Re-deploy them on every host.
+  Existing `<host>-<date>.log` files stay readable (readers count the last field). If the brain is in
+  git and the ledger was committed, offer `git rm --cached journal/_activity/*.log` (files stay on disk)
+  and list what it untracks; run it only with the owner's OK. Old raw-host file names age out through
+  the Journal-Trim rollup; never rename them silently.
 
 ## v1.4.0 addendum — host-setup detection is an ALWAYS-RUN step (not migration-only)
 

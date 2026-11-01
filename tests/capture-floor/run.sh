@@ -48,7 +48,11 @@ extract "### A.0" bash "$A0" && ok "extract A.0 activity-marker (bash) from the 
 extract "### A.1" bash "$A1" && ok "extract A.1 breadcrumb (bash) from the recipe" \
   || { nok "extract A.1 breadcrumb (bash) from the recipe" "heading or fence changed"; exit 1; }
 
-LINE_RE='^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z (stop|boot)$'
+LINE_RE='^(stop|boot)$'   # [X3] event only: per-day counts, no per-turn timestamps
+NAME_RE='^[0-9a-f]{12}-[0-9]{4}-[0-9]{2}-[0-9]{2}\.log$'   # [X3] <host-token>-<UTC date>.log, never the raw host name
+lower() { printf '%s' "$1" | tr '[:upper:]' '[:lower:]'; }
+# The documented host token: first 12 hex of SHA-256 over the lower-cased host name (no newline).
+host_token() { printf '%s' "$(lower "$(hostname)")" | { sha256sum 2>/dev/null || shasum -a 256; } | cut -c1-12; }
 ledger() { ls "$1"/.synaptic/journal/_activity/*.log 2>/dev/null | head -n 1; }
 has_bom() { [ "$(head -c 3 "$1" | od -An -tx1 | tr -d ' \n')" = "efbbbf" ]; }
 has_nul() { ! tr -d '\000' < "$1" | cmp -s - "$1"; }
@@ -63,14 +67,26 @@ f="$(ledger "$ws")"
 if [ -n "$f" ]; then
   ok "A.0 writes a marker in a NON-git workspace (the issue #2a fix)"
   [ "$(wc -l < "$f" | tr -d ' ')" -eq 1 ] && ok "A.0 writes exactly one line" || nok "A.0 writes exactly one line" "$(cat "$f")"
-  grep -Eq "$LINE_RE" "$f" && ok "A.0 line format is '<UTC ISO-8601> <event>'" || nok "A.0 line format" "got: $(head -n 1 "$f")"
+  grep -Eq "$LINE_RE" "$f" && ok "A.0 line format is '<event>' only, no per-turn timestamp [X3]" || nok "A.0 line format is '<event>' only, no per-turn timestamp [X3]" "got: $(head -n 1 "$f")"
   has_bom "$f" && nok "A.0 ledger has no UTF-8 BOM" || ok "A.0 ledger has no UTF-8 BOM"
   has_nul "$f" && nok "A.0 ledger has no NUL bytes (not UTF-16)" || ok "A.0 ledger has no NUL bytes (not UTF-16)"
   has_cr  "$f" && nok "A.0 ledger uses LF line endings" || ok "A.0 ledger uses LF line endings"
-  case "$(basename "$f")" in
-    -*) nok "A.0 ledger filename does not start with '-'" "$(basename "$f") - empty host name" ;;
-    *)  ok "A.0 ledger filename is <host>-<date>.log ($(basename "$f"))" ;;
+  bn="$(basename "$f")"
+  if printf '%s' "$bn" | grep -Eq "$NAME_RE" && [ "${bn%%-*}" = "$(host_token)" ]; then
+    ok "A.0 ledger filename is <host-token>-<date>.log with the documented token [X3]"
+  else
+    nok "A.0 ledger filename is <host-token>-<date>.log with the documented token [X3]" "$bn (expected token $(host_token))"
+  fi
+  case "$(lower "$bn")" in
+    *"$(lower "$(hostname)")"*) nok "A.0 ledger filename never contains the raw host name [X3]" "$bn" ;;
+    *) ok "A.0 ledger filename never contains the raw host name [X3]" ;;
   esac
+  gi="$ws/.synaptic/journal/_activity/.gitignore"
+  if [ -f "$gi" ] && grep -qx '\*' "$gi" && grep -qx '!.gitignore' "$gi"; then
+    ok "A.0 leaves the ledger untracked by default (_activity/.gitignore ignores everything but itself) [X3]"
+  else
+    nok "A.0 leaves the ledger untracked by default (_activity/.gitignore ignores everything but itself) [X3]" "$(cat "$gi" 2>/dev/null || echo 'no .gitignore')"
+  fi
   first="$(head -n 1 "$f")"
   ( cd "$ws" && sh "$A0" boot )
   if [ "$(wc -l < "$f" | tr -d ' ')" -eq 2 ] && [ "$(head -n 1 "$f")" = "$first" ]; then
@@ -259,7 +275,8 @@ if extract_quoted "- **Encoding PINNED" sh "$SK"; then
   sed "s#<brain>#$ws/.synaptic#g" "$SK" > "$WORK/skill-abs.sh"
   ( cd "$WORK/elsewhere" && sh "$WORK/skill-abs.sh" ); rc=$?
   f="$(ledger "$ws")"
-  if [ "$rc" -eq 0 ] && [ -n "$f" ] && grep -Eq "$LINE_RE" "$f"; then
+  if [ "$rc" -eq 0 ] && [ -n "$f" ] && grep -Eq "$LINE_RE" "$f" && basename "$f" | grep -Eq "$NAME_RE" \
+     && [ -f "$ws/.synaptic/journal/_activity/.gitignore" ]; then
     ok "SKILL.md sh one-liner writes a well-formed marker into an absolute brain path"
   else
     nok "SKILL.md sh one-liner writes a well-formed marker into an absolute brain path" "rc=$rc ledger=${f:-none}"
@@ -276,15 +293,24 @@ else
 fi
 
 # --- Cross-shell consistency (Windows) --------------------------------------------------------
-# The sh marker names its file with `hostname`; the PowerShell copies use $env:COMPUTERNAME on Windows.
-# NTFS is case-insensitive, so names that differ only in case share one file; a real split happens only
-# when they differ beyond case (e.g. a DNS name longer than the 15-character NetBIOS limit).
-if [ -n "${COMPUTERNAME:-}" ]; then
-  up() { printf '%s' "$1" | tr '[:lower:]' '[:upper:]'; }
-  if [ "$(up "$(hostname)")" = "$(up "$COMPUTERNAME")" ]; then
-    ok "bash hostname matches \$COMPUTERNAME up to case (one ledger file per host+day across shells)"
+# The sh marker hashes `hostname`; the PowerShell copies hash $env:COMPUTERNAME on Windows, both lower-
+# cased. Mixed sh + PowerShell hooks on one host must land in ONE ledger file per day. A real split
+# remains possible when the two names differ beyond case (a DNS name past the 15-character NetBIOS limit).
+if [ -n "${COMPUTERNAME:-}" ] && command -v powershell.exe >/dev/null 2>&1; then
+  A0PS="$WORK/synaptic-activity.ps1"
+  ws="$WORK/xshell"; mkdir -p "$ws/.synaptic"
+  if extract "### A.0" powershell "$A0PS"; then
+    ( cd "$ws" && sh "$A0" stop && powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$(cygpath -w "$A0PS" 2>/dev/null || echo "$A0PS")" boot ) >/dev/null 2>&1
+    nfiles="$(ls "$ws"/.synaptic/journal/_activity/*.log 2>/dev/null | wc -l | tr -d ' ')"
+    if [ "$nfiles" -eq 1 ] && [ "$(wc -l < "$(ledger "$ws")" | tr -d ' ')" -eq 2 ]; then
+      ok "sh and PowerShell markers on one host share ONE ledger file (same host token) [X3]"
+    elif [ "$(lower "$(hostname)")" != "$(lower "$COMPUTERNAME")" ]; then
+      info "bash 'hostname' ($(hostname)) differs from COMPUTERNAME ($COMPUTERNAME) beyond case: mixed sh+PowerShell hooks split the ledger"
+    else
+      nok "sh and PowerShell markers on one host share ONE ledger file (same host token) [X3]" "$(ls "$ws"/.synaptic/journal/_activity/ 2>/dev/null | tr '\n' ' ')"
+    fi
   else
-    info "bash 'hostname' ($(hostname)) differs from COMPUTERNAME ($COMPUTERNAME) beyond case: mixed sh+PowerShell hooks split the ledger"
+    nok "extract A.0 activity-marker (PowerShell) from the recipe" "heading or fence changed"
   fi
 fi
 

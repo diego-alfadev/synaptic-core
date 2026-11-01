@@ -117,7 +117,18 @@ function New-Workspace([string]$Name, [switch]$Brain) {
     return $ws
 }
 
-$LineRe = '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z (stop|boot)$'
+$LineRe = '^(stop|boot)$'   # [X3] event only: per-day counts, no per-turn timestamps
+$NameRe = '^[0-9a-f]{12}-\d{4}-\d{2}-\d{2}\.log$'   # [X3] <host-token>-<UTC date>.log, never the raw host name
+# The documented host token: first 12 hex of SHA-256 over the lower-cased host name.
+$HostName = if ($env:COMPUTERNAME) { $env:COMPUTERNAME } else { [Net.Dns]::GetHostName() }
+$HostToken = -join ([Security.Cryptography.SHA256]::Create().ComputeHash([Text.Encoding]::UTF8.GetBytes($HostName.ToLowerInvariant()))[0..5] | ForEach-Object { $_.ToString('x2') })
+function Test-LedgerName($Led) { return ($Led.Name -cmatch $NameRe -and $Led.Name.StartsWith("$HostToken-")) }
+function Test-LedgerIgnored([string]$Brain) {
+    $gi = Join-Path $Brain 'journal/_activity/.gitignore'
+    if (-not [IO.File]::Exists($gi)) { return $false }
+    $l = Get-Lines $gi
+    return (($l -contains '*') -and ($l -contains '!.gitignore'))
+}
 
 # Context the findings depend on: the recipe registers Windows hooks as `powershell -File ...` (5.1, on
 # every Windows install; pwsh is optional), and a .ps1 only runs under the effective execution policy.
@@ -170,13 +181,17 @@ try {
         $f = $led.FullName
         $lines = Get-Lines $f
         if ($lines.Count -eq 1) { Ok 'A.0 writes exactly one line' } else { Nok 'A.0 writes exactly one line' "got $($lines.Count)" }
-        if ($lines.Count -ge 1 -and $lines[0] -match $LineRe) { Ok "A.0 line format is '<UTC ISO-8601> <event>'" }
-        else { Nok 'A.0 line format' "got: $($lines -join ' | ')" }
+        if ($lines.Count -ge 1 -and $lines[0] -match $LineRe) { Ok "A.0 line format is '<event>' only, no per-turn timestamp [X3]" }
+        else { Nok "A.0 line format is '<event>' only, no per-turn timestamp [X3]" "got: $($lines -join ' | ')" }
         if (Test-Bom $f)       { Nok 'A.0 ledger has no UTF-8 BOM' }          else { Ok 'A.0 ledger has no UTF-8 BOM' }
         if (Test-Byte $f 0)    { Nok 'A.0 ledger has no NUL bytes (not UTF-16)' } else { Ok 'A.0 ledger has no NUL bytes (not UTF-16)' }
         if (Test-Byte $f 13)   { Nok 'A.0 ledger uses LF line endings' }      else { Ok 'A.0 ledger uses LF line endings' }
-        if ($led.Name.StartsWith('-')) { Nok "A.0 ledger filename does not start with '-'" "$($led.Name) - the host-name expression returned empty on this OS" }
-        else { Ok "A.0 ledger filename is <host>-<date>.log ($($led.Name))" }
+        if (Test-LedgerName $led) { Ok 'A.0 ledger filename is <host-token>-<date>.log with the documented token [X3]' }
+        else { Nok 'A.0 ledger filename is <host-token>-<date>.log with the documented token [X3]' "$($led.Name) (expected token $HostToken)" }
+        if ($led.Name.ToLowerInvariant().Contains($HostName.ToLowerInvariant())) { Nok 'A.0 ledger filename never contains the raw host name [X3]' $led.Name }
+        else { Ok 'A.0 ledger filename never contains the raw host name [X3]' }
+        if (Test-LedgerIgnored (Join-Path $ws '.synaptic')) { Ok 'A.0 leaves the ledger untracked by default (_activity/.gitignore ignores everything but itself) [X3]' }
+        else { Nok 'A.0 leaves the ledger untracked by default (_activity/.gitignore ignores everything but itself) [X3]' 'no or wrong .gitignore' }
         $first = $lines[0]
         $null = Invoke-Hook $A0 'boot' $ws
         $lines2 = Get-Lines $f
@@ -480,7 +495,8 @@ try {
         $sk = Save-Script 'skill-abs.ps1' ($skillBlock | ForEach-Object { $_.Replace('<brain>', (Join-Path $ws '.synaptic')) })
         $rc = Invoke-Hook $sk '' $elsewhere
         $led = Get-Ledger (Join-Path $ws '.synaptic')
-        if ($rc -eq 0 -and $led -and ((Get-Lines $led.FullName)[0] -match $LineRe) -and -not (Test-Bom $led.FullName)) {
+        if ($rc -eq 0 -and $led -and ((Get-Lines $led.FullName)[0] -match $LineRe) -and -not (Test-Bom $led.FullName) `
+            -and (Test-LedgerName $led) -and (Test-LedgerIgnored (Join-Path $ws '.synaptic'))) {
             Ok 'SKILL.md PowerShell one-liner writes a well-formed, BOM-free marker into an absolute brain path'
         } else { Nok 'SKILL.md PowerShell one-liner writes a well-formed, BOM-free marker into an absolute brain path' "rc=$rc ledger=$(if ($led) { $led.Name } else { 'none' })" }
 

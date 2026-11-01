@@ -522,10 +522,14 @@ gracefully** — never fail if a layer is unavailable.
 >
 > - **Write = PURE BLIND APPEND of ONE line.** No read, no dedup, no rewrite — a read-modify-write is
 >   program-shaped (not expressible identically across shells) and would risk sync conflict-copies.
-> - **Line shape (stable field contract):** `<ISO-8601-UTC timestamp> <event>` where
->   `event ∈ {boot, stop}`. Nothing that needs an LLM or a JSON parser. *(A host session-id from hook
->   stdin is OPTIONAL enrichment — POSIX `sh` has no JSON parser, so it is never part of the floor.)*
-> - **Destination: `journal/_activity/<host>-<YYYY-MM-DD>.log`** — **per host + per day**. Claim only
+> - **Line shape (stable field contract, v1.6):** `<event>` only, where `event ∈ {boot, stop}` — no
+>   time of day, so a day-file's line counts are the per-day counts (privacy: no per-turn work profile).
+>   Pre-1.6 lines `<ISO-8601-UTC timestamp> <event>` stay valid: readers count the **last field**.
+>   Nothing that needs an LLM or a JSON parser.
+> - **Destination: `journal/_activity/<host-token>-<YYYY-MM-DD>.log`** — **per host + per day**, where
+>   `<host-token>` = the first 12 hex of SHA-256 over the **lower-cased** host name (`hostname` in sh,
+>   `%COMPUTERNAME%` in PowerShell). The raw name is never written; the token is not anonymous (anyone
+>   who knows the name can recompute it). Pre-1.6 files are named `<host>-<date>.log`. Claim only
 >   what that buys: **no cross-host sync conflict copies** (each machine owns its own file, so a synced
 >   brain never sees two writers rewriting one file). **Same-host concurrency is NOT eliminated** — two
 >   concurrent sessions on the same host+day share a file, and the open-write-close append can hit a
@@ -534,8 +538,11 @@ gracefully** — never fail if a layer is unavailable.
 > - **The directory must exist.** A bare append to a missing parent **fails on both shells**, which
 >   would produce a *false* floor — the exact failure class this layer removes. So the one-liner is
 >   **self-creating** (`mkdir -p` / `New-Item -Force`, still read-free) **and** `/synaptic-init` /
->   `/synaptic-upgrade` create `journal/_activity/` (with a `.gitkeep`). Resolve the brain root
->   explicitly — never assume the host's cwd is the brain root.
+>   `/synaptic-upgrade` create `journal/_activity/`. Resolve the brain root explicitly — never assume
+>   the host's cwd is the brain root.
+> - **Not committed by default (v1.6).** The one-liner (and init/upgrade) writes
+>   `journal/_activity/.gitignore` = `*` + `!.gitignore` when absent, so the ledger stays out of git
+>   unless the owner deletes that file. A synced folder still syncs it; nothing is sent anywhere.
 > - **Encoding PINNED: UTF-8, no BOM.** On Windows PowerShell 5.1, `>>` and `Out-File` default to
 >   **UTF-16LE + BOM**, `Add-Content` to the **ANSI code page**, and `Add-Content -Encoding utf8` writes a
 >   **BOM** whenever the file is new or empty (all measured). Each breaks the ledger as clean UTF-8: a
@@ -546,7 +553,9 @@ gracefully** — never fail if a layer is unavailable.
 > # POSIX sh (Linux/macOS) — Stop; use `boot` for SessionStart. Self-creating; never blocks the turn.
 > # No-op if the brain is gone: a stale hook must not recreate a ghost <brain>/journal/_activity.
 > B="<brain>"; [ -d "$B" ] || exit 0; D="$B/journal/_activity"; mkdir -p "$D" 2>/dev/null
-> printf '%s stop\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$D/$(hostname)-$(date -u +%F).log" 2>/dev/null || true
+> [ -e "$D/.gitignore" ] || { printf '*\n!.gitignore\n' > "$D/.gitignore"; } 2>/dev/null
+> H=$(printf '%s' "$(hostname | tr '[:upper:]' '[:lower:]')" | { sha256sum 2>/dev/null || shasum -a 256 2>/dev/null; } | cut -c1-12)
+> { printf 'stop\n' >> "$D/${H:-host}-$(date -u +%F).log"; } 2>/dev/null || true
 > ```
 > ```powershell
 > # Windows PowerShell 5.1 — UTF-8 no BOM. Never >> / Out-File (UTF-16LE+BOM) or Add-Content (ANSI;
@@ -555,8 +564,10 @@ gracefully** — never fail if a layer is unavailable.
 > try {
 >   $b = "<brain>"; if (-not (Test-Path -LiteralPath $b)) { exit 0 }
 >   $d = Join-Path (Resolve-Path -LiteralPath $b).ProviderPath "journal\_activity"; [IO.Directory]::CreateDirectory($d) | Out-Null
->   $u = (Get-Date).ToUniversalTime()
->   [IO.File]::AppendAllText("$d\$env:COMPUTERNAME-$($u.ToString('yyyy-MM-dd')).log", "$($u.ToString('yyyy-MM-ddTHH:mm:ssZ')) stop`n", (New-Object Text.UTF8Encoding $false))
+>   $e = New-Object Text.UTF8Encoding $false; $g = "$d\.gitignore"
+>   try { if (-not [IO.File]::Exists($g)) { [IO.File]::WriteAllText($g, "*`n!.gitignore`n", $e) } } catch { }
+>   $t = -join ([Security.Cryptography.SHA256]::Create().ComputeHash([Text.Encoding]::UTF8.GetBytes($env:COMPUTERNAME.ToLowerInvariant()))[0..5] | ForEach-Object { $_.ToString('x2') })
+>   [IO.File]::AppendAllText("$d\$t-$((Get-Date).ToUniversalTime().ToString('yyyy-MM-dd')).log", "stop`n", $e)
 > } catch { }   # a missed marker is acceptable; a broken turn is not
 > ```
 >
@@ -698,8 +709,8 @@ gracefully** — never fail if a layer is unavailable.
 > smoke-test).
 >
 > **v1.5.0 changes WHO writes it.** It is no longer "an instruction the agent follows" into
-> `journal/_current.md` — it is the **layer-(a0) host shell append** (`<ts> boot`) into
-> `journal/_activity/<host>-<date>.log`, so the boot count no longer depends on agent compliance and
+> `journal/_current.md` — it is the **layer-(a0) host shell append** (a `boot` line) into
+> `journal/_activity/<host-token>-<date>.log`, so the boot count no longer depends on agent compliance and
 > lives in **one authoritative ledger**. On a host with no usable hooks there is no boot marker at all
 > (the agent may still note a boot by hand, but Step 9b treats yield as *unknown* there rather than
 > inferring anything). No new schema. *(Author-complete; actual firing is verified on a real (Robinson)
