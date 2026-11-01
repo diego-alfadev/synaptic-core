@@ -188,8 +188,8 @@ try {
         if (Test-Byte $f 13)   { Nok 'A.0 ledger uses LF line endings' }      else { Ok 'A.0 ledger uses LF line endings' }
         if (Test-LedgerName $led) { Ok 'A.0 ledger filename is <host-token>-<date>.log with the documented token [X3]' }
         else { Nok 'A.0 ledger filename is <host-token>-<date>.log with the documented token [X3]' "$($led.Name) (expected token $HostToken)" }
-        if ($led.Name.ToLowerInvariant().Contains($HostName.ToLowerInvariant())) { Nok 'A.0 ledger filename never contains the raw host name [X3]' $led.Name }
-        else { Ok 'A.0 ledger filename never contains the raw host name [X3]' }
+        if ($led.Name.ToLowerInvariant().StartsWith($HostName.ToLowerInvariant() + '-')) { Nok 'A.0 ledger filename is not named after the raw host name [X3]' $led.Name }
+        else { Ok 'A.0 ledger filename is not named after the raw host name [X3]' }
         if (Test-LedgerIgnored (Join-Path $ws '.synaptic')) { Ok 'A.0 leaves the ledger untracked by default (_activity/.gitignore ignores everything but itself) [X3]' }
         else { Nok 'A.0 leaves the ledger untracked by default (_activity/.gitignore ignores everything but itself) [X3]' 'no or wrong .gitignore' }
         $first = $lines[0]

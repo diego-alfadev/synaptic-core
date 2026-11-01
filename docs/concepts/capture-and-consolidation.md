@@ -16,7 +16,7 @@ Set it where you like:
 
 ### The always-on breadcrumbs (and the one mechanical floor)
 
-Underneath all settings is an **always-on, fixed-cost instruction**: a terse one-line **breadcrumb to the journal** on each meaningful turn. It lives on disk, so it survives a crash — what only lived in the context window dies; what hit the journal does not. It is *not* governed by `capture_policy`; it is the safety net. It is **best-effort**: an instruction can be skipped. The only mechanical non-empty floor is the activity marker, a content-free line the host itself appends to `journal/_activity/` on hosts that run a shell command on a hook.
+Underneath all settings is an **always-on, fixed-cost instruction**: a terse one-line **breadcrumb to the journal** on each meaningful turn (where the `Stop` hook already records the touched files, the agent writes only at decision points plus the session-boundary summary). It lives on disk, so it survives a crash — what only lived in the context window dies; what hit the journal does not. It is *not* governed by `capture_policy`; it is the safety net. It is **best-effort**: an instruction can be skipped. (The ledger has no time of day in its lines; file modification times and a sync service's version history can still reveal timing.) The only mechanical non-empty floor is the activity marker, a content-free line the host itself appends to `journal/_activity/` on hosts that run a shell command on a hook.
 
 ### The honest limit on "passive"
 

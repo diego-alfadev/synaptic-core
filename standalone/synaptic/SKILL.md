@@ -232,7 +232,7 @@ These answers become the **Context Capsule** in `BRAIN.md` (2–4 lines: what it
 Write the answer to `capture_policy:` in `BRAIN.md` frontmatter (default `balanced` if unsure).
 `capture_policy` is the **PROMOTION axis** — how aggressively the capture contract promotes work
 *into the wiki*. It does **not** change the six-step formula, and it does **not** govern the
-always-on per-turn journal breadcrumbs (those are a fixed-cost, best-effort instruction — see
+always-on journal breadcrumbs (those are a fixed-cost, best-effort instruction — see
 Harness Self-Wire, capture mechanism). Reassurance if they hesitate: "You can change this one word later;
 `/synaptic-weave` can also prune a `capture-all` brain back toward `selective`."
 
@@ -508,10 +508,10 @@ gracefully** — never fail if a layer is unavailable.
 
 | Layer | Trigger | Host support | What it does |
 |---|---|---|---|
-| **(a0) Activity marker** | per `Stop` + `SessionStart` | **shell**-hook-capable hosts (see the support table below — "fires hooks" is not enough) | **Host-executed shell append** of ONE deterministic line to `journal/_activity/<host>-<date>.log` — see "Deterministic activity marker" below. **The mechanical proof-of-life floor: it fires whether or not the agent does anything.** Content-free; not semantic capture. |
-| **(a) Stop breadcrumb** | per assistant turn (`Stop`) | **UNIVERSAL — all 5 agents** | Append **one terse line** to `journal/_current.md` (the meaningful change/decision this turn). The **semantic workhorse** — best-effort: it is an instruction the agent follows, so it is NOT the non-empty guarantee (a0 is). **Fixed cost; NOT governed by `capture_policy`.** |
+| **(a0) Activity marker** | per `Stop` + `SessionStart` | **shell**-hook-capable hosts (see the support table below — "fires hooks" is not enough) | **Host-executed shell append** of ONE deterministic line to `journal/_activity/<host-token>-<date>.log` — see "Deterministic activity marker" below. **The mechanical proof-of-life floor: it fires whether or not the agent does anything.** Content-free; not semantic capture. |
+| **(a) Stop breadcrumb** | per assistant turn (`Stop`) | **UNIVERSAL — all 5 agents** | Append **one terse line** to `journal/_current.md` (the meaningful change/decision this turn); where the hook writes `breadcrumb: touched` lines, the agent adds only decision points + the boundary summary (cadence: `templates/BRAIN.md`). The **semantic workhorse** — best-effort: it is an instruction the agent follows, so it is NOT the non-empty guarantee (a0 is). **Fixed cost; NOT governed by `capture_policy`.** |
 | **(b) PreCompact reminder** | before context compaction (`PreCompact`) | **Claude / Copilot / Codex** | The hook **prints a reminder** to consolidate (recipe A.2) **before context is lost**. A shell hook cannot run a slash command; consolidation itself is the agent's or the user's step. |
-| **(c) SessionStart heartbeat + rescue** | on next boot (`SessionStart`) | most hook-capable hosts | **FIRST**, the capture-INDEPENDENT **boot marker** is written by the layer-(a0) shell append into `journal/_activity/<host>-<date>.log` (v1.5.0 — moved out of `journal/_current.md`; see the migration note below) so boots are counted even when nothing else is captured. **THEN** detect **unconsolidated breadcrumbs / active playgrounds** and **offer to consolidate** — recovers abandoned sessions. Pairs with `/synaptic-audit`'s half-done check = the abandonment safety sweep. |
+| **(c) SessionStart heartbeat + rescue** | on next boot (`SessionStart`) | most hook-capable hosts | **FIRST**, the capture-INDEPENDENT **boot marker** is written by the layer-(a0) shell append into `journal/_activity/<host-token>-<date>.log` (v1.5.0 — moved out of `journal/_current.md`; see the migration note below) so boots are counted even when nothing else is captured. **THEN** detect **unconsolidated breadcrumbs / active playgrounds** and **offer to consolidate** — recovers abandoned sessions. Pairs with `/synaptic-audit`'s half-done check = the abandonment safety sweep. |
 | **(d) SessionEnd bonus** | clean exit (`SessionEnd`) | **bonus where present** (NOT Copilot-IDE, NOT Cursor) | On clean exit, print a reminder to consolidate (recipe A.2). A bonus only — capture must **never depend on it**. |
 
 > **Deterministic activity marker (v1.5.0 — the mechanical non-empty floor; layer a0).** Layers (a)–(d)
@@ -554,7 +554,7 @@ gracefully** — never fail if a layer is unavailable.
 > # No-op if the brain is gone: a stale hook must not recreate a ghost <brain>/journal/_activity.
 > B="<brain>"; [ -d "$B" ] || exit 0; D="$B/journal/_activity"; mkdir -p "$D" 2>/dev/null
 > [ -e "$D/.gitignore" ] || { printf '*\n!.gitignore\n' > "$D/.gitignore"; } 2>/dev/null
-> H=$(printf '%s' "$(hostname | tr '[:upper:]' '[:lower:]')" | { sha256sum 2>/dev/null || shasum -a 256 2>/dev/null; } | cut -c1-12)
+> N=$(hostname 2>/dev/null || uname -n 2>/dev/null); H=; [ -n "$N" ] && H=$(printf '%s' "$N" | tr '[:upper:]' '[:lower:]' | { sha256sum 2>/dev/null || shasum -a 256 2>/dev/null; } | cut -c1-12)
 > { printf 'stop\n' >> "$D/${H:-host}-$(date -u +%F).log"; } 2>/dev/null || true
 > ```
 > ```powershell
@@ -566,7 +566,8 @@ gracefully** — never fail if a layer is unavailable.
 >   $d = Join-Path (Resolve-Path -LiteralPath $b).ProviderPath "journal\_activity"; [IO.Directory]::CreateDirectory($d) | Out-Null
 >   $e = New-Object Text.UTF8Encoding $false; $g = "$d\.gitignore"
 >   try { if (-not [IO.File]::Exists($g)) { [IO.File]::WriteAllText($g, "*`n!.gitignore`n", $e) } } catch { }
->   $t = -join ([Security.Cryptography.SHA256]::Create().ComputeHash([Text.Encoding]::UTF8.GetBytes($env:COMPUTERNAME.ToLowerInvariant()))[0..5] | ForEach-Object { $_.ToString('x2') })
+>   $n = if ($env:COMPUTERNAME) { $env:COMPUTERNAME } else { [Net.Dns]::GetHostName() }
+>   $t = -join ([Security.Cryptography.SHA256]::Create().ComputeHash([Text.Encoding]::UTF8.GetBytes($n.ToLowerInvariant()))[0..5] | ForEach-Object { $_.ToString('x2') })
 >   [IO.File]::AppendAllText("$d\$t-$((Get-Date).ToUniversalTime().ToString('yyyy-MM-dd')).log", "stop`n", $e)
 > } catch { }   # a missed marker is acceptable; a broken turn is not
 > ```

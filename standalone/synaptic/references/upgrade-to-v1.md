@@ -45,7 +45,7 @@
 - **v1.6 privacy of the ledger (re-deploy the hooks).** The new one-liners write `<host-token>-<date>.log`
   with `boot`/`stop`-only lines and add `journal/_activity/.gitignore`. Re-deploy them on every host.
   Existing `<host>-<date>.log` files stay readable (readers count the last field). If the brain is in
-  git and the ledger was committed, offer `git rm --cached journal/_activity/*.log` (files stay on disk)
+  git and the ledger was committed, offer `git -C "<brain>" rm --cached -- "journal/_activity/*.log"` (files stay on disk)
   and list what it untracks; run it only with the owner's OK. Old raw-host file names age out through
   the Journal-Trim rollup; never rename them silently.
 

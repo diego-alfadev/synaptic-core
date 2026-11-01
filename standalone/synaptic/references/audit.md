@@ -434,7 +434,7 @@ hook smoke-test."* A different brain: *"0 boots in 7 days → not-used (benign)"
 
 **Activity-log hygiene (v1.5.0) — diagnose here, TREAT elsewhere.** The layer-(a0) hook only ever
 **blind-appends** — it never prunes. So this step **reports** when `journal/_activity/` has grown past a
-sane bound (e.g. > 30 day-files, or any file > ~2k lines) and **routes the rollup/prune to
+sane bound (e.g. > 30 `*.log` day-files, or any file > ~2k lines) and **routes the rollup/prune to
 `/synaptic-consolidate`** (Journal Trim) or `/synaptic-maintain`. **Audit itself writes nothing** — it
 never prunes the ledger, consistent with this file's diagnose-only contract. **Retention contract:**
 rollup MUST keep raw per-day logs covering at least this step's audit window, and any rollup summary MUST

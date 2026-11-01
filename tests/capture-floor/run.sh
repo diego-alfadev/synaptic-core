@@ -78,8 +78,8 @@ if [ -n "$f" ]; then
     nok "A.0 ledger filename is <host-token>-<date>.log with the documented token [X3]" "$bn (expected token $(host_token))"
   fi
   case "$(lower "$bn")" in
-    *"$(lower "$(hostname)")"*) nok "A.0 ledger filename never contains the raw host name [X3]" "$bn" ;;
-    *) ok "A.0 ledger filename never contains the raw host name [X3]" ;;
+    "$(lower "$(hostname)")-"*) nok "A.0 ledger filename is not named after the raw host name [X3]" "$bn" ;;
+    *) ok "A.0 ledger filename is not named after the raw host name [X3]" ;;
   esac
   gi="$ws/.synaptic/journal/_activity/.gitignore"
   if [ -f "$gi" ] && grep -qx '\*' "$gi" && grep -qx '!.gitignore' "$gi"; then
@@ -292,19 +292,21 @@ else
   nok "extract SKILL.md's deployed sh one-liner" "anchor '- **Encoding PINNED' or the sh fence moved"
 fi
 
-# --- Cross-shell consistency (Windows) --------------------------------------------------------
-# The sh marker hashes `hostname`; the PowerShell copies hash $env:COMPUTERNAME on Windows, both lower-
-# cased. Mixed sh + PowerShell hooks on one host must land in ONE ledger file per day. A real split
-# remains possible when the two names differ beyond case (a DNS name past the 15-character NetBIOS limit).
-if [ -n "${COMPUTERNAME:-}" ] && command -v powershell.exe >/dev/null 2>&1; then
+# --- Cross-shell consistency ------------------------------------------------------------------
+# The sh marker hashes `hostname`; the PowerShell copy hashes $env:COMPUTERNAME on Windows and
+# [Net.Dns]::GetHostName() elsewhere, both lower-cased. Mixed sh + PowerShell hooks on one host must land
+# in ONE ledger file per day. Windows can still split when the names differ beyond case (a DNS name past
+# the 15-character NetBIOS limit). Runs wherever a PowerShell is on PATH (powershell.exe, else pwsh).
+PSX="$(command -v powershell.exe 2>/dev/null || command -v pwsh 2>/dev/null || true)"
+if [ -n "$PSX" ]; then
   A0PS="$WORK/synaptic-activity.ps1"
   ws="$WORK/xshell"; mkdir -p "$ws/.synaptic"
   if extract "### A.0" powershell "$A0PS"; then
-    ( cd "$ws" && sh "$A0" stop && powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$(cygpath -w "$A0PS" 2>/dev/null || echo "$A0PS")" boot ) >/dev/null 2>&1
+    ( cd "$ws" && sh "$A0" stop && "$PSX" -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$(cygpath -w "$A0PS" 2>/dev/null || echo "$A0PS")" boot ) >/dev/null 2>&1
     nfiles="$(ls "$ws"/.synaptic/journal/_activity/*.log 2>/dev/null | wc -l | tr -d ' ')"
     if [ "$nfiles" -eq 1 ] && [ "$(wc -l < "$(ledger "$ws")" | tr -d ' ')" -eq 2 ]; then
       ok "sh and PowerShell markers on one host share ONE ledger file (same host token) [X3]"
-    elif [ "$(lower "$(hostname)")" != "$(lower "$COMPUTERNAME")" ]; then
+    elif [ -n "${COMPUTERNAME:-}" ] && [ "$(lower "$(hostname)")" != "$(lower "$COMPUTERNAME")" ]; then
       info "bash 'hostname' ($(hostname)) differs from COMPUTERNAME ($COMPUTERNAME) beyond case: mixed sh+PowerShell hooks split the ledger"
     else
       nok "sh and PowerShell markers on one host share ONE ledger file (same host token) [X3]" "$(ls "$ws"/.synaptic/journal/_activity/ 2>/dev/null | tr '\n' ' ')"
@@ -312,6 +314,8 @@ if [ -n "${COMPUTERNAME:-}" ] && command -v powershell.exe >/dev/null 2>&1; then
   else
     nok "extract A.0 activity-marker (PowerShell) from the recipe" "heading or fence changed"
   fi
+else
+  info "cross-shell ledger test skipped: no powershell.exe or pwsh on PATH"
 fi
 
 echo "1..$n"

@@ -101,7 +101,7 @@ mkdir -p "$DIR" 2>/dev/null
 [ -e "$DIR/.gitignore" ] || { printf '*\n!.gitignore\n' > "$DIR/.gitignore"; } 2>/dev/null
 # Host token, never the raw name: the first 12 hex of SHA-256 over the lower-cased host name. It hides
 # the name from a casual reader; it is not anonymous (anyone who knows the name can recompute it).
-H=$(printf '%s' "$(hostname | tr '[:upper:]' '[:lower:]')" | { sha256sum 2>/dev/null || shasum -a 256 2>/dev/null; } | cut -c1-12)
+N=$(hostname 2>/dev/null || uname -n 2>/dev/null); H=; [ -n "$N" ] && H=$(printf '%s' "$N" | tr '[:upper:]' '[:lower:]' | { sha256sum 2>/dev/null || shasum -a 256 2>/dev/null; } | cut -c1-12)
 # The line is the event only: the file is per day, so its line counts ARE the per-day counts.
 # Swallow failures: a missed marker is acceptable, a broken turn is not.
 { printf '%s\n' "$EVENT" >> "$DIR/${H:-host}-$(date -u +%Y-%m-%d).log"; } 2>/dev/null || true

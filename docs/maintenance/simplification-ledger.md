@@ -48,3 +48,10 @@
 - **Q3-X12:** cadence rule written once in `templates/BRAIN.md` (decision points + boundary summary
   where the hook writes breadcrumbs; per meaningful turn otherwise). The two "provisional cadence"
   notes in `SKILL.md` (§d honest limits) and `consolidate.md` replaced by a 3-line pointer each.
+- **Q3 review:** GO after fixes. Fixed: two stale `<host>-<date>` names in SKILL.md; X12 wording
+  in SKILL (a) row, Round 1b, the concept doc; committed-turn gap (agent writes the line itself);
+  `hostname` missing → `uname -n`, else the literal `host` (no shared empty-string hash); PS
+  one-liner falls back to `[Net.Dns]::GetHostName()`; cross-shell test also runs under `pwsh` and
+  reports when skipped; raw-host test checks the name prefix (hex-only host names); `git -C`
+  for the `rm --cached` offer; audit counts `*.log` day-files; CHANGELOG wording (unsalted token,
+  mtime timing, the 15-character split, dedup by file list). Suites: bash 45/45, PS 48/48.

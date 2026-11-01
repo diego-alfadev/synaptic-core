@@ -164,21 +164,25 @@ Do the steps in this order.
 - **The `Stop` breadcrumb (A.1) no longer repeats itself every turn.** An uncommitted diff persists
   across turns, so both scripts appended the same `breadcrumb: touched …` line on every turn until a
   commit, against the journal's own dedup rule. Both shells now skip the line when the last
-  breadcrumb lists the same files; an agent-written line in between does not reset it. Re-copy the
-  A.1 script from the recipe to pick this up. Tests: 3 new cases per shell, red against the old
-  script.
-- **The activity ledger (A.0) no longer records the machine name or a per-turn timeline, and is not
+  breadcrumb lists the same files; an agent-written line in between does not reset it. The dedup is by
+  file list, not by session: a later session that touches exactly the same uncommitted files adds no
+  new line. Re-copy the A.1 script from the recipe to pick this up. Tests: 3 new cases per shell, red
+  against the old script.
+- **The activity ledger (A.0) no longer writes the raw machine name or a per-turn timeline, and is not
   committed by default.** Files were `<hostname>-<date>.log` with one timestamp per turn, in a folder
   init tracked with a `.gitkeep`, while three docs said there was no telemetry. Now:
-  - the file name uses a 12-hex host token (SHA-256 of the lower-cased host name; pseudonymous, not
-    anonymous);
-  - each line is just `boot` or `stop`, so a day-file holds per-day counts;
+  - the file name uses a 12-hex host token, SHA-256 of the lower-cased host name. It is unsalted, so
+    anyone who can guess the name can recompute it: pseudonymous, not anonymous;
+  - each line is just `boot` or `stop`, so a day-file holds per-day counts. File modification times
+    and a sync service's version history can still reveal timing;
   - the hooks write `journal/_activity/.gitignore` (`*`, `!.gitignore`); delete it to opt in.
 
   Audit and consolidate read old and new files (they count the last field). sh and PowerShell on one
-  host still share one file: a new test runs both into the same brain. Re-deploy the hooks with
-  `/synaptic-upgrade`. If your brain already committed the ledger, upgrade offers `git rm --cached`.
-  A synced folder (OneDrive) still syncs the ledger.
+  host share one file wherever `hostname` and the PowerShell host name agree up to case. On Windows
+  they do not agree for a DNS name longer than 15 characters. A new test runs both shells into the same
+  brain, under `powershell.exe` or `pwsh`. Re-deploy the hooks with `/synaptic-upgrade`. If your brain
+  already committed the ledger, upgrade offers `git rm --cached`. A synced folder (OneDrive) still
+  syncs the ledger.
 - **The BRAIN.md template no longer claims a breadcrumb floor.** It said the agent-written breadcrumbs
   were "the always-on, fixed-cost floor" and that a session is "never breadcrumb-empty". Since 1.5.0
   the only mechanical floor is the activity marker. The template now calls breadcrumbs best-effort,
@@ -206,7 +210,8 @@ Do the steps in this order.
   a change of plan) plus the session-boundary summary. Without hooks, nothing changes: one line per
   meaningful turn. This replaces the "provisional cadence" notes. It saves an agent line per turn
   (an estimated 150–200 tokens), at the cost of losing in-between context if a crash comes before
-  the boundary summary. The rule lives once, in `templates/BRAIN.md`.
+  the boundary summary. The hook sees only uncommitted changes, so the agent still writes a line for
+  a turn whose work it committed. The rule lives once, in `templates/BRAIN.md`.
 
 #### Removed (simplification round)
 - **Project skills (`harness/skills/`) are no longer part of CORE.** Deploy used to copy a brain's
