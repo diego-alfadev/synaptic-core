@@ -160,7 +160,11 @@ ts="$(date -u +%Y-%m-%dT%H:%MZ)"
 # matches git's quoting of paths with non-ASCII characters (core.quotePath); -a keeps grep in text mode.
 touched=$(git -C "$(pwd)" diff --name-only HEAD 2>/dev/null | grep -a -v -E '(^|/)journal/(_current\.md"?$|_activity/)' | head -n 5 | paste -sd ',' - || true)
 
-if [ -n "$touched" ]; then
+# Dedup: an uncommitted diff persists across turns, so skip the line when the LAST breadcrumb already
+# lists the same files (agent-written lines in between do not count). One awk, read-only.
+last=$(awk -F' breadcrumb: touched ' 'NF>1{l=$2} END{sub(/\r$/,"",l); print l}' "$JOURNAL" 2>/dev/null)
+
+if [ -n "$touched" ] && [ "$touched" != "$last" ]; then
   printf -- "- %s breadcrumb: touched %s\n" "$ts" "$touched" >> "$JOURNAL"
 fi
 ```
@@ -176,7 +180,13 @@ try {
     $ts = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mmK")
     # The brain's own bookkeeping (this journal, the A.0 ledger) is not work - same filter as bash.
     $touched = (git diff --name-only HEAD 2>$null | Where-Object { $_ -cnotmatch '(^|/)journal/(_current\.md"?$|_activity/)' } | Select-Object -First 5) -join ','
-    if ($touched) {
+    # Dedup: skip when the LAST breadcrumb already lists the same files - same rule as bash.
+    $last = ''
+    if (Test-Path -LiteralPath $journal) {
+        $m = [regex]::Matches([IO.File]::ReadAllText($journal), ' breadcrumb: touched ([^\r\n]*)')
+        if ($m.Count -gt 0) { $last = $m[$m.Count - 1].Groups[1].Value }
+    }
+    if ($touched -and $touched -cne $last) {
         # NOT Add-Content. On Windows PowerShell 5.1 its default is the ANSI code page (a non-ASCII path
         # becomes invalid UTF-8), and `-Encoding utf8` means UTF-8 WITH a BOM, written whenever the
         # journal is new or empty. This writes UTF-8 without a BOM, and LF, on every version.

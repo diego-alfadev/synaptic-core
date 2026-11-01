@@ -161,6 +161,12 @@ Do the steps in this order.
 > `docs/maintenance/simplification-ledger.md`.
 
 #### Fixed (simplification round)
+- **The `Stop` breadcrumb (A.1) no longer repeats itself every turn.** An uncommitted diff persists
+  across turns, so both scripts appended the same `breadcrumb: touched …` line on every turn until a
+  commit, against the journal's own dedup rule. Both shells now skip the line when the last
+  breadcrumb lists the same files; an agent-written line in between does not reset it. Re-copy the
+  A.1 script from the recipe to pick this up. Tests: 3 new cases per shell, red against the old
+  script.
 - **The BRAIN.md template no longer claims a breadcrumb floor.** It said the agent-written breadcrumbs
   were "the always-on, fixed-cost floor" and that a session is "never breadcrumb-empty". Since 1.5.0
   the only mechanical floor is the activity marker. The template now calls breadcrumbs best-effort,

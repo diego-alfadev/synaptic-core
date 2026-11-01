@@ -34,3 +34,7 @@
 
 - **Q1:** `SKILL.md` 60,064 → 60,511 (+447). These are correctness fixes; they were never meant to
   shrink anything.
+- **Q3-D1:** A.1 dedup — one `awk` (sh) / one `[regex]::Matches` (PS) read of the journal, skip when the
+  last `breadcrumb: touched` line lists the same files. Tests: bash 40 → 43, PS 43 → 46; the 3 new
+  cases per shell fail against the pre-fix recipe (PS checked by running the new suite against
+  `git show HEAD:recipes/…` in a scratch tree). Recipe 23,042 → 23,697 B (LF).

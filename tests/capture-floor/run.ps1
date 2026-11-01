@@ -285,6 +285,26 @@ try {
     if (Test-BomAnywhere $jf) { Nok 'A.1 appending to an existing journal inserts no BOM' } else { Ok 'A.1 appending to an existing journal inserts no BOM' }
     if (Test-Byte $jf 0) { Nok 'A.1 journal has no NUL bytes (not UTF-16)' } else { Ok 'A.1 journal has no NUL bytes (not UTF-16)' }
 
+    # 8b. Dedup [D1]: the SAME uncommitted diff on a later turn appends nothing; an agent-written line in
+    #     between does not defeat it; a changed file list appends again.
+    function Get-CrumbCount([string]$Path) { $l = Get-Lines $Path; return @($l | Where-Object { $_ -match ' breadcrumb: touched ' }).Count }
+    $null = Invoke-Hook $A1 '' $ws
+    if ((Get-CrumbCount $jf) -eq 1) { Ok 'A.1 skips a breadcrumb identical to the last one (same files)' }
+    else { Nok 'A.1 skips a breadcrumb identical to the last one (same files)' "$(Get-CrumbCount $jf) breadcrumbs" }
+    [IO.File]::AppendAllText($jf, "- agent note: decided X`n", (New-Object Text.UTF8Encoding $false))
+    $null = Invoke-Hook $A1 '' $ws
+    if ((Get-CrumbCount $jf) -eq 1) { Ok 'A.1 dedup keys on the last breadcrumb, not the last line' }
+    else { Nok 'A.1 dedup keys on the last breadcrumb, not the last line' "$(Get-CrumbCount $jf) breadcrumbs" }
+    $eap = $ErrorActionPreference; $ErrorActionPreference = 'Continue'
+    Push-Location -LiteralPath $ws
+    try {
+        [IO.File]::WriteAllText((Join-Path $ws 'second.txt'), "c`n")
+        git add second.txt 2>$null | Out-Null
+    } finally { Pop-Location; $ErrorActionPreference = $eap }
+    $null = Invoke-Hook $A1 '' $ws
+    if ((Get-CrumbCount $jf) -eq 2) { Ok 'A.1 appends again when the touched-file list changes' }
+    else { Nok 'A.1 appends again when the touched-file list changes' "$(Get-CrumbCount $jf) breadcrumbs" }
+
     # 9. Gate passes, journal does NOT exist yet (e.g. rotated by a consolidation): A.1 creates it.
     $ws = New-GitWorkspace 'a1-git-missing' $null
     $jf = Join-Path $ws '.synaptic/journal/_current.md'

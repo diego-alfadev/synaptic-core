@@ -138,6 +138,21 @@ esac
 has_bom "$ws/.synaptic/journal/_current.md" && nok "A.1 (bash) leaves the journal BOM-free" \
   || ok "A.1 (bash) leaves the journal BOM-free"
 
+# 7b. Dedup [D1]: a later turn with the SAME uncommitted diff appends nothing (the journal's own
+#     dedup rule); a turn that changes the file list appends again, even after an agent-written line.
+crumbs() { grep -c ' breadcrumb: touched ' "$ws/.synaptic/journal/_current.md"; }
+( cd "$ws" && bash "$A1" ) 2>/dev/null
+[ "$(crumbs)" -eq 1 ] && ok "A.1 skips a breadcrumb identical to the last one (same files)" \
+  || nok "A.1 skips a breadcrumb identical to the last one (same files)" "$(crumbs) breadcrumbs"
+printf -- '- agent note: decided X\n' >> "$ws/.synaptic/journal/_current.md"
+( cd "$ws" && bash "$A1" ) 2>/dev/null
+[ "$(crumbs)" -eq 1 ] && ok "A.1 dedup keys on the last breadcrumb, not the last line" \
+  || nok "A.1 dedup keys on the last breadcrumb, not the last line" "$(crumbs) breadcrumbs"
+( cd "$ws" && echo c > second.txt && git add second.txt ) >/dev/null 2>&1
+( cd "$ws" && bash "$A1" ) 2>/dev/null
+[ "$(crumbs)" -eq 2 ] && ok "A.1 appends again when the touched-file list changes" \
+  || nok "A.1 appends again when the touched-file list changes" "$(crumbs) breadcrumbs"
+
 # --- A.2 reminder + A.3 rescue: one git-free "unconsolidated work?" predicate --------------------
 # Work = pending breadcrumb lines in journal/_current.md, or open playground directories.
 # playgrounds/archive/ is not open, and the A.0 activity ledger is not work. [C2 C4 C6]
