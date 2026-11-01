@@ -1,5 +1,5 @@
 ---
-description: "{{ONE_LINE: what outcome this playbook produces — copied into cluster _index.md}}"
+description: "{{ONE_LINE: what outcome this playbook produces; the MOC line carries its own routing text}}"
 type: playbook
 status: active
 updated: "{{YYYY-MM-DD}}"

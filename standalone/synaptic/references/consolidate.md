@@ -14,7 +14,8 @@ consolidation/wrap-up algorithm lives; other procedures call it, they do not re-
 > the only effect of a consolidation run is "the wiki got longer," the run did it wrong.
 
 **Autonomy.** Every edit to an existing node (a rewrite, a supersession, a `contradicts` link) follows
-the Autonomy Tiers table in your deployed rules (source: `harness/guardrails.md` — read it there if no
+the Autonomy Tiers table in your deployed rules (source: `harness/guardrails.md`; with no tier table there,
+the skill default in `references/contract.md` §5 — read it there if no
 deployed copy exists); the steps below name the action, and that table sets its tier.
 
 **Six-step formula** (the capture contract — same algorithm compressed in `BRAIN.md`):
@@ -22,10 +23,10 @@ deployed copy exists); the steps below name the action, and that table sets its 
 > **Capture policy.** Read `capture_policy:` from `BRAIN.md` frontmatter (`selective` | `balanced` | `capture-all`; default `balanced`, or a custom 1-line rule). It is the **PROMOTION axis** — how aggressively things reach the wiki — and is **orthogonal to the passivity dial** (when capture triggers). It tunes the *threshold* of Step 2 (promotion) and Step 6 (quality gate) — not the steps themselves:
 > - `selective` → promote crown-jewels only (reusable decision/lesson, or pattern seen 3+ times); strict gate, small wiki.
 > - `balanced` → promote at 2+ instances or clearly-reusable knowledge; standard gate.
-> - `capture-all` → promote durable-ish notes on first sight; lenient gate; prune later via `/synaptic-weave`.
+> - `capture-all` → promote durable-ish notes on first sight; lenient gate; prune later via `/synaptic-maintain weave`.
 >
 > Capture policy does **NOT** govern journal breadcrumbs — the per-turn `Stop` breadcrumb is a
-> fixed-cost safety net that always runs, regardless of this dial.
+> fixed-cost, best-effort safety net that always applies, regardless of this dial.
 
 ---
 
@@ -76,7 +77,7 @@ Before writing:
 
 - Strip the anecdote; keep the reusable principle.
 - Name the file after the *concept*, not the ticket (e.g. `retry-policy.md`, not `FEAT-123-fix.md`).
-- The `description:` frontmatter field should read as a self-contained 1-line summary a cold agent can understand without opening the file — it feeds directly into the cluster `_index.md`.
+- The `description:` frontmatter field should read as a self-contained 1-line summary a cold agent can understand without opening the file (the MOC line carries its own routing text; see Step 4).
 
 ---
 
@@ -91,67 +92,31 @@ Before writing:
 1. **Place** the node in the correct cluster under `knowledge/{cluster}/`.
 2. **Frontmatter (D1):** fill `description`, `type`, `status: active`, `updated: {today}`, `tags: [cluster-tag, topic-tags]`. No placeholders.
 3. **`[[wikilinks]]`:** add wikilinks to related nodes at first mention. One link per target page per source page is sufficient.
-3a. **Lifecycle (OPTIONAL):** set `lifecycle:` **only** if the node is a live project (`lifecycle: project`) or clearly a lazy-pull resource (`lifecycle: resource`); otherwise **leave it absent** (absent → treated as `area`, loads by default). Enum: `project | area | resource | dormant`. It is **orthogonal to `status`** — see the table below. A `project` node SHOULD link OUT to a durable `area`/`resource` node so its knowledge survives when it later cools to `dormant`.
-4. **Register** the node in `knowledge/{cluster}/_index.md` (one-line entry: `[[node-name]] — {description}`). If the cluster does not exist, create the `_index.md` from `templates/node.md` pattern and add the cluster to `knowledge/INDEX.md`.
+3a. **Lifecycle (OPTIONAL):** set `lifecycle:` **only** if the node is a live project (`lifecycle: project`) or clearly someday reference material (`lifecycle: resource`); otherwise **leave it absent** (absent → treated as `area`). Enum: `project | area | resource | dormant`. It is **orthogonal to `status`** — see `references/contract.md` §2. A `project` node SHOULD link OUT to a durable `area`/`resource` node so its knowledge survives when it later cools to `dormant`.
+4. **Register** the node in `knowledge/{cluster}/_index.md` with one MOC line: `- [[node-name]] — <routing text>`. **Routing text** is written for the next agent deciding whether to open the node: what it answers or when to reach for it. It is **non-empty, ≤120 characters**, and independent of `description:` (it may say the same thing, but it is not a copy and is not kept in sync with it). `/synaptic-audit` Step 4 checks both limits. If the cluster does not exist, create the `_index.md` from `templates/node.md` pattern and add the cluster to `knowledge/INDEX.md`.
 5. **Tabular data** → update or create the relevant `registries/{table}.md`; register in `registries/_index.md`.
-6. **Large verbatim artifact** → copy to `references/raw/`; add one-line entry to `references/_index.md`; create a distilled knowledge node with `type: reference` that links to the artifact entry. **Record a source `content_hash`** on the distilled node (see below) so future runs can detect that the raw artifact changed.
+6. **Large verbatim artifact** → copy to `references/raw/`; add one-line entry to `references/_index.md`; create a distilled knowledge node with `type: reference` that links to the artifact entry. **Record its `source`** on the distilled node, plus a `content_hash` when the brain is outside git (see below), so future runs can detect that the raw artifact changed.
 
-**`status` vs `lifecycle` — two orthogonal fields (do not conflate):**
+**Frontmatter rules** (required fields, the `status` / `lifecycle` enums and how they interact, typed
+edges, `untriaged` read semantics): `references/contract.md` — the one home. On a node you write here:
+`status: active`, `updated:` today, `lifecycle:` only when step 3a applies.
 
-`status` and `lifecycle` are independent and both may appear. `status` answers *is this content
-current and correct?*; `lifecycle` answers *is this in the current working set?* The literal
-`archived`/`dormant` tokens are deliberately different so the two enums never collide.
+**Source provenance + drift (an inline captured fact, NOT a materialized index):**
 
-| Field | Question it answers | Enum | Change it when… |
-|---|---|---|---|
-| `status` | Editorial / trust — is the content current & correct? | `active` \| `stale` \| `archived` | The content is superseded/dead (pair with a `supersedes`/`superseded_by` edge). |
-| `lifecycle` | Actionability — is this LIVE / in the working set? | `project` \| `area` \| `resource` \| `dormant` | A project ends or an area cools (flip to `dormant`); it re-activates (flip back). |
-
-> **Combined example:** a node may be `status: active` + `lifecycle: dormant` — the content is
-> **true**, but the project is over, so it does **not** load by default. Perfectly valid. Prefer
-> flipping `lifecycle` for actionability changes; reserve `status: archived` for "this content is
-> superseded/dead."
-
-**Interaction rules (which axis governs what — the part users get wrong):**
-
-- **Only `lifecycle` scopes the DEFAULT working set.** A `dormant` node drops out of the *default* load
-  once a brain grows. **`status` NEVER causes omission** — a stale-but-relevant node is **flagged
-  (`⚠ stale`), not hidden.**
-- **The `lifecycle: dormant` scoping applies to the DEFAULT working set ONLY.** `/synaptic-handover` and
-  `/synaptic-audit` read **ALL statuses and ALL lifecycles** — a binding `lifecycle: dormant` +
-  `status: active` decision **MUST still appear** in a handover brief (else it defeats the knowledge-tax
-  thesis). See `references/handover.md` and `references/audit.md`.
-- **Required vs optional + value semantics:** `status` is **REQUIRED** (a missing `status:` is a
-  `check.js` ERROR, never a default); `lifecycle` is **OPTIONAL** and absent → `area` (benign, loads by
-  default). An **unknown/mistyped** `status` value (present but off-vocabulary) reads as **`untriaged`** —
-  neither trusted-current nor stale; surfaced as `untriaged` in audits, **never silently promoted to
-  `active`.** A hand-edit typo (`Active`, `dorment`) surfaces via the `/synaptic-audit` typo advisory
-  rather than failing open.
-
-**Source `content_hash` (drift detection — an inline captured fact, NOT a materialized index):**
-
-When you distil a raw artifact into a `type: reference` node, capture the source provenance and a
-content hash directly in the node's authored frontmatter:
+When you distil a raw artifact into a `type: reference` node, record its source in the node's
+authored frontmatter. **Brain in git:** that is all — git history is the drift signal. **Brain outside
+git:** also record the whole-file fingerprint at capture time:
 
 ```yaml
 source: "references/raw/{filename.ext}"
-content_hash: "git:{first-12-hex}"   # the hash command below, on references/raw/{filename.ext} at capture time; TBD if no shell/git
+content_hash: "sha256-lf:{12-hex}"   # brains OUTSIDE git only; TBD if no shell
 ```
 
-- This is an **authored fact written once at capture time**, the same as any other frontmatter
-  value — it is **not** a generated index, never a must-sync cache, and nothing recomputes it
-  automatically. It exists purely so a later consolidation/audit pass can notice "the raw file's
-  hash no longer matches what the node recorded → the artifact drifted → re-distil."
-- **The hash command** (the same in every shell; the one place it is defined):
-  `git -C "<brain>" -c core.autocrlf=input -c core.attributesFile=/dev/null hash-object "references/raw/<filename>"`
-  — always with `-C "<brain>"` and the forward-slash path relative to it, never from the host's cwd
-  (another repo's `.gitattributes` would apply there). The two `-c` pins remove each machine's
-  line-ending setting and user-level attributes. Attributes of a repo that holds the brain itself
-  (e.g. `text`/`-text`, `eol`, `crlf`, a filter such as LFS, `ident`, `working-tree-encoding`) or a
-  SHA-256 repo still change the result. `<brain>` is the resolved brain root (the folder holding
-  `BRAIN.md`); on Windows pass it in drive form (`C:/…`), not `/c/…`. Store the first 12 hex characters. Never "compute" a hash yourself — a model cannot hash,
-  so the value would be invented. No shell or no git → write `content_hash: TBD` and keep the source
-  path — CORE never requires a runtime.
+- An **authored fact written once at capture time** — never a generated index or a must-sync cache;
+  nothing recomputes it automatically. It lets a later pass notice "the raw file changed since the
+  node was distilled → re-distil."
+- **Which form applies, and the exact commands:** `references/fingerprint.md` (the only place a hash
+  or drift command is defined). Never compute a hash yourself; no shell → `TBD`, keep the source path.
 
 ---
 
@@ -182,13 +147,14 @@ For each item being consolidated, ask: **does this contradict an existing node?*
    - Where the relationship is structural, record the typed edge `supersedes` on the new/current
      node (inverse `superseded_by` is grep-computed — author one direction only).
    - **Instead of rewriting it**, if a **whole node** is replaced by a new one, leave its body
-     unchanged, set `status: archived`, and record `supersedes` on the successor (above).
+     unchanged, set `status: archived`, record `supersedes` on the successor (above), and suffix its MOC
+     line ` (archived — superseded by [[successor]])` (`references/contract.md` §2).
 4. **If both remain valid / the conflict is genuine and unresolved:**
    - Keep both, link them with the `contradicts` typed edge, and **document the tension in the
      node's `## bias-check` section** (the other side / contradicting evidence). This is epistemic
      honesty on the page, not agent hedging.
 5. **If unsure which is correct:** do **not** guess. Flag it for the user / leave it for
-   `/synaptic-weave` or `/synaptic-maintain` to surface as a proposal. Reconciliation that needs a
+   `/synaptic-maintain weave` or `/synaptic-maintain` to surface as a proposal. Reconciliation that needs a
    human judgment is proposed, never auto-applied.
 
 > **CORE-safety:** every rewrite here is **diff-traced in the consolidation log**, recoverable via
@@ -213,7 +179,7 @@ Before marking consolidation complete, every new or updated node must pass:
 - [ ] `[[wikilinks]]` resolve to real files; no broken links introduced.
 - [ ] Professional & verifiable only: no opinions, rumors, blame, PII, credentials, or application data.
 - [ ] `updated:` stamped with today's date.
-- [ ] **Capture-policy strictness:** `selective` prunes hard (split/merge aggressively, keep the wiki small); `capture-all` keeps more and defers pruning to `/synaptic-weave`; `balanced` applies the budgets as written.
+- [ ] **Capture-policy strictness:** `selective` prunes hard (split/merge aggressively, keep the wiki small); `capture-all` keeps more and defers pruning to `/synaptic-maintain weave`; `balanced` applies the budgets as written.
 
 If any check fails, fix before proceeding. Do not skip this gate.
 
@@ -238,7 +204,7 @@ For each playground in the journal's **Active playgrounds** list:
 2. Classify its contents (Steps 1–6 above). Apply the promotion test and quality gate strictly:
    unfinished, outdated, or superseded artifacts do **not** pass — distil any durable conclusion and
    discard the rest.
-3. Move durable findings → knowledge cluster nodes; procedures → `type: playbook` nodes in their cluster; lessons → `knowledge/lessons/`; verbatim artifacts worth preserving → `references/raw/` (with a `content_hash`, per Step 4).
+3. Move durable findings → knowledge cluster nodes; procedures → `type: playbook` nodes in their cluster; lessons → `knowledge/lessons/`; verbatim artifacts worth preserving → `references/raw/` (with `source`, and `content_hash` outside git, per Step 4).
 4. Confirm with user: "Playground `{task-id}` consolidated — burn (delete) or archive?"
    - **Default: burn** — delete the directory (the scratch is gone; the distilled conclusions live in the wiki).
    - Archive (exception): move to `playgrounds/archive/` only on explicit user request.
@@ -252,7 +218,7 @@ For each playground in the journal's **Active playgrounds** list:
 ## Journal Trim
 
 > **Retention → structure transform (v1.4.0).** Trimming is where the **structured session-summaries**
-> (Goal/Discoveries/Accomplished/Next-Steps/Files — see the Journal Breadcrumb Contract above) are
+> (Goal/Discoveries/Accomplished/Next-Steps/Files — see `references/capture-hooks.md`, "Journal breadcrumb contract") are
 > **distilled into durable wiki knowledge** and the **consumed/stale breadcrumbs are pruned**. A
 > breadcrumb that has been promoted into a `knowledge/**` node is **removed** from the journal (it now
 > lives durably — leaving both is the "don't journal what's in the wiki" anti-pattern); a breadcrumb
@@ -271,8 +237,8 @@ After routing all items:
 3. Hard budget: **≤ 80 lines total**. If still over, trim the Log (oldest entries first).
 4. No archive directory — history lives in git and in consolidated knowledge nodes.
 5. **Activity-log rollup (v1.5.0 — this is the step `/synaptic-audit` routes to; the hook never prunes,
-   and audit never writes).** The layer-(a0) activity marker (`SKILL.md` §d) only ever blind-appends to
-   `journal/_activity/<host>-<date>.log`, so trimming it is **this** step's job:
+   and audit never writes).** The layer-(a0) activity marker (`references/capture-hooks.md`) only ever blind-appends to
+   `journal/_activity/<host-token>-<date>.log` (one `boot` or `stop` per line; pre-1.6 files are `<host>-<date>.log` with `<ts> <event>` lines — count the last field), so trimming it is **this** step's job:
    - **Retention contract (binding):** **never prune inside the audit window.** Keep **raw** per-day logs
      covering at least Step 9b's window (default: the last ~30 days). Only beyond it may a day-file be
      collapsed to a single line `<date> boot=N stop=M`, and the **per-day `boot` count must survive the
@@ -306,7 +272,7 @@ Consolidated:
   - N contradictions reconciled: {old-node → resolution (superseded / contradicts-linked / flagged)}
   - N lessons added: knowledge/lessons/{names}
   - N registry entries updated: registries/{tables}
-  - N artifacts stored: references/raw/{filenames} (_index.md entries + content_hash added)
+  - N artifacts stored: references/raw/{filenames} (_index.md entries + `source`; `content_hash` outside git)
   - N playground(s) closed: {task-ids} (scratch burned / archived; durable conclusions distilled)
   - N items discarded (temporal noise / superseded scratch)
 
@@ -330,7 +296,7 @@ BRAIN.md updated: field bumped to {date}.
 - Retry note → lesson (specific failure → reusable principle).
 - Token caching note → durable knowledge / pattern (performance decision that recurs).
 - Implementation draft (playground scratch) → conclusion already distilled into the two notes; burn.
-- OpenAPI spec → large verbatim artifact → `references/raw/` (record `content_hash` on the distilled node).
+- OpenAPI spec → large verbatim artifact → `references/raw/` (record `source`, plus `content_hash` outside git, on the distilled node).
 
 **Step 2 — Atomicity test:** both notes are distinct concepts; two separate nodes.
 
@@ -360,45 +326,11 @@ trimmed to 22 lines; `BRAIN.md` `updated:` stamped.
 
 ## Journal Breadcrumb Contract (the cheap, always-on safety net)
 
-Consolidation is the *promotion* pass. It sits on top of a cheaper layer that runs continuously and
-is **not** governed by `capture_policy`:
-
-- **One terse line per meaningful turn** is written to `journal/_current.md`. This is an
-  **instruction the agent follows, not only a hook**: the per-turn `Stop` breadcrumb prompts it where
-  wired, but write it even when no hook fires — hooks are host-specific and can silently fail. **Be
-  precise about what this is (v1.5.0):** because it is an instruction, it is **best-effort semantic
-  capture, NOT the non-empty guarantee** — an agent that does not comply writes nothing, which is
-  exactly issue #2a. The **mechanical** floor is the separate layer-(a0) activity marker (`SKILL.md` §d
-  — a host-run shell append, agent-independent, **shell**-hook-capable hosts only). This breadcrumb is
-  **fixed-cost**: a single line, never a full consolidation, regardless of the capture-policy dial.
-- Breadcrumbs **live on disk so they survive a crash** — what only lived in the context window dies;
-  what reached the journal can still be consolidated later (including by `SessionStart`-rescue on the
-  next boot — see `references/audit.md`).
-- Consolidation **consumes** these breadcrumbs: it routes the durable ones into the wiki (Steps 1–6)
-  and trims the rest in the Journal Trim step. A breadcrumb is a *candidate*, not a promotion.
-- **Do not** add a second policy dial for breadcrumbs. There are exactly two orthogonal dials:
-  `capture_policy` (how aggressively things get **promoted**) and the passivity dial (**when** capture
-  triggers). Breadcrumbs are the fixed floor underneath both.
-
-> **Structured session-summary + anti-verbosity discipline (v1.4.0 — inspired by Engram-class
-> memory-log protocols; fully file-based, zero-runtime).** At a session/context boundary the agent
-> writes a **short STRUCTURED session summary** (not just per-turn lines) mapped onto the journal's
-> three sections — **Goal → Resume Anchor · Discoveries/Next-Steps → Watch List + next step ·
-> Accomplished → Log · Files-touched → named inline** (see `SKILL.md` §d for the full shape and
-> attribution). The standing discipline: capture **concise structured summaries, never "bibles"**;
-> **dedup** (do not re-record a breadcrumb already in the journal); **do not journal what already lives
-> durably in the wiki** (breadcrumb a pointer, not the node's contents — the journal is working-memory
-> for what must survive context-loss, not a copy of curated knowledge); and **prune/expire** stale
-> breadcrumbs on consolidate (see Journal Trim below — the journal is bounded, not append-forever).
-> Cross-refs the **Simplicity Guardrail** (`docs/concepts/simplicity-guardrail.md`): keep the journal
-> surface small. This is the CORE floor; a future **Cortex-mode Engram MemoryLog backend (v2.0)** would
-> supersede the file-journal where a runtime is present — this protocol needs **none**.
-
-> **Provisional — revisit as a token-optimization.** The per-turn breadcrumb is *good for now*, not a
-> fixed rule. A future Cortex T2 Engram-style FTS journal index (a derived SQLite/FTS5 layer over the
-> journal — see `ROADMAP.md` → "Engram-style searchable journal — Cortex") may make the per-turn
-> breadcrumb partly redundant as a search surface. Treat the breadcrumb cadence as a **token-optimization
-> item to revisit** when that layer lands — not a change to make now, and never a CORE dependency on it.
+Consolidation **consumes** the journal breadcrumbs: Steps 1–6 route the durable ones into the wiki and
+Journal Trim drops the rest (a breadcrumb is a *candidate*, not a promotion). What a breadcrumb is (a
+best-effort, fixed-cost instruction, not governed by `capture_policy`), the structured session summary
+written at a boundary, and the anti-verbosity rules (optional reading; consolidate runs without it): `references/capture-hooks.md`, "Journal breadcrumb
+contract". Cadence: `templates/BRAIN.md`.
 
 ---
 

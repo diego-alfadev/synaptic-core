@@ -12,7 +12,7 @@
 
 ### The two-plane model
 
-The `.synaptic/` brain is structured around a clean separation between the **wiki** (what you know: patterns, decisions, playbooks, lessons, registries, references) and the **harness** (how you work here: conventions, guardrails, project-local skills). Persona and behavior are explicitly out of scope — they belong in the user harness (AGENTS.md / CLAUDE.md), not in the brain.
+The `.synaptic/` brain is structured around a clean separation between the **wiki** (what you know: patterns, decisions, playbooks, lessons, registries, references) and the **harness** (how you work here: conventions, guardrails). Persona and behavior are explicitly out of scope — they belong in the user harness (AGENTS.md / CLAUDE.md), not in the brain.
 
 ### Capture contract
 
@@ -24,7 +24,7 @@ A six-step agent-agnostic consolidation formula is embedded in every `BRAIN.md` 
 
 ### D1 frontmatter + tags
 
-Every knowledge node and registry carries: `description` (1 line, feeds the `_index` summary), `type`, `status`, `updated`, `tags`. Tags are the deliberate indexable surface for future FTS/RAG — present in v1 so the format never needs forking.
+Every knowledge node and registry carries: `description` (1 line, a self-contained summary; MOC lines carry their own routing text), `type`, `status`, `updated`, `tags`. Tags are the deliberate indexable surface for future FTS/RAG — present in v1 so the format never needs forking.
 
 ### Registries as first-class citizens
 
@@ -46,7 +46,7 @@ The skill now ships with a bootstrap header in `SKILL.md` plus a `MANIFEST.txt` 
 
 The combined `1.3.0` release folds the migration-&-upgrade-hardening work (per-phase `MIGRATION_DONE` gate + mandatory retrieval drill + one-commit-per-phase; git fast-forward cutover with the folder-rename demoted to a non-git, Windows/OneDrive-safe fallback; the instruction-first breadcrumb floor that closes issue #2 on hook-less hosts; the standing deletion/move/archive ledger; retrieval-readiness reporting and non-live-artifact checks in `check`) together with additive structural improvements. The **brain schema is unchanged (still 1.0)** — an existing v1 brain has nothing to migrate; reinstall the skill for the new engine behavior. Structural additions, all CORE and backward-compatible:
 
-- **Optional PARA lifecycle axis** — knowledge nodes MAY carry `lifecycle: project | area | resource | dormant`, an actionability axis orthogonal to `status`, scoping the active working set (`project` + `area` + absent load by default; `resource` + `dormant` lazy-pull). Absence behaves exactly as a pre-1.3.0 node, so **no schema bump**; a skill-less agent ignores the unknown key. Demotion is reversible archive-don't-delete (flip to `dormant`, keep file/index/edges).
+- **Optional PARA lifecycle axis** — knowledge nodes MAY carry `lifecycle: project | area | resource | dormant`, an actionability label orthogonal to `status` (since v1.6 a label only; the earlier "default working set" scoping had no consumer and was dropped). Absence behaves exactly as a pre-1.3.0 node, so **no schema bump**; a skill-less agent ignores the unknown key. Demotion is reversible archive-don't-delete (flip to `dormant`, keep file/index/edges).
 - **God-node + surprising-edge audit heuristics** — `/synaptic-audit` gains two diagnose-only, prose-CORE graph-health passes (over-connected hub detection; cross-cluster authored-edge listing), routing to `/synaptic-weave`, computed over the same knowledge-scoped edge universe as `check`/`graph`. No auto-discovery claim; edges stay authored.
 - **Local-vs-remote data-boundary governance doc** and a **verb-contract note** (`docs/concepts/`) — the explicit local/remote boundary (host LLM context = the sole egress point; Synaptic adds no server/DB/telemetry), and the four-verb contract mapped against Cognee's, with `memify` deferred to a P4 usage-signal-gated direction (no present-tense self-improvement claim).
 
@@ -96,13 +96,13 @@ The v1 file contract (frontmatter + tags + INDEX + `[[wikilinks]]` + registries)
 1. **Embeddings over nodes and registry rows** — find the most relevant node for a query even when the exact wikilink is unknown. Candidates: Smart Connections (Obsidian plugin), SQLite-vec sidecar, an embedding layer.
 2. **Nugget / proposition index** — extract atomic facts and entities from the narrative pages, embed and index them. Enables (a) fine-grained semantic retrieval over propositions, not whole pages, and (b) **proposing** candidate `[[links]]` for the `/synaptic-weave` graph-gardening operation to review.
 
-**Honesty line:** we are **not** GraphRAG and make **no auto-discovery-of-non-intuitive-links claim**. GraphRAG / LightRAG are cited as *the direction*. Edges stay **authored**; this layer **proposes, never auto-writes** — `/synaptic-weave` and a human confirm. Multi-hop relational retrieval here runs over **authored directional edges** an embedding cannot infer.
+**Honesty line:** we are **not** GraphRAG and make **no auto-discovery-of-non-intuitive-links claim**. GraphRAG / LightRAG are cited as *the direction*. Edges stay **authored**; this layer **proposes, never auto-writes** — `/synaptic-maintain weave` and a human confirm. Multi-hop relational retrieval here runs over **authored directional edges** an embedding cannot infer.
 
 **Why:** the MOC-of-MOCs navigation is efficient when you know *where* to look; the semantic sidecar is the **designed answer to the ticket → playbook seam at scale**, when you do not. It degrades to grep/MOC and is never required at CORE.
 
 **Relationship to the wiki:** the wiki (narrative pages) stays the authored, authoritative layer. The derived index does not replace pages, and nothing in CORE reads it. Think of it as a computed view over the same content.
 
-**Dependency:** an embedding runtime; the v1 `tags` frontmatter and `description` field as the primary embedding surface. The derived index is deletable; files remain authoritative. The `/synaptic-weave` skill operation can use this layer when available, but falls back to tag/term overlap when it is not.
+**Dependency:** an embedding runtime; the v1 `tags` frontmatter and `description` field as the primary embedding surface. The derived index is deletable; files remain authoritative. The `/synaptic-maintain weave` skill operation can use this layer when available, but falls back to tag/term overlap when it is not.
 
 **Constraint:** CORE remains 0-install-capable. This entire layer is **Cortex**, never CORE. The authored pages are the substrate; the index is an optional acceleration.
 

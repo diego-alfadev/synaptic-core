@@ -157,7 +157,10 @@ The v0.4 per-agent bridge file approach is replaced. At `/synaptic-init` or `/sy
    auto-discover at least one of them.
 3. Optionally writes `.cursor/rules/synaptic.mdc` if `.cursor/` is detected.
 
-`CLAUDE.md` is not touched — that is user persona territory. Cross-agent rule sync is
+`CLAUDE.md` is not touched — that is user persona territory. *(Amended in v1.6, decision X1a: Claude
+Code skips AGENTS.md when a project `CLAUDE.md` exists, so the guarantee is now **at most one
+marker-wrapped `SYNAPTIC-BOOT` block — one `@AGENTS.md` import line — in `CLAUDE.md`, only with
+approval**; see `references/init.md` §a2.)* Cross-agent rule sync is
 delegated to existing tools (gentle-ai, ai-rules-sync, block/ai-rules, rulesync); Synaptic
 documents compatibility but does not replicate the sync mechanism.
 
@@ -241,7 +244,10 @@ system. This is documented in the README "What SYNAPTIC-CORE is NOT" section.
 - **The `CLAUDE.md` non-touch rule requires discipline.** Because the skill never touches
   `CLAUDE.md`, users whose only harness file is `CLAUDE.md` (no AGENTS.md) will not get the
   brain pointer automatically unless they explicitly ask the skill to write it there. The
-  skill documents this; it is not a silent failure.
+  skill documents this; it is not a silent failure. *(Superseded in v1.6: it **was** a silent failure on
+  Claude Code whenever a project `CLAUDE.md` existed (per the Claude Code memory docs) — the brain
+  stopped receiving writes unnoticed — hence the boot
+  adapter and the audit boot proof, Step 10b.)*
 
 ---
 

@@ -1,5 +1,5 @@
 ---
-description: "Sub-MOC for the {{example-cluster}} cluster — lists every node with a 1-line summary."
+description: "Sub-MOC for the {{example-cluster}} cluster — lists every node with one line of routing text."
 type: knowledge
 status: active
 updated: "{{YYYY-MM-DD}}"
@@ -14,10 +14,11 @@ tags: [moc, "{{example-cluster}}"]
 
 ## Nodes
 
-<!-- Format: - `[[node-kebab-name]]` — {{1-line description copied from the node's `description:` frontmatter}}
-     Keep these summaries short — they are the mechanism that avoids reading full files. -->
+<!-- Format: - [[node-kebab-name]] — {{routing text: what this node answers or when to open it; non-empty, ≤120 characters}}
+     Routing text is written for routing, not copied from `description:`; it is what lets an agent skip
+     opening files it does not need. -->
 
-- [[example-node]] — {{1-line summary of what this node contains}}
+- [[example-node]] — {{routing text: what it answers or when to reach for it (≤120 characters)}}
 
 <!-- Playbooks co-located here (type: playbook): -->
 <!-- - `[[example-playbook]]` — {{when to reach for this playbook}} -->

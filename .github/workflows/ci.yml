@@ -2,7 +2,7 @@
 #
 # CORE (the skill) is prose and needs no runtime; these jobs verify the two things that ARE code:
 #   - tools/*.js, on every Node the tools claim to support (">= 18"), on Linux and Windows
-#   - the capture-floor hook scripts, exactly as published in the recipe and SKILL.md, under every
+#   - the capture-floor hook scripts, exactly as published in the recipe and references/capture-hooks.md, under every
 #     shell they are documented for, including Windows PowerShell 5.1 (the engine of the issue #2a
 #     PowerShell bug, and the only PowerShell a stock Windows install has)
 # See tests/README.md. Probes that settle open research questions live in probes.yml.

@@ -60,7 +60,9 @@ deployed — not loaded — by `/synaptic-init` and `/synaptic-upgrade`.
 **Mechanism:** `/synaptic-init` and `/synaptic-upgrade` run a **Deploy step** that:
 1. Reads `harness/conventions.md` + `harness/guardrails.md` from the brain.
 2. Writes a `<!-- BEGIN:SYNAPTIC-RULES --> … <!-- END:SYNAPTIC-RULES -->` block in AGENTS.md.
-3. Installs `harness/skills/*` into `.claude/skills/` and `.agents/skills/`.
+3. ~~Installs `harness/skills/*` into `.claude/skills/` and `.agents/skills/`.~~ **Superseded
+   2026-11 (X10):** deploy installs nothing executable from a brain; the feature is parked in
+   `docs/parked/harness-skills.md`.
 4. Is idempotent: the marked block is fully replaced on re-deploy; unmarked user content is
    never touched.
 
@@ -130,6 +132,6 @@ a node written today. The graph under-connects structurally over time regardless
   the single source of truth and the example brain is assembled on demand.
 - `standalone/synaptic/templates/harness/` (`conventions.md`, `guardrails.md`, `skills/`) — the
   deployable harness source files
-- `standalone/synaptic/SKILL.md` — Harness Self-Wire §c (Deploy step), Operations table
+- `standalone/synaptic/SKILL.md` — Operations table; `references/init.md` — Harness Self-Wire §c (Deploy step; moved there in v1.6)
 - `standalone/synaptic/references/weave.md` — the full /synaptic-weave specification
 - `docs/architecture/adr-001-minimal-cortex.md`, `adr-002-llm-wiki-first.md`

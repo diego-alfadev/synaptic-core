@@ -18,7 +18,9 @@ $Label   = "PS $($PSVersionTable.PSVersion) $($PSVersionTable.PSEdition)"
 $PsExe   = (Get-Process -Id $PID).Path
 $Root    = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).ProviderPath
 $Recipe  = Join-Path $Root 'recipes/session-end-consolidate.md'
-$Skill   = Join-Path $Root 'standalone/synaptic/SKILL.md'
+$Skill   = Join-Path $Root 'standalone/synaptic/references/capture-hooks.md'   # deployed one-liners (moved out of SKILL.md in v1.6)
+$SkillCore = Join-Path $Root 'standalone/synaptic/SKILL.md'
+$FpDoc   = Join-Path $Root 'standalone/synaptic/references/fingerprint.md'
 $Work    = Join-Path ([IO.Path]::GetTempPath()) ('syncf-' + [guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $Work | Out-Null
 # Any write that wrongly resolves against the .NET process directory lands here, never in a real brain.
@@ -45,14 +47,14 @@ function Info([string]$m) {
     if ($InCi) { Write-Output "::notice title=capture-floor ($Label)::$(Format-GhMessage $m)" }
 }
 
-function Get-Block([string]$Heading, [string]$Lang) {
-    $lines = [IO.File]::ReadAllLines($Recipe, [Text.Encoding]::UTF8)
+function Get-Block([string]$Heading, [string]$Lang, [string]$Path = $Recipe, [string]$Stop = '### ') {
+    $lines = [IO.File]::ReadAllLines($Path, [Text.Encoding]::UTF8)
     $inH = $false; $inB = $false; $out = New-Object System.Collections.Generic.List[string]
     foreach ($raw in $lines) {
         $l = $raw.TrimEnd("`r")
         if (-not $inH) { if ($l.StartsWith($Heading)) { $inH = $true }; continue }
         if (-not $inB) {
-            if ($l.StartsWith('### ')) { break }
+            if ($l.StartsWith($Stop)) { break }
             if ($l -eq ('```' + $Lang)) { $inB = $true }
             continue
         }
@@ -117,7 +119,18 @@ function New-Workspace([string]$Name, [switch]$Brain) {
     return $ws
 }
 
-$LineRe = '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z (stop|boot)$'
+$LineRe = '^(stop|boot)$'   # [X3] event only: per-day counts, no per-turn timestamps
+$NameRe = '^[0-9a-f]{12}-\d{4}-\d{2}-\d{2}\.log$'   # [X3] <host-token>-<UTC date>.log, never the raw host name
+# The documented host token: first 12 hex of SHA-256 over the lower-cased host name.
+$HostName = if ($env:COMPUTERNAME) { $env:COMPUTERNAME } else { [Net.Dns]::GetHostName() }
+$HostToken = -join ([Security.Cryptography.SHA256]::Create().ComputeHash([Text.Encoding]::UTF8.GetBytes($HostName.ToLowerInvariant()))[0..5] | ForEach-Object { $_.ToString('x2') })
+function Test-LedgerName($Led) { return ($Led.Name -cmatch $NameRe -and $Led.Name.StartsWith("$HostToken-")) }
+function Test-LedgerIgnored([string]$Brain) {
+    $gi = Join-Path $Brain 'journal/_activity/.gitignore'
+    if (-not [IO.File]::Exists($gi)) { return $false }
+    $l = Get-Lines $gi
+    return (($l -contains '*') -and ($l -contains '!.gitignore'))
+}
 
 # Context the findings depend on: the recipe registers Windows hooks as `powershell -File ...` (5.1, on
 # every Windows install; pwsh is optional), and a .ps1 only runs under the effective execution policy.
@@ -137,7 +150,7 @@ try {
     #    PowerShell accepts as a string delimiter, so the hook stops parsing. Comments are harmless.
     #    Covers the recipe AND SKILL.md, whose blocks sit inside a blockquote (`> ` prefix stripped).
     $blk = 0; $bad = @()
-    foreach ($src in @($Recipe, $Skill)) {
+    foreach ($src in @($Recipe, $Skill, $SkillCore, $FpDoc)) {
         $inB = $false; $ln = 0
         foreach ($raw in [IO.File]::ReadAllLines($src, [Text.Encoding]::UTF8)) {
             $ln++; $l = ($raw.TrimEnd("`r")) -replace '^> ?', ''
@@ -147,8 +160,8 @@ try {
             if ($code -match '[^\x00-\x7F]') { $bad += "$(Split-Path $src -Leaf):${ln}: $($l.Trim())" }
         }
     }
-    if ($bad.Count -eq 0) { Ok "recipe + SKILL.md PowerShell blocks are ASCII outside comments ($blk blocks)" }
-    else { Nok "recipe + SKILL.md PowerShell blocks are ASCII outside comments ($blk blocks)" "non-ASCII in code breaks or garbles BOM-less scripts under 5.1 -> $($bad -join ' ; ')" }
+    if ($bad.Count -eq 0) { Ok "recipe + skill PowerShell blocks are ASCII outside comments ($blk blocks)" }
+    else { Nok "recipe + skill PowerShell blocks are ASCII outside comments ($blk blocks)" "non-ASCII in code breaks or garbles BOM-less scripts under 5.1 -> $($bad -join ' ; ')" }
 
     $a0Body = Get-Block '### A.0' 'powershell'
     $a1Body = Get-Block '### A.1' 'powershell'
@@ -170,13 +183,17 @@ try {
         $f = $led.FullName
         $lines = Get-Lines $f
         if ($lines.Count -eq 1) { Ok 'A.0 writes exactly one line' } else { Nok 'A.0 writes exactly one line' "got $($lines.Count)" }
-        if ($lines.Count -ge 1 -and $lines[0] -match $LineRe) { Ok "A.0 line format is '<UTC ISO-8601> <event>'" }
-        else { Nok 'A.0 line format' "got: $($lines -join ' | ')" }
+        if ($lines.Count -ge 1 -and $lines[0] -match $LineRe) { Ok "A.0 line format is '<event>' only, no per-turn timestamp [X3]" }
+        else { Nok "A.0 line format is '<event>' only, no per-turn timestamp [X3]" "got: $($lines -join ' | ')" }
         if (Test-Bom $f)       { Nok 'A.0 ledger has no UTF-8 BOM' }          else { Ok 'A.0 ledger has no UTF-8 BOM' }
         if (Test-Byte $f 0)    { Nok 'A.0 ledger has no NUL bytes (not UTF-16)' } else { Ok 'A.0 ledger has no NUL bytes (not UTF-16)' }
         if (Test-Byte $f 13)   { Nok 'A.0 ledger uses LF line endings' }      else { Ok 'A.0 ledger uses LF line endings' }
-        if ($led.Name.StartsWith('-')) { Nok "A.0 ledger filename does not start with '-'" "$($led.Name) - the host-name expression returned empty on this OS" }
-        else { Ok "A.0 ledger filename is <host>-<date>.log ($($led.Name))" }
+        if (Test-LedgerName $led) { Ok 'A.0 ledger filename is <host-token>-<date>.log with the documented token [X3]' }
+        else { Nok 'A.0 ledger filename is <host-token>-<date>.log with the documented token [X3]' "$($led.Name) (expected token $HostToken)" }
+        if ($led.Name.ToLowerInvariant().StartsWith($HostName.ToLowerInvariant() + '-')) { Nok 'A.0 ledger filename is not named after the raw host name [X3]' $led.Name }
+        else { Ok 'A.0 ledger filename is not named after the raw host name [X3]' }
+        if (Test-LedgerIgnored (Join-Path $ws '.synaptic')) { Ok 'A.0 leaves the ledger untracked by default (_activity/.gitignore ignores everything but itself) [X3]' }
+        else { Nok 'A.0 leaves the ledger untracked by default (_activity/.gitignore ignores everything but itself) [X3]' 'no or wrong .gitignore' }
         $first = $lines[0]
         $null = Invoke-Hook $A0 'boot' $ws
         $lines2 = Get-Lines $f
@@ -285,6 +302,26 @@ try {
     if (Test-BomAnywhere $jf) { Nok 'A.1 appending to an existing journal inserts no BOM' } else { Ok 'A.1 appending to an existing journal inserts no BOM' }
     if (Test-Byte $jf 0) { Nok 'A.1 journal has no NUL bytes (not UTF-16)' } else { Ok 'A.1 journal has no NUL bytes (not UTF-16)' }
 
+    # 8b. Dedup [D1]: the SAME uncommitted diff on a later turn appends nothing; an agent-written line in
+    #     between does not defeat it; a changed file list appends again.
+    function Get-CrumbCount([string]$Path) { $l = Get-Lines $Path; return @($l | Where-Object { $_ -match ' breadcrumb: touched ' }).Count }
+    $null = Invoke-Hook $A1 '' $ws
+    if ((Get-CrumbCount $jf) -eq 1) { Ok 'A.1 skips a breadcrumb identical to the last one (same files)' }
+    else { Nok 'A.1 skips a breadcrumb identical to the last one (same files)' "$(Get-CrumbCount $jf) breadcrumbs" }
+    [IO.File]::AppendAllText($jf, "- agent note: decided X`n", (New-Object Text.UTF8Encoding $false))
+    $null = Invoke-Hook $A1 '' $ws
+    if ((Get-CrumbCount $jf) -eq 1) { Ok 'A.1 dedup keys on the last breadcrumb, not the last line' }
+    else { Nok 'A.1 dedup keys on the last breadcrumb, not the last line' "$(Get-CrumbCount $jf) breadcrumbs" }
+    $eap = $ErrorActionPreference; $ErrorActionPreference = 'Continue'
+    Push-Location -LiteralPath $ws
+    try {
+        [IO.File]::WriteAllText((Join-Path $ws 'second.txt'), "c`n")
+        git add second.txt 2>$null | Out-Null
+    } finally { Pop-Location; $ErrorActionPreference = $eap }
+    $null = Invoke-Hook $A1 '' $ws
+    if ((Get-CrumbCount $jf) -eq 2) { Ok 'A.1 appends again when the touched-file list changes' }
+    else { Nok 'A.1 appends again when the touched-file list changes' "$(Get-CrumbCount $jf) breadcrumbs" }
+
     # 9. Gate passes, journal does NOT exist yet (e.g. rotated by a consolidation): A.1 creates it.
     $ws = New-GitWorkspace 'a1-git-missing' $null
     $jf = Join-Path $ws '.synaptic/journal/_current.md'
@@ -301,12 +338,13 @@ try {
     if (Test-Bom $jf) { Nok 'A.1 appending to an empty journal writes no BOM' '-Encoding utf8 writes a BOM at offset 0 on Windows PowerShell 5.1' }
     else { Ok 'A.1 appending to an empty journal writes no BOM' }
 
-    # --- A.2 reminder: the same git-free "unconsolidated work?" predicate as the A.3 rescue ----------
+    # --- A.2 pending-work check: one script, modes rescue|compact, one git-free predicate [S7] -------
     # Work = pending breadcrumb lines, or open playground dirs; archive/ and the A.0 ledger are not. [C2 C4]
+    # The cases live in tests/capture-floor/pending-cases.txt, which run.sh reads too (sh/PS parity).
     $a2Body = Get-Block '### A.2' 'powershell'
-    if ($a2Body.Count -gt 0) { Ok 'extract A.2 consolidation reminder (PowerShell) from the recipe' }
-    else { Nok 'extract A.2 consolidation reminder (PowerShell) from the recipe' 'heading or fence changed'; exit 1 }
-    $A2 = Save-Script 'synaptic-consolidate-reminder.ps1' $a2Body
+    if ($a2Body.Count -gt 0) { Ok 'extract A.2 pending-work check (PowerShell) from the recipe' }
+    else { Nok 'extract A.2 pending-work check (PowerShell) from the recipe' 'heading or fence changed'; exit 1 }
+    $A2 = Save-Script 'synaptic-pending.ps1' $a2Body
     function New-BrainWs([string]$Name, [switch]$Git) {
         $ws = New-Workspace $Name -Brain
         foreach ($d in @('.synaptic/journal', '.synaptic/playgrounds')) { New-Item -ItemType Directory -Path (Join-Path $ws $d) | Out-Null }
@@ -322,46 +360,11 @@ try {
         }
         return $ws
     }
-    function Get-HookResult([string]$File, [string]$Cwd) {
-        $p = Start-Hook $File '' $Cwd $null
+    function Get-HookResult([string]$File, [string]$Cwd, [string]$Arg = '') {
+        $p = Start-Hook $File $Arg $Cwd $null
         $o = $p.StandardOutput.ReadToEnd(); $e = $p.StandardError.ReadToEnd(); $p.WaitForExit()
         return @{ Out = $o.Trim(); Err = $e.Trim(); Rc = $p.ExitCode }
     }
-    $crumb = "- 2026-10-29T10:00Z breadcrumb: touched a.md`n"
-
-    $ws = New-BrainWs 'a2ps-nogit'                                                                  # C2
-    New-Item -ItemType Directory -Path (Join-Path $ws '.synaptic/playgrounds/task') | Out-Null
-    $r = Get-HookResult $A2 $ws
-    if ($r.Out -match 'consolidation reminder') { Ok 'A.2 (PS) reminds on a NON-git brain with an open playground' }
-    else { Nok 'A.2 (PS) reminds on a NON-git brain with an open playground' "out='$($r.Out)' err='$($r.Err)'" }
-
-    $ws = New-BrainWs 'a2ps-marker'                                                                 # C2
-    $ad = Join-Path $ws '.synaptic/journal/_activity'; New-Item -ItemType Directory -Path $ad | Out-Null
-    [IO.File]::WriteAllText((Join-Path $ad 'h-2026-10-29.log'), "2026-10-29T10:00:00Z boot`n")
-    $eap = $ErrorActionPreference; $ErrorActionPreference = 'Continue'
-    Push-Location -LiteralPath $ws
-    try {
-        git -c core.autocrlf=false init -q 2>$null | Out-Null
-        git -c core.autocrlf=false add -A 2>$null | Out-Null
-        git -c core.autocrlf=false -c user.name=ci -c user.email=ci@example.invalid commit -qm init 2>$null | Out-Null
-    } finally { Pop-Location; $ErrorActionPreference = $eap }
-    [IO.File]::AppendAllText((Join-Path $ad 'h-2026-10-29.log'), "2026-10-29T10:05:00Z stop`n")
-    $r = Get-HookResult $A2 $ws
-    if (-not $r.Out -and -not $r.Err) { Ok 'A.2 (PS) stays silent when only the activity ledger changed' }
-    else { Nok 'A.2 (PS) stays silent when only the activity ledger changed' "false reminder: out='$($r.Out)'" }
-
-    $ws = New-BrainWs 'a2ps-crumbs' -Git
-    [IO.File]::AppendAllText((Join-Path $ws '.synaptic/journal/_current.md'), $crumb)
-    $r = Get-HookResult $A2 $ws
-    if ($r.Out -match 'consolidation reminder') { Ok 'A.2 (PS) reminds when breadcrumbs are pending' }
-    else { Nok 'A.2 (PS) reminds when breadcrumbs are pending' "out='$($r.Out)' err='$($r.Err)'" }
-
-    $ws = New-BrainWs 'a2ps-archive'                                                                # C4
-    New-Item -ItemType Directory -Path (Join-Path $ws '.synaptic/playgrounds/archive/old') -Force | Out-Null
-    $r = Get-HookResult $A2 $ws
-    if (-not $r.Out -and -not $r.Err) { Ok 'A.2 (PS) does not count playgrounds/archive/' }
-    else { Nok 'A.2 (PS) does not count playgrounds/archive/' "out='$($r.Out)' err='$($r.Err)'" }
-
     function Test-Quiet($r) { return ($r.Rc -eq 0 -and -not $r.Out -and -not $r.Err) }
     function Save-Commit([string]$Ws) {
         $eap = $ErrorActionPreference; $ErrorActionPreference = 'Continue'
@@ -373,29 +376,67 @@ try {
         } finally { Pop-Location; $ErrorActionPreference = $eap }
     }
 
-    $ws = New-BrainWs 'a2ps-case'                                                                   # parity
-    [IO.File]::AppendAllText((Join-Path $ws '.synaptic/journal/_current.md'), "- 2026-10-29T10:00Z Breadcrumb: touched a.md`n")
-    $r = Get-HookResult $A2 $ws
-    if (Test-Quiet $r) { Ok "A.2 (PS) counts only the lowercase hook token 'breadcrumb:' (parity with bash)" }
-    else { Nok "A.2 (PS) counts only the lowercase hook token 'breadcrumb:'" "out='$($r.Out)'" }
+    $crumb = "- 2026-10-29T10:00Z breadcrumb: touched a.md`n"
+    $utf8 = New-Object Text.UTF8Encoding $false
 
-    $ws = New-Workspace 'a2ps-pgfile' -Brain                                                        # parity
-    New-Item -ItemType Directory -Path (Join-Path $ws '.synaptic/journal') | Out-Null
-    [IO.File]::WriteAllText((Join-Path $ws '.synaptic/playgrounds'), "not a directory`n")
-    $r = Get-HookResult $A2 $ws
-    if (Test-Quiet $r) { Ok 'A.2 (PS) does not count a FILE named playgrounds (parity with bash)' }
-    else { Nok 'A.2 (PS) does not count a FILE named playgrounds' "out='$($r.Out)' err='$($r.Err)'" }
+    $cases = [IO.File]::ReadAllLines((Join-Path $Root 'tests/capture-floor/pending-cases.txt'), [Text.Encoding]::UTF8)
+    $rows = 0; $wantRows = @($cases | Where-Object { $_.Trim() -and -not $_.Trim().StartsWith("#") }).Count
+    foreach ($line in $cases) {
+        $f = $line.Split('|'); if ($f.Count -lt 4) { continue }
+        $name = $f[0].Trim(); if (-not $name -or $name.StartsWith('#')) { continue }
+        $setup = @($f[1].Split(',') | ForEach-Object { $_.Trim() } | Where-Object { $_ }); $mode = $f[2].Trim(); $expect = $f[3].Trim()
+        $rows++
+        if ($setup -contains 'nobrain') { $ws = New-Workspace "pc-$name" }
+        elseif ($setup -contains 'bare') { $ws = New-Workspace "pc-$name" -Brain; New-Item -ItemType Directory -Path (Join-Path $ws '.synaptic/knowledge') | Out-Null }
+        elseif ($setup -contains 'pgfile') { $ws = New-Workspace "pc-$name" -Brain; New-Item -ItemType Directory -Path (Join-Path $ws '.synaptic/journal') | Out-Null; [IO.File]::WriteAllText((Join-Path $ws '.synaptic/journal/_current.md'), "# Journal`n", $utf8); [IO.File]::WriteAllText((Join-Path $ws '.synaptic/playgrounds'), '') }
+        else { $ws = New-BrainWs "pc-$name" }
+        $jf = Join-Path $ws '.synaptic/journal/_current.md'
+        foreach ($item in $setup) {
+            if ($item -like 'crumbs=*') { 1..([int]$item.Substring(7)) | ForEach-Object { [IO.File]::AppendAllText($jf, $crumb, $utf8) } }
+            elseif ($item -eq 'crumbcase') { [IO.File]::AppendAllText($jf, "- 2026-10-29T10:00Z Breadcrumb: touched a.md`n", $utf8) }
+            elseif ($item -eq 'pg') { New-Item -ItemType Directory -Path (Join-Path $ws '.synaptic/playgrounds/task') | Out-Null }
+            elseif ($item -eq 'archive') { New-Item -ItemType Directory -Path (Join-Path $ws '.synaptic/playgrounds/archive/old') -Force | Out-Null }
+            elseif ($item -eq 'ledger') {
+                $ad = Join-Path $ws '.synaptic/journal/_activity'; New-Item -ItemType Directory -Path $ad | Out-Null
+                [IO.File]::WriteAllText((Join-Path $ad '0123456789ab-2026-10-29.log'), "boot`nstop`n", $utf8)
+            }
+        }
+        $r = Get-HookResult $A2 $ws $mode
+        if ($expect -eq 'quiet') {
+            if (Test-Quiet $r) { Ok "A.2 [$mode] ${name}: quiet" } else { Nok "A.2 [$mode] ${name}: quiet" "rc=$($r.Rc) out='$($r.Out)' err='$($r.Err)'" }
+        } elseif ($expect.StartsWith('say:')) {
+            $want = $expect.Substring(4)
+            if ($r.Rc -eq 0 -and $r.Out.Contains($want)) { Ok "A.2 [$mode] ${name}: says '$want'" } else { Nok "A.2 [$mode] ${name}: says '$want'" "out='$($r.Out)' err='$($r.Err)'" }
+        } else { Nok "A.2 fixture row $name" "unknown expect '$expect'" }
+    }
+    if ($rows -eq $wantRows) { Ok "A.2 fixture table: all $wantRows rows ran" } else { Nok "A.2 fixture table: all $wantRows rows ran" "ran $rows" }
 
-    $ws = New-Workspace 'a2ps-bare' -Brain
-    New-Item -ItemType Directory -Path (Join-Path $ws '.synaptic/knowledge') | Out-Null
-    $r = Get-HookResult $A2 $ws
-    if (Test-Quiet $r) { Ok 'A.2 (PS) is quiet with no journal and no playgrounds/ (exit 0)' }
-    else { Nok 'A.2 (PS) is quiet with no journal and no playgrounds/' "rc=$($r.Rc) err='$($r.Err)'" }
+    # PowerShell 5.1 started in a folder whose path contains [ ] reports $PSHOME as its location, so a
+    # relative .synaptic was never found and every hook silently did nothing. [S7]
+    $bk = Join-Path $Work 'proj[1]'; [IO.Directory]::CreateDirectory((Join-Path $bk '.synaptic/journal')) | Out-Null
+    [IO.Directory]::CreateDirectory((Join-Path $bk '.synaptic/playgrounds/task')) | Out-Null
+    [IO.File]::WriteAllText((Join-Path $bk '.synaptic/journal/_current.md'), "# Journal`n", $utf8)
+    $null = Invoke-Hook $A0 'stop' $bk
+    if ([IO.Directory]::Exists((Join-Path $bk '.synaptic/journal/_activity')) -and @([IO.Directory]::GetFiles((Join-Path $bk '.synaptic/journal/_activity'), '*.log')).Count -eq 1) { Ok 'A.0 run from a project folder whose path contains [ ] finds the brain' }
+    else { Nok 'A.0 run from a project folder whose path contains [ ] finds the brain' 'no ledger written (PowerShell 5.1 started at $PSHOME)' }
+    $r = Get-HookResult $A2 $bk 'rescue'
+    if ($r.Out.Contains('1 open playground(s)')) { Ok 'A.2 run from a project folder whose path contains [ ] finds the brain' }
+    else { Nok 'A.2 run from a project folder whose path contains [ ] finds the brain' "out='$($r.Out)'" }
+    # A.1 also has to run git in the project, not in $PSHOME.
+    $bg = Join-Path $Work 'gitproj[2]'; [IO.Directory]::CreateDirectory((Join-Path $bg '.synaptic/journal')) | Out-Null
+    [IO.File]::WriteAllText((Join-Path $bg '.synaptic/journal/_current.md'), "# Journal`n", $utf8); [IO.File]::WriteAllText((Join-Path $bg 'tracked.txt'), "a`n")
+    $eap = $ErrorActionPreference; $ErrorActionPreference = 'Continue'
+    Push-Location -LiteralPath $bg
+    try { git -c core.autocrlf=false init -q 2>$null | Out-Null; git -c core.autocrlf=false add tracked.txt 2>$null | Out-Null; git -c core.autocrlf=false -c user.name=ci -c user.email=ci@example.invalid commit -qm init 2>$null | Out-Null } finally { Pop-Location; $ErrorActionPreference = $eap }
+    [IO.File]::AppendAllText((Join-Path $bg 'tracked.txt'), "b`n")
+    $null = Invoke-Hook $A1 '' $bg
+    if ([IO.File]::ReadAllText((Join-Path $bg '.synaptic/journal/_current.md')) -match 'breadcrumb: touched tracked.txt') { Ok 'A.1 run from a git project folder whose path contains [ ] writes its breadcrumb' }
+    else { Nok 'A.1 run from a git project folder whose path contains [ ] writes its breadcrumb' 'no breadcrumb (git ran outside the project)' }
 
     $ws = New-BrainWs 'a2ps-untracked' -Git                                                         # C2
     New-Item -ItemType Directory -Path (Join-Path $ws '.synaptic/playgrounds/new') | Out-Null
     [IO.File]::WriteAllText((Join-Path $ws '.synaptic/playgrounds/new/notes.md'), "x`n")
-    $r = Get-HookResult $A2 $ws
+    $r = Get-HookResult $A2 $ws 'rescue'
     if ($r.Rc -eq 0 -and $r.Out -match '0 pending breadcrumb\(s\) and 1 open playground\(s\)') { Ok 'A.2 (PS) reminds for an untracked new playground in a git repo' }
     else { Nok 'A.2 (PS) reminds for an untracked new playground in a git repo' "out='$($r.Out)'" }
 
@@ -403,7 +444,7 @@ try {
     $ws = New-BrainWs 'chainps-qa'
     $null = Invoke-Hook $A0 'boot' $ws; Save-Commit $ws
     $null = Invoke-Hook $A0 'stop' $ws; $null = Invoke-Hook $A1 '' $ws
-    $r = Get-HookResult $A2 $ws
+    $r = Get-HookResult $A2 $ws 'rescue'
     if (Test-Quiet $r) { Ok 'chain (PS): a turn that only wrote the activity ledger leaves no reminder' }
     else { Nok 'chain (PS): a turn that only wrote the activity ledger leaves no reminder' "out='$($r.Out)'" }
 
@@ -411,7 +452,7 @@ try {
     [IO.File]::AppendAllText((Join-Path $ws '.synaptic/journal/_current.md'), $crumb); Save-Commit $ws
     [IO.File]::WriteAllText((Join-Path $ws '.synaptic/journal/_current.md'), "# Journal`n- [2026-10-29] consolidated`n", (New-Object Text.UTF8Encoding $false))
     $null = Invoke-Hook $A1 '' $ws; Save-Commit $ws
-    $r = Get-HookResult $A2 $ws
+    $r = Get-HookResult $A2 $ws 'rescue'
     if (Test-Quiet $r) { Ok "chain (PS): a journal-only consolidation turn's own Stop does not re-arm the reminder" }
     else { Nok "chain (PS): a journal-only consolidation turn's own Stop does not re-arm the reminder" "out='$($r.Out)'" }
 
@@ -422,18 +463,51 @@ try {
     [IO.File]::WriteAllText($jq, "# Journal`n" + $crumb, (New-Object Text.UTF8Encoding $false)); Save-Commit $ws
     [IO.File]::WriteAllText($jq, "# Journal`n- [2026-10-29] consolidated`n", (New-Object Text.UTF8Encoding $false))
     $null = Invoke-Hook $A1 '' $bw; Save-Commit $ws
-    $r = Get-HookResult $A2 $bw
+    $r = Get-HookResult $A2 $bw 'rescue'
     if (Test-Quiet $r) { Ok 'chain (PS): the journal stays filtered when git quotes a non-ASCII path' }
     else { Nok 'chain (PS): the journal stays filtered when git quotes a non-ASCII path' "out='$($r.Out)'" }
 
     $ws = New-BrainWs 'chainps-work'
     [IO.File]::WriteAllText((Join-Path $ws 'app.txt'), "a`n"); Save-Commit $ws
     [IO.File]::AppendAllText((Join-Path $ws 'app.txt'), "b`n"); $null = Invoke-Hook $A1 '' $ws
-    $r = Get-HookResult $A2 $ws
+    $r = Get-HookResult $A2 $ws 'rescue'
     if ($r.Rc -eq 0 -and $r.Out -match '1 pending breadcrumb\(s\)') { Ok 'chain (PS): a real project edit becomes a breadcrumb and triggers the reminder' }
     else { Nok 'chain (PS): a real project edit becomes a breadcrumb and triggers the reminder' "out='$($r.Out)'" }
 
-    # --- The DEPLOYED copy: SKILL.md's pinned one-liner -------------------------------------------
+    # --- The fingerprint primitive (references/fingerprint.md) [X4/S4] -------------------------------
+    # In-process here; run.sh checks PowerShell = sh on the same fixture set.
+    $fpW = Get-Block '## Whole-file fingerprint' 'powershell' $FpDoc '## '
+    $fpB = Get-Block '## Body fingerprint' 'powershell' $FpDoc '## '
+    if ($fpW.Count -eq 0 -or $fpB.Count -eq 0) { Nok 'extract the PowerShell fingerprint commands from references/fingerprint.md' 'heading or fence changed' }
+    else {
+        Ok 'extract the PowerShell fingerprint commands from references/fingerprint.md'
+        $fx = Join-Path $Work 'fp'; [IO.Directory]::CreateDirectory($fx) | Out-Null
+        $fixtures = @{
+            'lf.md' = "---`ntitle: x`n---`nBody line 1`nBody line 2`n"; 'crlf.md' = "---`r`ntitle: x`r`n---`r`nBody line 1`r`nBody line 2`r`n"
+            'nofinal.md' = "---`ntitle: x`n---`nBody line 1`nBody line 2"; 'fm2.md' = "---`ntitle: y`nextra: 1`n---`nBody line 1`nBody line 2`n"
+            'nofm.md' = "Body line 1`nBody line 2`n"; 'unterminated.md' = "---`ntitle: x`nBody line 1`n"; 'known.txt' = "a`r`nb`r`n"
+        }
+        foreach ($k in $fixtures.Keys) { [IO.File]::WriteAllText((Join-Path $fx $k), $fixtures[$k], (New-Object Text.UTF8Encoding $false)) }
+        function Get-Fp([string[]]$Body, [string]$Name) {
+            $code = ($Body -join "`n").Replace('<file>', (Join-Path $fx $Name))
+            return [string](& ([scriptblock]::Create($code)))
+        }
+        $wLf = Get-Fp $fpW 'lf.md'
+        if ($wLf -cmatch '^[0-9a-f]{12}$') { Ok 'fingerprint is 12 lower-case hex' } else { Nok 'fingerprint is 12 lower-case hex' "got '$wLf'" }
+        if ((Get-Fp $fpW 'crlf.md') -eq $wLf) { Ok 'whole-file fingerprint: CRLF and LF copies agree' } else { Nok 'whole-file fingerprint: CRLF and LF copies agree' }
+        if ((Get-Fp $fpW 'fm2.md') -ne $wLf) { Ok 'whole-file fingerprint changes when the frontmatter changes' } else { Nok 'whole-file fingerprint changes when the frontmatter changes' }
+        $want = '911169ddaaf1'   # SHA-256 of "a`nb`n", first 12 hex: a fixed literal
+        if ((Get-Fp $fpW 'known.txt') -eq $want) { Ok 'whole-file fingerprint = SHA-256 of the CR-stripped bytes (known answer)' }
+        else { Nok 'whole-file fingerprint = SHA-256 of the CR-stripped bytes (known answer)' "$(Get-Fp $fpW 'known.txt') vs $want" }
+        $bLf = Get-Fp $fpB 'lf.md'
+        $bad = @('crlf.md', 'nofinal.md', 'fm2.md', 'nofm.md') | Where-Object { (Get-Fp $fpB $_) -ne $bLf }
+        if (@($bad).Count -eq 0) { Ok 'body fingerprint ignores CR, a missing final newline and the frontmatter' }
+        else { Nok 'body fingerprint ignores CR, a missing final newline and the frontmatter' "differs for: $($bad -join ', ')" }
+        if ((Get-Fp $fpB 'unterminated.md') -eq (Get-Fp $fpW 'unterminated.md')) { Ok 'body fingerprint: an unterminated frontmatter is part of the body' }
+        else { Nok 'body fingerprint: an unterminated frontmatter is part of the body' }
+    }
+
+    # --- The DEPLOYED copy: the pinned one-liner in references/capture-hooks.md -------------------------------------------
     # /synaptic-init and /synaptic-upgrade wire THIS block into the host, so it is what users run.
     # It sits in a blockquote, and <brain> is a placeholder the agent fills.
     $skillBlock = @(); $inH = $false; $inB = $false
@@ -445,14 +519,14 @@ try {
         $skillBlock += $l
     }
     $onWindows = ($env:OS -eq 'Windows_NT')
-    if ($skillBlock.Count -eq 0) { Nok "extract SKILL.md's deployed PowerShell one-liner" "anchor '- **Encoding PINNED' or the powershell fence moved" }
+    if ($skillBlock.Count -eq 0) { Nok "extract the deployed PowerShell one-liner (capture-hooks.md)" "anchor '- **Encoding PINNED' or the powershell fence moved" }
     elseif (-not $onWindows) {
         # The block is labelled "Windows PowerShell 5.1" (backslash paths, $env:COMPUTERNAME); off Windows
         # the POSIX sh one-liner is the deployed copy, and run.sh covers it.
-        $script:n++; Write-Output "ok $($script:n) - [$Label] SKILL.md PowerShell one-liner # SKIP labelled Windows-only"
+        $script:n++; Write-Output "ok $($script:n) - [$Label] deployed PowerShell one-liner # SKIP labelled Windows-only"
     }
     else {
-        Ok "extract SKILL.md's deployed PowerShell one-liner"
+        Ok "extract the deployed PowerShell one-liner (capture-hooks.md)"
         $elsewhere = New-Workspace 'skill-elsewhere'
 
         # 11. Filled with an ABSOLUTE brain path (what the SKILL instructs), launched from elsewhere.
@@ -460,9 +534,10 @@ try {
         $sk = Save-Script 'skill-abs.ps1' ($skillBlock | ForEach-Object { $_.Replace('<brain>', (Join-Path $ws '.synaptic')) })
         $rc = Invoke-Hook $sk '' $elsewhere
         $led = Get-Ledger (Join-Path $ws '.synaptic')
-        if ($rc -eq 0 -and $led -and ((Get-Lines $led.FullName)[0] -match $LineRe) -and -not (Test-Bom $led.FullName)) {
-            Ok 'SKILL.md PowerShell one-liner writes a well-formed, BOM-free marker into an absolute brain path'
-        } else { Nok 'SKILL.md PowerShell one-liner writes a well-formed, BOM-free marker into an absolute brain path' "rc=$rc ledger=$(if ($led) { $led.Name } else { 'none' })" }
+        if ($rc -eq 0 -and $led -and ((Get-Lines $led.FullName)[0] -match $LineRe) -and -not (Test-Bom $led.FullName) `
+            -and (Test-LedgerName $led) -and (Test-LedgerIgnored (Join-Path $ws '.synaptic'))) {
+            Ok 'deployed PowerShell one-liner writes a well-formed, BOM-free marker into an absolute brain path'
+        } else { Nok 'deployed PowerShell one-liner writes a well-formed, BOM-free marker into an absolute brain path' "rc=$rc ledger=$(if ($led) { $led.Name } else { 'none' })" }
 
         # 12. Filled with a RELATIVE path (".synaptic" - what "resolve the brain root explicitly" can
         #     plausibly be read as) and run in-process after Set-Location, as a user checking a hook does.
@@ -470,24 +545,24 @@ try {
         $sk = Save-Script 'skill-rel.ps1' ($skillBlock | ForEach-Object { $_.Replace('<brain>', '.synaptic') })
         Push-Location -LiteralPath $ws
         try { & $sk } catch { } finally { Pop-Location }
-        if (Get-Ledger (Join-Path $ws '.synaptic')) { Ok 'SKILL.md PowerShell one-liner with a relative brain path, run in-process, writes to the right brain' }
-        else { Nok 'SKILL.md PowerShell one-liner with a relative brain path, run in-process, writes to the right brain' 'relative path resolved against the process directory: nothing written, exit 0' }
+        if (Get-Ledger (Join-Path $ws '.synaptic')) { Ok 'deployed PowerShell one-liner with a relative brain path, run in-process, writes to the right brain' }
+        else { Nok 'deployed PowerShell one-liner with a relative brain path, run in-process, writes to the right brain' 'relative path resolved against the process directory: nothing written, exit 0' }
 
         # 13. Contract parity with the recipe's A.0: a stale hook for a brain that no longer exists must
         #     not recreate it (moving or deleting a brain would otherwise leave a ghost directory).
         $gone = Join-Path $Work 'skill-gone/.synaptic'
         $sk = Save-Script 'skill-gone.ps1' ($skillBlock | ForEach-Object { $_.Replace('<brain>', $gone) })
         $rc = Invoke-Hook $sk '' $elsewhere
-        if ($rc -eq 0 -and -not (Test-Path -LiteralPath $gone)) { Ok 'SKILL.md PowerShell one-liner with an absent brain: exit 0 and recreates nothing' }
-        else { Nok 'SKILL.md PowerShell one-liner with an absent brain: exit 0 and recreates nothing' "rc=$rc; it created $gone (a ghost brain directory)" }
+        if ($rc -eq 0 -and -not (Test-Path -LiteralPath $gone)) { Ok 'deployed PowerShell one-liner with an absent brain: exit 0 and recreates nothing' }
+        else { Nok 'deployed PowerShell one-liner with an absent brain: exit 0 and recreates nothing' "rc=$rc; it created $gone (a ghost brain directory)" }
 
         # 14. An absolute brain path containing [ ] - legal in a Windows folder name.
         $ws = Join-Path $Work 'skill-proj[1]'
         [IO.Directory]::CreateDirectory((Join-Path $ws '.synaptic')) | Out-Null
         $sk = Save-Script 'skill-brackets.ps1' ($skillBlock | ForEach-Object { $_.Replace('<brain>', (Join-Path $ws '.synaptic')) })
         $null = Invoke-Hook $sk '' $elsewhere
-        if (Get-Ledger (Join-Path $ws '.synaptic')) { Ok 'SKILL.md PowerShell one-liner handles a brain path containing [ ]' }
-        else { Nok 'SKILL.md PowerShell one-liner handles a brain path containing [ ]' 'wildcard Test-Path reported the brain missing: nothing written, exit 0' }
+        if (Get-Ledger (Join-Path $ws '.synaptic')) { Ok 'deployed PowerShell one-liner handles a brain path containing [ ]' }
+        else { Nok 'deployed PowerShell one-liner handles a brain path containing [ ]' 'wildcard Test-Path reported the brain missing: nothing written, exit 0' }
     }
 }
 catch {

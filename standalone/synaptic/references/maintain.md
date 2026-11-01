@@ -1,4 +1,4 @@
-<!-- summary: The orchestrated diagnose-then-treat sweep — runs audit, then consolidate/reconcile/synthesize/weave in order, approval-gated, bounded-reversible, diff-traced, archive-before-delete. -->
+<!-- summary: The orchestrated diagnose-then-treat sweep (or one named pass: weave | synthesize) — runs audit, then consolidate/reconcile/synthesize/weave in order, approval-gated, bounded-reversible, diff-traced, archive-before-delete. -->
 
 # /synaptic-maintain — Brain Maintenance Procedure Reference
 
@@ -8,6 +8,13 @@ other lifecycle procedures in the right order and gates every change on approval
 
 Run when: user invokes `/synaptic-maintain`, after a busy stretch, on a periodic cadence, or when
 audit reports significant debt.
+
+**Invocation (v1.6).** `/synaptic-maintain` = the full sweep below. `/synaptic-maintain weave` = only
+the weave pass (`references/weave.md`); `/synaptic-maintain synthesize` = only the synthesize pass
+(`references/synthesize.md`). A named pass uses the latest audit findings if there are any; otherwise
+it scans only what the pass itself needs (it does not load `references/audit.md`). It still obeys the
+CORE-safety contract below. The 1.6 aliases `/synaptic-weave` and
+`/synaptic-synthesize` map to the two passes and are removed in the next minor release.
 
 > **The procedure is CORE-safe; the *timer* is Cortex.** `/synaptic-maintain` is plain skill
 > guidance over plain files — pure CORE. Wanting it to run **on a schedule** (e.g. nightly) needs an
@@ -69,13 +76,13 @@ Diff-traced, git-reversible, archive-before-delete.
 
 ### 4 — Synthesize
 
-Run the `/synaptic-synthesize` procedure (`references/synthesize.md`): cross-source patterns,
+Run the synthesize pass (`references/synthesize.md`): cross-source patterns,
 concept-evolution nodes, and **orphan rescue** for the orphans the diagnosis surfaced. Every new
 node is `[[wikilinked]]` + MOC-registered at write time; merges/rewrites are propose-then-approve.
 
 ### 5 — Repair links, edges & near-duplicates (weave)
 
-Run the `/synaptic-weave` passes (`references/weave.md`) to treat the remaining structural findings:
+Run the weave pass (`references/weave.md`) to treat the remaining structural findings:
 add the missing cross-links **with a proposed typed edge type** (Pass 1), connect under-linked
 nodes, fill concept gaps, propose near-duplicate merges. Propose, never auto-write.
 
@@ -90,7 +97,8 @@ links or phantom nodes. Report what was diagnosed, what was treated, and what wa
 ## CORE-safety contract (binding)
 
 - **Approval-gated.** Maintain presents a plan and applies only confirmed changes, each at the tier
-  the Autonomy Tiers table sets for it (source: `harness/guardrails.md`).
+  the Autonomy Tiers table sets for it (source: `harness/guardrails.md`; default when it has none:
+  `references/contract.md` §5).
 - **Every automated edit is diff-traced, git-reversible, archive-before-delete** — never an
   autonomous unbounded rewriter.
 - **Deletion ledger (standing rule — not migration-only).** Any leg that deletes, moves, or archives a
@@ -133,8 +141,8 @@ Re-verify: graph clean / N residual findings.
 
 - **`/synaptic-audit`** — the diagnosis maintain starts from. Run alone for a read-only health check.
 - **`/synaptic-consolidate`** — the wrap-up algorithm maintain invokes. Run alone at session end.
-- **`/synaptic-synthesize`** — the generative leg. Run alone to connect an already-curated brain.
-- **`/synaptic-weave`** — the link/edge-repair leg. Run alone for a graph-gardening pass.
+- **`/synaptic-maintain synthesize`** — the generative leg. Run alone to connect an already-curated brain.
+- **`/synaptic-maintain weave`** — the link/edge-repair leg. Run alone for a graph-gardening pass.
 - **`/synaptic-maintain`** — runs all of the above in diagnose-then-treat order, approval-gated, as
   one sweep. The Cortex OS-cron timer (if installed) simply triggers this same procedure on a cadence.
 

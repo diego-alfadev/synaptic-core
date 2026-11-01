@@ -7,7 +7,7 @@ or a colleague covering for someone on leave — can be productive **without the
 This is the concrete, testable form of the knowledge-tax thesis (onboarding, handovers, context
 reconstruction, less tribal-knowledge dependency).
 
-> **This is a NEW top-level verb — not a mode of `/synaptic-synthesize`.** It is clearer to a
+> **This is a top-level verb — not a pass of `/synaptic-maintain` (such as its `synthesize` pass).** It is clearer to a
 > non-technical user and it is purely additive: optional, files-only, no schema bump.
 
 ## Contract (what makes this trustworthy)
@@ -19,12 +19,10 @@ reconstruction, less tribal-knowledge dependency).
 - **Reproducible from files alone.** Run twice on an unchanged brain → the same brief. It is a
   read/grep + MOC-navigation pass; no runtime, no tool required (a tool may only *tabulate* what is
   already in the files).
-- **Reads ALL statuses and ALL lifecycles — no default-working-set scoping.** A handover is an
-  export-class read: it does **NOT** apply the `lifecycle`-scoped default-load filter. A
-  `lifecycle: dormant` node whose decision is still binding (`status: active`) **MUST appear**;
-  omitting it would defeat the whole handover thesis. See `SKILL.md` "Lifecycle axis" and the
-  `status`-vs-`lifecycle` interaction rules — only `lifecycle` scopes the *default* working set, and
-  handover/audit deliberately ignore that scoping.
+- **Reads ALL statuses and ALL lifecycles.** A handover is an export-class read. `lifecycle` only
+  labels actionability (e.g. a `project` node is an open thread); it never
+  hides a node. A `lifecycle: dormant` node whose decision is still binding (`status: active`) **MUST
+  appear**; omitting it would defeat the whole handover thesis. See `references/contract.md` §3.
 - **`status` never hides, it flags.** A stale-but-relevant node is included and **flagged** (`⚠ stale`),
   not dropped. `status` is **required** on knowledge nodes; a node whose `status:` is an unknown/mistyped
   value reads as **untriaged** (neither trusted-current nor stale) — surface it as such, never silently
@@ -37,17 +35,22 @@ reconstruction, less tribal-knowledge dependency).
 
 Read `BRAIN.md` (Context Capsule), then `knowledge/INDEX.md` and each `{cluster}/_index.md`. Scan
 frontmatter across **all** `knowledge/**` nodes and `registries/` **without any lifecycle/status
-filter**. Assemble the five sections below.
+filter**. Assemble the five sections below, **always in this order**; inside each, follow `knowledge/INDEX.md`
+cluster order, then each `_index.md` line order (so two runs over the same files give the same brief).
 
-1. **Project summary** — a one-paragraph orientation synthesized (extractively) from the active
-   `project` + `area` nodes and the Context Capsule. What is this person/team working on, in plain
+1. **Project summary** — a one-paragraph orientation synthesized (extractively) from the active nodes
+   **explicitly** tagged `project` / `area` (or, if none is tagged, the cluster scopes in
+   `knowledge/INDEX.md`) and the Context Capsule. What is this person/team working on, in plain
    language.
-2. **What this person / team owns** — list the `project` and `area` nodes (the PARA `lifecycle:`
-   axis, shipped v1.3.0) and their owners where recorded. Group by cluster. Include `dormant` nodes
-   that are still binding (mark them `(parked)`), because a covering colleague still needs them.
-3. **Key decisions** — the `type: decision` nodes **plus** the highest-in-degree nodes (reuse the
-   god-node degree math from `references/audit.md` Step 4c: the same knowledge-scoped, MOC-excluded,
-   undirected-deduped edge universe). One line each, with a `[→ node]` link. Flag any that are
+2. **What this person / team owns** — list the nodes **explicitly** tagged `lifecycle: project` or
+   `lifecycle: area` (PARA axis, shipped v1.3.0; an absent `lifecycle` is only the benign default, not a
+   claim of ownership; if no node is tagged, list the clusters instead) and their owners where recorded.
+   Group by cluster. Include `dormant` nodes that are still binding (mark them `(parked)`), because a
+   covering colleague still needs them.
+3. **Key decisions** — the `type: decision` nodes in index order, **then** the top in-degree nodes
+   (degree descending, then name; reuse the god-node degree math from `references/audit.md` Step 4c:
+   the same knowledge-scoped, MOC-excluded, undirected-deduped edge universe). One line each, with a
+   `[→ node]` link. Flag any that are
    `⚠ stale` or a `dormant`+`active` binding-but-parked decision.
 4. **Where things live / where-to-look** — the "where is X" pointers: key `type: reference` nodes,
    `registries/` (repo catalog, environments, glossary), runbooks (`type: playbook`). **Describe**
@@ -60,11 +63,11 @@ filter**. Assemble the five sections below.
 
 | The brief must… | Rule |
 |---|---|
-| include a `lifecycle: dormant` + `status: active` binding decision | **YES — MUST appear** (dormant scopes only the *default* load, not exports) |
+| include a `lifecycle: dormant` + `status: active` binding decision | **YES — MUST appear** (`lifecycle` is a label; it never hides a node) |
 | include a `status: stale` but relevant node | **YES — flagged `⚠ stale`**, never hidden (`status` never omits) |
 | include a node whose `status:` is an unknown/mistyped value | **YES — marked `untriaged`**, never promoted to "current" (`status` is required; an unknown value reads as untriaged) |
 | include a `status: archived` node | **YES — only as history**, never as a current decision: an indented `↳ replaces [[old]] (archived)` under its nearest non-archived successor (grep for the node whose `supersedes` names it; repeat while that node is archived) — under the successor's Key decisions line if it has one, else under its first listing in the brief; several `↳` lines go nearest-first, then by name. If the brief lists no such successor, name it on a closing `Archived (history only): [[old]], …` line (omitted when there are none) |
-| apply the default-working-set (`lifecycle`) filter | **NO** — handover reads ALL lifecycles and ALL statuses |
+| hide a node by its `lifecycle` | **NO** — handover reads ALL lifecycles and ALL statuses |
 
 ## Output shape (worked example — author-complete, by inspection)
 
@@ -102,4 +105,4 @@ they want to keep iterating on it) — never commit/sync it into a foreign repo.
 Files-first synthesis (every claim derivable from disk). Prose-CORE: an agent produces it by reading
 the MOC + frontmatter — the grep/MOC floor, zero-runtime. Optional tool assist (e.g. reusing the
 god-node degree math) is never required. Runtime confirmation of the exact output is author-complete;
-verify on a real (Robinson) run.
+verify on a real run.

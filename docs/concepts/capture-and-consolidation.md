@@ -1,8 +1,8 @@
 # Capture is a dial — and the consolidation formula behind it
 
-*What this is: how a Synaptic brain grows — two orthogonal dials that control when and how much gets captured, the always-on breadcrumb floor underneath them, the six-step consolidation formula that turns raw work into navigable knowledge, the honest manual trade, and a suggested cadence.*
+*What this is: how a Synaptic brain grows — two orthogonal dials that control when and how much gets captured, the always-on breadcrumbs underneath them (and the one mechanical floor), the six-step consolidation formula that turns raw work into navigable knowledge, the honest manual trade, and a suggested cadence.*
 
-The #1 question people ask is *"do I have to babysit this?"* The answer is **no — capture is a dial, and the default leans passive.** You decide how much the agent does for you versus how much you do by hand. There are **two orthogonal dials**, plus an always-on floor underneath them.
+The #1 question people ask is *"do I have to babysit this?"* The answer is **no — capture is a dial, and the default leans passive.** You decide how much the agent does for you versus how much you do by hand. There are **two orthogonal dials**, plus always-on breadcrumbs underneath them.
 
 ## Dial 1 — the passivity dial: *when* capture triggers
 
@@ -11,16 +11,16 @@ Set it where you like:
 | Setting | What happens | Good for |
 |---|---|---|
 | **Manual** | You run `/synaptic-consolidate` when you choose | Maximum control |
-| **Event-driven (recommended)** | Hooks fire on agent events — a one-line journal breadcrumb every turn, a flush before the context window compacts, a rescue sweep on next session start | Most people; the agent does the remembering |
+| **Event-driven (recommended)** | Hooks fire on agent events — a one-line journal breadcrumb every turn, a recovery line right after the context window compacts, a rescue sweep on next session start | Most people; the agent does the remembering |
 | **Where-supported automation** | On hosts that support it, more of the lifecycle runs without prompting | Long or heavy sessions |
 
-### The always-on breadcrumb floor
+### The always-on breadcrumbs (and the one mechanical floor)
 
-Underneath all settings is an **always-on, fixed-cost floor**: a terse one-line **breadcrumb to the journal** on each meaningful turn. It lives on disk, so it survives a crash — what only lived in the context window dies; what hit the journal does not. This floor is *not* governed by `capture_policy`; it is the safety net.
+Underneath all settings is an **always-on, fixed-cost instruction**: a terse one-line **breadcrumb to the journal** on each meaningful turn (where the `Stop` hook already records the touched files, the agent writes only at decision points plus the session-boundary summary). It lives on disk, so it survives a crash — what only lived in the context window dies; what hit the journal does not. It is *not* governed by `capture_policy`; it is the safety net. It is **best-effort**: an instruction can be skipped. (The ledger has no time of day in its lines; file modification times and a sync service's version history can still reveal timing.) The only mechanical non-empty floor is the activity marker, a content-free line the host itself appends to `journal/_activity/` on hosts that run a shell command on a hook.
 
 ### The honest limit on "passive"
 
-**No agent has native idle detection.** "Passive" here means *event-driven on hook-capable hosts* (a per-turn `Stop` breadcrumb on all agents; a pre-compaction flush and a next-session rescue where the host supports them) — plus the journal as the universal fallback. It is **not** an unattended daemon watching you work. We say this plainly so the dial is not mistaken for magic.
+**No agent has native idle detection.** "Passive" here means *event-driven on hook-capable hosts* (a per-turn `Stop` breadcrumb on all agents; a recovery line after a compaction and a next-session rescue where the host supports them) — plus the journal as the universal fallback. It is **not** an unattended daemon watching you work. We say this plainly so the dial is not mistaken for magic.
 
 ## Dial 2 — the `capture_policy` dial: *how much* reaches the wiki
 
@@ -32,7 +32,7 @@ A separate, orthogonal valve set in `BRAIN.md`. Where the passivity dial control
 | `balanced` *(default)* | Wiki-first with generous journaling — promote at 2+ instances or clearly-reusable knowledge. | Most projects. |
 | `capture-all` | Capture almost everything — durable-ish notes promoted on first sight. | This brain is your **only** memory layer (no separate searchable store). |
 
-Same 6-step formula, one tunable valve — it changes *how much* gets promoted, never *how* the graph is built. A custom 1-line policy overrides the presets. (The journal breadcrumb floor is unaffected — `capture_policy` governs promotion to the wiki, not the breadcrumbs.)
+Same 6-step formula, one tunable valve — it changes *how much* gets promoted, never *how* the graph is built. A custom 1-line policy overrides the presets. (The journal breadcrumbs are unaffected — `capture_policy` governs promotion to the wiki, not the breadcrumbs.)
 
 The two dials are genuinely **orthogonal**: passivity decides *when* the formula fires (manual / hooks / more automation), `capture_policy` decides *how much* survives the formula into the wiki. You can run fully manual with `capture-all`, or fully event-driven with `selective` — any combination is valid.
 
@@ -59,21 +59,21 @@ Not "zero overhead" — a deliberate trade of a little write-time cost for large
 
 | When | Action |
 |---|---|
-| **Each session** | `/synaptic-consolidate` (or let the event-driven hook offer it) — apply the 6-step capture contract to what was produced |
+| **Each session** | `/synaptic-consolidate` (or let the next boot's rescue hook offer it) — apply the 6-step capture contract to what was produced |
 | **Weekly** | `/synaptic-audit` — **diagnose** staleness, orphans, broken links, MOC gaps, cross-link (horizontal) coverage, and half-done / unconsolidated work + pending breadcrumbs (audit diagnoses; weave/consolidate/synthesize treat) |
-| **Periodically** (after a stretch of consolidation) | `/synaptic-synthesize` — generative pass that writes new synthesis nodes over the curated brain (cross-source patterns, concept evolution, orphan rescue), MOC-validated at write time |
-| **Monthly** | `/synaptic-weave` — retroactive graph-gardening: missing links (+ typed-edge proposals), near-duplicates, theme promotion |
+| **Periodically** (after a stretch of consolidation) | `/synaptic-maintain synthesize` — generative pass that writes new synthesis nodes over the curated brain (cross-source patterns, concept evolution, orphan rescue), MOC-validated at write time |
+| **Monthly** | `/synaptic-maintain weave` — retroactive graph-gardening: missing links (+ typed-edge proposals), near-duplicates, theme promotion |
 | **Monthly, or when audit reports debt** | `/synaptic-maintain` — the orchestrated diagnose-then-treat sweep that runs all of the above in order, approval-gated (CORE procedure; an unattended schedule would be optional Cortex) |
 
 Without some cadence the brain drifts. With it, quality compounds.
 
-> **Tip:** the optional host-run hook config that wires the event-driven setting (the breadcrumb floor, a pre-compaction flush where supported, and a next-session rescue sweep) ships as a recipe in the repo. Hooks are plain host-run config — they are CORE, not a runtime we ship.
+> **Tip:** the optional host-run hook config that wires the event-driven setting (the breadcrumbs, the activity marker, a recovery line after a compaction where supported, and a next-session rescue sweep) ships as a recipe in the repo. Hooks are plain host-run config — they are CORE, not a runtime we ship.
 
 ---
 
 **Related:**
 - [Navigation and planes](./navigation-and-planes.md) — where step 4 ("place & link") puts a node and how it stays reachable
-- [Typed edges](./typed-edges.md) — the relationships `/synaptic-weave` proposes during graph-gardening
+- [Typed edges](./typed-edges.md) — the relationships `/synaptic-maintain weave` proposes during graph-gardening
 - [Epistemic honesty](./epistemic-honesty.md) — the source/confidence metadata stamped at the quality gate
 - [Architecture (Matrioshka)](./architecture-matrioshka.md) — why hooks are CORE, not a shipped runtime
 - [RAG vs wiki vs brain](./rag-vs-wiki-vs-brain.md) — the write-time-curation bet this formula implements

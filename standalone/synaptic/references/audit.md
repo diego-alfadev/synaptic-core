@@ -14,13 +14,13 @@ Cortex utility; CORE never depends on it — every check here is grep-able by ha
 
 > **Audit DIAGNOSES; it does not TREAT.** This procedure only *finds and reports* problems. The
 > fixes live in other procedures:
-> - broken links / orphans / missing edges / near-duplicates → **`/synaptic-weave`**
+> - broken links / orphans / missing edges / near-duplicates → **`/synaptic-maintain weave`**
 > - unconsolidated playgrounds, pending breadcrumbs, half-done work → **`/synaptic-consolidate`**
-> - cross-source synthesis, orphan rescue, concept evolution → **`/synaptic-synthesize`**
+> - cross-source synthesis, orphan rescue, concept evolution → **`/synaptic-maintain synthesize`**
 > - the orchestrated diagnose-then-treat sweep → **`/synaptic-maintain`**
 >
 > **`/synaptic-audit` + `SessionStart`-rescue = the abandonment safety sweep:** on next boot, the
-> rescue net runs the half-done check (Step 9) to recover sessions that ended before consolidation.
+> rescue hook prints an offer; Step 9 here is the full half-done check that recovers sessions that ended before consolidation.
 
 Do not auto-fix findings. Surface a prioritised list; ask for confirmation before any change — and
 route each finding to the procedure that treats it.
@@ -42,6 +42,11 @@ Scan all node files under `knowledge/` (recursing into clusters and `lessons/`) 
 
 - Flag any node where `updated:` date is more than **90 days ago**.
 - Flag any node with `status: stale`.
+- **Supersession consistency (advisory):** a node named in someone's `supersedes:` that is still
+  `status: active`, or a `status: archived` node that no `supersedes:` names. Either may be deliberate;
+  report it, never fix it here.
+- `status: archived` nodes are history: do **not** flag them for age (the 90-day rule applies to
+  `active` and `stale` nodes only). `tools/check.js` skips them too.
 
 For each flagged node: note the staleness age and likely section to review. Present findings; ask before changing.
 
@@ -50,7 +55,7 @@ For each flagged node: note the staleness age and likely section to review. Pres
 ## Step 1a — Lifecycle Completion-Cadence (WARN — optional `lifecycle:` axis)
 
 Advisory hygiene for the optional `lifecycle:` axis (`project | area | resource | dormant`; see
-`SKILL.md` "Lifecycle axis"). **Diagnose only, WARN never ERROR** — the fix (flip `lifecycle:`) is
+`references/contract.md` §3). **Diagnose only, WARN never ERROR** — the fix (flip `lifecycle:`) is
 the owner's decision or `/synaptic-maintain`. Reuses the Step 1 staleness machinery, tightened for
 live projects. Skip any node with no `lifecycle:` field (absent → `area`, nothing to flag here).
 
@@ -60,15 +65,14 @@ live projects. Skip any node with no `lifecycle:` field (absent → `area`, noth
   *"area gone silent — still a live responsibility?"* (Reuses the Step 1 staleness threshold.)
 
 > **`lifecycle: dormant` / `resource` are NOT orphans.** A node cooled to `dormant` (or tagged
-> `resource`) is still registered in its cluster `_index.md` — cooling is a load-priority signal,
+> `resource`) is still registered in its cluster `_index.md` — cooling is an actionability label,
 > not de-registration. It **must not** trigger the Step 2 orphan check, and its `updated:` staleness
 > is expected (Step 1 may still note age, but it is not a lifecycle-cadence finding).
 
-> **The audit reads ALL statuses and ALL lifecycles.** `lifecycle: dormant` scopes only the **default
-> working set** (the load-priority signal), **NOT** what the audit inspects. The audit (like
-> `/synaptic-handover`) reads **every** node regardless of `lifecycle` or `status` — a `dormant` or
-> `resource` node is still audited; a `status: stale` node is **flagged, not hidden**. Only `lifecycle`
-> ever scopes the *default* load; `status` **never** causes omission.
+> **The audit reads ALL statuses and ALL lifecycles.** `lifecycle` is a label, never a filter: the audit
+> (like `/synaptic-handover`) reads **every** node regardless of `lifecycle` or `status` — a `dormant`
+> or `resource` node is still audited; a `status: stale` node is **flagged, not hidden**. Neither field
+> ever causes omission.
 
 **No runtime required.** Grep `lifecycle:` values and compare `updated:` — same by-hand posture as
 every other check here.
@@ -89,13 +93,9 @@ check) but is an **unknown token** — it would otherwise be read as an unknown 
 - Report each off-vocabulary value with its node path → *"`status: Active` is not a valid token (did you
   mean `active`?) — a mistyped value is treated as absent and silently defaulted."*
 
-**Value semantics the audit surfaces (do not conflate):**
-
-- **`status` is REQUIRED — an unknown value reads as `untriaged`.** A node with **no** `status:` is a
-  `check.js` **ERROR** (missing required field), not a default; surface it as a hard finding. An
-  **unknown/mistyped** `status` value (present but off-vocabulary) is neither trusted-current nor stale —
-  read it as `untriaged` and **never silently promote it to `active`.**
-- **`lifecycle` absent → `area`** — a benign role default (loads by default). Not a finding.
+**Value semantics** (`references/contract.md` §1–2): a node with **no** `status:` is a hard finding
+(missing required field); an off-vocabulary `status` reads as `untriaged`, never `active`; an absent
+`lifecycle` is the benign `area` default, not a finding.
 
 **No runtime required.** Pure grep over frontmatter values.
 
@@ -136,6 +136,16 @@ Flag: missing `_index.md` files; nodes in a cluster directory not listed in the 
 
 Also check: is every cluster directory listed in `knowledge/INDEX.md`? Flag unlisted cluster directories.
 
+**Routing-text check (WARN, advisory).** Every MOC entry line (`- [[target]] — <routing text>`, in
+`INDEX.md` and each `_index.md`) must carry routing text that is **non-empty and ≤120 characters**
+(rule: `references/consolidate.md` Step 4, "Register"). Flag an empty one (the MOC can no longer route
+without opening the node) or an over-long one (it costs tokens on every navigation). You see these
+lines anyway while reading the MOCs; CORE-host shortcut (run in a UTF-8 locale, e.g.
+`LC_ALL=C.UTF-8`, or the length count is in bytes and approximate):
+`` grep -rnE --include=INDEX.md --include=_index.md '^[-*] `?\[\[[^]]+\]\]`?( —| -)?[[:space:]]*$' knowledge/ registries/ references/ `` (empty) and
+`` grep -rnE --include=INDEX.md --include=_index.md '^[-*] `?\[\[[^]]+\]\]`?( —| -) .{121,}' knowledge/ registries/ references/ `` (too long).
+Route fixes to `/synaptic-consolidate` (rewrite the routing text); report them under "MOC coverage gaps".
+
 ---
 
 ## Step 4b — Cross-Link Coverage (HORIZONTAL reachability)
@@ -166,7 +176,7 @@ Scaffolding-exclusion note above) — flag **plausible-but-missing** horizontal 
 - Two nodes that **share 2+ tags or are co-cited from a third node** but do not link to each other →
   flag as a missing cross-link candidate.
 
-> **Diagnose only.** Do not add the links here — surface them and route to **`/synaptic-weave`**
+> **Diagnose only.** Do not add the links here — surface them and route to **`/synaptic-maintain weave`**
 > (Pass 1), which proposes the link **and a typed edge type** for confirmation. Cite GraphRAG only
 > as *the direction* (multi-hop relational retrieval); make **no auto-discovery claim** — edges are
 > authored, never inferred (C5).
@@ -204,7 +214,7 @@ orphans — the "3× median" rule collapses to 0 and would flag every connected 
 apply the absolute **≥ 15** bar only. The 3× rule is meant to *tighten* the bar on a well-connected
 brain, never to flood a sparse one.)
 
-> **Diagnose only.** Route the split option to **`/synaptic-weave`** (near-duplicate / split
+> **Diagnose only.** Route the split option to **`/synaptic-maintain weave`** (near-duplicate / split
 > proposals) or the owner. Remediation prompt: *"candidate to split into atomic sub-nodes, or a
 > legitimate hub — confirm."* A god-node is not an error — a genuinely central concept legitimately
 > has many edges; the owner confirms split-vs-keep.
@@ -231,7 +241,7 @@ For each cross-cluster edge, list the **endpoint pair + the edge type** (the typ
 `wikilink` for an untyped body link), e.g. `knowledge/auth/jwt-decode.md —[depends_on]→
 knowledge/infra/key-vault.md`. Advisory — **WARN, never ERROR**.
 
-> **Diagnose only.** Route confirmation to **`/synaptic-weave`** (which proposes / confirms edge
+> **Diagnose only.** Route confirmation to **`/synaptic-maintain weave`** (which proposes / confirms edge
 > types). Make **no auto-discovery claim** — Synaptic does **not** infer edges; every edge here was
 > **authored** by hand or by a prior weave, never discovered from embeddings (C5), consistent with
 > Step 4b. This check only *surfaces* edges that already exist for the owner to confirm or correct.
@@ -316,23 +326,20 @@ playground artifacts) but never reached the knowledge store. **Diagnose only —
 
 - A `## bias-check` or note that records an **unresolved** `contradicts` pair never reconciled.
 - TODO/`{{placeholder}}` markers, or an off-vocabulary `status:` (Step 1b), left in otherwise-promoted nodes.
-- A `references/raw/` artifact whose distilled node carries a `content_hash` that **no longer matches**
-  the raw file (the artifact drifted; re-distillation is pending — see consolidate.md Step 4).
-  Recompute with the hash command in consolidate.md Step 4 (anchored with `-C "<brain>"`) — never
-  compute a hash yourself; with no shell or no git, every hash is unverifiable. **Unverifiable, not
-  drifted:** a `TBD` hash, or a legacy `sha256:` value (written before 1.5.1; it may be a
-  `git hash-object` prefix, a real SHA-256 prefix, or invented). If a legacy hex equals the recomputed
-  prefix, propose re-labelling it `git:`. If the brain sits in a git repo (`git -C "<brain>" rev-parse
-  --git-dir` succeeds), still report a mismatch as drift, adding *"may come from the repository (moved
-  brain, changed attributes, SHA-256 repo, git-lfs on some machines only), not an edit"*. Re-record or
-  re-distil only with the user's OK.
+- A `references/raw/` artifact that **drifted** since its node was distilled (re-distillation is
+  pending). Check it with `references/fingerprint.md`: in a git brain, the raw file's last commit against the
+  node's (an uncommitted raw change is pending); outside git, the recomputed fingerprint against
+  `content_hash`. Never compute a hash
+  yourself; no shell → **unknown**. **Unverifiable, not drifted:** `TBD`, or a legacy `git:`/`sha256:`
+  value outside git (propose re-recording it as `sha256-lf:`). Re-record or re-distil only with the
+  user's OK.
 
 **Warn (not error)** when a threshold is exceeded; present as advisory — the user decides whether to
 consolidate now or defer:
 
 - Open playgrounds ≥ 3: "Half-done — N open playgrounds. Run `/synaptic-consolidate` to process and close completed task workspaces."
 - Journal lines since last consolidation ≥ 60: "Half-done — journal at N pending breadcrumbs since last consolidation. Run `/synaptic-consolidate` before the journal nears 80 lines."
-- Any untracked playground, stale active-playground entry, drifted `content_hash`, or unresolved `contradicts`: list each as a half-done finding routed to `/synaptic-consolidate` (or `/synaptic-maintain` for the orchestrated sweep).
+- Any untracked playground, stale active-playground entry, drifted raw artifact, or unresolved `contradicts`: list each as a half-done finding routed to `/synaptic-consolidate` (or `/synaptic-maintain` for the orchestrated sweep).
 
 ---
 
@@ -342,8 +349,8 @@ The thesis verb is **capture**. This advisory answers *does daily work produce b
 the brain silently empty?* — from files alone. **Advisory (exit-0 / never gates)**, like every check here.
 
 **The activity ledger decouples "session opened" from "work captured".** The **layer-(a0) activity
-marker** (`SKILL.md` §d — a **host-executed shell append** of `<ts> boot|stop` to
-`journal/_activity/<host>-<date>.log`) is **capture-INDEPENDENT** *and agent-independent*, so activity is
+marker** (`references/capture-hooks.md` — a **host-executed shell append** of one `boot` or `stop` line to
+`journal/_activity/<host-token>-<date>.log`; pre-1.6 files: `<host>-<date>.log`, `<ts> <event>` lines — count the last field) is **capture-INDEPENDENT** *and agent-independent*, so activity is
 counted even when nothing else is captured. That lets this step distinguish two states the naive "zero
 artifacts" signal conflates:
 
@@ -351,25 +358,20 @@ artifacts" signal conflates:
   advisory.**
 - **`used-but-capture-dead`** — **boots present, 0 captured** (0 new breadcrumbs, 0 nodes over the
   window) → raise a **distinct "hooks-appear-dead" advisory** pointing to the per-host hook smoke-test.
-  This is the actionable failure. *(This is the refined meaning of "silent-empty": used-but-capture-dead,
-  NOT "empty brain".)*
+  This is the actionable failure.
 
 > **Denominator source (v1.5.0) — `boot` ONLY, scoped to THIS host.**
 > - **Sessions = `boot` events.** Read them from **this host's** files only:
->   `journal/_activity/<current-host>-*.log`. **`stop` events are NOT part of the session denominator** —
->   `Stop` fires *per assistant turn*, so one session emits 1 `boot` + N `stop`. Summing them would turn
->   breadcrumbs-per-**session** into breadcrumbs-per-**turn** and deflate yield by the turn count (a
->   40-turn session with one good summary would score 1/41 instead of 1/1). Keep `stop` as a separate
->   **work-intensity** signal only.
-> - **Per-host scoping is mandatory, not cosmetic.** The ledger is per host by design, and a brain can be
->   shared across machines. Globbing every host would (a) let a host with **no** floor compute a yield
->   against another machine's boots, and (b) let one host's healthy capture **mask** another host's dead
->   capture. The numerator (breadcrumbs/nodes) is brain-wide and **cannot** be attributed per host — say
->   so when reporting, or report per-host rows.
+>   `journal/_activity/<this-host-token>-*.log` (token = the first 12 hex of SHA-256 over the lower-cased host name — `hostname` in sh, `%COMPUTERNAME%` in PowerShell, e.g. `printf %s "$(hostname | tr A-Z a-z)" | sha256sum | cut -c1-12`; CORE-host: with no shell to hash, report per-file rows instead of guessing which is this host), plus this host's pre-1.6 `<host>-*.log` files while they exist. **`stop` events are NOT part of the session denominator** —
+>   one session emits 1 `boot` + N `stop`; keep `stop` as a separate **work-intensity** signal only.
+> - **Per-host scoping is mandatory.** Never glob every host's files. The numerator (breadcrumbs/nodes)
+>   is brain-wide and **cannot** be attributed per host — say so when reporting, or report per-host rows.
+>   *(Optional reading, not needed to run this step: `references/capture-hooks.md`, "Why audit Step 9b counts the way it does".)*
 > - **Migration window.** Pre-v1.5.0 brains recorded boots as `- boot:` lines inside
 >   `journal/_current.md`. Count those **exactly once** while they exist; for any window that
 >   **straddles** the v1.4.0→v1.5.0 upgrade, report `capture-yield: unknown (window straddles upgrade)`
->   rather than a number the two mechanisms cannot jointly support.
+>   rather than a number the two mechanisms cannot jointly support. Same for a window straddling the
+>   v1.6 hook re-deploy: before it, compactions also wrote `boot` lines; after it they do not.
 >
 > **Do NOT cry wolf (binding — a false advisory costs more than a missed one).** The ONLY warning state
 > is **`used-but-capture-dead`**, and it needs **two** conditions, not one:
@@ -378,10 +380,7 @@ artifacts" signal conflates:
 > 2. a **work signal** in that window: evidence of real work derivable from files — modifications under
 >    `knowledge/**` or `journal/`, frontmatter `updated:` dates, or git log activity.
 >
-> **Why condition 2 is required (v1.5.0 regression guard).** Before v1.5.0 a pure-Q&A agent often never
-> wrote the instruction-heartbeat, so the brain read as `not-used` → benign *by accident*. Now the host
-> writes activity markers **unconditionally**, so activity is **always** present — without a work signal,
-> a legitimate read-only week would fire `HOOKS-APPEAR-DEAD`. So:
+> **Condition 2 is a regression guard** (activity is now always present; optional background in `references/capture-hooks.md`). So:
 > - **Activity present + NO work signal = read-only / idle → benign, NO advisory.** A read-only or Q&A
 >   session that leaves 0 breadcrumbs is a **VALID, expected** outcome: a breadcrumb records *"the
 >   meaningful change this turn"*, and a session that changed nothing **should** leave none.
@@ -401,7 +400,7 @@ artifacts" signal conflates:
 >   **Do not** infer capture-death from absence, and do not claim a yield you cannot measure.
 
 **The expected artifact is a well-formed STRUCTURED summary, not just any text (v1.4.0).** The
-structured session-summary protocol (`SKILL.md` §d / `references/consolidate.md` — inspired by
+structured session-summary protocol (`references/capture-hooks.md` / `references/consolidate.md` — inspired by
 Engram-class memory-log protocols, fully file-based) defines the shape capture is *supposed* to leave:
 a short summary mapped onto **Resume Anchor (Goal/Next-Steps) · Watch List (Discoveries) · Log
 (Accomplished)**, with files named inline. So *"did meaningful capture happen?"* checks for **that
@@ -425,8 +424,7 @@ heuristic resolves differently per host; hook-less hosts have no reliable sessio
 placeholder state skews file-touch counts). For any cross-host or trend reading, **prefer the two robust
 counts**: **breadcrumbs per artifact-counted session** (denominator = `boot` events we can actually count
 via **this host's** activity ledger, not a heuristic) and **nodes-per-week** (from frontmatter `updated` /
-git log). *(The reasoning is unchanged from v1.4.0; only the mechanism moved — the countable denominator
-is now the host-written activity ledger instead of the agent-written heartbeat.)*
+git log).
 
 **Report example:** *"12 sessions BOOTED, 0 new breadcrumbs, 0 nodes added in 7 days →
 HOOKS-APPEAR-DEAD (used-but-capture-dead): capture is likely not firing on this host — run the per-host
@@ -434,7 +432,7 @@ hook smoke-test."* A different brain: *"0 boots in 7 days → not-used (benign)"
 
 **Activity-log hygiene (v1.5.0) — diagnose here, TREAT elsewhere.** The layer-(a0) hook only ever
 **blind-appends** — it never prunes. So this step **reports** when `journal/_activity/` has grown past a
-sane bound (e.g. > 30 day-files, or any file > ~2k lines) and **routes the rollup/prune to
+sane bound (e.g. > 30 `*.log` day-files, or any file > ~2k lines) and **routes the rollup/prune to
 `/synaptic-consolidate`** (Journal Trim) or `/synaptic-maintain`. **Audit itself writes nothing** — it
 never prunes the ledger, consistent with this file's diagnose-only contract. **Retention contract:**
 rollup MUST keep raw per-day logs covering at least this step's audit window, and any rollup summary MUST
@@ -444,8 +442,8 @@ step's denominator — it is a `.log` under `journal/`, never knowledge, and nev
 knowledge-scoped checks above never see it).
 
 **No runtime required.** Degree/count math over files (journal timestamps + frontmatter/git), LLM-free.
-*The activity marker's actual firing is author-complete; verify on a real (Robinson) run — and note its
-host coverage is confirmed only for Claude Code (see `SKILL.md` §d "Per-host activity marker support").*
+*The activity marker's actual firing is author-complete; verify on a real run — and note its
+host coverage is confirmed only for Claude Code (see `references/capture-hooks.md` "Per-host activity marker support").*
 
 ---
 
@@ -462,6 +460,27 @@ This check closes the silent drift vector where a user edits the deployed block 
 
 ---
 
+## Step 10b — Boot proof: is the bridge actually loaded? (v1.6)
+
+"Wired" means **observed loaded**, not files present. Read `harness/setup/<host>.md` first; its
+`boot:` / `wired:` lines are what this step checks and updates.
+
+1. **Static check (CORE-floor, by reading files).** On Claude Code, for a project-reach brain: if any
+   of `CLAUDE.md`, `.claude/CLAUDE.md`, `CLAUDE.local.md` exists and none carries an `@AGENTS.md` line
+   outside a code fence, the bridge is **not loaded** → finding *"Claude Code skips AGENTS.md here; add
+   the boot block (`references/init.md` §a2)"*. If the import is there (or no CLAUDE file exists) and
+   `AGENTS.md` holds the `BEGIN:SYNAPTIC` bridge, report `wired: expected`. A record that says
+   `boot: declined` is reported once, not re-asked.
+2. **The live proof (a new session only).** It cannot run inside this audit: this session has already
+   read brain and skill files. Tell the user to open a new session and, as the first message, ask
+   `synaptic status` (Claude Code: `claude -p "synaptic status"`). A reply with
+   `SYNAPTIC-BOOT-OK <nonce>` matching the record → `wired: proven` with the date. Anything else, or a
+   reply after the agent first opened files → stays `unproven`. An agent never upgrades `unproven` to
+   `proven` from file evidence or self-report.
+3. A setup record that says "fully wired" with no `wired: proven` line is reported as **unproven**.
+
+---
+
 ## Step 11 — Report
 
 Present findings as a prioritised actionable checklist, grouped by category. Cap at **10 highest-impact findings**; note the total count if more exist. Each finding names the **procedure that treats it** (audit diagnoses, it does not fix).
@@ -475,11 +494,11 @@ Brain audit — N findings (showing top N):  [audit DIAGNOSES; weave/consolidate
 
 ## Orphan nodes (not in any _index.md)
 2. knowledge/infra/old-deploy-notes.md — not registered in any sub-MOC
-   → [/synaptic-weave] Register, move, or delete?
+   → [/synaptic-maintain weave] Register, move, or delete?
 
 ## Broken [[wikilinks]]
 3. knowledge/api-integration/retry-policy.md [[rate-limiter]] — target not found
-   → [/synaptic-weave] Create rate-limiter.md, rename, or remove link?
+   → [/synaptic-maintain weave] Create rate-limiter.md, rename, or remove link?
 
 ## MOC coverage gaps (vertical)
 4. knowledge/auth/ cluster — _index.md missing
@@ -487,15 +506,15 @@ Brain audit — N findings (showing top N):  [audit DIAGNOSES; weave/consolidate
 
 ## Cross-link coverage gaps (horizontal)
 5. knowledge/ci-cd/deploy-playbook.md (type: playbook) — no link to any system it applies to
-   → [/synaptic-weave Pass 1] Propose [[deploy-service]] + applies_to edge?
+   → [/synaptic-maintain weave Pass 1] Propose [[deploy-service]] + applies_to edge?
 
 ## God-nodes (over-connected)
 6. knowledge/architecture/platform-overview.md — degree 18 (≥ 15, and ≥ 3× median 4) [WARN]
-   → [/synaptic-weave] Candidate to split into atomic sub-nodes, or a legitimate hub — confirm.
+   → [/synaptic-maintain weave] Candidate to split into atomic sub-nodes, or a legitimate hub — confirm.
 
 ## Surprising edges (cross-cluster)
 7. knowledge/auth/jwt-decode.md —[depends_on]→ knowledge/infra/key-vault.md (auth ↔ infra) [WARN]
-   → [/synaptic-weave] Confirm the interdisciplinary link (keep + ensure typed) or fix a mis-file.
+   → [/synaptic-maintain weave] Confirm the interdisciplinary link (keep + ensure typed) or fix a mis-file.
       (No auto-discovery — this edge was authored, not inferred.)
 
 ## Registry integrity

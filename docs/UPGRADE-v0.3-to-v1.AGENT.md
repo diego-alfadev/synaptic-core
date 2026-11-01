@@ -7,8 +7,9 @@
 > skill-side procedure the agent executes lives in
 > **`standalone/synaptic/references/upgrade-to-v1.md`** (it is fetched in Step 0).
 >
-> **This lands you on v1.3.0.** Step 0 installs the *current* skill, so a fresh v0.3 → v1 migration
-> today produces a brain on the latest engine (**v1.3.0**) — brain **schema still `1.0`** — with the
+> **This lands you on the current engine** (written when that was v1.3.0). Step 0 installs the *current*
+> skill, so a fresh v0.3 → v1 migration
+> today produces a brain on the latest engine — brain **schema still `1.0`** — with the
 > **PARA lifecycle axis** (optional `lifecycle:` field, absent → `area`, backward-compatible), the
 > **hardened `check.js`** (retrieval-readiness report + structural≠retrieval caveat), the interactive
 > `graph.html`, and the god-node audit. The migration STEPS are unchanged by v1.3.0; you simply end up
@@ -19,7 +20,8 @@
 > construction**: the work is mostly *refactor + construction* (re-file, re-link, add frontmatter).
 > Deletions are **never silent** — every removal is surfaced and confirmed, and originals are kept in
 > staging + a backup until you explicitly close out. It runs **on a copy**, it is **interactive**
-> (it asks before any structural/breaking change), and it ends with a **report** that compares the
+> (interactive mode asks before any structural/breaking change; guided mode asks only its listed
+> questions), and it ends with a **report** that compares the
 > brain **before vs after** against the backup. Treat it as a **supervised, resumable** first run —
 > not a 10-minute job. Tokens are not the constraint; correctness is.
 >
@@ -44,7 +46,7 @@ At the end, produce the REPORT in Step 9. Do not rush — correctness over speed
 │       check.js at this boundary MAY still have ERRORS (v0.x staged, empty scaffold) — expected.│
 │   (2) `refactor: Phase C content rearrange`      — links / MOC / frontmatter / consolidation. │
 │       check.js at this boundary MUST reach 0 ERRORS (structural green).                        │
-│   (3) `chore: cleanup + cutover`                 — staging deletion, harness rewrite, backups. │
+│   (3) `chore: cleanup + cutover`                 — staging prune after soak, harness rewrite, backups. │
 │       check.js re-verifies; the retrieval drill (Step 6) must pass before cutover.             │
 │ Each phase closes by ticking its block in MIGRATION_DONE.md and recording the commit HASH in   │
 │ the DECISION LOG / ledger. Do NOT "commit everything at the end." (See Step 3/4/7 for the exact │
@@ -186,7 +188,7 @@ Phase M only MOVES files into the v1 layout and STAGES v0.x boot files — it de
                 node tools/migrate.js ./synaptic-v1-work/.synaptic .claude/skills/synaptic/templates
 
   [no Node] fallback — do Phase M by hand exactly as references/upgrade-to-v1.md "Phase M" says:
-    create the v1 dirs (registries/ harness/ harness/skills/ references/ references/raw/ playgrounds/
+    create the v1 dirs (registries/ harness/ references/ references/raw/ playgrounds/
     templates/ _migration-staging/); MOVE (never delete) the v0.3 boot files into _migration-staging/
     (BOOTSTRAP.md, MANIFEST.md, identity/HEARTBEAT.md, knowledge/_tree.yaml), MOVE worklines/ and
     inventory/ into staging; M7 frontmatter scaffold; copy v1 templates. COLLISION RULE for manual
@@ -208,7 +210,7 @@ This is the "refactor" phase and the heart of the upgrade. Execute Phase C of
 references/upgrade-to-v1.md, with these BINDING reinforcements (they close real failure modes):
 
   • CONTENT-CONSERVATION MANIFEST (do this FIRST, before editing). Snapshot every existing node as
-    (path, title, sha256 of the body-minus-frontmatter). This is the no-loss ground truth — the file
+    (path, title, body fingerprint — the command is in references/fingerprint.md). This is the no-loss ground truth — the file
     COUNT is only a smoke check (dedupe lowers it, splits raise it, so a count alone can hide a drop).
   • Work CLUSTER BY CLUSTER with a LEDGER (cluster | C3 links | C4 MOC | C5 consolidate | C11
     frontmatter | every-node-in-_index?). "Phase C complete" = all clusters ticked. This survives a
@@ -232,7 +234,7 @@ references/upgrade-to-v1.md, with these BINDING reinforcements (they close real 
     harness/guardrails.md in Phase C; brain-root
     context/bridge files → extract knowledge, then MOVE
     originals to HARNESS_ORIGINALS/ (they are harness material); inventory/ → registries/; worklines/
-    → playgrounds or your task system; skills/ → harness/skills/; rebuild knowledge/INDEX.md + each
+    → playgrounds or your task system; custom skills/ → harness/skills/ (only if any exist; inert, never installed); rebuild knowledge/INDEX.md + each
     cluster _index.md from real files only; journal → thin 3-section format.
   • DO NOT delete _migration-staging/ here — keep it through Step 6 and the soak (Step 10). This
     OVERRIDES the referenced procedure's step C12 ("delete staging as the final step of Phase C") —
@@ -267,7 +269,7 @@ BRAIN.md / knowledge/INDEX.md / registries/ and lists /synaptic-* commands, and 
 HEARTBEAT every N turns" anti-drift (v1 boots from BRAIN.md). Originals are backed up (Step 2.2).
 
 5A — SINGLE-PROJECT brain (.synaptic nested inside the one repo):
-   • Run the skill's Harness Self-Wire (SKILL.md §a–c) on the project root: write the BEGIN:SYNAPTIC
+   • Run the skill's Harness Self-Wire (references/init.md §a–c) on the project root: write the BEGIN:SYNAPTIC
      bridge block + the BEGIN:SYNAPTIC-RULES block into the project root AGENTS.md (or, with Node:
      `node tools/deploy.js <project-root>` for the RULES block — it backs up AGENTS.md, diffs, and
      refuses on placeholders). Remove the old v0.3 bridge fragments.
@@ -353,7 +355,7 @@ STEP 6 — Phase V (verify) on the work copy   [needs Node for check.js; [no Nod
     Answer EACH by MOC navigation ONLY: BRAIN.md → knowledge/INDEX.md → cluster _index.md → node
       (or registries/_index.md → registry). Record the hop path for every question.
     PASS BAR (binary): all 5 fact-lookups (the 3 most-linked + 2 registry) answered via MOC navigation
-      with 0 grep-fallbacks required. The 1 synthesis question MAY miss — a miss is a /synaptic-weave
+      with 0 grep-fallbacks required. The 1 synthesis question MAY miss — a miss is a /synaptic-maintain weave
       content gap (per the v1.0 benchmark caveat), NOT a navigation failure; log it as a weave to-do.
     A fact-lookup that needs grep/keyword search to answer is a NAVIGATION FAILURE — fix the MOC/links
       (register the node, add the missing _index entry) and re-run the drill. Record the drill result
@@ -427,8 +429,8 @@ archive-before-delete:
   2. /synaptic-audit (references/audit.md) — DIAGNOSE only: staleness, orphans, broken links, MOC +
      cross-link coverage, half-done work, registry integrity, oversized nodes, tag hygiene.
   3. Treat, in order, each approval-gated: consolidate half-done work → reconcile contradicts/supersedes
-     → /synaptic-synthesize (cross-source patterns, orphan rescue; new nodes MOC-registered at write
-     time) → /synaptic-weave (propose missing [[links]] + typed edges, near-dup merges; PROPOSE-never-
+     → /synaptic-maintain synthesize (cross-source patterns, orphan rescue; new nodes MOC-registered at write
+     time) → /synaptic-maintain weave (propose missing [[links]] + typed edges, near-dup merges; PROPOSE-never-
      auto-write).
   4. POST-CHECK: re-run check.js / the matrix → confirm no new broken links or phantom nodes.
   5. BEFORE/AFTER diff vs the backup: nodes added/split/merged, links added, orphans cleared, broken

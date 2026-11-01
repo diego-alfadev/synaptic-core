@@ -6,15 +6,15 @@ acceptance criterion in the CHANGELOG was by-inspection.
 
 | Suite | What it verifies | Runs on | Run locally |
 |---|---|---|---|
-| `capture-floor/run.sh` | the v1.5.0 capture floor (issue #2a): the recipe's A.0–A.3 hooks (marker, breadcrumb, reminder, rescue), alone and chained in the A.4 order, **and** the one-liners `SKILL.md` deploys, POSIX side | Linux, macOS, Windows (Git Bash) | `bash tests/capture-floor/run.sh` |
-| `capture-floor/run.ps1` | the same for the PowerShell scripts the recipe ships (A.0–A.2; there is no PowerShell A.3). Runs under whichever engine executes it | Windows PowerShell 5.1, PowerShell 7 | `powershell -NoProfile -ExecutionPolicy Bypass -File tests/capture-floor/run.ps1` |
+| `capture-floor/run.sh` | the v1.5.0 capture floor (issue #2a): the recipe's A.0–A.2 hooks (marker, breadcrumb, pending check in its rescue and compact modes, via the shared `pending-cases.txt` table), alone and chained in the A.4 order, **and** the deployed one-liners (`standalone/synaptic/references/capture-hooks.md`), POSIX side | Linux, macOS, Windows (Git Bash) | `bash tests/capture-floor/run.sh` |
+| `capture-floor/run.ps1` | the same for the PowerShell scripts the recipe ships (A.0–A.2, the same `pending-cases.txt` table, plus the PowerShell 5.1 `[ ]`-folder cases). Runs under whichever engine executes it | Windows PowerShell 5.1, PowerShell 7 | `powershell -NoProfile -ExecutionPolicy Bypass -File tests/capture-floor/run.ps1` |
 | `tools.test.js` | `tools/*.js` behaviour: `check.js` rules and regressions, `graph.js` offline output, `export.js`, `deploy.js`, `vault-open.js`, `migrate.js --dry-run` | Node 18 / 22 / 24 on Linux and Windows | `node tests/tools.test.js` |
 | `probes/` | open research questions, not product checks — see `.github/workflows/probes.yml` | CI only | — |
 
 ## Principles
 
 - **Test the documentation.** The capture-floor suites extract the hook scripts from the fenced blocks
-  of `recipes/session-end-consolidate.md` and `standalone/synaptic/SKILL.md` instead of copying them. The
+  of `recipes/session-end-consolidate.md` and `standalone/synaptic/references/capture-hooks.md` instead of copying them. The
   scripts under test are the scripts a user pastes. If a heading or a fence moves, extraction fails loudly.
 - **Launch hooks the way a host does**: a new process whose working directory is the workspace — plus one
   deliberate in-process run, because that is how a user checks a hook from their own terminal.
@@ -31,6 +31,6 @@ acceptance criterion in the CHANGELOG was by-inspection.
   Resolve to an absolute path first.
 - **Non-ASCII inside PowerShell code.** A BOM-less script is read as cp1252 by 5.1; an em dash becomes
   three characters, the last a typographic quote that PowerShell accepts as a string delimiter, so the
-  script stops parsing. Recipe and SKILL.md PowerShell blocks must be ASCII outside comments.
+  script stops parsing. PowerShell blocks in the recipe, SKILL.md, capture-hooks.md and fingerprint.md must be ASCII outside comments.
 - **CRLF shell scripts.** Git for Windows defaults to `core.autocrlf=true`; a CRLF `.sh` does not run
   under bash. `.gitattributes` pins `*.sh` to LF.

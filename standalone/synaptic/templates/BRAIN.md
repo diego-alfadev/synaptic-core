@@ -14,9 +14,7 @@ updated: "{{YYYY-MM-DD}}"
 
 # {{BRAIN_NAME}} — Synaptic Brain
 
-> The only mandatory read at session start. Everything else loads on demand.
-
-> This brain conforms to **synaptic-core schema `1.0`** (see `schema_version:` above). A skill-less agent can read it directly — no skill, runtime, or version check is required to boot. The synaptic skill's engine version is separate (`SKILL.md`); a skill update never migrates this brain.
+> The only mandatory read at session start. Everything else loads on demand. This brain conforms to **synaptic-core schema `1.0`** (see `schema_version:` above). A skill-less agent can read it directly — no skill, runtime, or version check is required to boot. The synaptic skill's engine version is separate (`SKILL.md`); a skill update never migrates this brain.
 
 ## Context Capsule
 
@@ -38,37 +36,35 @@ updated: "{{YYYY-MM-DD}}"
   - `capture-all` — promote liberally; rely on later consolidation to prune.
 - **The passivity dial = WHEN capture triggers** (manual ↔ event-driven hooks ↔ where-supported automation). This is set in the harness/hook config, not here.
 
-> Breadcrumbs (below) are the always-on, fixed-cost floor and are **NOT** governed by `capture_policy`. Do not add a second policy for breadcrumbs.
-
 ### Incremental journal breadcrumbs (the safety net)
 
-One terse line appended to `journal/_current.md → ## Log` per meaningful turn. **Fixed cost, always on, policy-independent.** They live on disk so they survive a crash; what only lived in context dies. Breadcrumbs are not promotion — they are the raw trail that consolidation later distills.
+One terse line appended to `journal/_current.md → ## Log` per meaningful turn. **Fixed cost, always on, and NOT governed by `capture_policy`** (do not add a second policy for breadcrumbs). They live on disk so they survive a crash; what only lived in context dies. Breadcrumbs are not promotion — they are the raw trail that consolidation later distills.
 
-> **This is an instruction you follow, not only a hook.** Append the breadcrumb per meaningful turn yourself; the `Stop` hook automates it where wired, but write it even when no hook fires. Hooks are host-specific and can silently fail to fire — the instruction is the floor underneath the automation, so a session that reaches compaction is **never breadcrumb-empty** (this closes issue #2: a session neared recompact with no breadcrumbs written). Nothing fires without you acting; there is no idle daemon (see the honest limit below).
+> **This is an instruction you follow, not only a hook.** **Cadence:** where the `Stop` breadcrumb hook is wired (its `breadcrumb: touched …` lines appear in the Log), it already records which files changed, so you write only at **decision points** (a decision, a lesson, a blocker, a change of plan) plus the **session-boundary summary** (a boundary = right after a compaction, or a wrap-up). The hook sees only uncommitted changes, so if you committed this turn's work, write its line yourself. Where no such lines appear, append one line per meaningful turn yourself — hooks are host-specific and can silently fail to fire. An instruction can still be skipped, so breadcrumbs are **best-effort, not a guarantee**. The only mechanical non-empty floor is the host-run activity marker in `journal/_activity/`, and only where a shell hook is wired. Nothing fires without you acting; there is no idle daemon (see the honest limit below).
 
-### Layered capture (does NOT depend on SessionEnd)
+### Layered capture (two hook events, plus your own lines)
 
 | Layer | Trigger | Availability |
 |---|---|---|
+| Activity marker (mechanical floor) | `Stop` + `SessionStart` — host shell appends one content-free line to `journal/_activity/` | Shell-hook-capable hosts only |
 | Breadcrumb (workhorse) | `Stop` — per-turn cheap line to the journal | UNIVERSAL across agents |
-| Flush before context loss | `PreCompact` — consolidate before compaction | Host-conditional (Claude / Copilot / Codex) |
+| Recovery after compaction | `SessionStart` (`compact`) — the hook injects one line: re-read the journal and write the session summary there | Host-conditional (Claude Code) |
 | Rescue net | `SessionStart` — detect unconsolidated breadcrumbs/active playgrounds, OFFER to consolidate | Universal on next boot |
-| Clean-exit bonus | `SessionEnd` — consolidate on graceful close | Bonus only where present (not Copilot-IDE, not Cursor) |
 
 > Honest limit: **no agent has native idle detection.** Capture is event-driven + journal fallback + `SessionStart`-rescue — never an unattended idle daemon at CORE.
 
 ### Six-step consolidation formula
 
-Run on consolidation (manual `/synaptic-consolidate`, or offered at session end / on next-boot rescue):
+Run on consolidation (manual `/synaptic-consolidate` at a wrap-up, or when the next boot's rescue offers it):
 
 1. **Classify** — durable knowledge · tabular record → registry · lesson · decision · big task → playground · temporal → journal · noise → drop.
 2. **Atomicity test** — one concept per node; promote only when it recurs (2+ instances → pattern) or is a reusable decision/lesson, per `capture_policy`. Incident-specifics stay in playground/journal.
 3. **Generalize** — strip the anecdote, keep the reusable pattern; name = the concept, not the ticket.
-4. **Place & link** — atomic node in the right cluster; fill frontmatter (incl. optional `source` / `confidence` / typed edges, and the optional `lifecycle: project|area|resource|dormant` actionability axis — absent → `area`, loads by default); add `[[wikilinks]]`; register in cluster `_index.md`.
+4. **Place & link** — atomic node in the right cluster; fill frontmatter (incl. optional `source` / `confidence` / typed edges, and the optional `lifecycle: project|area|resource|dormant` actionability label — absent → `area`); add `[[wikilinks]]`; register in cluster `_index.md`.
 5. **Dedupe / SSOT** — search first; update, don't duplicate; one source of truth per fact.
 6. **Quality gate** — professional & verifiable only; soft budget ~150 lines or tag `type: reference`; stamp `updated:`; confirm reachable from a MOC.
 
-> **Session-end OFFER:** when a session closes (or on next-boot rescue if it was abandoned), the agent OFFERS to run this consolidation — it does not silently rewrite the brain. Breadcrumbs already captured the trail; consolidation is the supervised promotion step.
+> **Wrap-up OFFER:** when the work wraps up (or on the next boot's rescue if a session was abandoned), the agent OFFERS to run this consolidation — it does not silently rewrite the brain. Breadcrumbs already captured the trail; consolidation is the supervised promotion step.
 
 ---
 
@@ -90,7 +86,7 @@ Run on consolidation (manual `/synaptic-consolidate`, or offered at session end 
 | `knowledge/` | Wiki — what you know | On demand via `knowledge/INDEX.md` |
 | `registries/` | Wiki — tabular SSOTs (resources, repos, glossary) | On demand; never eager-load |
 | `references/` | Wiki — existence index + verbatim artifacts (`raw/`) | On demand |
-| `harness/` | Harness — conventions, guardrails, project skills | On demand; top subset above |
+| `harness/` | Harness — conventions, guardrails | On demand; top subset above |
 | `playgrounds/` | Working memory — per-task burnable workspaces | Registered in journal only |
 | `journal/` | Working memory — thin anchor/watch/log | Resume: read `_current.md` |
 | `templates/` | Scaffolding — node, registry, playbook, lesson | When creating a new node |
@@ -104,12 +100,7 @@ Run on consolidation (manual `/synaptic-consolidate`, or offered at session end 
 **Resuming work:** read `journal/_current.md` (active playgrounds + next step), then proceed.
 **Starting fresh:** just work; load knowledge on demand through `knowledge/INDEX.md`.
 **Load trigger examples:** "before CI work → read `harness/guardrails.md`"; "for a domain insight → INDEX → cluster `_index` → 1–2 nodes."
-
----
-
-## Commands
-
-Commands are provided by the `synaptic` skill (installed in `.claude/skills/` or `.agents/skills/`) — see the bridge command listing (the `BEGIN:SYNAPTIC` block in AGENTS.md) or the `SKILL.md` Operations table for the full, current set. This file keeps no separate command list, so nothing here can drift out of sync with the skill.
+**Commands:** provided by the `synaptic` skill (installed in `.claude/skills/` or `.agents/skills/`) — see the bridge command listing (the `BEGIN:SYNAPTIC` block in AGENTS.md) or the `SKILL.md` Operations table for the full, current set. This file keeps no separate command list, so nothing here can drift out of sync with the skill.
 
 ---
 

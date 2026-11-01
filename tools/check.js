@@ -463,7 +463,7 @@ function checkFrontmatter() {
     // visible instead of failing open. Mirrors the lifecycle WARN below; parseFrontmatter
     // already .trim()s scalar values, so a trailing-space value is normalised before the
     // set test (an author who wrote `Active ` sees "Active", the real defect).
-    // author-complete; verify with Node on Robinson's run.
+    // author-complete; verify with Node on a real run.
     const status = fm.status;
     if (status !== undefined && status !== null) {
       if (Array.isArray(status)) {
@@ -490,7 +490,7 @@ function checkFrontmatter() {
     // one of the closed enum values (module-level LIFECYCLE_ENUM, shared with the status advisory
     // above); an out-of-enum value is a WARN (typo/near-collision), never a gate. Absent → legal
     // (treated as `area`; no schema bump). (v1.4.0 §5.5(c) — the lifecycle half of the typo-advisory.)
-    // author-complete; verify with Node on Robinson's run.
+    // author-complete; verify with Node on a real run.
     const lifecycle = fm.lifecycle;
     if (lifecycle !== undefined && lifecycle !== null) {
       if (Array.isArray(lifecycle)) {
@@ -805,7 +805,7 @@ function checkBudgets() {
 }
 
 // ---------------------------------------------------------------------------
-// Check 9: Staleness — updated: > 90d (skip placeholders)
+// Check 9: Staleness — updated: > 90d (skip placeholders and status: archived)
 // ---------------------------------------------------------------------------
 
 function checkStaleness() {
@@ -820,6 +820,7 @@ function checkStaleness() {
 
     const fm = parseFrontmatter(readLines(filePath));
     if (!fm) continue;
+    if (String(fm.status || '').trim() === 'archived') continue; // archived = history, never stale
 
     const updated = parseDate(fm.updated);
     if (!updated) continue; // placeholder or unparseable
@@ -937,7 +938,7 @@ function printRetrievalReadiness() {
 
     if (godNodes.length || crossClusterEdges.length) {
       console.log('');
-      console.log('  Graph-health (advisory — WARN only; run /synaptic-weave to confirm/split; ' +
+      console.log('  Graph-health (advisory — WARN only; run /synaptic-maintain weave to confirm/split; ' +
         'does NOT fail the check):');
       console.log(`  God-nodes        : ${godNodes.length} ` +
         `(degree >= ${godThreshold} = min(15, 3x median ${median}))`);
@@ -967,7 +968,7 @@ function printRetrievalReadiness() {
     console.log('  0 errors, but this brain shows low connectivity ' +
       `(orphan ratio ${orphanPctStr} > 20% OR edges/node ${epnStr} < 0.5).`);
     console.log('  A brain can pass every structural check and still be hard to retrieve from.');
-    console.log('  Run /synaptic-weave to author missing edges, and do a retrieval drill ' +
+    console.log('  Run /synaptic-maintain weave to author missing edges, and do a retrieval drill ' +
       '(BRAIN -> INDEX -> cluster _index -> node). This is advisory; it does NOT fail the check.');
   }
 }

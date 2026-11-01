@@ -1,9 +1,16 @@
----
-description: "Project-local executable skills that travel with this brain — distinct from the synaptic lifecycle skill."
-type: knowledge
-status: active
-updated: "{{YYYY-MM-DD}}"
-tags: [harness, skills]
+# PARKED — `harness/skills/` (project skills that travel with a brain)
+
+> **Status: parked, not part of CORE** (decision X10, 2026-11-01). Kept as a possible Cortex idea.
+> **Why parked:** Self-Wire step c.6 copied `harness/skills/*` executables into the host's skill
+> folders at boot with no per-item approval, so a shared or handed-over brain became a code-delivery
+> channel that the content-is-data rule never sees (review defect D2). The author's own brain carried
+> no project skills when it was parked (n=1).
+> **What changed:** new brains no longer get `harness/skills/`; init and upgrade install nothing from a
+> brain. `/synaptic-upgrade` still preserves a legacy brain's custom skill dirs as inert files.
+> **To revive it (Cortex):** per-item approval, never during boot, never an install path built from
+> BRAIN.md `name:`, and a scan of what is being installed.
+> The original template follows (frontmatter dropped, one step marked historical).
+
 ---
 
 # Project Skills
@@ -28,7 +35,7 @@ This folder holds **project-local executable skills** — small agent programs t
 1. Create `harness/skills/{skill-name}.md` — document intent, trigger, and usage.
 2. If the skill is executable (a script), place it alongside the `.md` doc.
 3. Register it in the index below.
-4. Declare it during `/synaptic-init` so it auto-installs on new machines.
+4. *(Historical — no longer done:)* declare it during `/synaptic-init` so it auto-installs on new machines.
 
 ---
 

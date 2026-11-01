@@ -38,7 +38,7 @@ An explicit, agent-agnostic algorithm embedded in every `BRAIN.md` as the **capt
 ### 3-concern separation — knowledge · operating rules · persona
 Three concerns are explicitly separated and never mixed:
 - **Knowledge** lives in the brain (`knowledge/`, `registries/`, `references/`) and is read on demand via MOC.
-- **Operating rules** (commit conventions, guardrails, project skills) live in `harness/` as a **deployable source**: `/synaptic-init` and `/synaptic-upgrade` deploy them into the outer harness (AGENTS.md / CLAUDE.md); at work-time the agent reads the outer harness, not the brain's `harness/` folder. The brain keeps the copy so the harness is regenerable on any machine.
+- **Operating rules** (commit conventions, guardrails) live in `harness/` as a **deployable source**: `/synaptic-init` and `/synaptic-upgrade` deploy them into the outer harness (AGENTS.md / CLAUDE.md); at work-time the agent reads the outer harness, not the brain's `harness/` folder. The brain keeps the copy so the harness is regenerable on any machine.
 - **Persona** (tone, chat language, agent personality) lives in the outer harness only — never in the brain.
 The brain stays knowledge-focused; the harness stays rule-focused; portability is preserved. A Jarvis-persona agent and a vanilla agent share the same brain without conflict.
 
@@ -46,7 +46,7 @@ The brain stays knowledge-focused; the harness stays rule-focused; portability i
 Two schools exist: **write-time curation** (our approach) curates knowledge on the way in — expensive ingestion, cheap and near-deterministic retrieval; **read-time reasoning** (RAG-over-raw) stores raw content verbatim and re-derives answers per query — cheap ingestion, expensive and variable retrieval. We chose write-time curation because agents re-read the same context constantly: curate once, read cheap forever. Curated knowledge is auditable, portable, and stable — a teammate or any agent gets the same coherent answer, not a fresh re-derivation. We are a pragmatic hybrid: knowledge nodes are curated (schema-on-write), and verbatim payloads live in `references/raw/` for the rare fine-detail query (schema-on-read fallback). Best of both worlds.
 
 ### Frontmatter + tags — FTS-ready surface
-Every node carries `description`, `type`, `status`, `updated`, and `tags`. Tags are present in v1 specifically as the indexable surface for future FTS / RAG / semantic search — so the format never needs forking when those layers are added. `description` feeds the `_index.md` one-liner and the embedding input.
+Every node carries `description`, `type`, `status`, `updated`, and `tags`. Tags are present in v1 specifically as the indexable surface for future FTS / RAG / semantic search — so the format never needs forking when those layers are added. `description` feeds search and the embedding input.
 
 ### Two-engine migration — mechanical + guided agent rearrange
 Upgrading a v0.x brain runs in two distinct engines: **Phase M** (deterministic file operations — safe to run as a script or a cheap agent; stages files, never deletes) and **Phase C** (mandatory capable agent — content judgment for link conversion, MOC creation, consolidation formula applied retroactively, harness triage). The split is deliberate: Phase M is cheap and reversible; Phase C is where the real re-wiring happens and cannot be scripted away.

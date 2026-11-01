@@ -14,7 +14,7 @@
 
 > The phase-by-phase body below is correct; these reinforcements close real failure modes surfaced by
 > a readiness review (especially for **large** and **team-shared / global** brains). The operational,
-> paste-to-your-agent form of all of this is **`docs/UPGRADE-v0.3-to-v1.AGENT.md`** — prefer driving a
+> paste-to-your-agent form of all of this is **`docs/UPGRADE-v0.3-to-v1.AGENT.md`** (written for v0.3 sources; for a v0.4 / v0.5 brain follow this file) — prefer driving a
 > real migration from there. Where this addendum and the older body differ, **the addendum wins.**
 
 ## v1.5.0 addendum — deploy the activity marker (the mechanical capture floor)
@@ -22,15 +22,15 @@
 > Runs on **every** `/synaptic-upgrade` (and `/synaptic-init`), including the light already-schema-`1.0`
 > path. Closes the floor half of issue #2a. No schema bump.
 
-- **Create `journal/_activity/`** (with a `.gitkeep`) in the brain. A bare append to a missing parent
+- **Create `journal/_activity/`** in the brain, with a `.gitignore` of `*` + `!.gitignore` (v1.6: the ledger is not committed by default). A bare append to a missing parent
   fails on **both** shells, so a wired-but-never-writing hook would be a *false* floor. The shipped
   one-liner is also self-creating (`mkdir -p` / `New-Item -Force`) — belt and braces, because this is
   precisely the failure class v1.5.0 exists to remove. Resolve the brain root explicitly in the hook
   command; never assume the host's cwd is the brain root.
-- **Deploy the layer-(a0) activity marker** per `SKILL.md` §d "Deterministic activity marker": wire the
+- **Deploy the layer-(a0) activity marker** per `references/capture-hooks.md` "Deterministic activity marker": wire the
   pinned platform-appropriate one-liner (**UTF-8 no-BOM**; `[IO.File]::AppendAllText` on PowerShell —
   never `>>` (UTF-16LE+BOM) or `Add-Content` (ANSI by default; a BOM with `-Encoding utf8` on 5.1)) to `Stop` (`stop`) and `SessionStart`
-  (`boot`), writing to `journal/_activity/<host>-<YYYY-MM-DD>.log`. Marker-wrapped + idempotent like
+  startup / resume / clear (`boot`; never on the `compact` source), writing to `journal/_activity/<host-token>-<YYYY-MM-DD>.log`. Marker-wrapped + idempotent like
   every other hook write.
 - **Migrate the boot ledger:** stop emitting the old `- boot:` line into `journal/_current.md`; the boot
   event now lives ONLY in the activity ledger. Existing `- boot:` lines are harmless history and are
@@ -40,18 +40,37 @@
   instruction-layer breadcrumb is best-effort, and that `/synaptic-audit` will report capture-yield as
   **unknown** rather than inferring capture-death. **Do not** repeat the retired pre-v1.5.0 claim that
   the instruction-layer breadcrumb "closes issue #2" on a hook-less host.
-- **Host coverage is UNVERIFIED beyond Claude Code** (`SKILL.md` §d "Per-host activity marker support")
+- **Host coverage is UNVERIFIED beyond Claude Code** (`references/capture-hooks.md` "Per-host activity marker support")
   — detect, attempt, verify, and report; never assert parity.
+- **v1.6 privacy of the ledger (re-deploy the hooks).** The new one-liners write `<host-token>-<date>.log`
+  with `boot`/`stop`-only lines and add `journal/_activity/.gitignore`. Re-deploy them on every host.
+  Existing `<host>-<date>.log` files stay readable (readers count the last field). If the brain is in
+  git and the ledger was committed, offer `git -C "<brain>" rm --cached -- "journal/_activity/*.log"` (files stay on disk)
+  and list what it untracks; run it only with the owner's OK. Old raw-host file names age out through
+  the Journal-Trim rollup; never rename them silently.
+- **v1.6 hook shape (re-deploy on every host).** Inside the `BEGIN:SYNAPTIC-HOOKS` block (or the
+  hand-wired entries the host record lists), with the owner's OK:
+  1. **Remove** the `PreCompact` and `SessionEnd` entries and the old `SessionStart` rescue entry;
+     delete the old script files (`synaptic-consolidate-reminder.sh` / `.ps1`, `synaptic-rescue.sh`),
+     or the old and new rescue double-fire.
+  2. **Split `SessionStart`:** startup / resume / clear → A.0 `boot` + `synaptic-pending rescue`;
+     `compact` → `synaptic-pending compact` only (recipe A.2 / A.4; `references/capture-hooks.md`
+     deploy step 2). On Windows deploy `synaptic-pending.ps1` too: the rescue now exists there.
+  3. **Audit note:** a capture-yield window that straddles this re-deploy counts compactions as
+     `boot` before it and not after; report it like the v1.4 → v1.5 straddle (`references/audit.md`
+     Step 9b).
+  4. **Claude Code with a project `CLAUDE.md`:** offer the `SYNAPTIC-BOOT` block
+     (`references/init.md` §a2), then run the boot check (`references/audit.md` Step 10b).
 
 ## v1.4.0 addendum — host-setup detection is an ALWAYS-RUN step (not migration-only)
 
 > **This runs on EVERY `/synaptic-upgrade` and every `/synaptic-init`, including the light
-> already-schema-`1.0` path — not just a pre-v1 migration.** The canonical procedure is **`SKILL.md` →
+> already-schema-`1.0` path — not just a pre-v1 migration.** The canonical procedure is **`references/host-setup.md` →
 > "Host-setup detection"**; this addendum binds it into the upgrade flow. The convert-to-global runbook
 > (`references/convert-to-global.md`) reuses the same detect+classify+re-deploy step.
 
 - **Actively DETECT where + how the brain + harness are wired, then re-deploy the correct wiring** —
-  never silently assume a repo-local `.synaptic/`. Run the six steps in `SKILL.md` "Host-setup
+  never silently assume a repo-local `.synaptic/`. Run the six steps in `references/host-setup.md` "Host-setup
   detection": resolve brain location (project-local vs global) → scan all carriers → read
   `harness/setup/<host>.md` and report drift → **classify** → **re-deploy accordingly** → update the
   record. **Emit a one-line classification** (brain location · host · wiring level).
@@ -71,7 +90,7 @@
   carrier for this brain's bridge/rules in any foreign committed **or synced** file → count MUST be zero.
 - **Stub-drift check.** As part of detection, run the command-discovery stub-drift check
   (`references/command-discovery.md`): compare recorded stubs/version vs the current SOT command list,
-  regenerate + **prune** stale stubs, clean OneDrive KFM `*-DESKTOP-*` conflict copies, and regenerate
+  regenerate + **prune** stale stubs, clean OneDrive KFM `synaptic-*-DESKTOP-*` conflict copies, and regenerate
   the Layer-1 bridge command descriptions from the SOT summaries.
 
 - **Topology first (does NOT change the migration — only the wiring).** Detect/ask whether the brain
@@ -92,7 +111,7 @@
   knowledge deletion is human-only. Mostly this migration is *refactor + construction*, not deletion.
 - **Content-conservation gate REPLACES the node-count gate.** "v1 count ≥ v0.3 count" cannot prove
   no-loss (dedupe lowers it, splits raise it). Instead: before Phase C, snapshot every node as
-  `(path, title, sha256(body-minus-frontmatter))`; afterwards each must be **present, logged-merged
+  `(path, title, body fingerprint)` (`references/fingerprint.md`); afterwards each must be **present, logged-merged
   (loser→winner), or logged-split**. Any node neither present nor logged = SILENT DROP = STOP. Keep the
   count only as a smoke check, defined identically on both sides.
 - **Re-file, don't rewrite.** `description:` is EXTRACTIVE (condense the node's own first sentence —
@@ -120,7 +139,7 @@
   registries paths; `/synaptic-*` commands; drop the HEARTBEAT re-read). Point at the brain by its
   fixed path (absolute is fine for a per-user brain; `../.synaptic/` only if the workspace root is the
   brain's parent). **For a user-global brain also write the skill's ABSOLUTE path into the bridge block**
-  (grep-recoverable on hosts that don't discover user-level skill dirs — `SKILL.md` §a). Deploy
+  (grep-recoverable on hosts that don't discover user-level skill dirs — `references/init.md` §a). Deploy
   conventions+guardrails as the always-on rules — **SYMLINK the `harness/` source ONLY on a POSIX local
   (non-synced) path where the host allows it; on Windows or any OneDrive/DFS-synced location symlinks are
   NOT allowed (they break on sync/copy) — emit the block / generate a pointer file** instead. Only
@@ -149,7 +168,7 @@
   NON-GIT brain only: delete the v1 brain and **rename** `*-v0.3-backup` back.
 - **Optional deep clean (on request only).** After the strict migration, a diagnose-then-treat sweep =
   `/synaptic-maintain` (`references/maintain.md`): pre-check → `/synaptic-audit` → consolidate /
-  reconcile / `/synaptic-synthesize` / `/synaptic-weave` → post-check, approval-gated, with a
+  reconcile / `/synaptic-maintain synthesize` / `/synaptic-maintain weave` → post-check, approval-gated, with a
   before/after diff against the backup.
 - **Mode: guided (DEFAULT) vs interactive vs autonomous.** Run **guided** by default =
   supervised-but-quiet: hide the internals, drive the migration, and ask the owner ONLY on genuine
@@ -217,7 +236,7 @@ The migration is non-destructive, content-preserving, and fully reversible:
 
 1. **Branch:** `git switch -c v1-upgrade` — work on a copy; the original branch is your fallback.
 2. **Phase M (mechanical):** if `tools/migrate.js` exists, run `node tools/migrate.js .synaptic` (use `--dry-run` first to preview moves without writing anything) — deterministic file staging, safe and scriptable; otherwise do the manual equivalent (stage files to `_migration-staging/` per the M-step checklist below by hand).
-3. **Phase C (agent rearrange):** tell your agent `/synaptic-upgrade` — the capable-agent phase: link conversion, MOC creation, consolidation formula applied retroactively, harness triage. The agent proposes each change; you confirm before it is written.
+3. **Phase C (agent rearrange):** tell your agent `/synaptic-upgrade` — the capable-agent phase: link conversion, MOC creation, consolidation formula applied retroactively, harness triage. The agent proposes each change; you confirm before it is written (interactive mode; guided mode asks only its listed questions).
 4. **Verify:** if `tools/check.js` exists, run `node tools/check.js .synaptic` for graph health; otherwise do the manual equivalent (the Phase V checklist greps / inspection below). Then `/synaptic-audit` in the agent for staleness and coverage. Review the result in Obsidian or Foam before proceeding.
 5. **Promote (fast-forward):** once satisfied, `git switch main && git merge --ff-only v1-upgrade` — files rewritten in place, no folder rename (Windows/OneDrive-safe). If `--ff-only` refuses, `main` advanced (concurrent writers) → reconcile via the shared-brain freeze path first. The old branch/`pre-v1` tag remains as a rollback point.
 
@@ -241,8 +260,8 @@ ask into `_migration-staging/harness-pending.md` in the work copy: each rule bou
 `harness/conventions.md` / `harness/guardrails.md`, each personal agent-behaviour item, the
 SYNAPTIC-RULES deploy, and the intake answers (including whether (3) was asked or guessed). Every item
 carries a status line: `pending`, `approved → <destination>`, or `discarded`. Phase C never writes
-`harness/conventions.md` / `harness/guardrails.md` and never deploys (other `harness/` moves, such as
-`skills/` → `harness/skills/`, are unaffected).
+`harness/conventions.md` / `harness/guardrails.md` and never deploys (other moves, such as legacy
+`skills/` → `harness/skills/` as inert files, are unaffected).
 - **Guided:** (5) is asked from this file; record each answer as its status, then write and deploy the
   approved items.
 - **Autonomous:** nothing is written or deployed; items stay `pending`. Phase V reports the Layout
@@ -270,7 +289,7 @@ carries a status line: `pending`, `approved → <destination>`, or `discarded`. 
 | `identity/PRINCIPLES.md` (v0.4) | Split: project constraints → knowledge node; team norms → `harness/conventions.md`; agent behavior → AGENTS.md/CLAUDE.md (user harness, not brain) | Ownership test: "would a teammate inheriting this brain need it?" |
 | `inventory/` (v0.3) | `registries/` | Tabular SSOTs reinstated as first-class |
 | `worklines/` (v0.3/0.4) | Active → `playgrounds/`; BAU → playbook node; stale → discard with consent | Never auto-delete |
-| `skills/` inside `.synaptic/` | `harness/skills/` | Project-local skills travel with brain |
+| `skills/` inside `.synaptic/` (custom only) | `harness/skills/`, preserved as **inert** files (never installed; the feature is parked) | Non-destructive: nothing is lost, nothing executes |
 | `knowledge/_tree.yaml` (v0.3) | Replaced by `knowledge/INDEX.md` (only real files) | Phantom entries dropped |
 | `playbooks/` directory (v0.5) | Nodes moved to `knowledge/{cluster}/` (type: playbook) | Playbooks are typed co-located nodes, not a silo |
 | `knowledge/working-agreements.md` (v0.5 pattern) | `harness/conventions.md` | Team conventions belong in harness |
@@ -285,7 +304,7 @@ carries a status line: `pending`, `approved → <destination>`, or `discarded`. 
 
 Phase M is pure file operations: no content judgment. Safe to run as a cheap agent or script
 (or `tools/migrate` if available). **Phase M never destroys content Phase C still needs** —
-move to `_migration-staging/` inside the brain; Phase C consumes and deletes it.
+move to `_migration-staging/` inside the brain; Phase C consumes it; it is deleted LAST, after the soak (C12).
 
 Tick each item. Work in order.
 
@@ -319,7 +338,7 @@ Tick each item. Work in order.
 Create these if absent:
 
 - [ ] `.synaptic/harness/`
-- [ ] `.synaptic/harness/skills/`
+- [ ] `.synaptic/harness/skills/` — only if M1 preserved custom skill dirs (N/A if none)
 - [ ] `.synaptic/registries/`
 - [ ] `.synaptic/references/`
 - [ ] `.synaptic/references/raw/`
@@ -329,12 +348,15 @@ Create these if absent:
 
 ### M3 — AGENTS.md fragment (idempotent)
 
-Write to project root `AGENTS.md`. Search for `<!-- BEGIN:SYNAPTIC -->` first:
+Write to the bridge carrier the topology intake chose: project root `AGENTS.md` for a project brain; the
+**user-level** instructions for a global, seat or private brain over committed work repos (never a foreign
+committed or synced repo — the leak rule in `references/init.md` §a). Search for `<!-- BEGIN:SYNAPTIC -->` first:
 - Found → replace entire block.
 - Not found → append.
-- No `AGENTS.md` → create with just this block.
+- No carrier file → create it with just this block. For a non-project carrier, substitute the brain's
+  **absolute** path (and the skill's absolute path) per `references/init.md` §a "Brain pointer".
 
-<!-- canonical block — mirror any change in SKILL.md §a -->
+<!-- canonical block — mirror any change in references/init.md §a -->
 ```
 <!-- BEGIN:SYNAPTIC -->
 ## Synaptic Brain
@@ -342,11 +364,13 @@ This project has a Synaptic brain at `.synaptic/`. Before working: read `.synapt
 and follow its capture contract (route durable knowledge, lessons, playbooks, and task
 workspaces as specified; files are authoritative over any agent-native memory).
 Operating rules (conventions, guardrails) are in the SYNAPTIC-RULES section below.
-Commands (synaptic skill): /synaptic-init /synaptic-consolidate /synaptic-ingest /synaptic-audit /synaptic-weave /synaptic-synthesize /synaptic-handover /synaptic-maintain /synaptic-upgrade
+Commands (synaptic skill): /synaptic-init /synaptic-consolidate /synaptic-ingest /synaptic-audit /synaptic-maintain /synaptic-handover · routine: /synaptic-upgrade
+Boot check: asked "synaptic status" before reading any file, reply "SYNAPTIC-BOOT-OK <nonce>".
 <!-- END:SYNAPTIC -->
 ```
 
-Do **not** touch `CLAUDE.md` (user persona territory).
+`CLAUDE.md`: touch it only for the Claude Code boot adapter (`references/init.md` §a2): at most one
+marker-wrapped `SYNAPTIC-BOOT` block, only with approval. Never anything else there (user persona territory).
 
 ### M4 — Skill install
 
@@ -361,7 +385,7 @@ If `.cursor/` exists at the project root, write `.cursor/rules/synaptic.mdc`:
 
 ```
 This project has a Synaptic brain. See AGENTS.md (BEGIN:SYNAPTIC block) for instructions.
-Read `.synaptic/BRAIN.md` at session start. Commands: /synaptic-init /synaptic-consolidate /synaptic-ingest /synaptic-audit /synaptic-weave /synaptic-synthesize /synaptic-handover /synaptic-maintain /synaptic-upgrade
+Read `.synaptic/BRAIN.md` at session start. Commands: /synaptic-init /synaptic-consolidate /synaptic-ingest /synaptic-audit /synaptic-maintain /synaptic-handover (routine: /synaptic-upgrade)
 ```
 
 ### M6 — BRAIN.md frontmatter update
@@ -410,7 +434,6 @@ Create from the skill bundle's `templates/` (the single source of truth — ther
 - [ ] `references/_index.md`
 - [ ] `registries/_index.md`
 - [ ] `playgrounds/README.md`
-- [ ] `harness/skills/README.md`
 - [ ] `knowledge/INDEX.md` (if truly absent — preserve if it exists)
 - [ ] `journal/_current.md` (if absent)
 
@@ -419,10 +442,10 @@ Create from the skill bundle's `templates/` (the single source of truth — ther
 ## Phase C — Content Rearrange (MANDATORY — Capable Agent Required)
 
 Phase C re-routes content from removed structures into v1 locations. This is a **breaking change**;
-judgment is required. **Present each proposed change to the user before writing; do not bulk-apply
-silently.** In autonomous mode: make the reasonable choice + log.
+judgment is required. **Interactive mode: present each proposed change before writing; do not bulk-apply
+silently.** Guided mode asks only its listed questions and reports the rest; autonomous mode makes the reasonable choice + logs it.
 
-Phase C consumes `_migration-staging/` and **deletes it as its final step**.
+Phase C consumes `_migration-staging/`; it is **deleted LAST, after the soak** (C12), not at the end of Phase C.
 
 ### C1 — Identity / boot content re-routing
 
@@ -454,9 +477,9 @@ If Phase M listed context-prompt or bridge-like files at the brain root: extract
 
 For each item in staged `worklines/_active.yaml` or `worklines/{slug}/`:
 
-- **Still active** (specific in-flight work) → create `playgrounds/{task-id}/`; register in `journal/_current.md`. Ask: "Move to playground or to your external task system (Jira/etc.)?"
+- **Still active** (specific in-flight work) → create `playgrounds/{task-id}/`; register in `journal/_current.md`. Interactive mode asks "Move to a playground or to your external task system?"; guided and autonomous modes default to a playground and report it (it is not one of guided mode's ONLY questions).
 - **Perpetual / BAU** (always-on maintenance, no specific in-flight state) → distil the operating rhythm into a knowledge node or `type: playbook` node in its cluster. Not a stale item.
-- **Stale** → extract any durable lessons first, then: "This workline appears stale — delete?" Delete only on explicit consent (autonomous: discard + log).
+- **Stale** → extract any durable lessons first, then: "This workline appears stale — delete?" Delete only on explicit consent (autonomous: never delete — move it to `_migration-staging/stale-worklines/` and log it as pending the owner's decision).
 
 ### C3 — Path-links → `[[wikilinks]]`
 
@@ -476,7 +499,7 @@ Scan all files in `knowledge/` for Markdown path-style links `[text](../path/fil
 **Per-cluster `_index.md`:**
 
 - For each cluster directory, create or rebuild `_index.md` from the skill bundle's `templates/` pattern.
-- Add a 1-line entry per node: `[[node-name]] — {description copied from node's frontmatter}`.
+- Add one MOC line per node: `- [[node-name]] — <routing text>` (non-empty, ≤120 characters; written for routing, not copied from `description:` — `references/consolidate.md` Step 4).
 - Migrate content from old `_overview.md` files: split into atomic kebab-case nodes (≤150 lines each); each gets full D1 frontmatter; listed in `_index.md`. After verifying, delete the empty source directory.
 
 ### C5 — Apply consolidation formula retroactively
@@ -493,7 +516,7 @@ For each node in `knowledge/`:
 **From v0.5 `knowledge/working-agreements.md`** (staged in `_migration-staging/`):
 
 - Route team/project norms → `harness/conventions.md` (merge or create from the skill bundle's `templates/harness/conventions.md`).
-- Route hard rules → `harness/guardrails.md`. Both files are the **deployable source** — collect the routed text in the question-5 file; write them and run the Deploy step (Harness Self-Wire §c via `/synaptic-init`) only after (5) is approved. Do NOT mirror rules in `BRAIN.md → Top Guardrails` (that block is dropped in v1).
+- Route hard rules → `harness/guardrails.md`. Both files are the **deployable source** — collect the routed text in the question-5 file; write them and run the Deploy step (`references/init.md` Harness Self-Wire §c via `/synaptic-init`) only after (5) is approved. Do NOT mirror rules in `BRAIN.md → Top Guardrails` (that block is dropped in v1).
 - Persona/agent behavior content → offer to place in AGENTS.md (user harness). Never into the brain.
 - Delete the staged file only after every item from it has an outcome in the question-5 file.
 
@@ -520,8 +543,10 @@ For each node in `knowledge/`:
 
 **Custom skill dirs preserved from M1:**
 
-- MOVE each custom skill dir to `harness/skills/{skill-name}/`.
-- Register in `harness/skills/README.md`.
+- MOVE each custom skill dir to `harness/skills/{skill-name}/` (create `harness/skills/` only now,
+  and only if there is something to move). List them in a short `harness/skills/README.md` that says
+  they are **inert**: preserved content, never installed by Synaptic (the project-skills feature is
+  parked). Tell the user they can install any of them by hand if they still want it.
 
 ### C10 — Journal rewrite
 
@@ -544,7 +569,8 @@ For all nodes with scaffolded (empty) frontmatter from M7:
 
 ### C12 — Delete staging area
 
-When all Phase C steps are confirmed complete: delete `_migration-staging/`.
+**Not at the end of Phase C.** Keep `_migration-staging/` through the soak (owner-orientation checklist)
+and delete it LAST, once the owner confirms the new brain is stable.
 
 ---
 
@@ -561,7 +587,7 @@ otherwise use manual greps / inspection.
 > `knowledge/`) — a phase is DONE only when every box under it is checked.
 
 **Layout (v1):**
-- [ ] `BRAIN.md`, `knowledge/INDEX.md`, `registries/_index.md`, `references/_index.md`, `journal/_current.md`, `harness/conventions.md`, `harness/guardrails.md`, `harness/skills/README.md`, `playgrounds/README.md`, `templates/node.md`, `templates/registry.md`, `templates/playbook.md`, `templates/lesson.md`
+- [ ] `BRAIN.md`, `knowledge/INDEX.md`, `registries/_index.md`, `references/_index.md`, `journal/_current.md`, `harness/conventions.md`, `harness/guardrails.md`, `playgrounds/README.md`, `templates/node.md`, `templates/registry.md`, `templates/playbook.md`, `templates/lesson.md`
 
 **BRAIN.md:**
 - [ ] ≤110 lines; `schema_version: 1.0` in frontmatter (matches `templates/BRAIN.md` + the SKILL.md compat-check `supported_schema`)
@@ -582,11 +608,11 @@ otherwise use manual greps / inspection.
 **Harness (source):**
 - [ ] `harness/conventions.md` exists with team norms (no persona content) — header says "(source — deployed)"
 - [ ] `harness/guardrails.md` exists with hard rules — header says "(source — deployed)"
-- [ ] Custom project skills in `harness/skills/` (if any existed)
+- [ ] Custom project skills preserved, inert, in `harness/skills/` (if any existed)
 
 **Harness (deployed — outer harness):**
 - [ ] `AGENTS.md` contains `<!-- BEGIN:SYNAPTIC-RULES --> … <!-- END:SYNAPTIC-RULES -->` block with deployed conventions + guardrails
-- [ ] Project skills from `harness/skills/` installed in `.claude/skills/` and/or `.agents/skills/`
+- [ ] Nothing from `harness/skills/` was installed into host skill folders (nothing is installed from the brain's contents; the skill bundle and hook commands come from the release)
 
 **Registries:**
 - [ ] `registries/_index.md` lists every registry file; all files exist
@@ -600,7 +626,8 @@ otherwise use manual greps / inspection.
 - [ ] v0.3: No `BOOTSTRAP.md`, `MANIFEST.md`, `HEARTBEAT.md`, `identity/`, `worklines/`, `skills/` inside brain, `_tree.yaml`, `cortex.config.yaml`
 - [ ] v0.4: No `identity/`, `worklines/`, `skills/` inside brain, `cortex.config.yaml`
 - [ ] v0.5: No `playbooks/` silo; no `knowledge/working-agreements.md`
-- [ ] All versions: No `_migration-staging/`
+- [ ] All versions: no `_migration-staging/` **after the soak** (it is kept through the soak and deleted
+      LAST; while it still exists this box stays open, it is not a failure)
 
 **Harness wiring:**
 - [ ] `AGENTS.md` has `<!-- BEGIN:SYNAPTIC --> … <!-- END:SYNAPTIC -->` block
@@ -621,20 +648,21 @@ Question-selection recipe (deterministic — pick the same way every run):
 - [ ] 1 **cross-cluster synthesis** question attempted (answer needs two nodes in different top-level
       clusters).
 - [ ] **Pass bar:** all 5 fact-lookups answered via MOC navigation with **0 grep-fallbacks**. The
-      synthesis question MAY miss — a miss is a `/synaptic-weave` content gap (per the v1.0 benchmark
+      synthesis question MAY miss — a miss is a `/synaptic-maintain weave` content gap (per the v1.0 benchmark
       caveat), not a navigation failure. A fact-lookup that needs grep is a navigation failure — fix
       the MOC/links and re-run.
 
 **Phase → commit mapping (one commit per phase — mirror of the AGENT runbook):**
 
 The migration lands as **≥3 distinct, independently-revertible commits** on the upgrade branch, each
-passing `check.js` before the next begins — never one blended mega-commit:
+passing the structural check (`check.js`, or the manual Phase V greps where Node is absent; record
+which ran) before the next begins — never one blended mega-commit. "check.js" below means either:
 
 - [ ] `migrate: Phase M mechanical file moves` — deterministic moves + staging only (check.js **may
       still ERROR** here — expected).
 - [ ] `refactor: Phase C content rearrange` — links / MOC / frontmatter / consolidation (check.js
       **must reach 0 errors**).
-- [ ] `chore: cleanup + cutover` — staging deletion, harness rewrite, backups pruned (check.js
+- [ ] `chore: cleanup + cutover` — staging prune after the soak, harness rewrite, backups pruned (check.js
       re-verifies; retrieval drill passes before cutover). The upgrade branch's 3 phase commits then
       promote to `main` by a single `git merge --ff-only` (see the cutover section / AGENT runbook).
 

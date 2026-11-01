@@ -1,5 +1,219 @@
 # Changelog
 
+## [Unreleased]
+
+## [1.6.0] - 2026-11-01
+
+> **Simpler and cheaper to run.** `SKILL.md`, which every command reads, drops from 60 KB to a 12 KB
+> core; each command loads its own reference on demand (consolidate ~89 → ~36 KB, audit ~93 → ~47 KB;
+> init grows ~10 KB). Six public commands: `/synaptic-weave` and `/synaptic-synthesize` become passes of
+> `/synaptic-maintain` and keep working as aliases for one minor release; `/synaptic-upgrade` is a
+> routine. One `SessionStart` pending check replaces the reminder and rescue hooks, and Windows gains the
+> rescue. Claude Code gets an approval-gated boot adapter with a boot proof. The frontmatter schema, the
+> default autonomy tiers and the drift fingerprint each have one home. A user's own skills are never
+> touched. Every move or removal is recorded in `docs/maintenance/simplification-ledger.md`.
+>
+> **Behaviour removed (minor, not major):** a brain no longer installs `harness/skills/` into host skill
+> folders; existing content is kept as inert files (`docs/parked/harness-skills.md`).
+>
+> **Upgrade:** run `/synaptic-upgrade` (re-deploys the hooks and stubs; the steps are under Changed and
+> Removed below).
+>
+> **Scope of the verification.** Executed locally: Git Bash and Windows PowerShell 5.1 on Windows 11
+> (bash 56/56, PowerShell 5.1 65/65). Node (`tests/tools.test.js`), PowerShell 7, Linux and macOS run
+> in CI. Host-side hook semantics (what each host does with hook output) come from the host docs and
+> were not measured on a live host.
+
+### Fixed
+- **A user's own skills and commands are never touched.** Stub deletes, overwrites and the drift prune
+  now act only on a file the host record lists, whose name starts with `synaptic` and that carries the
+  `generated-from: synaptic-skill@` line. The OneDrive conflict-copy cleanup matches only
+  `synaptic-*-DESKTOP-*`; before, its `*-DESKTOP-*` pattern could match a conflict copy of a user's skill.
+  A name clash is reported, not resolved (`references/command-discovery.md`, Cleanup).
+- **Carried defects closed (no Node needed).** The changes by area:
+  - **Upgrade.** `_migration-staging/` is kept through the soak and deleted last. It is no longer
+    deleted at the end of Phase C, and the final checklist no longer fails while it is kept.
+    Autonomous mode never deletes a stale workline; it stages it and logs it for the owner. Guided
+    mode no longer asks the playground-or-task-system question. Phase M writes the bridge where the
+    topology says, never into a foreign committed repo. The paste-to-agent runbook no longer claims to
+    land on v1.3.0 and is scoped to v0.3 sources.
+  - **Handover.** "Owns" lists only explicitly tagged `project` / `area` nodes, and the brief has a
+    fixed order.
+  - **Audit.** Archived nodes are not flagged for age, and a supersession-consistency advisory is new.
+  - **Archived nodes** keep their MOC line with ` (archived — superseded by [[x]])`.
+  - **A backfilled `content_hash`** is marked as backfilled.
+
+  The two Node-only fixes are written with tests: `tools/check.js` skips `status: archived` in its
+  staleness check, and the `tools/graph.js` "hide archived" filter tests `status`, not `lifecycle`.
+  Their first run is in CI.
+- **The `Stop` breadcrumb (A.1) no longer repeats itself every turn.** An uncommitted diff persists
+  across turns, so both scripts appended the same `breadcrumb: touched …` line on every turn until a
+  commit, against the journal's own dedup rule. Both shells now skip the line when the last
+  breadcrumb lists the same files; an agent-written line in between does not reset it. The dedup is by
+  file list, not by session: a later session that touches exactly the same uncommitted files adds no
+  new line. Re-copy the A.1 script from the recipe to pick this up. Tests: 3 new cases per shell, red
+  against the old script.
+- **The activity ledger (A.0) no longer writes the raw machine name or a per-turn timeline, and is not
+  committed by default.** Files were `<hostname>-<date>.log` with one timestamp per turn, in a folder
+  init tracked with a `.gitkeep`, while three docs said there was no telemetry. Now:
+  - the file name uses a 12-hex host token, SHA-256 of the lower-cased host name. It is unsalted, so
+    anyone who can guess the name can recompute it: pseudonymous, not anonymous;
+  - each line is just `boot` or `stop`, so a day-file holds per-day counts. File modification times
+    and a sync service's version history can still reveal timing;
+  - the hooks write `journal/_activity/.gitignore` (`*`, `!.gitignore`); delete it to opt in.
+
+  Audit and consolidate read old and new files (they count the last field). sh and PowerShell on one
+  host share one file wherever `hostname` and the PowerShell host name agree up to case. On Windows
+  they do not agree for a DNS name longer than 15 characters. A new test runs both shells into the same
+  brain, under `powershell.exe` or `pwsh`. Re-deploy the hooks with `/synaptic-upgrade`. If your brain
+  already committed the ledger, upgrade offers `git rm --cached`. A synced folder (OneDrive) still
+  syncs the ledger.
+- **The BRAIN.md template no longer claims a breadcrumb floor.** It said the agent-written breadcrumbs
+  were "the always-on, fixed-cost floor" and that a session is "never breadcrumb-empty". Since 1.5.0
+  the only mechanical floor is the activity marker. The template now calls breadcrumbs best-effort,
+  names the marker, adds it to the layered-capture table, and fits its own ≤110-line budget (116 → 108
+  lines). `SKILL.md`, `consolidate.md`, the recipe and the capture concept doc carry the same
+  correction. Existing brains keep their wording; nothing is migrated.
+- **`PreCompact` and `SessionEnd` no longer "run `/synaptic-consolidate`" or "flush".** No shell hook
+  can run a slash command; the shipped A.2 hook prints a reminder. `SKILL.md`, the template, the
+  recipe and the concept doc now say "reminder".
+- **The migration gates accept the manual check.** MIGRATION_DONE Phases M, C and V.1, and the
+  phase-commit list in `upgrade-to-v1.md`, required `tools/check.js`, which a normal skill install
+  does not ship. They now allow the manual greps from `upgrade-to-v1.md` Phase V and ask which check
+  ran.
+- **Claude Code command stubs follow the skill's install scope.** They always went to
+  `~/.claude/commands/`, so a project-installed skill's stubs loaded in every workspace and pointed at
+  a path that existed in one project only. A project skill now gets project-level stubs. Existing
+  stubs stay where they are until `/synaptic-upgrade`, whose stub-drift check now also checks
+  placement and offers the move.
+- **The self-install check no longer always fails.** It required every manifest file to be non-empty,
+  but the manifest lists a 0-byte `.gitkeep`. Placeholders are exempt.
+
+### Changed
+- **One drift and fingerprint primitive, `references/fingerprint.md`.** The raw-artifact hash went
+  through several versions in 1.5.1, each depending on some git setting. Its uses now point at one file:
+  consolidate, ingest, audit, the stub `<sot-hash>`, and the upgrade and convert-to-global no-loss
+  checks.
+  - **Brains in git** no longer write `content_hash`. The drift signal is the raw file's last commit,
+    compared with the last commit of its node (exact to the second; not the day-granular `updated:`).
+    Files committed together compare equal; a shallow clone is reported as unknown, never as drifted.
+  - **Brains outside git** record `content_hash: "sha256-lf:<12 hex>"`. That is SHA-256 over the
+    bytes with CR removed, so CRLF and LF copies agree, and it uses no git at all. The value comes
+    from a pinned sh command or its PowerShell twin.
+  - A body form, which ignores frontmatter and a missing final newline, serves the no-loss checks.
+  - Legacy `git:` and `sha256:` values are reported as unverifiable, never as drifted.
+
+  Tests: 6 cases per shell, plus a check that PowerShell prints exactly what sh prints on LF, CRLF,
+  no-final-newline and frontmatter fixtures. Manifest: 28 → 29 entries (the new reference).
+- **Fewer agent-written breadcrumbs where the hook is wired.** Where the `Stop` hook already records
+  which files changed, the agent now writes only at decision points (a decision, a lesson, a blocker,
+  a change of plan) plus the session-boundary summary. Without hooks, nothing changes: one line per
+  meaningful turn. This replaces the "provisional cadence" notes. It saves an agent line per turn
+  (an estimated 150–200 tokens), at the cost of losing in-between context if a crash comes before
+  the boundary summary. The hook sees only uncommitted changes, so the agent still writes a line for
+  a turn whose work it committed. The rule lives once, in `templates/BRAIN.md`.
+- **CORE is stated in two tiers, once.** `docs/concepts/architecture-matrioshka.md` defines both.
+  **CORE-floor** needs only an agent that reads, writes and searches files; every guarantee holds
+  there. **CORE-host** is the optional shell, git, grep and hooks, under one rule: absent → unknown,
+  never invented. In `SKILL.md` §d, one repeated honesty note was removed (the per-host table
+  already says it) and two passages were shortened. The always-loaded `SKILL.md` drops ~1.1 KB; the
+  repo total grows slightly, because the statement and the audit check are new text.
+- **`lifecycle` is a label, not a load filter.** The "default working set / lazy-pull" wording is gone
+  from `SKILL.md`, the node and playbook templates, consolidate, audit, handover, day-one, upgrade,
+  ROADMAP and the concept doc. No agent load path ever filtered on it (the optional graph tool's
+  visual filter is separate). The field, its four values and its absent → `area` default are
+  unchanged. The concept doc's combined-value table no longer uses `archived` as a `lifecycle` value.
+- **MOC lines are routing text.** `- [[node]] — <routing text>` is written for the next agent deciding
+  whether to open the node. It is non-empty, at most 120 characters, and no longer a copy of
+  `description:`. Consolidate Step 4, day-one and both MOC templates say so. `/synaptic-audit` Step 4
+  flags empty or over-long lines (advisory), with optional grep one-liners. Existing MOCs need no
+  change unless the audit flags them.
+- **Six public commands: weave and synthesize are now passes of maintain.** The menu is `/synaptic-init`,
+  `/synaptic-consolidate`, `/synaptic-ingest`, `/synaptic-audit`, `/synaptic-maintain` and
+  `/synaptic-handover`. `/synaptic-maintain weave` and `/synaptic-maintain synthesize` run one pass
+  alone. Both passes keep their procedures, now headed as passes and under maintain's CORE-safety
+  contract, which they no longer restate. **`/synaptic-upgrade` becomes a routine.** It leaves the main
+  menu but stays invocable by name. `/synaptic-init` offers it when it finds an older brain, and the
+  upgrade runbooks call it.
+
+  **Not breaking in 1.6:** `/synaptic-weave` and `/synaptic-synthesize` still work as deprecated
+  aliases, and their stubs are regenerated as alias stubs. Both are **removed in the next minor
+  release**, when the stub-drift check prunes their stubs. The bridge's command line, the Cursor shim,
+  the skill description and the README list the six commands plus the routine. Re-run
+  `/synaptic-upgrade` (or `/synaptic-init`) to redeploy them.
+- **One home for the node contract: `references/contract.md`.** It holds the frontmatter schema
+  (required fields, enums, `untriaged` read semantics, the `status`/`lifecycle` interaction, the
+  lifecycle axis, typed-edge vocabulary) and the **skill-side default autonomy tiers**.
+  - `SKILL.md`'s Lifecycle section and consolidate's status/lifecycle block moved there, each leaving a
+    pointer. `SKILL.md` drops ~3 KB and consolidate ~2 KB.
+  - Audit Step 1b and the node template point to it.
+  - Tier precedence: a brain's own `harness/guardrails.md` table **governs entirely**; an action it does
+    not name is propose-then-approve, so the default never loosens a stricter brain. The skill default
+    applies only to brains whose guardrails have no tier table (new brains copy it at init). A test keeps
+    the default and the template table identical.
+
+  No field, enum or default changed. Existing brains need nothing.
+- **`SKILL.md` is now a small always-loaded core: 58 KB → 12 KB (≈ −11.6k tokens on every command).**
+  It keeps the self-install bootstrap, Detect on Load, a one-paragraph compat-check, and the
+  Operations tables. Three new on-demand references take the rest, moved verbatim:
+  - `references/init.md`: onboarding interview, Generate, Harness Self-Wire;
+  - `references/host-setup.md`: compat-check details, host-setup detection;
+  - `references/capture-hooks.md`: the capture mechanism (§d), the pinned activity-marker one-liners,
+    and the journal breadcrumb contract moved from consolidate.
+
+  Consolidate (26.6 → 23.7 KB) and audit Step 9b (whose rationale moved to capture-hooks) shrink too.
+  `/synaptic-init` reads more than before (about 65 KB across four files); every other command reads
+  much less. Stubs still load `SKILL.md` first. The first stub-drift check after upgrading reports the
+  init stub as changed, because its source file is now `references/init.md`; it is regenerated. The test suites now
+  extract the deployed one-liners from `references/capture-hooks.md`. Manifest: 30 → 33 entries.
+
+- **Claude Code boot adapter: closes the silent freeze for Claude Code with a project `CLAUDE.md`.** Per
+  the Claude Code memory docs, a project `AGENTS.md` is not loaded when a `CLAUDE.md` exists. The bridge
+  then never reached the agent and the brain stopped receiving writes, with nothing reporting it.
+  `/synaptic-init` (and the upgrade routine) now handles this for **project-reach brains only**: it
+  detects `CLAUDE.md` / `.claude/CLAUDE.md` / `CLAUDE.local.md`, respects an `@AGENTS.md` import the
+  user already wrote, and otherwise, **only with your approval**, appends one marker-wrapped
+  `SYNAPTIC-BOOT` block containing `@AGENTS.md` (`references/init.md` §a2).
+  - The block is idempotent, removable by deleting four lines (uninstall, downgrade and
+    convert-to-global do it from the setup record), and a "no" is remembered.
+  - The prompt states the cost: the whole `AGENTS.md`, 1–2k tokens, becomes resident in every session.
+  - ADR-002's "never touch `CLAUDE.md`" becomes "at most one marker-wrapped block, only with
+    approval".
+  - The bridge gains a `Boot check:` line carrying a per-install nonce. `/synaptic-audit` **Step 10b**
+    checks the import statically (`wired: expected`). Only a new session whose first answer to
+    `synaptic status` carries the nonce counts as `proven`.
+
+  Global, seat and private brains, user-level `CLAUDE.md` and every other host are not covered yet.
+
+### Removed
+- **Project skills (`harness/skills/`) are no longer part of CORE.** Deploy used to copy a brain's
+  `harness/skills/*` into the host's skill folders at boot, with no per-item approval. That made a
+  shared or handed-over brain a channel for delivering code. Deploy now installs nothing from a brain.
+  New brains no longer get `harness/skills/`, and the template is gone from the bundle (29 → 28
+  manifest entries). The idea is parked in `docs/parked/harness-skills.md`. **Existing brains:** a
+  `harness/skills/` folder stays where it is, inert. `/synaptic-upgrade` still preserves a pre-v1
+  brain's custom skill dirs, without installing them. If you relied on auto-install, install those
+  skills by hand.
+- **The `PreCompact` and `SessionEnd` reminder hooks are gone; one `SessionStart` script replaces A.2
+  + A.3.** On Claude Code only `SessionStart` (and `UserPromptSubmit`) stdout reaches the model, so
+  the old reminder reached no one. Engram's Claude Code plugin makes the same choice.
+  `synaptic-pending.sh` / `.ps1` has two modes, with one git-free predicate:
+  - `rescue` (startup / resume / clear) offers to consolidate pending work;
+  - `compact` (the `compact` source) injects one line right after a compaction, pointing at the
+    journal.
+
+  **Windows gains the rescue,** which was bash-only before. A compaction no longer writes a `boot`
+  marker. The rule comes from the Claude Code hook docs and Engram's plugin source; it was not measured on a
+  live host.
+
+  **PowerShell 5.1 hooks started in a folder whose path contains `[ ]`** used to start at `$PSHOME`,
+  find no brain and silently do nothing. A.0, A.1 and A.2 now resolve the brain against the process
+  directory when needed (A.1 also runs git there). The defect was reproduced, and all three cases are now tested.
+
+  One fixture table, `tests/capture-floor/pending-cases.txt`, runs through both shells. **Upgrade:**
+  re-deploy the hooks, delete `synaptic-consolidate-reminder.*` and `synaptic-rescue.sh`, and drop
+  their `PreCompact` / `SessionEnd` settings entries.
+
 ## [1.5.1] - 2026-11-01
 
 > **First runtime verification of the capture floor.** Everything in [1.5.0] was accepted by inspection
@@ -77,7 +291,8 @@
   file named `playgrounds`, matching bash. A long-lived open playground keeps the reminder firing on
   purpose: it is unconsolidated work until it is burned or archived.
 - **Skill prose defects** (no runtime involved; checked by review, not by tests):
-  - **`content_hash` has one command, defined once in consolidate Step 4:**
+  - **`content_hash` has one command, defined once in consolidate Step 4** *(superseded in [1.6.0]
+    by `references/fingerprint.md`)*:
     `git -C "<brain>" -c core.autocrlf=input -c core.attributesFile=/dev/null hash-object
     "references/raw/<filename>"`, stored as `git:{first-12}`. Before, the field was labelled `sha256:`
     but could hold a `git hash-object` prefix, a real SHA-256 prefix, or a value the agent "computed",
@@ -147,7 +362,8 @@ Do the steps in this order.
 - **Re-run `/synaptic-upgrade` (or `/synaptic-init`)** to re-wire the guarded one-liners, re-deploy
   the edited rules, and regenerate the `/`-menu stubs (they now load `SKILL.md` first). For its drift
   check to notice, the release must bump `SKILL.md`'s `version:`.
-- **Existing `content_hash` values** are labelled `sha256:`. Each one may be a `git hash-object`
+- **Existing `content_hash` values** *(superseded in [1.6.0]: git brains ignore the
+  field, others re-record as `sha256-lf:`)* are labelled `sha256:`. Each one may be a `git hash-object`
   prefix, a real SHA-256 prefix, or an invented value. Audit reports them as unverifiable, not drifted.
   Where the hex matches the recomputed prefix, re-label it `git:`. Otherwise, re-record it only with
   your OK.

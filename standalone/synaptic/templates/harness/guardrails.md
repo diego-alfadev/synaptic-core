@@ -68,7 +68,7 @@ These guard the brain's trustworthiness. They are knowledge-epistemic rules for 
 
 ## Autonomy Tiers (what the agent may do unprompted)
 
-Every automated edit is **diff-traced, git-reversible, and archive-before-delete**. The tier sets how much approval is required.
+Every automated edit is **diff-traced, git-reversible, and archive-before-delete**. The tier sets how much approval is required. *(This table wins over any skill default.)*
 
 | Tier | Scope | Examples |
 |---|---|---|

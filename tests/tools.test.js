@@ -226,6 +226,14 @@ test('check.js: warnings alone never fail the run (stale node)', () => {
   check(b, 0, ['stale:']);
 });
 
+test('check.js: an old status: archived node is not reported stale', () => {
+  const b = validBrain();
+  const fm = ['description: Node two', 'type: concept', 'status: archived', 'updated: 2000-01-01', 'tags: [ci]'];
+  write(b, 'knowledge/alpha/node-two.md', node('Node two', 'Relates to [[node-one]].', fm));
+  const r = check(b, 0);
+  assert(!r.out.includes('stale:'), `archived node reported stale\n${tail(r.out)}`);
+});
+
 test('check.js: a mistyped status warns but does not fail', () => {
   const b = validBrain();
   const fm = ['description: Node two', 'type: concept', 'status: actve', `updated: ${TODAY}`, 'tags: [ci]'];
@@ -262,6 +270,19 @@ test('graph.js: writes a single-file HTML graph with no external resources', () 
   const urls = (html.match(/https?:\/\/[^\s"'<>)]+/g) || []).filter((u) => !u.startsWith('http://www.w3.org/'));
   assert(urls.length === 0, `references external URLs: ${[...new Set(urls)].slice(0, 5).join(', ')}`);
   assert(html.includes('node-one') && html.includes('node-two'), 'graph does not contain the fixture nodes');
+});
+
+test('graph.js: the archived filter keys on status, which the page data carries', () => {
+  const b = validBrain();
+  const fm = ['description: Node two', 'type: concept', 'status: archived', `updated: ${TODAY}`, 'tags: [ci]'];
+  write(b, 'knowledge/alpha/node-two.md', node('Node two', 'Relates to [[node-one]].', fm));
+  const out = path.join(tmp('graph'), 'g.html');
+  const r = tool('graph.js', [b, '--out', out]);
+  assert(r.code === 0, `graph.js exited ${r.code}\n${tail(r.out)}`);
+  const html = fs.readFileSync(out, 'utf8');
+  assert(/"status":\s*"archived"/.test(html), 'page data lacks status: archived');
+  assert(html.includes('n.status === "archived"'), 'archived filter does not test status');
+  assert(!html.includes('n.lifecycle === "archived"'), 'archived filter still tests lifecycle');
 });
 
 // --- export.js -----------------------------------------------------------------------------------

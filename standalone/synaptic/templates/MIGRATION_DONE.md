@@ -23,13 +23,15 @@ Brain: `{{brain-path}}`  ·  Source schema: `{{v0.3 | v0.4 | v0.5}}`  ·  Run st
 scaffolded-but-empty). That is expected and documented — running the check early is the point.
 
 - [ ] All v0.x boot files MOVED (never deleted) into `_migration-staging/` (per source-version list).
-- [ ] v1 directories created (`registries/ harness/ harness/skills/ references/ references/raw/
-      playgrounds/ templates/ _migration-staging/`).
+- [ ] v1 directories created (`registries/ harness/ references/ references/raw/
+      playgrounds/ templates/ _migration-staging/`; `harness/skills/` only to hold legacy custom skills).
 - [ ] `worklines/` and `inventory/` moved into staging (if present).
 - [ ] M7 frontmatter scaffold added to every `knowledge/` node that lacked D1 fields.
 - [ ] v1 templates copied into `templates/`.
 - [ ] NOTHING deleted in Phase M (staging holds every moved original).
-- [ ] `node tools/check.js <brain>` was run at the END of Phase M (errors expected — recorded, not fixed yet).
+- [ ] `node tools/check.js <brain>` (or, without Node, the manual equivalent in
+      `references/upgrade-to-v1.md` Phase V) was run at the END of Phase M; record which one ran
+      (errors expected — recorded, not fixed yet).
 - [ ] DECISION LOG + DELETIONS LEDGER started and current.
 
 **Phase M DONE only when every box above is checked.**
@@ -42,21 +44,24 @@ Closed: `{{YYYY-MM-DD HH:MM}}`  ·  commit: `{{migrate: Phase M mechanical file 
 `check.js` expectation at this boundary: **0 ERRORS** (this is the phase that reaches structural green).
 
 - [ ] CONTENT-CONSERVATION MANIFEST snapshotted BEFORE editing: every node as `(path, title,
-      sha256(body-minus-frontmatter))`.
+      body fingerprint)` — the command is in `references/fingerprint.md`.
 - [ ] Every cluster ticked in the Phase-C ledger (C3 links · C4 MOC · C5 consolidate · C11 frontmatter ·
       every-node-in-`_index`?).
 - [ ] Identity/boot, CONTACTS, PRINCIPLES/working-agreements, brain-root context files all routed per
       the runbook (knowledge vs `harness/` vs `HARNESS_ORIGINALS/`; `harness/` text is held for
       question 5, not written in this phase).
-- [ ] `inventory/` → `registries/`; `worklines/` → playgrounds/task system; `skills/` → `harness/skills/`.
+- [ ] `inventory/` → `registries/`; `worklines/` → playgrounds/task system; custom `skills/` → `harness/skills/` (inert, never installed).
 - [ ] `knowledge/INDEX.md` + every cluster `_index.md` rebuilt from real files only (no phantom entries).
 - [ ] Every `[[wikilink]]` resolves AND passes a link-IDENTITY spot-check (new target == old path's file).
 - [ ] `updated:` stamped ONLY on nodes actually rewritten this pass (NOT mass-stamped, NOT from mtime).
 - [ ] NO silent deletions — every merge/split/removal is in the DELETIONS LEDGER, confirmed.
 - [ ] `_migration-staging/` still present (it is deleted LAST, in Step 10 — not here).
-- [ ] `node tools/check.js <brain>` → **0 ERRORS** (fix every ERROR before closing this phase).
+- [ ] `node tools/check.js <brain>` → **0 ERRORS**, or, where `tools/check.js` or Node is absent, the
+      manual equivalent (the Phase V greps / inspection in `references/upgrade-to-v1.md`) finds 0
+      errors. Record which one ran. Fix every ERROR before closing this phase.
 
-**Phase C DONE only when every box above is checked AND check.js is at 0 errors.**
+**Phase C DONE only when every box above is checked AND the structural check (check.js or the manual
+equivalent) is at 0 errors.**
 Closed: `{{YYYY-MM-DD HH:MM}}`  ·  commit: `{{refactor: Phase C content rearrange — <hash>}}`
 
 ---
@@ -69,8 +74,9 @@ Closed: `{{YYYY-MM-DD HH:MM}}`  ·  commit: `{{refactor: Phase C content rearran
 
 ### V.1 — Structural (check.js green, or the manual matrix)
 
-- [ ] `node tools/check.js <brain>` exits 0 (no ERRORS). Record the retrieval-readiness summary block
-      it prints: nodes `{{N}}`, edges `{{N}}`, orphans `{{N}}`, edges-per-node `{{x.xx}}`,
+- [ ] `node tools/check.js <brain>` exits 0 (no ERRORS), or the manual matrix (the Phase V greps /
+      inspection in `references/upgrade-to-v1.md`) finds 0 errors; record which one ran. Record the
+      retrieval-readiness summary (check.js prints it; by hand, count it): nodes `{{N}}`, edges `{{N}}`, orphans `{{N}}`, edges-per-node `{{x.xx}}`,
       MOC-reachable `{{N}}`.
 - [ ] If the caveat line printed ("structural-green ≠ retrieval-green": orphan ratio > 20% OR
       edges-per-node < 0.5), the retrieval risk was reviewed and is acknowledged in the DECISION LOG.
@@ -112,7 +118,7 @@ fallback is allowed** — a question that needs grep to answer is a navigation f
 **Pass bar (binary):**
 
 - [ ] **All 5 fact-lookups (Q1–Q5) answered via MOC navigation, with 0 grep-fallbacks required.**
-- [ ] The synthesis question (Q6) MAY miss — a miss is a `/synaptic-weave` content gap, not a
+- [ ] The synthesis question (Q6) MAY miss — a miss is a `/synaptic-maintain weave` content gap, not a
       navigation failure (per the v1.0 benchmark caveat). If it missed, it is noted as a weave to-do.
 
 **Phase V DONE only when V.1 is all-checked AND the V.2 pass bar is met.**

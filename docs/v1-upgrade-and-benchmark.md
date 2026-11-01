@@ -38,7 +38,7 @@ STEP 2 — Phase C (the rearrange — you do this with judgment)
   _index.md (sub-MOC, one line per node) from the old _overview files; apply the 6-step consolidation
   formula retroactively (atomic nodes, frontmatter incl. tags, type: reference for long canonical docs);
   route identity → harness/ (conventions+guardrails as deploy-source) and contacts → a people-routing
-  knowledge node; move any project-local skills to harness/skills/; triage worklines → playgrounds or
+  knowledge node; move any project-local skills to harness/skills/ (inert, never installed); triage worklines → playgrounds or
   your task system; rewrite journal to the thin 3-section format. Delete `_migration-staging/` last.
 - Then DEPLOY the operating rules: `node <SYNAPTIC>/tools/deploy.js ./synaptic-v1-test` (writes the
   SYNAPTIC + SYNAPTIC-RULES blocks into the test project's AGENTS.md; --dry-run to preview).

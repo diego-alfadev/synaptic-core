@@ -11,7 +11,7 @@ M→C→V content rearrange.
 > **REACH = harness placement, not folder location.** A brain's reach is set by **where its
 > `BEGIN:SYNAPTIC` bridge is wired** — project-level bridge → that folder only; **user-level** bridge
 > → every folder. "Going global" = moving the bridge up to user level. The brain FOLDER can stay
-> exactly where it is. See `SKILL.md` "Detect on Load" and Harness Self-Wire §a. Load this file only
+> exactly where it is. See `SKILL.md` "Detect on Load" and `references/init.md` Harness Self-Wire §a. Load this file only
 > when a user asks to make a brain global.
 
 ## The two sub-cases (pick one up front)
@@ -111,7 +111,7 @@ repo, plus the history warning above.
      absolute path.
 4. **Wire the bridge at user level FIRST (add; don't yet remove the old one):**
    - **WRITE** the bridge into the host's **user-level** instruction context, pointer = the brain's
-     (new) **absolute** path **+ the skill's absolute path** (see `SKILL.md` §a global/seat rewrite
+     (new) **absolute** path **+ the skill's absolute path** (see `references/init.md` §a global/seat rewrite
      and the REACH host-setup detection note) — **before** removing the project-level bridge.
    - **VERIFY resolution from a SECOND, unrelated folder** (open a different folder; confirm
      Detect-on-Load resolves the brain via the new user-level bridge). Only once green do the removals
@@ -124,7 +124,8 @@ repo, plus the history warning above.
      host-setup detection uses: the project's `AGENTS.md`, `.github/copilot-instructions.md`, Copilot
      workspace/user `*.instructions.md` + `*.chatmode.md`, Cursor rules (`.cursor/rules/*` / `.mdc`
      shim), `CLAUDE.md`. Removing from only `AGENTS.md` leaves a resolvable duplicate bridge in
-     another carrier (double-bridge limbo).
+     another carrier (double-bridge limbo). A project `CLAUDE.md` `SYNAPTIC-BOOT` block
+     (`references/init.md` §a2) goes too, when the setup record lists it.
 6. **Move hooks + skill install to user level** so they fire from every folder; write the skill's
    **absolute path** into the user-level bridge so it is grep-recoverable on hosts that do not
    discover user-level skill dirs. **Remove the project-level command-discovery stubs** (recorded in
@@ -159,7 +160,7 @@ repo, plus the history warning above.
   re-wire** (file-count + size parity logged). *(Both sub-cases.)*
 - **AC2.2 [relocate (b) only]** After the **copy** (copy, not move — rollback depends on the source
   still existing until step 8), the destination `.synaptic/` contains **every** file the original had
-  (path + `sha256(body)` parity for all `knowledge/**`, `registries/**`, `references/**`, `journal/**`,
+  (path + whole-file fingerprint parity, `references/fingerprint.md`, for all `knowledge/**`, `registries/**`, `references/**`, `journal/**`,
   `harness/**`). *(In re-wire (a): the check reduces to confirming the brain folder is byte-identical
   to its backup — no relocation occurred.)*
 - **AC2.2a On-disk hydration.** For **every** file asserted above (and, in sub-case (a), every file of
@@ -199,4 +200,4 @@ folder + project-level bridge/rules + all touched user-level instruction/hook/sk
 Placement + wiring change, zero-runtime, no schema bump. Every gate is grep + file-existence + hash by
 hand. The safety discipline mirrors `references/upgrade-to-v1.md`'s addendum. Runtime confirmation
 (second-folder resolution, OneDrive hydration behavior) is author-complete; verify on a real
-(Robinson) run.
+run.

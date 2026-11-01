@@ -1,11 +1,16 @@
 SKILL.md
 references/audit.md
+references/capture-hooks.md
 references/command-discovery.md
 references/consolidate.md
+references/contract.md
 references/convert-to-global.md
 references/day-one.md
+references/fingerprint.md
 references/handover.md
+references/host-setup.md
 references/ingest.md
+references/init.md
 references/maintain.md
 references/synthesize.md
 references/upgrade-to-v1.md
@@ -14,7 +19,6 @@ templates/BRAIN.md
 templates/MIGRATION_DONE.md
 templates/harness/conventions.md
 templates/harness/guardrails.md
-templates/harness/skills/README.md
 templates/journal/_current.md
 templates/knowledge/INDEX.md
 templates/knowledge/example-cluster/_index.md
