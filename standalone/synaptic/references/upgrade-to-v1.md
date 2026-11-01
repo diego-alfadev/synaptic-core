@@ -27,7 +27,7 @@
   one-liner is also self-creating (`mkdir -p` / `New-Item -Force`) — belt and braces, because this is
   precisely the failure class v1.5.0 exists to remove. Resolve the brain root explicitly in the hook
   command; never assume the host's cwd is the brain root.
-- **Deploy the layer-(a0) activity marker** per `SKILL.md` §d "Deterministic activity marker": wire the
+- **Deploy the layer-(a0) activity marker** per `references/capture-hooks.md` "Deterministic activity marker": wire the
   pinned platform-appropriate one-liner (**UTF-8 no-BOM**; `[IO.File]::AppendAllText` on PowerShell —
   never `>>` (UTF-16LE+BOM) or `Add-Content` (ANSI by default; a BOM with `-Encoding utf8` on 5.1)) to `Stop` (`stop`) and `SessionStart`
   (`boot`), writing to `journal/_activity/<host-token>-<YYYY-MM-DD>.log`. Marker-wrapped + idempotent like
@@ -40,7 +40,7 @@
   instruction-layer breadcrumb is best-effort, and that `/synaptic-audit` will report capture-yield as
   **unknown** rather than inferring capture-death. **Do not** repeat the retired pre-v1.5.0 claim that
   the instruction-layer breadcrumb "closes issue #2" on a hook-less host.
-- **Host coverage is UNVERIFIED beyond Claude Code** (`SKILL.md` §d "Per-host activity marker support")
+- **Host coverage is UNVERIFIED beyond Claude Code** (`references/capture-hooks.md` "Per-host activity marker support")
   — detect, attempt, verify, and report; never assert parity.
 - **v1.6 privacy of the ledger (re-deploy the hooks).** The new one-liners write `<host-token>-<date>.log`
   with `boot`/`stop`-only lines and add `journal/_activity/.gitignore`. Re-deploy them on every host.
@@ -52,12 +52,12 @@
 ## v1.4.0 addendum — host-setup detection is an ALWAYS-RUN step (not migration-only)
 
 > **This runs on EVERY `/synaptic-upgrade` and every `/synaptic-init`, including the light
-> already-schema-`1.0` path — not just a pre-v1 migration.** The canonical procedure is **`SKILL.md` →
+> already-schema-`1.0` path — not just a pre-v1 migration.** The canonical procedure is **`references/host-setup.md` →
 > "Host-setup detection"**; this addendum binds it into the upgrade flow. The convert-to-global runbook
 > (`references/convert-to-global.md`) reuses the same detect+classify+re-deploy step.
 
 - **Actively DETECT where + how the brain + harness are wired, then re-deploy the correct wiring** —
-  never silently assume a repo-local `.synaptic/`. Run the six steps in `SKILL.md` "Host-setup
+  never silently assume a repo-local `.synaptic/`. Run the six steps in `references/host-setup.md` "Host-setup
   detection": resolve brain location (project-local vs global) → scan all carriers → read
   `harness/setup/<host>.md` and report drift → **classify** → **re-deploy accordingly** → update the
   record. **Emit a one-line classification** (brain location · host · wiring level).
@@ -126,7 +126,7 @@
   registries paths; `/synaptic-*` commands; drop the HEARTBEAT re-read). Point at the brain by its
   fixed path (absolute is fine for a per-user brain; `../.synaptic/` only if the workspace root is the
   brain's parent). **For a user-global brain also write the skill's ABSOLUTE path into the bridge block**
-  (grep-recoverable on hosts that don't discover user-level skill dirs — `SKILL.md` §a). Deploy
+  (grep-recoverable on hosts that don't discover user-level skill dirs — `references/init.md` §a). Deploy
   conventions+guardrails as the always-on rules — **SYMLINK the `harness/` source ONLY on a POSIX local
   (non-synced) path where the host allows it; on Windows or any OneDrive/DFS-synced location symlinks are
   NOT allowed (they break on sync/copy) — emit the block / generate a pointer file** instead. Only
@@ -340,7 +340,7 @@ Write to project root `AGENTS.md`. Search for `<!-- BEGIN:SYNAPTIC -->` first:
 - Not found → append.
 - No `AGENTS.md` → create with just this block.
 
-<!-- canonical block — mirror any change in SKILL.md §a -->
+<!-- canonical block — mirror any change in references/init.md §a -->
 ```
 <!-- BEGIN:SYNAPTIC -->
 ## Synaptic Brain
@@ -498,7 +498,7 @@ For each node in `knowledge/`:
 **From v0.5 `knowledge/working-agreements.md`** (staged in `_migration-staging/`):
 
 - Route team/project norms → `harness/conventions.md` (merge or create from the skill bundle's `templates/harness/conventions.md`).
-- Route hard rules → `harness/guardrails.md`. Both files are the **deployable source** — collect the routed text in the question-5 file; write them and run the Deploy step (Harness Self-Wire §c via `/synaptic-init`) only after (5) is approved. Do NOT mirror rules in `BRAIN.md → Top Guardrails` (that block is dropped in v1).
+- Route hard rules → `harness/guardrails.md`. Both files are the **deployable source** — collect the routed text in the question-5 file; write them and run the Deploy step (`references/init.md` Harness Self-Wire §c via `/synaptic-init`) only after (5) is approved. Do NOT mirror rules in `BRAIN.md → Top Guardrails` (that block is dropped in v1).
 - Persona/agent behavior content → offer to place in AGENTS.md (user harness). Never into the brain.
 - Delete the staged file only after every item from it has an outcome in the question-5 file.
 

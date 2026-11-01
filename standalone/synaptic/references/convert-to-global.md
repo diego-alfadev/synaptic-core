@@ -11,7 +11,7 @@ M→C→V content rearrange.
 > **REACH = harness placement, not folder location.** A brain's reach is set by **where its
 > `BEGIN:SYNAPTIC` bridge is wired** — project-level bridge → that folder only; **user-level** bridge
 > → every folder. "Going global" = moving the bridge up to user level. The brain FOLDER can stay
-> exactly where it is. See `SKILL.md` "Detect on Load" and Harness Self-Wire §a. Load this file only
+> exactly where it is. See `SKILL.md` "Detect on Load" and `references/init.md` Harness Self-Wire §a. Load this file only
 > when a user asks to make a brain global.
 
 ## The two sub-cases (pick one up front)
@@ -111,7 +111,7 @@ repo, plus the history warning above.
      absolute path.
 4. **Wire the bridge at user level FIRST (add; don't yet remove the old one):**
    - **WRITE** the bridge into the host's **user-level** instruction context, pointer = the brain's
-     (new) **absolute** path **+ the skill's absolute path** (see `SKILL.md` §a global/seat rewrite
+     (new) **absolute** path **+ the skill's absolute path** (see `references/init.md` §a global/seat rewrite
      and the REACH host-setup detection note) — **before** removing the project-level bridge.
    - **VERIFY resolution from a SECOND, unrelated folder** (open a different folder; confirm
      Detect-on-Load resolves the brain via the new user-level bridge). Only once green do the removals

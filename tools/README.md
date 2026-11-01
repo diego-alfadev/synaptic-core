@@ -42,7 +42,7 @@ outer harness (`<project-root>/AGENTS.md`) by writing/replacing a marker-bounded
 | Idempotent | Replaces only the marked block; never touches unmarked user content in AGENTS.md |
 | Warning comment | Emits an auto-generated comment as the first line inside the block: "edit the source in `harness/`, not here" |
 
-**No-runtime fallback:** follow `SKILL.md` §c Deploy step — show the user a diff of the
+**No-runtime fallback:** follow `references/init.md` §c Deploy step — show the user a diff of the
 proposed SYNAPTIC-RULES block, require confirmation, and refuse if `harness/` contains
 `{{placeholders}}`.
 

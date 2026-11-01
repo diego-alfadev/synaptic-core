@@ -270,6 +270,19 @@ Do the steps in this order.
     the default and the template table identical.
 
   No field, enum or default changed. Existing brains need nothing.
+- **`SKILL.md` is now a small always-loaded core: 58 KB → 12 KB (≈ −11.6k tokens on every command).**
+  It keeps the self-install bootstrap, Detect on Load, a one-paragraph compat-check, and the
+  Operations tables. Three new on-demand references take the rest, moved verbatim:
+  - `references/init.md`: onboarding interview, Generate, Harness Self-Wire;
+  - `references/host-setup.md`: compat-check details, host-setup detection;
+  - `references/capture-hooks.md`: the capture mechanism (§d), the pinned activity-marker one-liners,
+    and the journal breadcrumb contract moved from consolidate.
+
+  Consolidate (26.6 → 23.7 KB) and audit Step 9b (whose rationale moved to capture-hooks) shrink too.
+  `/synaptic-init` reads more than before (about 65 KB across four files); every other command reads
+  much less. Stubs still load `SKILL.md` first. The first stub-drift check after upgrading reports the
+  init stub as changed, because its source file is now `references/init.md`; it is regenerated. The test suites now
+  extract the deployed one-liners from `references/capture-hooks.md`. Manifest: 30 → 33 entries.
 
 #### Removed (simplification round)
 - **Project skills (`harness/skills/`) are no longer part of CORE.** Deploy used to copy a brain's

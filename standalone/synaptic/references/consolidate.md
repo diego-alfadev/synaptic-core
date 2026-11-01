@@ -217,7 +217,7 @@ For each playground in the journal's **Active playgrounds** list:
 ## Journal Trim
 
 > **Retention → structure transform (v1.4.0).** Trimming is where the **structured session-summaries**
-> (Goal/Discoveries/Accomplished/Next-Steps/Files — see the Journal Breadcrumb Contract above) are
+> (Goal/Discoveries/Accomplished/Next-Steps/Files — see `references/capture-hooks.md`, "Journal breadcrumb contract") are
 > **distilled into durable wiki knowledge** and the **consumed/stale breadcrumbs are pruned**. A
 > breadcrumb that has been promoted into a `knowledge/**` node is **removed** from the journal (it now
 > lives durably — leaving both is the "don't journal what's in the wiki" anti-pattern); a breadcrumb
@@ -236,7 +236,7 @@ After routing all items:
 3. Hard budget: **≤ 80 lines total**. If still over, trim the Log (oldest entries first).
 4. No archive directory — history lives in git and in consolidated knowledge nodes.
 5. **Activity-log rollup (v1.5.0 — this is the step `/synaptic-audit` routes to; the hook never prunes,
-   and audit never writes).** The layer-(a0) activity marker (`SKILL.md` §d) only ever blind-appends to
+   and audit never writes).** The layer-(a0) activity marker (`references/capture-hooks.md`) only ever blind-appends to
    `journal/_activity/<host-token>-<date>.log` (one `boot` or `stop` per line; pre-1.6 files are `<host>-<date>.log` with `<ts> <event>` lines — count the last field), so trimming it is **this** step's job:
    - **Retention contract (binding):** **never prune inside the audit window.** Keep **raw** per-day logs
      covering at least Step 9b's window (default: the last ~30 days). Only beyond it may a day-file be
@@ -325,44 +325,11 @@ trimmed to 22 lines; `BRAIN.md` `updated:` stamped.
 
 ## Journal Breadcrumb Contract (the cheap, always-on safety net)
 
-Consolidation is the *promotion* pass. It sits on top of a cheaper layer that runs continuously and
-is **not** governed by `capture_policy`:
-
-- **One terse line per meaningful turn** is written to `journal/_current.md` (where the hook writes
-  them, the agent adds only decision points + the boundary summary — cadence note below). This is an
-  **instruction the agent follows, not only a hook**: the per-turn `Stop` breadcrumb prompts it where
-  wired, but write it even when no hook fires — hooks are host-specific and can silently fail. **Be
-  precise about what this is (v1.5.0):** because it is an instruction, it is **best-effort semantic
-  capture, NOT the non-empty guarantee** — an agent that does not comply writes nothing, which is
-  exactly issue #2a. The **mechanical** floor is the separate layer-(a0) activity marker (`SKILL.md` §d
-  — a host-run shell append, agent-independent, **shell**-hook-capable hosts only). This breadcrumb is
-  **fixed-cost**: a single line, never a full consolidation, regardless of the capture-policy dial.
-- Breadcrumbs **live on disk so they survive a crash** — what only lived in the context window dies;
-  what reached the journal can still be consolidated later (including by `SessionStart`-rescue on the
-  next boot — see `references/audit.md`).
-- Consolidation **consumes** these breadcrumbs: it routes the durable ones into the wiki (Steps 1–6)
-  and trims the rest in the Journal Trim step. A breadcrumb is a *candidate*, not a promotion.
-- **Do not** add a second policy dial for breadcrumbs. There are exactly two orthogonal dials:
-  `capture_policy` (how aggressively things get **promoted**) and the passivity dial (**when** capture
-  triggers). Breadcrumbs are the fixed floor underneath both.
-
-> **Structured session-summary + anti-verbosity discipline (v1.4.0 — inspired by Engram-class
-> memory-log protocols; fully file-based, zero-runtime).** At a session/context boundary the agent
-> writes a **short STRUCTURED session summary** (not just per-turn lines) mapped onto the journal's
-> three sections — **Goal → Resume Anchor · Discoveries/Next-Steps → Watch List + next step ·
-> Accomplished → Log · Files-touched → named inline** (see `SKILL.md` §d for the full shape and
-> attribution). The standing discipline: capture **concise structured summaries, never "bibles"**;
-> **dedup** (do not re-record a breadcrumb already in the journal); **do not journal what already lives
-> durably in the wiki** (breadcrumb a pointer, not the node's contents — the journal is working-memory
-> for what must survive context-loss, not a copy of curated knowledge); and **prune/expire** stale
-> breadcrumbs on consolidate (see Journal Trim below — the journal is bounded, not append-forever).
-> Cross-refs the **Simplicity Guardrail** (`docs/concepts/simplicity-guardrail.md`): keep the journal
-> surface small. This is the CORE floor; a future **Cortex-mode Engram MemoryLog backend (v2.0)** would
-> supersede the file-journal where a runtime is present — this protocol needs **none**.
-
-> **Cadence (decided, v1.6):** where the `Stop` hook writes breadcrumbs, the agent writes only at
-> decision points plus the session-boundary summary. Single home: `templates/BRAIN.md` →
-> "Incremental journal breadcrumbs".
+Consolidation **consumes** the journal breadcrumbs: Steps 1–6 route the durable ones into the wiki and
+Journal Trim drops the rest (a breadcrumb is a *candidate*, not a promotion). What a breadcrumb is (a
+best-effort, fixed-cost instruction, not governed by `capture_policy`), the structured session summary
+written at a boundary, and the anti-verbosity rules (optional reading; consolidate runs without it): `references/capture-hooks.md`, "Journal breadcrumb
+contract". Cadence: `templates/BRAIN.md`.
 
 ---
 

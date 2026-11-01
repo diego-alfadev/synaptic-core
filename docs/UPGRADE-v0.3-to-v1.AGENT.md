@@ -267,7 +267,7 @@ BRAIN.md / knowledge/INDEX.md / registries/ and lists /synaptic-* commands, and 
 HEARTBEAT every N turns" anti-drift (v1 boots from BRAIN.md). Originals are backed up (Step 2.2).
 
 5A — SINGLE-PROJECT brain (.synaptic nested inside the one repo):
-   • Run the skill's Harness Self-Wire (SKILL.md §a–c) on the project root: write the BEGIN:SYNAPTIC
+   • Run the skill's Harness Self-Wire (references/init.md §a–c) on the project root: write the BEGIN:SYNAPTIC
      bridge block + the BEGIN:SYNAPTIC-RULES block into the project root AGENTS.md (or, with Node:
      `node tools/deploy.js <project-root>` for the RULES block — it backs up AGENTS.md, diffs, and
      refuses on placeholders). Remove the old v0.3 bridge fragments.

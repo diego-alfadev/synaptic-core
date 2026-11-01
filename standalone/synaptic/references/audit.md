@@ -344,7 +344,7 @@ The thesis verb is **capture**. This advisory answers *does daily work produce b
 the brain silently empty?* — from files alone. **Advisory (exit-0 / never gates)**, like every check here.
 
 **The activity ledger decouples "session opened" from "work captured".** The **layer-(a0) activity
-marker** (`SKILL.md` §d — a **host-executed shell append** of one `boot` or `stop` line to
+marker** (`references/capture-hooks.md` — a **host-executed shell append** of one `boot` or `stop` line to
 `journal/_activity/<host-token>-<date>.log`; pre-1.6 files: `<host>-<date>.log`, `<ts> <event>` lines — count the last field) is **capture-INDEPENDENT** *and agent-independent*, so activity is
 counted even when nothing else is captured. That lets this step distinguish two states the naive "zero
 artifacts" signal conflates:
@@ -353,21 +353,15 @@ artifacts" signal conflates:
   advisory.**
 - **`used-but-capture-dead`** — **boots present, 0 captured** (0 new breadcrumbs, 0 nodes over the
   window) → raise a **distinct "hooks-appear-dead" advisory** pointing to the per-host hook smoke-test.
-  This is the actionable failure. *(This is the refined meaning of "silent-empty": used-but-capture-dead,
-  NOT "empty brain".)*
+  This is the actionable failure.
 
 > **Denominator source (v1.5.0) — `boot` ONLY, scoped to THIS host.**
 > - **Sessions = `boot` events.** Read them from **this host's** files only:
->   `journal/_activity/<this-host-token>-*.log` (compute the token with the one-liner's formula in `SKILL.md` §d; CORE-host: with no shell to hash, report per-file rows instead of guessing which is this host), plus this host's pre-1.6 `<host>-*.log` files while they exist. **`stop` events are NOT part of the session denominator** —
->   `Stop` fires *per assistant turn*, so one session emits 1 `boot` + N `stop`. Summing them would turn
->   breadcrumbs-per-**session** into breadcrumbs-per-**turn** and deflate yield by the turn count (a
->   40-turn session with one good summary would score 1/41 instead of 1/1). Keep `stop` as a separate
->   **work-intensity** signal only.
-> - **Per-host scoping is mandatory, not cosmetic.** The ledger is per host by design, and a brain can be
->   shared across machines. Globbing every host would (a) let a host with **no** floor compute a yield
->   against another machine's boots, and (b) let one host's healthy capture **mask** another host's dead
->   capture. The numerator (breadcrumbs/nodes) is brain-wide and **cannot** be attributed per host — say
->   so when reporting, or report per-host rows.
+>   `journal/_activity/<this-host-token>-*.log` (token = the first 12 hex of SHA-256 over the lower-cased host name — `hostname` in sh, `%COMPUTERNAME%` in PowerShell, e.g. `printf %s "$(hostname | tr A-Z a-z)" | sha256sum | cut -c1-12`; CORE-host: with no shell to hash, report per-file rows instead of guessing which is this host), plus this host's pre-1.6 `<host>-*.log` files while they exist. **`stop` events are NOT part of the session denominator** —
+>   one session emits 1 `boot` + N `stop`; keep `stop` as a separate **work-intensity** signal only.
+> - **Per-host scoping is mandatory.** Never glob every host's files. The numerator (breadcrumbs/nodes)
+>   is brain-wide and **cannot** be attributed per host — say so when reporting, or report per-host rows.
+>   *(Optional reading, not needed to run this step: `references/capture-hooks.md`, "Why audit Step 9b counts the way it does".)*
 > - **Migration window.** Pre-v1.5.0 brains recorded boots as `- boot:` lines inside
 >   `journal/_current.md`. Count those **exactly once** while they exist; for any window that
 >   **straddles** the v1.4.0→v1.5.0 upgrade, report `capture-yield: unknown (window straddles upgrade)`
@@ -380,10 +374,7 @@ artifacts" signal conflates:
 > 2. a **work signal** in that window: evidence of real work derivable from files — modifications under
 >    `knowledge/**` or `journal/`, frontmatter `updated:` dates, or git log activity.
 >
-> **Why condition 2 is required (v1.5.0 regression guard).** Before v1.5.0 a pure-Q&A agent often never
-> wrote the instruction-heartbeat, so the brain read as `not-used` → benign *by accident*. Now the host
-> writes activity markers **unconditionally**, so activity is **always** present — without a work signal,
-> a legitimate read-only week would fire `HOOKS-APPEAR-DEAD`. So:
+> **Condition 2 is a regression guard** (activity is now always present; optional background in `references/capture-hooks.md`). So:
 > - **Activity present + NO work signal = read-only / idle → benign, NO advisory.** A read-only or Q&A
 >   session that leaves 0 breadcrumbs is a **VALID, expected** outcome: a breadcrumb records *"the
 >   meaningful change this turn"*, and a session that changed nothing **should** leave none.
@@ -403,7 +394,7 @@ artifacts" signal conflates:
 >   **Do not** infer capture-death from absence, and do not claim a yield you cannot measure.
 
 **The expected artifact is a well-formed STRUCTURED summary, not just any text (v1.4.0).** The
-structured session-summary protocol (`SKILL.md` §d / `references/consolidate.md` — inspired by
+structured session-summary protocol (`references/capture-hooks.md` / `references/consolidate.md` — inspired by
 Engram-class memory-log protocols, fully file-based) defines the shape capture is *supposed* to leave:
 a short summary mapped onto **Resume Anchor (Goal/Next-Steps) · Watch List (Discoveries) · Log
 (Accomplished)**, with files named inline. So *"did meaningful capture happen?"* checks for **that
@@ -427,8 +418,7 @@ heuristic resolves differently per host; hook-less hosts have no reliable sessio
 placeholder state skews file-touch counts). For any cross-host or trend reading, **prefer the two robust
 counts**: **breadcrumbs per artifact-counted session** (denominator = `boot` events we can actually count
 via **this host's** activity ledger, not a heuristic) and **nodes-per-week** (from frontmatter `updated` /
-git log). *(The reasoning is unchanged from v1.4.0; only the mechanism moved — the countable denominator
-is now the host-written activity ledger instead of the agent-written heartbeat.)*
+git log).
 
 **Report example:** *"12 sessions BOOTED, 0 new breadcrumbs, 0 nodes added in 7 days →
 HOOKS-APPEAR-DEAD (used-but-capture-dead): capture is likely not firing on this host — run the per-host
@@ -447,7 +437,7 @@ knowledge-scoped checks above never see it).
 
 **No runtime required.** Degree/count math over files (journal timestamps + frontmatter/git), LLM-free.
 *The activity marker's actual firing is author-complete; verify on a real run — and note its
-host coverage is confirmed only for Claude Code (see `SKILL.md` §d "Per-host activity marker support").*
+host coverage is confirmed only for Claude Code (see `references/capture-hooks.md` "Per-host activity marker support").*
 
 ---
 

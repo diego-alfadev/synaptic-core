@@ -22,7 +22,7 @@ exist and can **invoke them by name** — even a chat-only host with no slash-me
   This preserves single-source (hub-and-spoke): the description lives in **one** place; the floor and
   the stubs both derive from it.
 - **How to generate:** for each row of the Operations table (`SKILL.md`), then the routine row of
-  its "Routine and aliases" table (never the alias rows), read the `summary:` line of the file in the
+  its "Routine and aliases" table (never the alias rows), read the `summary:` line of the **first** file in the
   row's Reference column and emit `  /synaptic-<cmd> — <summary>` into the bridge block.
   **Deterministic fallback:** when a `references/<cmd>.md` has **no** `<!-- summary: … -->` line, use
   the **H1 title tail** — the text after the `# /synaptic-<cmd> — ` prefix on the file's first heading

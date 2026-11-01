@@ -1,5 +1,6 @@
 SKILL.md
 references/audit.md
+references/capture-hooks.md
 references/command-discovery.md
 references/consolidate.md
 references/contract.md
@@ -7,7 +8,9 @@ references/convert-to-global.md
 references/day-one.md
 references/fingerprint.md
 references/handover.md
+references/host-setup.md
 references/ingest.md
+references/init.md
 references/maintain.md
 references/synthesize.md
 references/upgrade-to-v1.md

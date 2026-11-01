@@ -253,10 +253,10 @@ ws=$(mkbrain chain-work); echo a > "$ws/app.txt"; gitinit "$ws"; echo b >> "$ws/
 said "1 pending breadcrumb(s)" && ok "chain: a real project edit becomes a breadcrumb and triggers the reminder" \
   || nok "chain: a real project edit becomes a breadcrumb and triggers the reminder" "$(tr '\n' ' ' < "$WORK/out.txt" | head -c 160)"
 
-# --- The DEPLOYED copy: SKILL.md's pinned one-liner --------------------------------------------
+# --- The DEPLOYED copy: the pinned one-liner in references/capture-hooks.md --------------------------------------------
 # /synaptic-init and /synaptic-upgrade wire THIS block into the host, not the recipe's script, so it is
 # the copy users actually run. It lives inside a blockquote; <brain> is a placeholder the agent fills.
-SKILL="$ROOT/standalone/synaptic/SKILL.md"
+SKILL="$ROOT/standalone/synaptic/references/capture-hooks.md"   # the deployed one-liners (moved out of SKILL.md in v1.6)
 extract_quoted() {   # like extract(), but strips the blockquote prefix and anchors on a list item
   awk -v h="$1" -v lang="$2" '
     { sub(/\r$/, ""); sub(/^> ?/, "") }
@@ -269,7 +269,7 @@ extract_quoted() {   # like extract(), but strips the blockquote prefix and anch
 }
 SK="$WORK/skill-oneliner.sh"
 if extract_quoted "- **Encoding PINNED" sh "$SK"; then
-  ok "extract SKILL.md's deployed sh one-liner"
+  ok "extract the deployed sh one-liner (capture-hooks.md)"
   # 8. Filled with an ABSOLUTE brain path (what the SKILL instructs), run from an unrelated directory.
   ws="$WORK/skill-abs"; mkdir -p "$ws/.synaptic" "$WORK/elsewhere"
   sed "s#<brain>#$ws/.synaptic#g" "$SK" > "$WORK/skill-abs.sh"
@@ -277,19 +277,19 @@ if extract_quoted "- **Encoding PINNED" sh "$SK"; then
   f="$(ledger "$ws")"
   if [ "$rc" -eq 0 ] && [ -n "$f" ] && grep -Eq "$LINE_RE" "$f" && basename "$f" | grep -Eq "$NAME_RE" \
      && [ -f "$ws/.synaptic/journal/_activity/.gitignore" ]; then
-    ok "SKILL.md sh one-liner writes a well-formed marker into an absolute brain path"
+    ok "deployed sh one-liner writes a well-formed marker into an absolute brain path"
   else
-    nok "SKILL.md sh one-liner writes a well-formed marker into an absolute brain path" "rc=$rc ledger=${f:-none}"
+    nok "deployed sh one-liner writes a well-formed marker into an absolute brain path" "rc=$rc ledger=${f:-none}"
   fi
   # 9. Contract parity with the recipe's A.0: a stale hook pointing at a brain that no longer exists must
   #    not recreate it. Otherwise moving or deleting a brain leaves a ghost .synaptic/journal/_activity.
   gone="$WORK/skill-gone/.synaptic"
   sed "s#<brain>#$gone#g" "$SK" > "$WORK/skill-gone.sh"
   ( cd "$WORK/elsewhere" && sh "$WORK/skill-gone.sh" ); rc=$?
-  if [ "$rc" -eq 0 ] && [ ! -e "$gone" ]; then ok "SKILL.md sh one-liner with an absent brain: exit 0 and recreates nothing"
-  else nok "SKILL.md sh one-liner with an absent brain: exit 0 and recreates nothing" "rc=$rc; it created $gone (a ghost brain directory)"; fi
+  if [ "$rc" -eq 0 ] && [ ! -e "$gone" ]; then ok "deployed sh one-liner with an absent brain: exit 0 and recreates nothing"
+  else nok "deployed sh one-liner with an absent brain: exit 0 and recreates nothing" "rc=$rc; it created $gone (a ghost brain directory)"; fi
 else
-  nok "extract SKILL.md's deployed sh one-liner" "anchor '- **Encoding PINNED' or the sh fence moved"
+  nok "extract the deployed sh one-liner (capture-hooks.md)" "anchor '- **Encoding PINNED' or the sh fence moved"
 fi
 
 # --- The fingerprint primitive (references/fingerprint.md) [X4/S4] -----------------------------

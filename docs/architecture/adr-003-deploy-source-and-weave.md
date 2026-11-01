@@ -132,6 +132,6 @@ a node written today. The graph under-connects structurally over time regardless
   the single source of truth and the example brain is assembled on demand.
 - `standalone/synaptic/templates/harness/` (`conventions.md`, `guardrails.md`, `skills/`) — the
   deployable harness source files
-- `standalone/synaptic/SKILL.md` — Harness Self-Wire §c (Deploy step), Operations table
+- `standalone/synaptic/SKILL.md` — Operations table; `references/init.md` — Harness Self-Wire §c (Deploy step; moved there in v1.6)
 - `standalone/synaptic/references/weave.md` — the full /synaptic-weave specification
 - `docs/architecture/adr-001-minimal-cortex.md`, `adr-002-llm-wiki-first.md`

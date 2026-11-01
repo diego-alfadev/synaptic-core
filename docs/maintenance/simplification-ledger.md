@@ -132,3 +132,43 @@
   generalises a migration-only rule. New bash test: tier default = template table (checked to fail
   on a mutated copy). Known drift risk, accepted: `docs/concepts/status-vs-lifecycle.md` is a
   human-facing copy of contract §1–3 outside the bundle.
+- **Q8-S1/S6:** SKILL.md split. **Moved verbatim** (headings adjusted, internal "above/below/this
+  file" references repointed):
+  - lines "Compat-check" + "Host-setup detection" → new `references/host-setup.md` (5,730 B);
+  - "Onboarding Interview", "Generate", "Harness Self-Wire" §a–c, §e, §f → new `references/init.md`
+    (19,787 B, with a §d pointer);
+  - §d "Capture mechanism" → new `references/capture-hooks.md`, plus consolidate's "Journal Breadcrumb
+    Contract" (consolidate keeps a 5-line pointer) and audit Step 9b's rationale (audit keeps the
+    rules) — 28,125 B.
+
+  SKILL.md keeps frontmatter, bootstrap (must stay: it is the only file a URL-only install has),
+  Detect on Load, a compat-check paragraph, host-setup / lifecycle / self-wire pointers, Operations.
+  External pointers repointed (audit, consolidate, upgrade-to-v1, convert-to-global, AGENT runbook,
+  ADR-003, tools/README). Tests: extraction path → `capture-hooks.md`; the PS encoding guard covers
+  both SKILL.md and capture-hooks.md. MANIFEST 30 → 33.
+
+  | Item (LF bytes) | Before (`9f90780`) | After |
+  |---|---|---|
+  | `SKILL.md` (every command) | 58,310 | 11,832 |
+  | consolidate path (SKILL + consolidate) | 84,883 | 35,578 |
+  | audit path (SKILL + audit) | 92,286 | 44,929 |
+  | maintain sweep (SKILL + maintain + audit + consolidate + weave + synthesize) | ~144 KB | ~94 KB |
+  | init path (SKILL + init + host-setup + capture-hooks) | 58,310 | 65,474 |
+  | bundle total | 282,568 at round start | 300,272 (34 files) |
+
+  **"Files alone still boot, capture and retrieve" check: pass.** A skill-less agent reads only
+  `BRAIN.md` (unchanged contract text), captures through its breadcrumb section, retrieves through
+  `knowledge/INDEX.md` → `_index.md`; nothing on that path reads SKILL.md or the moved references.
+- **Q8 review (3 lenses: contract, tokens, host — all GO with should-fixes):** losslessness checked
+  by script (every non-blank old SKILL.md line present or an explained repoint). Fixed: plain
+  `summary:` lines for the three new files (no "/synaptic-init —" prefix or "moved" tail leaking into
+  the bridge/menu), one-line headers instead of provenance blockquotes, Layer-1 derivation uses the
+  **first** Reference-column file; core SKILL.md says paths are skill-folder-relative, names
+  `references/init.md` on the no-brain leaf and in bootstrap step 5, and restores the compat-check
+  "missing → assume compatible" meaning; host-setup's header admits the boot-time warning read;
+  upgrade-to-v1 (canonical host-setup procedure, Self-Wire §c), consolidate (breadcrumb pointer),
+  capture-hooks self-pointers, tests/README, ci.yml comment, PS guard label repointed. Token lens:
+  audit Step 9b now carries the ~300 B host-token formula inline, and its and consolidate's pointers
+  into capture-hooks are marked optional (audit stays at ~45 KB, not ~73 KB). Not done (lens nits, Q8
+  scope kept): further core trims (REACH paragraph, Operations column) ~3 KB; init's +7 KB. No
+  separate refuter: no lens returned NO-GO.
