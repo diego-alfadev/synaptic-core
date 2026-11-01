@@ -218,3 +218,33 @@
   (Claude Code memory docs, read 2026-11-01; the host lens could not confirm it from memory). Audit
   Step 10b: static check first (`expected`), then the new-session probe. CHANGELOG/ADR overclaims
   narrowed to "Claude Code with a project CLAUDE.md". No separate refuter: both lenses agreed.
+- **Q11 — carried defects (no Node), per item:**
+
+  | Carried item (backlog) | Outcome |
+  |---|---|
+  | check.js / audit flag `status: archived` as stale after 90 days | **prose fixed** (audit Step 1 skips archived); `tools/check.js` half **needs-CI** (unchanged) |
+  | `tools/graph.js` tests `lifecycle === "archived"` (never matches) | **needs-CI** (unchanged; fix = test `status`) |
+  | archived nodes default-load; unmarked `_index.md` line | default-load gone (Q5, X11); MOC suffix ` (archived — superseded by [[x]])` written in `contract.md` §2 — **done** |
+  | `TBD` content_hash backfill records a later hash | **done** (`fingerprint.md`: `> Changed <date>: content_hash backfilled`) |
+  | supersedes target still active / archived with no inbound supersedes | **done** (audit Step 1 advisory) |
+  | residual CRLF hash edge case on `autocrlf=true` clones | **obsolete** (Q4: git brains no longer hash; `sha256-lf` strips CR) |
+  | upgrade "All versions: no `_migration-staging/`" vs keep-staging; C12 deletes at end of Phase C | **done** (box open until after the soak; C12 = delete LAST) |
+  | questions outside guided mode's ONLY list (C2 playground question; "present each change"; AGENT "STOP and ask") | **done** for C2 (interactive only); the other two no longer exist in the text |
+  | C2 stale worklines "autonomous: discard + log" | **done** (never delete; move to staging, pending owner) |
+  | AGENT runbook v0.3-only / "lands you on v1.3.0" | **done** (header says current engine; upgrade-to-v1 scopes it to v0.3 sources) |
+  | Phase M step M3 writes the bridge into project AGENTS.md for every topology | **done** (carrier follows the topology; leak rule) |
+  | behaviour-placement lines name CLAUDE.md | **no change needed**: they tell the user where persona lives (their own file); the v1.6 boot adapter is the only Synaptic write there |
+  | status-vs-lifecycle `archived` as a lifecycle value | **done in Q5** |
+  | handover "Owns" includes almost every node; order not fixed; a named real run | **done** (explicit tags only; fixed order); the named run was removed in Q5 |
+  | audit repository-caused note / CHANGELOG recompute line | **obsolete** (Q4 replaced the hash command) |
+  | placeholder drift `{filename.ext}` vs `<filename>` | **obsolete** (the command lives in `fingerprint.md` with its own placeholders) |
+  | release task: bump SKILL.md `version:` | **release step** (left for the release commit; see the report) |
+- **Q11 review (NO-GO → fixed):** my ledger claimed two off-list questions "no longer exist": they did
+  (upgrade-to-v1 "present each proposed change", AGENT runbook "STOP and ask") → now scoped to
+  interactive mode, guided asks only its listed questions; the Phase C "deletes staging as its final
+  step" lines (upgrade :307, :447, commit list, AGENT runbook commit 3) now say "LAST, after the soak".
+  Also: audit Step 1 notes check.js still warns on archived nodes until its fix lands; M3 adds the
+  absolute-path rule and the no-carrier case; handover summary + Key-decisions order made
+  deterministic; contract archived suffix is a SHOULD; consolidate's supersede step applies it;
+  UPGRADE-v1.x doc header. The table row "the other two no longer exist" above is superseded by this
+  entry.

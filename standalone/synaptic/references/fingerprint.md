@@ -31,6 +31,8 @@ Paths below are relative to `<brain>` (the folder holding `BRAIN.md`; on Windows
   clone gives both the boundary commit (equal). A node rewritten later for another reason masks an
   older raw change. When the history looks rewritten or shallow (`git -C "<brain>" rev-parse
   --is-shallow-repository` prints `true`), report drift as **unknown**.
+- **Backfilling a `TBD`** later hashes the file as it is *now*, not as it was distilled: write the
+  value and a body line `> Changed <date>: content_hash backfilled (hashes today's file)`.
 - **Legacy values** (written before 1.6): `git:<hex>` and `sha256:<hex>`. Treat them as
   **unverifiable, not drifted**. In a git brain, ignore the field and use git history; elsewhere,
   propose re-recording it as `sha256-lf:` — only with the owner's OK.

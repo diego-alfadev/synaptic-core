@@ -9,8 +9,8 @@
 This doc is for the **feature-adoption** path: you are already running a v1 brain and want the v1.3.0
 engine. It is deliberately short. If instead you are still on a **v0.3** (pre-v1) brain, that is a
 real schema migration — use **[UPGRADE-v0.3-to-v1.md](UPGRADE-v0.3-to-v1.md)** (narrative) and
-**[UPGRADE-v0.3-to-v1.AGENT.md](UPGRADE-v0.3-to-v1.AGENT.md)** (the runbook), which now land you on
-v1.3.0 directly.
+**[UPGRADE-v0.3-to-v1.AGENT.md](UPGRADE-v0.3-to-v1.AGENT.md)** (the runbook), which land you on the current engine (they first shipped with
+v1.3.0).
 
 ---
 

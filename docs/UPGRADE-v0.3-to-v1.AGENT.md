@@ -7,8 +7,9 @@
 > skill-side procedure the agent executes lives in
 > **`standalone/synaptic/references/upgrade-to-v1.md`** (it is fetched in Step 0).
 >
-> **This lands you on v1.3.0.** Step 0 installs the *current* skill, so a fresh v0.3 → v1 migration
-> today produces a brain on the latest engine (**v1.3.0**) — brain **schema still `1.0`** — with the
+> **This lands you on the current engine** (written when that was v1.3.0). Step 0 installs the *current*
+> skill, so a fresh v0.3 → v1 migration
+> today produces a brain on the latest engine — brain **schema still `1.0`** — with the
 > **PARA lifecycle axis** (optional `lifecycle:` field, absent → `area`, backward-compatible), the
 > **hardened `check.js`** (retrieval-readiness report + structural≠retrieval caveat), the interactive
 > `graph.html`, and the god-node audit. The migration STEPS are unchanged by v1.3.0; you simply end up
@@ -19,7 +20,8 @@
 > construction**: the work is mostly *refactor + construction* (re-file, re-link, add frontmatter).
 > Deletions are **never silent** — every removal is surfaced and confirmed, and originals are kept in
 > staging + a backup until you explicitly close out. It runs **on a copy**, it is **interactive**
-> (it asks before any structural/breaking change), and it ends with a **report** that compares the
+> (interactive mode asks before any structural/breaking change; guided mode asks only its listed
+> questions), and it ends with a **report** that compares the
 > brain **before vs after** against the backup. Treat it as a **supervised, resumable** first run —
 > not a 10-minute job. Tokens are not the constraint; correctness is.
 >
@@ -44,7 +46,7 @@ At the end, produce the REPORT in Step 9. Do not rush — correctness over speed
 │       check.js at this boundary MAY still have ERRORS (v0.x staged, empty scaffold) — expected.│
 │   (2) `refactor: Phase C content rearrange`      — links / MOC / frontmatter / consolidation. │
 │       check.js at this boundary MUST reach 0 ERRORS (structural green).                        │
-│   (3) `chore: cleanup + cutover`                 — staging deletion, harness rewrite, backups. │
+│   (3) `chore: cleanup + cutover`                 — staging prune after soak, harness rewrite, backups. │
 │       check.js re-verifies; the retrieval drill (Step 6) must pass before cutover.             │
 │ Each phase closes by ticking its block in MIGRATION_DONE.md and recording the commit HASH in   │
 │ the DECISION LOG / ledger. Do NOT "commit everything at the end." (See Step 3/4/7 for the exact │

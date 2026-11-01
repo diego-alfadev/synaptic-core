@@ -35,17 +35,22 @@ reconstruction, less tribal-knowledge dependency).
 
 Read `BRAIN.md` (Context Capsule), then `knowledge/INDEX.md` and each `{cluster}/_index.md`. Scan
 frontmatter across **all** `knowledge/**` nodes and `registries/` **without any lifecycle/status
-filter**. Assemble the five sections below.
+filter**. Assemble the five sections below, **always in this order**; inside each, follow `knowledge/INDEX.md`
+cluster order, then each `_index.md` line order (so two runs over the same files give the same brief).
 
-1. **Project summary** — a one-paragraph orientation synthesized (extractively) from the active
-   `project` + `area` nodes and the Context Capsule. What is this person/team working on, in plain
+1. **Project summary** — a one-paragraph orientation synthesized (extractively) from the active nodes
+   **explicitly** tagged `project` / `area` (or, if none is tagged, the cluster scopes in
+   `knowledge/INDEX.md`) and the Context Capsule. What is this person/team working on, in plain
    language.
-2. **What this person / team owns** — list the `project` and `area` nodes (the PARA `lifecycle:`
-   axis, shipped v1.3.0) and their owners where recorded. Group by cluster. Include `dormant` nodes
-   that are still binding (mark them `(parked)`), because a covering colleague still needs them.
-3. **Key decisions** — the `type: decision` nodes **plus** the highest-in-degree nodes (reuse the
-   god-node degree math from `references/audit.md` Step 4c: the same knowledge-scoped, MOC-excluded,
-   undirected-deduped edge universe). One line each, with a `[→ node]` link. Flag any that are
+2. **What this person / team owns** — list the nodes **explicitly** tagged `lifecycle: project` or
+   `lifecycle: area` (PARA axis, shipped v1.3.0; an absent `lifecycle` is only the benign default, not a
+   claim of ownership; if no node is tagged, list the clusters instead) and their owners where recorded.
+   Group by cluster. Include `dormant` nodes that are still binding (mark them `(parked)`), because a
+   covering colleague still needs them.
+3. **Key decisions** — the `type: decision` nodes in index order, **then** the top in-degree nodes
+   (degree descending, then name; reuse the god-node degree math from `references/audit.md` Step 4c:
+   the same knowledge-scoped, MOC-excluded, undirected-deduped edge universe). One line each, with a
+   `[→ node]` link. Flag any that are
    `⚠ stale` or a `dormant`+`active` binding-but-parked decision.
 4. **Where things live / where-to-look** — the "where is X" pointers: key `type: reference` nodes,
    `registries/` (repo catalog, environments, glossary), runbooks (`type: playbook`). **Describe**

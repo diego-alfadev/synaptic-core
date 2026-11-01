@@ -165,6 +165,21 @@ Do the steps in this order.
 > below), the drift hash is `references/fingerprint.md`, and the suites now run bash 54 / PowerShell 62+.
 
 #### Fixed (simplification round)
+- **Carried defects closed (no Node needed).** The changes by area:
+  - **Upgrade.** `_migration-staging/` is kept through the soak and deleted last. It is no longer
+    deleted at the end of Phase C, and the final checklist no longer fails while it is kept.
+    Autonomous mode never deletes a stale workline; it stages it and logs it for the owner. Guided
+    mode no longer asks the playground-or-task-system question. Phase M writes the bridge where the
+    topology says, never into a foreign committed repo. The paste-to-agent runbook no longer claims to
+    land on v1.3.0 and is scoped to v0.3 sources.
+  - **Handover.** "Owns" lists only explicitly tagged `project` / `area` nodes, and the brief has a
+    fixed order.
+  - **Audit.** Archived nodes are not flagged for age, and a supersession-consistency advisory is new.
+  - **Archived nodes** keep their MOC line with ` (archived — superseded by [[x]])`.
+  - **A backfilled `content_hash`** is marked as backfilled.
+
+  The two Node-only fixes (`tools/check.js` archived staleness, `tools/graph.js` archived test) wait
+  for CI.
 - **The `Stop` breadcrumb (A.1) no longer repeats itself every turn.** An uncommitted diff persists
   across turns, so both scripts appended the same `breadcrumb: touched …` line on every turn until a
   commit, against the journal's own dedup rule. Both shells now skip the line when the last

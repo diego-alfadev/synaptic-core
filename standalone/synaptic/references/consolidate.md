@@ -147,7 +147,8 @@ For each item being consolidated, ask: **does this contradict an existing node?*
    - Where the relationship is structural, record the typed edge `supersedes` on the new/current
      node (inverse `superseded_by` is grep-computed — author one direction only).
    - **Instead of rewriting it**, if a **whole node** is replaced by a new one, leave its body
-     unchanged, set `status: archived`, and record `supersedes` on the successor (above).
+     unchanged, set `status: archived`, record `supersedes` on the successor (above), and suffix its MOC
+     line ` (archived — superseded by [[successor]])` (`references/contract.md` §2).
 4. **If both remain valid / the conflict is genuine and unresolved:**
    - Keep both, link them with the `contradicts` typed edge, and **document the tension in the
      node's `## bias-check` section** (the other side / contradicting evidence). This is epistemic

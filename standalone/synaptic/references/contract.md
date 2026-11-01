@@ -39,7 +39,9 @@ so the two enums never collide.
   binding `lifecycle: dormant` + `status: active` decision MUST still appear in a handover brief.
 - **Combined example:** `status: active` + `lifecycle: dormant` is valid (true content, finished
   project). Flip `lifecycle` for actionability changes; reserve `status: archived` for superseded or
-  dead content (pair it with a `supersedes` edge).
+  dead content (pair it with a `supersedes` edge). An archived node keeps its `_index.md` line and SHOULD
+  get the suffix ` (archived — superseded by [[successor]])` on its routing text, so the MOC stays honest
+  (same idea as the optional ` (dormant)` suffix; no `check.js` change is needed).
 - **Typos:** an off-vocabulary `status` reads as `untriaged`; an off-vocabulary `lifecycle` reads as
   `area`. `/synaptic-audit` Step 1b surfaces both (advisory).
 

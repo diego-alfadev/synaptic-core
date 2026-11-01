@@ -42,6 +42,12 @@ Scan all node files under `knowledge/` (recursing into clusters and `lessons/`) 
 
 - Flag any node where `updated:` date is more than **90 days ago**.
 - Flag any node with `status: stale`.
+- **Supersession consistency (advisory):** a node named in someone's `supersedes:` that is still
+  `status: active`, or a `status: archived` node that no `supersedes:` names. Either may be deliberate;
+  report it, never fix it here.
+- `status: archived` nodes are history: do **not** flag them for age (the 90-day rule applies to
+  `active` and `stale` nodes only). `tools/check.js` still warns on them until its fix lands; ignore
+  that warning.
 
 For each flagged node: note the staleness age and likely section to review. Present findings; ask before changing.
 

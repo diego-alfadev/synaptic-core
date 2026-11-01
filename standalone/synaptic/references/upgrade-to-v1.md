@@ -14,7 +14,7 @@
 
 > The phase-by-phase body below is correct; these reinforcements close real failure modes surfaced by
 > a readiness review (especially for **large** and **team-shared / global** brains). The operational,
-> paste-to-your-agent form of all of this is **`docs/UPGRADE-v0.3-to-v1.AGENT.md`** — prefer driving a
+> paste-to-your-agent form of all of this is **`docs/UPGRADE-v0.3-to-v1.AGENT.md`** (written for v0.3 sources; for a v0.4 / v0.5 brain follow this file) — prefer driving a
 > real migration from there. Where this addendum and the older body differ, **the addendum wins.**
 
 ## v1.5.0 addendum — deploy the activity marker (the mechanical capture floor)
@@ -236,7 +236,7 @@ The migration is non-destructive, content-preserving, and fully reversible:
 
 1. **Branch:** `git switch -c v1-upgrade` — work on a copy; the original branch is your fallback.
 2. **Phase M (mechanical):** if `tools/migrate.js` exists, run `node tools/migrate.js .synaptic` (use `--dry-run` first to preview moves without writing anything) — deterministic file staging, safe and scriptable; otherwise do the manual equivalent (stage files to `_migration-staging/` per the M-step checklist below by hand).
-3. **Phase C (agent rearrange):** tell your agent `/synaptic-upgrade` — the capable-agent phase: link conversion, MOC creation, consolidation formula applied retroactively, harness triage. The agent proposes each change; you confirm before it is written.
+3. **Phase C (agent rearrange):** tell your agent `/synaptic-upgrade` — the capable-agent phase: link conversion, MOC creation, consolidation formula applied retroactively, harness triage. The agent proposes each change; you confirm before it is written (interactive mode; guided mode asks only its listed questions).
 4. **Verify:** if `tools/check.js` exists, run `node tools/check.js .synaptic` for graph health; otherwise do the manual equivalent (the Phase V checklist greps / inspection below). Then `/synaptic-audit` in the agent for staleness and coverage. Review the result in Obsidian or Foam before proceeding.
 5. **Promote (fast-forward):** once satisfied, `git switch main && git merge --ff-only v1-upgrade` — files rewritten in place, no folder rename (Windows/OneDrive-safe). If `--ff-only` refuses, `main` advanced (concurrent writers) → reconcile via the shared-brain freeze path first. The old branch/`pre-v1` tag remains as a rollback point.
 
@@ -304,7 +304,7 @@ carries a status line: `pending`, `approved → <destination>`, or `discarded`. 
 
 Phase M is pure file operations: no content judgment. Safe to run as a cheap agent or script
 (or `tools/migrate` if available). **Phase M never destroys content Phase C still needs** —
-move to `_migration-staging/` inside the brain; Phase C consumes and deletes it.
+move to `_migration-staging/` inside the brain; Phase C consumes it; it is deleted LAST, after the soak (C12).
 
 Tick each item. Work in order.
 
@@ -348,10 +348,13 @@ Create these if absent:
 
 ### M3 — AGENTS.md fragment (idempotent)
 
-Write to project root `AGENTS.md`. Search for `<!-- BEGIN:SYNAPTIC -->` first:
+Write to the bridge carrier the topology intake chose: project root `AGENTS.md` for a project brain; the
+**user-level** instructions for a global, seat or private brain over committed work repos (never a foreign
+committed or synced repo — the leak rule in `references/init.md` §a). Search for `<!-- BEGIN:SYNAPTIC -->` first:
 - Found → replace entire block.
 - Not found → append.
-- No `AGENTS.md` → create with just this block.
+- No carrier file → create it with just this block. For a non-project carrier, substitute the brain's
+  **absolute** path (and the skill's absolute path) per `references/init.md` §a "Brain pointer".
 
 <!-- canonical block — mirror any change in references/init.md §a -->
 ```
@@ -439,10 +442,10 @@ Create from the skill bundle's `templates/` (the single source of truth — ther
 ## Phase C — Content Rearrange (MANDATORY — Capable Agent Required)
 
 Phase C re-routes content from removed structures into v1 locations. This is a **breaking change**;
-judgment is required. **Present each proposed change to the user before writing; do not bulk-apply
-silently.** In autonomous mode: make the reasonable choice + log.
+judgment is required. **Interactive mode: present each proposed change before writing; do not bulk-apply
+silently.** Guided mode asks only its listed questions and reports the rest; autonomous mode makes the reasonable choice + logs it.
 
-Phase C consumes `_migration-staging/` and **deletes it as its final step**.
+Phase C consumes `_migration-staging/`; it is **deleted LAST, after the soak** (C12), not at the end of Phase C.
 
 ### C1 — Identity / boot content re-routing
 
@@ -474,9 +477,9 @@ If Phase M listed context-prompt or bridge-like files at the brain root: extract
 
 For each item in staged `worklines/_active.yaml` or `worklines/{slug}/`:
 
-- **Still active** (specific in-flight work) → create `playgrounds/{task-id}/`; register in `journal/_current.md`. Ask: "Move to playground or to your external task system (Jira/etc.)?"
+- **Still active** (specific in-flight work) → create `playgrounds/{task-id}/`; register in `journal/_current.md`. Interactive mode asks "Move to a playground or to your external task system?"; guided and autonomous modes default to a playground and report it (it is not one of guided mode's ONLY questions).
 - **Perpetual / BAU** (always-on maintenance, no specific in-flight state) → distil the operating rhythm into a knowledge node or `type: playbook` node in its cluster. Not a stale item.
-- **Stale** → extract any durable lessons first, then: "This workline appears stale — delete?" Delete only on explicit consent (autonomous: discard + log).
+- **Stale** → extract any durable lessons first, then: "This workline appears stale — delete?" Delete only on explicit consent (autonomous: never delete — move it to `_migration-staging/stale-worklines/` and log it as pending the owner's decision).
 
 ### C3 — Path-links → `[[wikilinks]]`
 
@@ -566,7 +569,8 @@ For all nodes with scaffolded (empty) frontmatter from M7:
 
 ### C12 — Delete staging area
 
-When all Phase C steps are confirmed complete: delete `_migration-staging/`.
+**Not at the end of Phase C.** Keep `_migration-staging/` through the soak (owner-orientation checklist)
+and delete it LAST, once the owner confirms the new brain is stable.
 
 ---
 
@@ -622,7 +626,8 @@ otherwise use manual greps / inspection.
 - [ ] v0.3: No `BOOTSTRAP.md`, `MANIFEST.md`, `HEARTBEAT.md`, `identity/`, `worklines/`, `skills/` inside brain, `_tree.yaml`, `cortex.config.yaml`
 - [ ] v0.4: No `identity/`, `worklines/`, `skills/` inside brain, `cortex.config.yaml`
 - [ ] v0.5: No `playbooks/` silo; no `knowledge/working-agreements.md`
-- [ ] All versions: No `_migration-staging/`
+- [ ] All versions: no `_migration-staging/` **after the soak** (it is kept through the soak and deleted
+      LAST; while it still exists this box stays open, it is not a failure)
 
 **Harness wiring:**
 - [ ] `AGENTS.md` has `<!-- BEGIN:SYNAPTIC --> … <!-- END:SYNAPTIC -->` block
@@ -657,7 +662,7 @@ which ran) before the next begins — never one blended mega-commit. "check.js" 
       still ERROR** here — expected).
 - [ ] `refactor: Phase C content rearrange` — links / MOC / frontmatter / consolidation (check.js
       **must reach 0 errors**).
-- [ ] `chore: cleanup + cutover` — staging deletion, harness rewrite, backups pruned (check.js
+- [ ] `chore: cleanup + cutover` — staging prune after the soak, harness rewrite, backups pruned (check.js
       re-verifies; retrieval drill passes before cutover). The upgrade branch's 3 phase commits then
       promote to `main` by a single `git merge --ff-only` (see the cutover section / AGENT runbook).
 
