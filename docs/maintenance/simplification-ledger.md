@@ -112,3 +112,23 @@
   v0.3→v1 runbooks, ROADMAP's forward-looking lines. Dropped by the refuter: the "1.6 aliases" bytes
   in the skill description (trigger vocabulary), a hand-authored "Deprecated" menu prefix (breaks the
   no-hand-authored-description rule), historical docs.
+- **Q7-S2/S3:** new `references/contract.md` (9,026 B, on demand). **Moved there:** SKILL.md
+  "Lifecycle axis" body (verbatim; SKILL.md 61,294 → 58,310, always-loaded −2,984), consolidate's
+  `status` vs `lifecycle` table + interaction rules (consolidate 28,502 → 26,560), audit Step 1b's
+  value-semantics bullets (34,232 → 33,975), the node template's lifecycle comment block (5,005 →
+  4,348). Each leaves a pointer. **Written once there:** the field table, typed-edge vocabulary,
+  and the default Autonomy Tiers table (a copy of the template's) with the precedence rule; the
+  brain's `harness/guardrails.md` keeps its table and gains a one-line "this copy wins" note (5,256
+  → 5,434); consolidate and maintain name the default. Operational restatements kept on purpose:
+  audit Step 1a/1b's token lists (they are the checks) and handover's include/flag table (its own
+  behaviour). MANIFEST 29 → 30. **Not cut (needs Diego, n=1 evidence):** `true_since` / `learned_on` /
+  `confidence` have no reader; the review suggested checking a colleague's brain first.
+- **Q7 review:** NO-GO → fixed. Precedence no longer lets the default loosen a stricter brain
+  (brain table governs entirely; unnamed action = propose-then-approve; default only for table-less
+  brains). Dangling/stale pointers (consolidate 3a, audit Step 1a, handover) → `contract.md` §2/§3.
+  Typed-edge vocabulary: contract §4 now points to weave.md's existing single source instead of
+  restating it. Node template keeps three gloss lines for skill-less agents. The always-deployed
+  guardrails note shortened to "This table wins over any skill default." `updated:` row no longer
+  generalises a migration-only rule. New bash test: tier default = template table (checked to fail
+  on a mutated copy). Known drift risk, accepted: `docs/concepts/status-vs-lifecycle.md` is a
+  human-facing copy of contract §1–3 outside the bundle.

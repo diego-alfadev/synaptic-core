@@ -319,55 +319,9 @@ Use real data — no `{{placeholder}}` values in generated files. Report the ful
 
 ## Lifecycle axis (optional actionability label)
 
-Knowledge nodes (and registries, where meaningful) MAY carry one optional frontmatter field —
-`lifecycle:` — that labels **what kind of attention a node needs** (live effort, standing
-responsibility, someday reference, cooled off). Audit and handover read it. It is **not a load
-filter**: retrieval always goes through the MOCs, and a node's lifecycle never decides whether it is
-read. It applies to `knowledge/**` and
-`registries/` only; it is **never** used on `playgrounds/` or `journal/` (those are the separate
-raw/working layer, governed by consolidation, not by a lifecycle field). Adding it does **not** bump
-the brain schema — it is additive optional frontmatter, the same class as typed edges and provenance.
-
-**Field + values (closed enum, exactly four):**
-
-```yaml
-lifecycle: project | area | resource | dormant
-```
-
-- `project` — a disposable **hot node**: a live, time-boxed effort. Links OUT to durable nodes.
-- `area` — an ongoing responsibility / durable domain node with no end date. **The default for
-  un-tagged nodes.**
-- `resource` — reference material relevant *someday*, not current work.
-- `dormant` — cooled off: kept for the record. Reversible (see below).
-
-**Default / absent (backward-compatible).** A node **without** `lifecycle:` is treated as **`area`**.
-Absence is legal, never an error; a skill-less or older-skill agent that does not understand the field
-simply ignores it.
-
-**MOC visibility is unaffected:** a node's lifecycle never removes it from its cluster `_index.md`
-(de-registration would orphan it). *(Before v1.6 this section also defined a "default-load set";
-nothing ever consumed it, so it was dropped — decision X11.)*
-
-**Archive-don't-delete demotion (reversible cooling, never a delete).**
-
-- **Demote:** flip `lifecycle: dormant`. Keep the file in place; keep its `_index.md` entry
-  (optionally append " (dormant)" to its routing text so the MOC stays honest); keep all its
-  `[[wikilinks]]` and typed edges intact. Archiving must not sever the graph.
-- This is **decoupled from `status`** — demotion flips `lifecycle` **only**; do NOT also set
-  `status: archived`. `status` stays the orthogonal editorial-trust field (a node can be
-  `status: active` + `lifecycle: dormant`).
-- **Promote (reverse):** flip `lifecycle:` back to `project` / `area` when it becomes live again —
-  a single-field edit, no other change required. Nothing was deleted, so nothing is lost.
-- **Boundary with hard delete:** deletion stays a separate, explicit, approval-gated
-  `/synaptic-maintain` action ("archive-before-delete"). The lifecycle `dormant` flip is the softer,
-  in-graph, reversible step *before* any maintain-delete.
-
-**`project`-links-out convention (no new `type:` token).** `project` is a *lifecycle* value, not a
-`type:`. A project node keeps a normal `type:` (usually `knowledge` or `decision`) and carries
-`lifecycle: project` — the `type:` enum is unchanged. A project node SHOULD carry ≥1 outgoing typed
-edge (`relates_to` / `depends_on` / `part_of`) to a durable `area`/`resource` node, so when it is
-cooled to `dormant` the durable knowledge survives independently. Audit/weave may flag a `project`
-node with **zero** outgoing durable edges — a diagnose-only finding, never an auto-fix.
+Knowledge nodes MAY carry an optional `lifecycle: project | area | resource | dormant` label (absent →
+`area`; a label that audit and handover read, never a load filter). Values, demotion, the
+`project`-links-out convention and every other frontmatter rule: `references/contract.md`.
 
 ---
 

@@ -22,7 +22,7 @@ reconstruction, less tribal-knowledge dependency).
 - **Reads ALL statuses and ALL lifecycles.** A handover is an export-class read. `lifecycle` only
   labels actionability (e.g. a `project` node is an open thread); it never
   hides a node. A `lifecycle: dormant` node whose decision is still binding (`status: active`) **MUST
-  appear**; omitting it would defeat the whole handover thesis. See `SKILL.md` "Lifecycle axis".
+  appear**; omitting it would defeat the whole handover thesis. See `references/contract.md` §3.
 - **`status` never hides, it flags.** A stale-but-relevant node is included and **flagged** (`⚠ stale`),
   not dropped. `status` is **required** on knowledge nodes; a node whose `status:` is an unknown/mistyped
   value reads as **untriaged** (neither trusted-current nor stale) — surface it as such, never silently

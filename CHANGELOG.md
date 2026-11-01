@@ -258,6 +258,18 @@ Do the steps in this order.
   release**, when the stub-drift check prunes their stubs. The bridge's command line, the Cursor shim,
   the skill description and the README list the six commands plus the routine. Re-run
   `/synaptic-upgrade` (or `/synaptic-init`) to redeploy them.
+- **One home for the node contract: `references/contract.md`.** It holds the frontmatter schema
+  (required fields, enums, `untriaged` read semantics, the `status`/`lifecycle` interaction, the
+  lifecycle axis, typed-edge vocabulary) and the **skill-side default autonomy tiers**.
+  - `SKILL.md`'s Lifecycle section and consolidate's status/lifecycle block moved there, each leaving a
+    pointer. `SKILL.md` drops ~3 KB and consolidate ~2 KB.
+  - Audit Step 1b and the node template point to it.
+  - Tier precedence: a brain's own `harness/guardrails.md` table **governs entirely**; an action it does
+    not name is propose-then-approve, so the default never loosens a stricter brain. The skill default
+    applies only to brains whose guardrails have no tier table (new brains copy it at init). A test keeps
+    the default and the template table identical.
+
+  No field, enum or default changed. Existing brains need nothing.
 
 #### Removed (simplification round)
 - **Project skills (`harness/skills/`) are no longer part of CORE.** Deploy used to copy a brain's

@@ -337,6 +337,18 @@ else
   nok "extract the sh fingerprint commands from references/fingerprint.md" "heading or fence changed"
 fi
 
+# --- Autonomy-tier default parity [S3] -------------------------------------------------------
+# The skill-side default (references/contract.md §5) and the table every new brain copies
+# (templates/harness/guardrails.md) must stay identical; only table-less brains ever read the default.
+tiers() { tr -d '\r' < "$1" | grep -E '^\| \*\*(AUTO|PROPOSE-THEN-APPROVE|HUMAN-ONLY)\*\*'; }
+TDEF="$(tiers "$ROOT/standalone/synaptic/references/contract.md")"
+TTPL="$(tiers "$ROOT/standalone/synaptic/templates/harness/guardrails.md")"
+if [ -n "$TDEF" ] && [ "$(printf '%s\n' "$TDEF" | wc -l | tr -d ' ')" -eq 3 ] && [ "$TDEF" = "$TTPL" ]; then
+  ok "autonomy-tier default in contract.md = the guardrails template table (3 rows) [S3]"
+else
+  nok "autonomy-tier default in contract.md = the guardrails template table (3 rows) [S3]" "the two tables differ or a row is missing"
+fi
+
 # --- Cross-shell consistency ------------------------------------------------------------------
 # The sh marker hashes `hostname`; the PowerShell copy hashes $env:COMPUTERNAME on Windows and
 # [Net.Dns]::GetHostName() elsewhere, both lower-cased. Mixed sh + PowerShell hooks on one host must land

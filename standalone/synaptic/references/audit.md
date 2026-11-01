@@ -50,7 +50,7 @@ For each flagged node: note the staleness age and likely section to review. Pres
 ## Step 1a — Lifecycle Completion-Cadence (WARN — optional `lifecycle:` axis)
 
 Advisory hygiene for the optional `lifecycle:` axis (`project | area | resource | dormant`; see
-`SKILL.md` "Lifecycle axis"). **Diagnose only, WARN never ERROR** — the fix (flip `lifecycle:`) is
+`references/contract.md` §3). **Diagnose only, WARN never ERROR** — the fix (flip `lifecycle:`) is
 the owner's decision or `/synaptic-maintain`. Reuses the Step 1 staleness machinery, tightened for
 live projects. Skip any node with no `lifecycle:` field (absent → `area`, nothing to flag here).
 
@@ -88,13 +88,9 @@ check) but is an **unknown token** — it would otherwise be read as an unknown 
 - Report each off-vocabulary value with its node path → *"`status: Active` is not a valid token (did you
   mean `active`?) — a mistyped value is treated as absent and silently defaulted."*
 
-**Value semantics the audit surfaces (do not conflate):**
-
-- **`status` is REQUIRED — an unknown value reads as `untriaged`.** A node with **no** `status:` is a
-  `check.js` **ERROR** (missing required field), not a default; surface it as a hard finding. An
-  **unknown/mistyped** `status` value (present but off-vocabulary) is neither trusted-current nor stale —
-  read it as `untriaged` and **never silently promote it to `active`.**
-- **`lifecycle` absent → `area`** — a benign role default. Not a finding.
+**Value semantics** (`references/contract.md` §1–2): a node with **no** `status:` is a hard finding
+(missing required field); an off-vocabulary `status` reads as `untriaged`, never `active`; an absent
+`lifecycle` is the benign `area` default, not a finding.
 
 **No runtime required.** Pure grep over frontmatter values.
 

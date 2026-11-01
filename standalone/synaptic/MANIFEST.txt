@@ -2,6 +2,7 @@ SKILL.md
 references/audit.md
 references/command-discovery.md
 references/consolidate.md
+references/contract.md
 references/convert-to-global.md
 references/day-one.md
 references/fingerprint.md

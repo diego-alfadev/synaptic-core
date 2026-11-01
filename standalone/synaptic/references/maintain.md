@@ -97,7 +97,8 @@ links or phantom nodes. Report what was diagnosed, what was treated, and what wa
 ## CORE-safety contract (binding)
 
 - **Approval-gated.** Maintain presents a plan and applies only confirmed changes, each at the tier
-  the Autonomy Tiers table sets for it (source: `harness/guardrails.md`).
+  the Autonomy Tiers table sets for it (source: `harness/guardrails.md`; default when it has none:
+  `references/contract.md` §5).
 - **Every automated edit is diff-traced, git-reversible, archive-before-delete** — never an
   autonomous unbounded rewriter.
 - **Deletion ledger (standing rule — not migration-only).** Any leg that deletes, moves, or archives a
