@@ -160,7 +160,9 @@ Do the steps in this order.
 ### Simplification round (branch `feat/v1.6.0-simplify`, not released)
 
 > Optimisation and simplification pass. Every move or removal is recorded in
-> `docs/maintenance/simplification-ledger.md`.
+> `docs/maintenance/simplification-ledger.md`. **Where this round supersedes the 1.5.1 notes above:** the
+> A.2 reminder and A.3 rescue are one `synaptic-pending` script with a PowerShell twin (see "Removed"
+> below), the drift hash is `references/fingerprint.md`, and the suites now run bash 54 / PowerShell 62+.
 
 #### Fixed (simplification round)
 - **The `Stop` breadcrumb (A.1) no longer repeats itself every turn.** An uncommitted diff persists
@@ -293,6 +295,25 @@ Do the steps in this order.
   `harness/skills/` folder stays where it is, inert. `/synaptic-upgrade` still preserves a pre-v1
   brain's custom skill dirs, without installing them. If you relied on auto-install, install those
   skills by hand.
+- **The `PreCompact` and `SessionEnd` reminder hooks are gone; one `SessionStart` script replaces A.2
+  + A.3.** On Claude Code only `SessionStart` (and `UserPromptSubmit`) stdout reaches the model, so
+  the old reminder reached no one. Engram's Claude Code plugin makes the same choice.
+  `synaptic-pending.sh` / `.ps1` has two modes, with one git-free predicate:
+  - `rescue` (startup / resume / clear) offers to consolidate pending work;
+  - `compact` (the `compact` source) injects one line right after a compaction, pointing at the
+    journal.
+
+  **Windows gains the rescue,** which was bash-only before. A compaction no longer writes a `boot`
+  marker. The rule comes from the Claude Code hook docs and Engram's plugin source; it was not measured on a
+  live host.
+
+  **PowerShell 5.1 hooks started in a folder whose path contains `[ ]`** used to start at `$PSHOME`,
+  find no brain and silently do nothing. A.0, A.1 and A.2 now resolve the brain against the process
+  directory when needed (A.1 also runs git there). The defect was reproduced, and all three cases are now tested.
+
+  One fixture table, `tests/capture-floor/pending-cases.txt`, runs through both shells. **Upgrade:**
+  re-deploy the hooks, delete `synaptic-consolidate-reminder.*` and `synaptic-rescue.sh`, and drop
+  their `PreCompact` / `SessionEnd` settings entries.
 
 ## [1.5.0] - 2026-07-27
 

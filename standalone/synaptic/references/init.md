@@ -290,7 +290,7 @@ with the current source. Unmarked user content in AGENTS.md is never touched.
 
 ### d. Capture mechanism — deploy host hooks (CORE)
 
-The full procedure (layers a0–d, the pinned activity-marker one-liners, per-host support, honesty
+The full procedure (layers a0–c, the pinned activity-marker one-liners, per-host support, honesty
 rules) is `references/capture-hooks.md`. Run it here.
 
 ### e. Cursor shim (optional)

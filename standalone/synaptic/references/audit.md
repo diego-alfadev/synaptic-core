@@ -20,7 +20,7 @@ Cortex utility; CORE never depends on it — every check here is grep-able by ha
 > - the orchestrated diagnose-then-treat sweep → **`/synaptic-maintain`**
 >
 > **`/synaptic-audit` + `SessionStart`-rescue = the abandonment safety sweep:** on next boot, the
-> rescue net runs the half-done check (Step 9) to recover sessions that ended before consolidation.
+> rescue hook prints an offer; Step 9 here is the full half-done check that recovers sessions that ended before consolidation.
 
 Do not auto-fix findings. Surface a prioritised list; ask for confirmation before any change — and
 route each finding to the procedure that treats it.
@@ -365,7 +365,8 @@ artifacts" signal conflates:
 > - **Migration window.** Pre-v1.5.0 brains recorded boots as `- boot:` lines inside
 >   `journal/_current.md`. Count those **exactly once** while they exist; for any window that
 >   **straddles** the v1.4.0→v1.5.0 upgrade, report `capture-yield: unknown (window straddles upgrade)`
->   rather than a number the two mechanisms cannot jointly support.
+>   rather than a number the two mechanisms cannot jointly support. Same for a window straddling the
+>   v1.6 hook re-deploy: before it, compactions also wrote `boot` lines; after it they do not.
 >
 > **Do NOT cry wolf (binding — a false advisory costs more than a missed one).** The ONLY warning state
 > is **`used-but-capture-dead`**, and it needs **two** conditions, not one:

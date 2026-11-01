@@ -1,4 +1,4 @@
-<!-- summary: Capture mechanism — deploy host hooks: the activity marker (a0), Stop breadcrumb, PreCompact/SessionStart/SessionEnd layers, per-host support, honesty rules, the journal breadcrumb contract. -->
+<!-- summary: Capture mechanism — deploy host hooks: the activity marker (a0), Stop breadcrumb, SessionStart rescue + compaction recovery, per-host support, honesty rules, the journal breadcrumb contract. -->
 
 # Capture mechanism — deploy host hooks
 
@@ -19,11 +19,11 @@ gracefully** — never fail if a layer is unavailable.
 |---|---|---|---|
 | **(a0) Activity marker** | per `Stop` + `SessionStart` | **shell**-hook-capable hosts (see the support table below — "fires hooks" is not enough) | **Host-executed shell append** of ONE deterministic line to `journal/_activity/<host-token>-<date>.log` — see "Deterministic activity marker" below. **The mechanical proof-of-life floor: it fires whether or not the agent does anything.** Content-free; not semantic capture. |
 | **(a) Stop breadcrumb** | per assistant turn (`Stop`) | **UNIVERSAL — all 5 agents** | Append **one terse line** to `journal/_current.md` (the meaningful change/decision this turn); where the hook writes `breadcrumb: touched` lines, the agent adds only decision points + the boundary summary (cadence: `templates/BRAIN.md`). The **semantic workhorse** — best-effort: it is an instruction the agent follows, so it is NOT the non-empty guarantee (a0 is). **Fixed cost; NOT governed by `capture_policy`.** |
-| **(b) PreCompact reminder** | before context compaction (`PreCompact`) | **Claude / Copilot / Codex** | The hook **prints a reminder** to consolidate (recipe A.2) **before context is lost**. A shell hook cannot run a slash command; consolidation itself is the agent's or the user's step. |
-| **(c) SessionStart heartbeat + rescue** | on next boot (`SessionStart`) | most hook-capable hosts | **FIRST**, the capture-INDEPENDENT **boot marker** is written by the layer-(a0) shell append into `journal/_activity/<host-token>-<date>.log` (v1.5.0 — moved out of `journal/_current.md`; see the migration note below) so boots are counted even when nothing else is captured. **THEN** detect **unconsolidated breadcrumbs / active playgrounds** and **offer to consolidate** — recovers abandoned sessions. Pairs with `/synaptic-audit`'s half-done check = the abandonment safety sweep. |
-| **(d) SessionEnd bonus** | clean exit (`SessionEnd`) | **bonus where present** (NOT Copilot-IDE, NOT Cursor) | On clean exit, print a reminder to consolidate (recipe A.2). A bonus only — capture must **never depend on it**. |
+| **(b) Compaction recovery** | right after a compaction (`SessionStart`, `compact` source) | **Claude Code**; other hosts: check their docs | The hook prints **one line**, injected into the context: re-read `journal/_current.md` and write the session summary there (recipe A.2 `compact`). |
+| **(c) SessionStart heartbeat + rescue** | on next boot (`SessionStart`: startup / resume / clear, never `compact`) | most hook-capable hosts | **FIRST**, the capture-INDEPENDENT **boot marker** is written by the layer-(a0) shell append into `journal/_activity/<host-token>-<date>.log` (v1.5.0 — moved out of `journal/_current.md`; see the migration note below) so boots are counted even when nothing else is captured. **THEN** detect **unconsolidated breadcrumbs / active playgrounds** and **offer to consolidate** — recovers abandoned sessions. Pairs with `/synaptic-audit`'s half-done check = the abandonment safety sweep. |
+| *(retired in v1.6)* | `PreCompact`, `SessionEnd` | — | Not wired: their stdout does not reach the model on Claude Code, so the old reminder reached no one (recipe A.2). |
 
-> **Deterministic activity marker (v1.5.0 — the mechanical non-empty floor; layer a0).** Layers (a)–(d)
+> **Deterministic activity marker (v1.5.0 — the mechanical non-empty floor; layer a0).** Layers (a)–(c)
 > are **instructions the agent follows** when a hook fires. If the agent does not follow them (long or
 > abused sessions, compaction, or simply not doing it), **nothing is written** — which is why journals
 > could still end up empty (repo issue #2a). Layer **(a0)** closes that at the floor by having the **host
@@ -116,7 +116,7 @@ gracefully** — never fail if a layer is unavailable.
 
 > **Structured session-summary capture protocol (v1.4.0 — inspired by Engram-class memory-log
 > protocols; fully file-based, zero-runtime).** The per-turn `Stop` breadcrumb (layer a) is one terse
-> line; **at a session/context boundary** — when the agent acts on a `PreCompact` or `SessionEnd` reminder, or at a manual wrap —
+> line; **at a session/context boundary** — after a compaction (the `compact` recovery line), at the natural end of the work, or at a manual wrap —
 > the agent additionally writes a **short STRUCTURED session summary** into `journal/_current.md`, so
 > what survives a context loss is a legible handoff, not a raw scroll. The shape maps onto the journal's
 > existing three sections (do not invent a fourth):
@@ -154,23 +154,26 @@ gracefully** — never fail if a layer is unavailable.
 
 **Deploy logic (host-gated, idempotent):**
 
-1. **Detect the host harness** from what is present in the project root: `.claude/` →
-   Claude Code (Stop, PreCompact, SessionStart, SessionEnd via `settings.json` hooks);
-   `.github/` Copilot → Stop, PreCompact, SessionStart (no SessionEnd in Copilot-IDE);
-   Codex / `AGENTS.md` host → Stop, PreCompact, SessionStart, SessionEnd as available;
-   `.cursor/` → Stop + SessionStart only (no PreCompact, no SessionEnd; use `.cursor/hooks.json`);
-   Gemini CLI → Stop + SessionStart where exposed.
+1. **Detect the host harness** from what is present in the project root: `.claude/` → Claude Code
+   (`settings.json` hooks); `.github/` → Copilot; Codex / `AGENTS.md` host; `.cursor/` → Cursor
+   (`.cursor/hooks.json`); Gemini CLI. Wire **only `Stop` and `SessionStart`** on each (per-host
+   coverage: step 5). `PreCompact` and `SessionEnd` exist on some hosts but are **not wired** (their
+   stdout does not reach the model; see the layer table).
 2. For each supported layer, **write the host's native hook config** (marker-wrapped / idempotent,
    same discipline as the AGENTS.md fragment: replace a `BEGIN:SYNAPTIC-HOOKS` … `END:SYNAPTIC-HOOKS`
-   block if present, else add it; never touch unmarked user hooks). The hook command is a shell
-   script (recipe A: append-breadcrumb for `Stop`; a printed reminder or offer for the rest). No
-   shell hook can run a slash command such as `/synaptic-consolidate`.
+   block if present, else add it; never touch unmarked user hooks). The commands are the recipe's
+   shell scripts (`recipes/session-end-consolidate.md`, Option A; the skill bundle does not ship the
+   recipe, so take them from the repo or a release): `Stop` → the A.0 marker (`stop`) + the A.1
+   breadcrumb; `SessionStart` with sources startup / resume / clear → the A.0 marker (`boot`) +
+   `synaptic-pending rescue`; `SessionStart` with source `compact` → `synaptic-pending compact` only
+   (a compaction is not a new session, so no `boot`). On Windows use the `.ps1` twins. No shell hook can
+   run a slash command such as `/synaptic-consolidate`.
 2b. **Deploy the layer-(a0) activity marker (v1.5.0) wherever the host runs a shell command on a
    hook** — create `journal/_activity/` and wire the pinned platform-appropriate one-liner (UTF-8
-   no-BOM) to `Stop` (`stop`) and `SessionStart` (`boot`). This is the only layer that does not depend
+   no-BOM) to `Stop` (`stop`) and to `SessionStart` startup / resume / clear (`boot`; never on `compact`). This is the only layer that does not depend
    on the agent complying, so deploy it first and report whether the host accepted it.
-3. **Always deploy `Stop`** (universal). Deploy `PreCompact` / `SessionStart` / `SessionEnd` only
-   where the detected host supports them.
+3. **Always deploy `Stop`** (universal). Deploy `SessionStart` (rescue on startup / resume / clear;
+   the recovery line on `compact`) where the host supports it. Do not wire `PreCompact` or `SessionEnd`.
 4. **Degrade gracefully:** if the host exposes **no usable hooks**, deploy nothing and fall back to
    the **instruction layer**: the breadcrumb contract in `BRAIN.md` still instructs the agent to
    append a one-line journal breadcrumb per meaningful turn *by hand* — **best-effort semantic capture,
@@ -186,18 +189,18 @@ gracefully** — never fail if a layer is unavailable.
    floor is layer (a0) on **shell**-hook-capable hosts only — a host whose hooks merely surface a prompt
    to the agent has **no** mechanical floor, exactly like a hook-less host. The instruction-layer
    breadcrumb is the **best-effort semantic** layer everywhere (never a guarantee):
-   - **Claude Code** — full set (Stop, PreCompact, SessionStart, SessionEnd).
-   - **Copilot** — Stop + PreCompact + SessionStart; no SessionEnd → clean-exit consolidation falls
-     back to the SessionStart-rescue net (below) or a manual `/synaptic-consolidate`.
-   - **Codex / `AGENTS.md` host** — Stop + PreCompact + SessionStart + SessionEnd as available; any
-     absent layer → instruction-only breadcrumbs + manual `/synaptic-consolidate`.
-   - **Cursor** — Stop + SessionStart only; **no PreCompact** → the before-compaction reminder falls back to
-     the SessionStart-rescue net + instruction-only breadcrumbs.
+   - **Claude Code** — Stop + SessionStart (startup / resume / clear, and compact).
+   - **Copilot** — Stop + SessionStart; a compaction source is UNVERIFIED → if absent, the next
+     boot's rescue (below) or a manual `/synaptic-consolidate` covers it.
+   - **Codex / `AGENTS.md` host** — Stop + SessionStart as available; any absent layer →
+     instruction-only breadcrumbs + manual `/synaptic-consolidate`.
+   - **Cursor** — Stop + SessionStart only → no compaction recovery; the rescue net +
+     instruction-only breadcrumbs cover it.
    - **Gemini CLI** — Stop + SessionStart where exposed; anything not exposed →
      instruction-only breadcrumbs + manual `/synaptic-consolidate`.
 
-> **PreCompact not fired? SessionStart-rescue is the net.** On any host where `PreCompact` is absent
-> or silently fails to fire, the next-boot `SessionStart` rescue detects the unconsolidated
+> **No compaction recovery on this host? SessionStart-rescue is the net.** On any host without a
+> compaction source on SessionStart, the next-boot rescue detects the unconsolidated
 > breadcrumbs / active playgrounds and offers to consolidate (see `references/audit.md`'s half-done
 > check). **Whatever the agent did write** — plus the layer-(a0) activity markers, which are written by
 > the host regardless — is still there for the rescue to consolidate on the next session. *(Do not claim
@@ -205,7 +208,7 @@ gracefully** — never fail if a layer is unavailable.
 > genuinely gone. What the activity log guarantees is that the session itself is never invisible.)*
 
 > **SessionStart boot marker (capture-INDEPENDENT — the FIRST thing a session writes).** Before the
-> rescue detect and before any work, `SessionStart` records a single **boot marker**. This is
+> rescue detect and before any work, `SessionStart` (startup / resume / clear; not `compact`) records a single **boot marker**. This is
 > **decoupled from capture**: it fires even when *nothing else* is captured, so "session opened" is
 > counted separately from "work captured." That separation is what lets `/synaptic-audit` (see
 > `references/audit.md` Step 9b) distinguish **not-used** (0 boots — benign) from
@@ -251,7 +254,7 @@ gracefully** — never fail if a layer is unavailable.
 >    Accomplished · Next-Steps · Files) as described above.
 >
 > Mirroring **only** at the boundary is not sufficient: a session could make dozens of `append()` calls
-> and then die before any `PreCompact` / `SessionEnd` boundary is reached — no summary was ever due, so
+> and then die before any session boundary is reached — no summary was ever due, so
 > nothing would have been dual-written, and deleting the provider would lose every one of those entries.
 > Both granularities together are what keep the git-tracked record *complete* if the provider is deleted.
 >
@@ -272,7 +275,7 @@ gracefully** — never fail if a layer is unavailable.
   hosts + the per-turn journal as the universal fallback + `SessionStart`-rescue as the safety net —
   **never an unattended idle daemon at CORE**. (An OS-cron/background timer would be **Cortex**, not
   CORE, and is never required.)
-- **`PreCompact` / `SessionEnd` are host-conditional;** the `Stop` breadcrumb is best-effort; the only
+- **Compaction recovery is host-conditional;** the `Stop` breadcrumb is best-effort; the only
   mechanical floor is (a0), on the hosts the per-host table marks. Elsewhere: absent → unknown.
 - **Breadcrumbs vs promotion are orthogonal:** `capture_policy` governs only how much gets promoted
   into the wiki, never the breadcrumbs.

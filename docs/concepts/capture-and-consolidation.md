@@ -11,7 +11,7 @@ Set it where you like:
 | Setting | What happens | Good for |
 |---|---|---|
 | **Manual** | You run `/synaptic-consolidate` when you choose | Maximum control |
-| **Event-driven (recommended)** | Hooks fire on agent events — a one-line journal breadcrumb every turn, a reminder to consolidate before the context window compacts, a rescue sweep on next session start | Most people; the agent does the remembering |
+| **Event-driven (recommended)** | Hooks fire on agent events — a one-line journal breadcrumb every turn, a recovery line right after the context window compacts, a rescue sweep on next session start | Most people; the agent does the remembering |
 | **Where-supported automation** | On hosts that support it, more of the lifecycle runs without prompting | Long or heavy sessions |
 
 ### The always-on breadcrumbs (and the one mechanical floor)
@@ -20,7 +20,7 @@ Underneath all settings is an **always-on, fixed-cost instruction**: a terse one
 
 ### The honest limit on "passive"
 
-**No agent has native idle detection.** "Passive" here means *event-driven on hook-capable hosts* (a per-turn `Stop` breadcrumb on all agents; a pre-compaction reminder and a next-session rescue where the host supports them) — plus the journal as the universal fallback. It is **not** an unattended daemon watching you work. We say this plainly so the dial is not mistaken for magic.
+**No agent has native idle detection.** "Passive" here means *event-driven on hook-capable hosts* (a per-turn `Stop` breadcrumb on all agents; a recovery line after a compaction and a next-session rescue where the host supports them) — plus the journal as the universal fallback. It is **not** an unattended daemon watching you work. We say this plainly so the dial is not mistaken for magic.
 
 ## Dial 2 — the `capture_policy` dial: *how much* reaches the wiki
 
@@ -59,7 +59,7 @@ Not "zero overhead" — a deliberate trade of a little write-time cost for large
 
 | When | Action |
 |---|---|
-| **Each session** | `/synaptic-consolidate` (or let the event-driven hook offer it) — apply the 6-step capture contract to what was produced |
+| **Each session** | `/synaptic-consolidate` (or let the next boot's rescue hook offer it) — apply the 6-step capture contract to what was produced |
 | **Weekly** | `/synaptic-audit` — **diagnose** staleness, orphans, broken links, MOC gaps, cross-link (horizontal) coverage, and half-done / unconsolidated work + pending breadcrumbs (audit diagnoses; weave/consolidate/synthesize treat) |
 | **Periodically** (after a stretch of consolidation) | `/synaptic-maintain synthesize` — generative pass that writes new synthesis nodes over the curated brain (cross-source patterns, concept evolution, orphan rescue), MOC-validated at write time |
 | **Monthly** | `/synaptic-maintain weave` — retroactive graph-gardening: missing links (+ typed-edge proposals), near-duplicates, theme promotion |
@@ -67,7 +67,7 @@ Not "zero overhead" — a deliberate trade of a little write-time cost for large
 
 Without some cadence the brain drifts. With it, quality compounds.
 
-> **Tip:** the optional host-run hook config that wires the event-driven setting (the breadcrumbs, the activity marker, a pre-compaction reminder where supported, and a next-session rescue sweep) ships as a recipe in the repo. Hooks are plain host-run config — they are CORE, not a runtime we ship.
+> **Tip:** the optional host-run hook config that wires the event-driven setting (the breadcrumbs, the activity marker, a recovery line after a compaction where supported, and a next-session rescue sweep) ships as a recipe in the repo. Hooks are plain host-run config — they are CORE, not a runtime we ship.
 
 ---
 

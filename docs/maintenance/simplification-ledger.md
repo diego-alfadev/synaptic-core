@@ -172,3 +172,27 @@
   into capture-hooks are marked optional (audit stays at ~45 KB, not ~73 KB). Not done (lens nits, Q8
   scope kept): further core trims (REACH paragraph, Operations column) ~3 KB; init's +7 KB. No
   separate refuter: no lens returned NO-GO.
+- **Q9-S7 + K1 (Engram lessons):** recipe A.2 + A.3 **merged** into one `synaptic-pending` script per
+  shell (modes `rescue` | `compact`); A.3 heading kept as a one-paragraph pointer. **Removed:** the
+  PreCompact / SessionEnd reminder (nothing parked: the behaviour moves to `SessionStart`
+  `compact`; the decision and its evidence are recorded in recipe A.2). PowerShell gains the rescue.
+  PS 5.1 `[ ]`-cwd defect **reproduced** (location = `$PSHOME`, brain not found) and fixed in A.0, A.1
+  and A.2 by resolving against `[Environment]::CurrentDirectory`. Tests: one fixture table
+  (`tests/capture-floor/pending-cases.txt`, 12 cases) run by both suites; old per-shell A.2/A.3 cases
+  folded into it; git-only and chain cases kept. Docs aligned: recipe layer table + host table +
+  A.4 registration, capture-hooks (b)/(d) rows + deploy step 3 + per-host list, BRAIN.md template
+  table (107 lines), concept doc. **Not done (to the K1 spec, Q12c):** the liveness model
+  (no rescue offer for a playground the current session owns), SubagentStop Key-Learnings harvest,
+  the `_degraded` marker.
+- **Q9 review (host GO; contract NO-GO → fixed):** capture-hooks deploy steps 1–2 now wire only
+  `Stop` + `SessionStart` and name the recipe scripts and the matcher split; layer counts (a)–(c);
+  boot marker = startup/resume/clear only, stated in capture-hooks, upgrade-to-v1 and the recipe;
+  **new v1.6 hook-shape upgrade bullet** (remove PreCompact/SessionEnd/old rescue entries and script
+  files, split SessionStart, deploy the PS pending script, audit straddle note) + audit Step 9b
+  straddle sentence; recipe hedged ("from the hook docs and Engram's plugin source, not measured";
+  plain stdout vs `additionalContext`); stale "four events / bonus / reminders" wording; BRAIN.md
+  boundary defined, "Wrap-up OFFER", heading; README / concept doc "the next boot's rescue offers it";
+  tests/README; audit Step 9 wording; CHANGELOG supersede note over the 1.5.1 notes. Tests: `pgfile`
+  row (restores lost PS coverage), row-count assertion + unknown-expect failure in both suites, an A.1
+  `[ ]` git case; A.1's `Set-Location` only when the fallback brain exists. No separate refuter: the
+  blockers were text gaps verified line by line.

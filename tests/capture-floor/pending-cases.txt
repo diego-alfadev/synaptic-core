@@ -1,0 +1,28 @@
+# Fixture table for the A.2 pending-work check (recipes/session-end-consolidate.md), run through BOTH
+# shells: tests/capture-floor/run.sh and run.ps1 read this file, build each brain, run the script in
+# the given mode, and compare. One table = sh/PowerShell parity by construction.
+#
+# name | setup | mode | expect
+#   setup (comma-separated, empty = a brain with an empty journal and an empty playgrounds/):
+#     crumbs=N   append N lowercase "breadcrumb: touched a.md" lines to journal/_current.md
+#     crumbcase  append one "Breadcrumb:" line (wrong case: must NOT count)
+#     pg         create playgrounds/task/ (an open playground)
+#     archive    create playgrounds/archive/old/ (finished work: must NOT count)
+#     ledger     create journal/_activity/<x>.log with boot/stop lines (bookkeeping: must NOT count)
+#     bare       a brain with knowledge/ only: no journal, no playgrounds/
+#     nobrain    no .synaptic/ at all
+#     pgfile     playgrounds is a FILE, not a directory (must NOT count, no error)
+#   expect: quiet (exit 0, no stdout, no stderr) | say:<substring of stdout> (exit 0)
+zero         |                 | rescue  | quiet
+archive      | archive         | rescue  | quiet
+ledger       | ledger          | rescue  | quiet
+case         | crumbcase       | rescue  | quiet
+bare         | bare            | rescue  | quiet
+nobrain      | nobrain         | rescue  | quiet
+pgfile       | pgfile          | rescue  | quiet
+pending      | crumbs=2,pg     | rescue  | say:2 pending breadcrumb(s) and 1 open playground(s)
+pg-only      | pg              | rescue  | say:0 pending breadcrumb(s) and 1 open playground(s)
+crumb-only   | crumbs=1        | rescue  | say:1 pending breadcrumb(s) and 0 open playground(s)
+c-zero       |                 | compact | say:context was just compacted
+c-pending    | crumbs=1,pg     | compact | say:1 pending breadcrumb(s), 1 open playground(s)
+c-nobrain    | nobrain         | compact | quiet

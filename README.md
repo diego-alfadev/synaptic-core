@@ -57,7 +57,7 @@ Download or clone the repo and copy the **whole folder** `standalone/synaptic/` 
 
 1. **Install** — pick a tier above. Tier 1 is one pasted line; you are done in under a minute.
 2. **Run `/synaptic-init`** — the skill runs a short scope-aware interview (about 3 questions: what is this brain *for*, who fills the role, where does the work live), generates a complete personalized brain from the templates, and self-wires your harness. No further setup.
-3. **Work normally** — just do your work with your agent as usual. At session end, run `/synaptic-consolidate` to distil what you learned into the brain — or let the event-driven hook offer it for you.
+3. **Work normally** — just do your work with your agent as usual. When you wrap up, run `/synaptic-consolidate` to distil what you learned into the brain — or let the next session's rescue hook offer it for you.
 4. **Next session, your agent already knows the project** — it boots from `BRAIN.md` (one file, ~500 tokens) and arrives knowing the scope, conventions, guardrails, and where everything lives. No re-briefing.
 
 That is the whole loop: install once, init once, then work → consolidate → boot smarter. The brain compounds with every session.

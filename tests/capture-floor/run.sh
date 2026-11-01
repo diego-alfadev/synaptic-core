@@ -169,87 +169,83 @@ printf -- '- agent note: decided X\n' >> "$ws/.synaptic/journal/_current.md"
 [ "$(crumbs)" -eq 2 ] && ok "A.1 appends again when the touched-file list changes" \
   || nok "A.1 appends again when the touched-file list changes" "$(crumbs) breadcrumbs"
 
-# --- A.2 reminder + A.3 rescue: one git-free "unconsolidated work?" predicate --------------------
+# --- A.2 pending-work check: one script, modes rescue|compact, one git-free predicate [S7] ----------
 # Work = pending breadcrumb lines in journal/_current.md, or open playground directories.
 # playgrounds/archive/ is not open, and the A.0 activity ledger is not work. [C2 C4 C6]
-A2="$WORK/synaptic-consolidate-reminder.sh"
-A3="$WORK/synaptic-rescue.sh"
-extract "### A.2" bash "$A2" && ok "extract A.2 consolidation reminder (bash) from the recipe" \
-  || { nok "extract A.2 consolidation reminder (bash) from the recipe" "heading or fence changed"; exit 1; }
-extract "### A.3" bash "$A3" && ok "extract A.3 rescue check (bash) from the recipe" \
-  || { nok "extract A.3 rescue check (bash) from the recipe" "heading or fence changed"; exit 1; }
+# The cases live in tests/capture-floor/pending-cases.txt, which run.ps1 reads too (sh/PS parity).
+A2="$WORK/synaptic-pending.sh"
+extract "### A.2" bash "$A2" && ok "extract A.2 pending-work check (bash) from the recipe" \
+  || { nok "extract A.2 pending-work check (bash) from the recipe" "heading or fence changed"; exit 1; }
 mkbrain() { mkdir -p "$WORK/$1/.synaptic/journal" "$WORK/$1/.synaptic/playgrounds"
             printf '# Journal\n' > "$WORK/$1/.synaptic/journal/_current.md"; echo "$WORK/$1"; }
 commitall() { ( cd "$1" && git add -A \
                 && git -c user.name=ci -c user.email=ci@example.invalid -c commit.gpgsign=false commit -qm c ) >/dev/null 2>&1; }
 gitinit() { ( cd "$1" && git init -q ) >/dev/null 2>&1; commitall "$1"; }
-hook() { ( cd "$1" && bash "$2" ) > "$WORK/out.txt" 2> "$WORK/err.txt"; echo $? > "$WORK/rc.txt"; }
+hook() { local d="$1" s="$2"; shift 2; ( cd "$d" && bash "$s" "$@" ) > "$WORK/out.txt" 2> "$WORK/err.txt"; echo $? > "$WORK/rc.txt"; }
 quiet() { [ "$(cat "$WORK/rc.txt")" = 0 ] && [ ! -s "$WORK/out.txt" ] && [ ! -s "$WORK/err.txt" ]; }
-said()  { [ "$(cat "$WORK/rc.txt")" = 0 ] && grep -q "$1" "$WORK/out.txt"; }
+said()  { [ "$(cat "$WORK/rc.txt")" = 0 ] && grep -qF "$1" "$WORK/out.txt"; }
 crumb='- 2026-10-29T10:00Z breadcrumb: touched a.md'
 
-ws=$(mkbrain a3-zero); hook "$ws" "$A3"                                                      # C6
-quiet && ok "A.3 with zero breadcrumbs is silent (no shell error on every boot)" \
-  || nok "A.3 with zero breadcrumbs is silent" "stderr: $(head -c 160 "$WORK/err.txt")"
-ws=$(mkbrain a3-archive); mkdir -p "$ws/.synaptic/playgrounds/archive/old"; hook "$ws" "$A3"   # C4
-quiet && ok "A.3 does not count playgrounds/archive/ as an open playground" \
-  || nok "A.3 does not count playgrounds/archive/" "$(tr '\n' ' ' < "$WORK/out.txt" | head -c 160)"
-ws=$(mkbrain a3-pending); mkdir -p "$ws/.synaptic/playgrounds/task"
-printf '%s\n%s\n' "$crumb" "$crumb" >> "$ws/.synaptic/journal/_current.md"; hook "$ws" "$A3"
-said "2 pending breadcrumb(s) and 1 open playground(s)" && ok "A.3 reports pending breadcrumbs and open playgrounds" \
-  || nok "A.3 reports pending breadcrumbs and open playgrounds" "$(tr '\n' ' ' < "$WORK/out.txt" | head -c 160)"
-ws=$(mkbrain a2-nogit); mkdir -p "$ws/.synaptic/playgrounds/task"; hook "$ws" "$A2"            # C2
-said "consolidation reminder" && ok "A.2 reminds on a NON-git brain with an open playground" \
-  || nok "A.2 reminds on a NON-git brain with an open playground" "no reminder printed"
+CASES="$ROOT/tests/capture-floor/pending-cases.txt"; rows=0
+trim() { printf '%s' "$1" | sed 's/^[[:space:]]*//; s/[[:space:]]*$//'; }
+while IFS='|' read -r c_name c_setup c_mode c_expect; do
+  c_name=$(trim "$c_name"); case "$c_name" in ''|'#'*) continue ;; esac
+  c_setup=$(trim "$c_setup"); c_mode=$(trim "$c_mode"); c_expect=$(trim "$c_expect")
+  ws="$WORK/pc-$c_name"; mkdir -p "$ws"
+  rows=$((rows+1))
+  case ",$c_setup," in
+    *,nobrain,*) ;;
+    *,bare,*) mkdir -p "$ws/.synaptic/knowledge" ;;
+    *,pgfile,*) mkdir -p "$ws/.synaptic/journal"; printf '# Journal\n' > "$ws/.synaptic/journal/_current.md"; : > "$ws/.synaptic/playgrounds" ;;
+    *) mkbrain "pc-$c_name" >/dev/null ;;
+  esac
+  for item in $(printf '%s' "$c_setup" | tr ',' ' '); do
+    case "$item" in
+      crumbs=*) i=0; while [ "$i" -lt "${item#crumbs=}" ]; do echo "$crumb" >> "$ws/.synaptic/journal/_current.md"; i=$((i+1)); done ;;
+      crumbcase) echo '- 2026-10-29T10:00Z Breadcrumb: touched a.md' >> "$ws/.synaptic/journal/_current.md" ;;
+      pg) mkdir -p "$ws/.synaptic/playgrounds/task" ;;
+      archive) mkdir -p "$ws/.synaptic/playgrounds/archive/old" ;;
+      ledger) mkdir -p "$ws/.synaptic/journal/_activity"; printf 'boot\nstop\n' > "$ws/.synaptic/journal/_activity/0123456789ab-2026-10-29.log" ;;
+    esac
+  done
+  hook "$ws" "$A2" "$c_mode"
+  case "$c_expect" in
+    quiet) quiet && ok "A.2 [$c_mode] $c_name: quiet" || nok "A.2 [$c_mode] $c_name: quiet" "rc=$(cat "$WORK/rc.txt") out=$(tr '\n' ' ' < "$WORK/out.txt" | head -c 160) err=$(head -c 120 "$WORK/err.txt")" ;;
+    say:*) said "${c_expect#say:}" && ok "A.2 [$c_mode] $c_name: says '${c_expect#say:}'" || nok "A.2 [$c_mode] $c_name: says '${c_expect#say:}'" "out=$(tr '\n' ' ' < "$WORK/out.txt" | head -c 160)" ;;
+    *) nok "A.2 fixture row $c_name" "unknown expect '$c_expect'" ;;
+  esac
+done < <(tr -d '\r' < "$CASES")
+want_rows=$(tr -d '\r' < "$CASES" | grep -cvE '^[[:space:]]*(#|$)')
+[ "${rows:-0}" -eq "$want_rows" ] && ok "A.2 fixture table: all $want_rows rows ran" \
+  || nok "A.2 fixture table: all $want_rows rows ran" "ran ${rows:-0}"
+
+# Git-only cases the table cannot express (bash side; the predicate itself reads no git):
 ws=$(mkbrain a2-untracked); gitinit "$ws"; mkdir -p "$ws/.synaptic/playgrounds/new"           # C2
-echo x > "$ws/.synaptic/playgrounds/new/notes.md"; hook "$ws" "$A2"
-said "consolidation reminder" && ok "A.2 reminds for an untracked new playground in a git repo" \
-  || nok "A.2 reminds for an untracked new playground in a git repo" "no reminder printed"
-ws=$(mkbrain a2-marker); mkdir -p "$ws/.synaptic/journal/_activity"                            # C2
-echo "2026-10-29T10:00:00Z boot" > "$ws/.synaptic/journal/_activity/h-2026-10-29.log"; gitinit "$ws"
-echo "2026-10-29T10:05:00Z stop" >> "$ws/.synaptic/journal/_activity/h-2026-10-29.log"; hook "$ws" "$A2"
-quiet && ok "A.2 stays silent when only the activity ledger changed (no reminder every session)" \
-  || nok "A.2 stays silent when only the activity ledger changed" "false reminder"
-ws=$(mkbrain a2-crumbs); gitinit "$ws"; echo "$crumb" >> "$ws/.synaptic/journal/_current.md"; hook "$ws" "$A2"
-said "consolidation reminder" && ok "A.2 reminds when breadcrumbs are pending" \
-  || nok "A.2 reminds when breadcrumbs are pending" "no reminder printed"
-ws=$(mkbrain a2-archive); mkdir -p "$ws/.synaptic/playgrounds/archive/old"; hook "$ws" "$A2"   # C4
-quiet && ok "A.2 does not count playgrounds/archive/ (silent, no stderr)" \
-  || nok "A.2 does not count playgrounds/archive/" "$(tr '\n' ' ' < "$WORK/out.txt" | head -c 160)"
-ws=$(mkbrain a3-pg); mkdir -p "$ws/.synaptic/playgrounds/task"; hook "$ws" "$A3"   # each half of the OR alone
-said "0 pending breadcrumb(s) and 1 open playground(s)" && ok "A.3 reports an open playground on its own" \
-  || nok "A.3 reports an open playground on its own" "$(tr '\n' ' ' < "$WORK/out.txt" | head -c 160)"
-ws=$(mkbrain a3-crumb); echo "$crumb" >> "$ws/.synaptic/journal/_current.md"; hook "$ws" "$A3"
-said "1 pending breadcrumb(s) and 0 open playground(s)" && ok "A.3 reports a pending breadcrumb on its own" \
-  || nok "A.3 reports a pending breadcrumb on its own" "$(tr '\n' ' ' < "$WORK/out.txt" | head -c 160)"
-ws="$WORK/bare"; mkdir -p "$ws/.synaptic/knowledge"; hook "$ws" "$A2"; r2=$(quiet && echo y); hook "$ws" "$A3"
-[ "$r2" = y ] && quiet && ok "A.2 and A.3 are quiet with no journal and no playgrounds/ (exit 0)" \
-  || nok "A.2 and A.3 are quiet with no journal and no playgrounds/" "rc=$(cat "$WORK/rc.txt")"
-ws=$(mkbrain a2-case); echo '- 2026-10-29T10:00Z Breadcrumb: touched a.md' >> "$ws/.synaptic/journal/_current.md"
-hook "$ws" "$A2"; quiet && ok "A.2 counts only the lowercase hook token 'breadcrumb:'" \
-  || nok "A.2 counts only the lowercase hook token 'breadcrumb:'" "$(tr '\n' ' ' < "$WORK/out.txt" | head -c 160)"
+echo x > "$ws/.synaptic/playgrounds/new/notes.md"; hook "$ws" "$A2" rescue
+said "1 open playground(s)" && ok "A.2 counts an untracked new playground in a git repo" \
+  || nok "A.2 counts an untracked new playground in a git repo" "no offer printed"
 
 # --- End to end in the A.4 order (A.0 -> A.1 -> A.2) on a committed git brain [C2] ---------------
 # A.1 must not turn the brain's own bookkeeping (the A.0 ledger, the journal it writes) into breadcrumbs,
 # or the reminder can never go quiet.
 ws=$(mkbrain chain-qa); ( cd "$ws" && bash "$A0" boot ) >/dev/null 2>&1; gitinit "$ws"
-( cd "$ws" && bash "$A0" stop; bash "$A1" ) >/dev/null 2>&1; hook "$ws" "$A2"
+( cd "$ws" && bash "$A0" stop; bash "$A1" ) >/dev/null 2>&1; hook "$ws" "$A2" rescue
 quiet && ok "chain: a turn that only wrote the activity ledger leaves no reminder" \
   || nok "chain: a turn that only wrote the activity ledger leaves no reminder" "journal: $(tail -n 1 "$ws/.synaptic/journal/_current.md")"
 ws=$(mkbrain chain-cons); echo "$crumb" >> "$ws/.synaptic/journal/_current.md"; gitinit "$ws"
 printf '# Journal\n- [2026-10-29] consolidated\n' > "$ws/.synaptic/journal/_current.md"
-( cd "$ws" && bash "$A1" ) >/dev/null 2>&1; commitall "$ws"; hook "$ws" "$A2"
+( cd "$ws" && bash "$A1" ) >/dev/null 2>&1; commitall "$ws"; hook "$ws" "$A2" rescue
 quiet && ok "chain: a journal-only consolidation turn's own Stop does not re-arm the reminder" \
   || nok "chain: a journal-only consolidation turn's own Stop does not re-arm the reminder" "journal: $(tail -n 1 "$ws/.synaptic/journal/_current.md")"
 nd=$'An\xc3\xa1lisis'   # a non-ASCII folder between the repo root and the brain: git prints the path "quoted"
 ws="$WORK/chain-quoted"; bw="$ws/$nd"; mkdir -p "$bw/.synaptic/journal" "$bw/.synaptic/playgrounds"
 printf '# Journal\n%s\n' "$crumb" > "$bw/.synaptic/journal/_current.md"; gitinit "$ws"
 printf '# Journal\n- [2026-10-29] consolidated\n' > "$bw/.synaptic/journal/_current.md"
-( cd "$bw" && bash "$A1" ) >/dev/null 2>&1; commitall "$ws"; hook "$bw" "$A2"
+( cd "$bw" && bash "$A1" ) >/dev/null 2>&1; commitall "$ws"; hook "$bw" "$A2" rescue
 quiet && ok "chain: the journal stays filtered when git quotes a non-ASCII path" \
   || nok "chain: the journal stays filtered when git quotes a non-ASCII path" "journal: $(tail -n 1 "$bw/.synaptic/journal/_current.md")"
 ws=$(mkbrain chain-work); echo a > "$ws/app.txt"; gitinit "$ws"; echo b >> "$ws/app.txt"
-( cd "$ws" && bash "$A1" ) >/dev/null 2>&1; hook "$ws" "$A2"
+( cd "$ws" && bash "$A1" ) >/dev/null 2>&1; hook "$ws" "$A2" rescue
 said "1 pending breadcrumb(s)" && ok "chain: a real project edit becomes a breadcrumb and triggers the reminder" \
   || nok "chain: a real project edit becomes a breadcrumb and triggers the reminder" "$(tr '\n' ' ' < "$WORK/out.txt" | head -c 160)"
 

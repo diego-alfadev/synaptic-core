@@ -30,7 +30,7 @@
 - **Deploy the layer-(a0) activity marker** per `references/capture-hooks.md` "Deterministic activity marker": wire the
   pinned platform-appropriate one-liner (**UTF-8 no-BOM**; `[IO.File]::AppendAllText` on PowerShell —
   never `>>` (UTF-16LE+BOM) or `Add-Content` (ANSI by default; a BOM with `-Encoding utf8` on 5.1)) to `Stop` (`stop`) and `SessionStart`
-  (`boot`), writing to `journal/_activity/<host-token>-<YYYY-MM-DD>.log`. Marker-wrapped + idempotent like
+  startup / resume / clear (`boot`; never on the `compact` source), writing to `journal/_activity/<host-token>-<YYYY-MM-DD>.log`. Marker-wrapped + idempotent like
   every other hook write.
 - **Migrate the boot ledger:** stop emitting the old `- boot:` line into `journal/_current.md`; the boot
   event now lives ONLY in the activity ledger. Existing `- boot:` lines are harmless history and are
@@ -48,6 +48,17 @@
   git and the ledger was committed, offer `git -C "<brain>" rm --cached -- "journal/_activity/*.log"` (files stay on disk)
   and list what it untracks; run it only with the owner's OK. Old raw-host file names age out through
   the Journal-Trim rollup; never rename them silently.
+- **v1.6 hook shape (re-deploy on every host).** Inside the `BEGIN:SYNAPTIC-HOOKS` block (or the
+  hand-wired entries the host record lists), with the owner's OK:
+  1. **Remove** the `PreCompact` and `SessionEnd` entries and the old `SessionStart` rescue entry;
+     delete the old script files (`synaptic-consolidate-reminder.sh` / `.ps1`, `synaptic-rescue.sh`),
+     or the old and new rescue double-fire.
+  2. **Split `SessionStart`:** startup / resume / clear → A.0 `boot` + `synaptic-pending rescue`;
+     `compact` → `synaptic-pending compact` only (recipe A.2 / A.4; `references/capture-hooks.md`
+     deploy step 2). On Windows deploy `synaptic-pending.ps1` too: the rescue now exists there.
+  3. **Audit note:** a capture-yield window that straddles this re-deploy counts compactions as
+     `boot` before it and not after; report it like the v1.4 → v1.5 straddle (`references/audit.md`
+     Step 9b).
 
 ## v1.4.0 addendum — host-setup detection is an ALWAYS-RUN step (not migration-only)
 
