@@ -118,7 +118,7 @@ When `/synaptic-upgrade` runs host-setup detection, it MUST perform a **stub-dri
 **OneDrive KFM conflict-copy cleanup.** Host command dirs under OneDrive Known-Folder-Move can
 accumulate **`*-DESKTOP-XXX` conflict copies** (e.g. `synaptic-audit-DESKTOP-AB12CD.md`) when sync
 collides across machines. They are not real stubs — they shadow the canonical one and can surface a
-stale duplicate in the `/` menu. The drift sweep MUST **detect and clean these `*-DESKTOP-*` variants**.
+stale duplicate in the `/` menu. The drift sweep MUST **detect and clean these `synaptic-*-DESKTOP-*` variants** (the `synaptic-` prefix is required: a conflict copy of any other file is the user's and is never touched).
 *(Author-complete; verify on a real run — actual filesystem/sync behavior needs a real host.)*
 
 ## Cleanup — uninstall / downgrade / convert-to-global
@@ -135,6 +135,13 @@ using the `harness/setup/<host>.md` inventory (never guess):
   and on convert-to-global, delete the `BEGIN:SYNAPTIC-BOOT` … `END:SYNAPTIC-BOOT` lines from the file
   the record names (`boot: claude-md-import`) and clear the `boot:` lines. Never remove a `boot:
   user-import` line: the user wrote it.
+
+**The user's own skills and commands are never touched.** Every stub delete or overwrite above, and
+the drift prune, acts only on a file that the host record lists **and** whose name starts with
+`synaptic` **and** that carries the `generated-from: synaptic-skill@` provenance line (a
+`synaptic-*-DESKTOP-*` conflict copy needs only the last two). Anything else in a host
+skill or command folder (a skill the user built, with or without scripts) is left as it is, even when
+its name clashes; report the clash instead.
 
 ## CORE-safety (Simplicity Guardrail — passes)
 

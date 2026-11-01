@@ -222,8 +222,8 @@
 
   | Carried item (backlog) | Outcome |
   |---|---|
-  | check.js / audit flag `status: archived` as stale after 90 days | **prose fixed** (audit Step 1 skips archived); `tools/check.js` half **needs-CI** (unchanged) |
-  | `tools/graph.js` tests `lifecycle === "archived"` (never matches) | **needs-CI** (unchanged; fix = test `status`) |
+  | check.js / audit flag `status: archived` as stale after 90 days | **done**: audit Step 1 skips archived; `tools/check.js` skips them too (post-loop commit; test written, **needs-CI** to run) |
+  | `tools/graph.js` tests `lifecycle === "archived"` (never matches) | **done**: the filter tests `status`, carried into the page data (post-loop commit; test written, **needs-CI** to run) |
   | archived nodes default-load; unmarked `_index.md` line | default-load gone (Q5, X11); MOC suffix ` (archived — superseded by [[x]])` written in `contract.md` §2 — **done** |
   | `TBD` content_hash backfill records a later hash | **done** (`fingerprint.md`: `> Changed <date>: content_hash backfilled`) |
   | supersedes target still active / archived with no inbound supersedes | **done** (audit Step 1 advisory) |
@@ -248,3 +248,11 @@
   deterministic; contract archived suffix is a SHOULD; consolidate's supersede step applies it;
   UPGRADE-v1.x doc header. The table row "the other two no longer exist" above is superseded by this
   entry.
+- **Post-loop (2026-11-02, after Diego's X10 answer):**
+  - Node fixes written with tests (`tools/check.js` archived staleness; `tools/graph.js` archived
+    filter keys on `status`); review GO by inspection; **needs-CI** to run. Audit Step 1's "check.js
+    still warns" sentence removed.
+  - User-skill guard: one rule in `references/command-discovery.md` Cleanup (record-listed +
+    `synaptic` name + provenance line); conflict-copy cleanup narrowed to `synaptic-*-DESKTOP-*` in
+    command-discovery, init, host-setup and upgrade-to-v1. Nothing removed. Portability of users'
+    skills (registry, own skills repo) is a v1.7 spec, not built.

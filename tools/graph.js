@@ -120,6 +120,7 @@ const clientNodes = g.nodes.map(n => ({
   type:      n.type,
   tags:      n.tags,
   lifecycle: n.lifecycle || null,
+  status:    n.status || null,
   degree:    g.degreeOf[n.id] || 0,
   color:     n.cluster ? (clusterColor[n.cluster] || NO_CLUSTER_COLOR) : NO_CLUSTER_COLOR,
 }));
@@ -275,7 +276,7 @@ var DATA = ${safeJson(DATA)};
   // ---- model ---------------------------------------------------------------
   var nodes = DATA.nodes.map(function(n){ return {
     id:n.id, label:n.label, cluster:n.cluster, type:n.type, tags:n.tags,
-    lifecycle:n.lifecycle, degree:n.degree, color:n.color,
+    lifecycle:n.lifecycle, status:n.status, degree:n.degree, color:n.color,
     x:0, y:0, vx:0, vy:0, r: Math.max(6, Math.min(22, 7 + n.degree*1.6)),
     pinned:false, _collapsed:false, collapsedHidden:false
   };});
@@ -387,7 +388,7 @@ var DATA = ${safeJson(DATA)};
   var hiddenClusters = {}, hiddenEdgeTypes = {}, hideResource = false, hideArchived = false;
   function passesLifecycle(n){
     if (hideResource && n.lifecycle === "resource") return false;
-    if (hideArchived && (n.lifecycle === "archived" || n.lifecycle === "dormant")) return false;
+    if (hideArchived && (n.status === "archived" || n.lifecycle === "dormant")) return false;
     return true;
   }
   function computeVisibility(){

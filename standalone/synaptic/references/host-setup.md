@@ -61,7 +61,7 @@ the upgrade addendum, `references/upgrade-to-v1.md`, reuse this same detect+clas
      brain"; matches the unreachable-pointer branch of `SKILL.md` Detect on Load).
 5. **Run the command-discovery stub-drift check** (`references/command-discovery.md`): compare the
    recorded stub set + version against the current SOT command list; regenerate + prune stale stubs;
-   clean OneDrive KFM `*-DESKTOP-*` conflict copies; regenerate the Layer-1 bridge descriptions.
+   clean OneDrive KFM `synaptic-*-DESKTOP-*` conflict copies; regenerate the Layer-1 bridge descriptions.
 6. **Update `harness/setup/<host>.md`** with the re-deployed state.
 
 > **Absolute skill path in the bridge (grep-recoverable).** When wiring at user level, the bridge block

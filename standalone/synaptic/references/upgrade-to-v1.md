@@ -90,7 +90,7 @@
   carrier for this brain's bridge/rules in any foreign committed **or synced** file → count MUST be zero.
 - **Stub-drift check.** As part of detection, run the command-discovery stub-drift check
   (`references/command-discovery.md`): compare recorded stubs/version vs the current SOT command list,
-  regenerate + **prune** stale stubs, clean OneDrive KFM `*-DESKTOP-*` conflict copies, and regenerate
+  regenerate + **prune** stale stubs, clean OneDrive KFM `synaptic-*-DESKTOP-*` conflict copies, and regenerate
   the Layer-1 bridge command descriptions from the SOT summaries.
 
 - **Topology first (does NOT change the migration — only the wiring).** Detect/ask whether the brain

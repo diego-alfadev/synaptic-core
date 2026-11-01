@@ -165,6 +165,11 @@ Do the steps in this order.
 > below), the drift hash is `references/fingerprint.md`, and the suites now run bash 54 / PowerShell 62+.
 
 #### Fixed (simplification round)
+- **A user's own skills and commands are never touched.** Stub deletes, overwrites and the drift prune
+  now act only on a file the host record lists, whose name starts with `synaptic` and that carries the
+  `generated-from: synaptic-skill@` line. The OneDrive conflict-copy cleanup matches only
+  `synaptic-*-DESKTOP-*`; before, its `*-DESKTOP-*` pattern could match a conflict copy of a user's skill.
+  A name clash is reported, not resolved (`references/command-discovery.md`, Cleanup).
 - **Carried defects closed (no Node needed).** The changes by area:
   - **Upgrade.** `_migration-staging/` is kept through the soak and deleted last. It is no longer
     deleted at the end of Phase C, and the final checklist no longer fails while it is kept.
@@ -178,8 +183,9 @@ Do the steps in this order.
   - **Archived nodes** keep their MOC line with ` (archived — superseded by [[x]])`.
   - **A backfilled `content_hash`** is marked as backfilled.
 
-  The two Node-only fixes (`tools/check.js` archived staleness, `tools/graph.js` archived test) wait
-  for CI.
+  The two Node-only fixes are written with tests: `tools/check.js` skips `status: archived` in its
+  staleness check, and the `tools/graph.js` "hide archived" filter tests `status`, not `lifecycle`.
+  Their first run is in CI.
 - **The `Stop` breadcrumb (A.1) no longer repeats itself every turn.** An uncommitted diff persists
   across turns, so both scripts appended the same `breadcrumb: touched …` line on every turn until a
   commit, against the journal's own dedup rule. Both shells now skip the line when the last

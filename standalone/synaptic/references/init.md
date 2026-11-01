@@ -284,7 +284,7 @@ Create directories if absent. If a target already contains a `SKILL.md` with the
   maintains only one source.
 - **Drift + prune (on `/synaptic-upgrade`):** compare recorded stubs/version vs the current SOT command
   list; report added/removed/renamed; **regenerate** changed and **PRUNE** stubs for commands no longer
-  in the SOT; clean OneDrive KFM `*-DESKTOP-*` conflict copies. **Cleanup:** on uninstall remove every
+  in the SOT; clean OneDrive KFM `synaptic-*-DESKTOP-*` conflict copies. **Cleanup:** on uninstall remove every
   recorded stub then clear the record; on convert-to-global remove the project-level stubs.
 
 **Record the wiring.** After wiring + deploy, write/update `harness/setup/<host>.md` in the brain (e.g.

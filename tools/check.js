@@ -805,7 +805,7 @@ function checkBudgets() {
 }
 
 // ---------------------------------------------------------------------------
-// Check 9: Staleness — updated: > 90d (skip placeholders)
+// Check 9: Staleness — updated: > 90d (skip placeholders and status: archived)
 // ---------------------------------------------------------------------------
 
 function checkStaleness() {
@@ -820,6 +820,7 @@ function checkStaleness() {
 
     const fm = parseFrontmatter(readLines(filePath));
     if (!fm) continue;
+    if (String(fm.status || '').trim() === 'archived') continue; // archived = history, never stale
 
     const updated = parseDate(fm.updated);
     if (!updated) continue; // placeholder or unparseable
