@@ -353,7 +353,7 @@ STEP 6 — Phase V (verify) on the work copy   [needs Node for check.js; [no Nod
     Answer EACH by MOC navigation ONLY: BRAIN.md → knowledge/INDEX.md → cluster _index.md → node
       (or registries/_index.md → registry). Record the hop path for every question.
     PASS BAR (binary): all 5 fact-lookups (the 3 most-linked + 2 registry) answered via MOC navigation
-      with 0 grep-fallbacks required. The 1 synthesis question MAY miss — a miss is a /synaptic-weave
+      with 0 grep-fallbacks required. The 1 synthesis question MAY miss — a miss is a /synaptic-maintain weave
       content gap (per the v1.0 benchmark caveat), NOT a navigation failure; log it as a weave to-do.
     A fact-lookup that needs grep/keyword search to answer is a NAVIGATION FAILURE — fix the MOC/links
       (register the node, add the missing _index entry) and re-run the drill. Record the drill result
@@ -427,8 +427,8 @@ archive-before-delete:
   2. /synaptic-audit (references/audit.md) — DIAGNOSE only: staleness, orphans, broken links, MOC +
      cross-link coverage, half-done work, registry integrity, oversized nodes, tag hygiene.
   3. Treat, in order, each approval-gated: consolidate half-done work → reconcile contradicts/supersedes
-     → /synaptic-synthesize (cross-source patterns, orphan rescue; new nodes MOC-registered at write
-     time) → /synaptic-weave (propose missing [[links]] + typed edges, near-dup merges; PROPOSE-never-
+     → /synaptic-maintain synthesize (cross-source patterns, orphan rescue; new nodes MOC-registered at write
+     time) → /synaptic-maintain weave (propose missing [[links]] + typed edges, near-dup merges; PROPOSE-never-
      auto-write).
   4. POST-CHECK: re-run check.js / the matrix → confirm no new broken links or phantom nodes.
   5. BEFORE/AFTER diff vs the backup: nodes added/split/merged, links added, orphans cleared, broken

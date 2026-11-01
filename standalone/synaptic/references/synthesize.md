@@ -1,13 +1,14 @@
-<!-- summary: A generative pass over the curated brain — write new synthesis nodes (cross-source patterns, concept evolution, orphan rescue), each with wikilinks + MOC registration. Does not replace consolidate. -->
+<!-- summary: The synthesize pass of /synaptic-maintain (generative) — over the curated brain, write new synthesis nodes (cross-source patterns, concept evolution, orphan rescue), each with wikilinks + MOC registration. Does not replace consolidate. -->
 
-# /synaptic-synthesize — Generative Synthesis Reference
+# Synthesize pass — `/synaptic-maintain synthesize` (generative synthesis)
 
 A **generative** pass that runs over the **already-curated brain** and writes **new synthesis
 nodes** — connecting what consolidation has already filed. It surfaces cross-source patterns,
 captures how a concept has evolved, and rescues orphans by giving them a home.
 
-Run when: user invokes `/synaptic-synthesize`, after a stretch of consolidation has added many
-nodes, or as the generative leg of `/synaptic-maintain` (see `references/maintain.md`).
+Run when: user invokes `/synaptic-maintain synthesize`, after a stretch of consolidation has added many
+nodes, or as the generative leg of a full `/synaptic-maintain` sweep (see `references/maintain.md`). The 1.6
+alias `/synaptic-synthesize` still resolves here, until the next minor.
 
 > **Synthesize does NOT replace `/synaptic-consolidate`.** They are different lifecycle stages:
 > - **Consolidate** = the *promotion* stage. Routes raw session/journal/playground material **into**
@@ -23,20 +24,18 @@ nodes, or as the generative leg of `/synaptic-maintain` (see `references/maintai
 
 ## CORE-safety contract (binding)
 
-Synthesize **generates; it never silently mutates the SSOT.**
+Synthesize **generates; it never silently mutates the SSOT.** The `/synaptic-maintain` CORE-safety
+contract (`references/maintain.md`) binds this pass in full: approval tiers, diff-traced /
+git-reversible / archive-before-delete, the deletion ledger, no auto-discovery claim. Specific to this
+pass:
 
 - **MOC write-validation gate (C4/C2).** Every synthesis node it writes gets `[[wikilinks]]` to the
   sources it synthesizes **and** is registered in its cluster `_index.md` (and the cluster in
   `knowledge/INDEX.md`) **at write time** — no phantom nodes, ever. A node that cannot be made
   MOC-reachable is not written.
-- **Propose / confirm for merges and promotions.** Generating a *new* synthesis node is the routine
-  output. **Merging or rewriting existing nodes is propose-then-approve; deleting one is human-only**
-  (`harness/guardrails.md`) — synthesize surfaces the proposal and waits; it does not collapse SSOT on its own.
-- **Diff-traced, git-reversible, archive-before-delete** for anything that touches existing content.
-- **No auto-discovery claim (C5).** Synthesis is the agent reasoning over **authored** edges and
-  content; it does not infer hidden links from embeddings. GraphRAG is cited only as *the direction*.
-- **Capture contract applies.** Synthesis nodes obey the same frontmatter (D1), atomicity, and
-  quality gate as any consolidated node — they are first-class wiki nodes, not annotations.
+- **New node = routine; merge/rewrite = propose-then-approve; delete = human-only.**
+- **Capture contract applies.** Synthesis nodes obey the same frontmatter, atomicity, and quality
+  gate as any consolidated node — they are first-class wiki nodes, not annotations.
 
 ---
 
@@ -77,7 +76,7 @@ durable knowledge:
 
 - Find the cluster and the related nodes it belongs with; **write the connective tissue** — a
   synthesis node or the missing links that give the orphan a home — and register it in the MOC.
-- If an orphan has no real home, do not fabricate one: flag it for `/synaptic-weave` (move to a
+- If an orphan has no real home, do not fabricate one: flag it for `/synaptic-maintain weave` (move to a
   cluster `_index.md`, relocate to `references/`, or — with explicit human approval — retire). Orphan
   *rescue* is generative; orphan *deletion* is human-only.
 
@@ -102,7 +101,7 @@ Pass 2 — Concept evolution (N new nodes):
 
 Pass 3 — Orphan rescue (N nodes):
   - [[stray-runbook]] (orphan) → NEW links to [[deploy-service]] + register in knowledge/ops/_index.md
-  - [[old-spike-notes]] (orphan, no home) → flag for /synaptic-weave (relocate or retire)
+  - [[old-spike-notes]] (orphan, no home) → flag for /synaptic-maintain weave (relocate or retire)
   - ...
 
 Write new nodes? Apply proposed merges/rewrites? (y / n / pick)
@@ -127,7 +126,7 @@ in `knowledge/` registered in no `_index.md`.
 - Pass 2: the q1→q2→q3 sequence shows the retry policy tightening each quarter. → NEW
   `[[retry-policy-evolution]]` telling the arc, with `supersedes` edges between the policy nodes.
 - Pass 3: `old-spike.md` is an orphan whose content matches `ops/`. → propose links + register in
-  `knowledge/ops/_index.md`; if no fit existed, flag for `/synaptic-weave`.
+  `knowledge/ops/_index.md`; if no fit existed, flag for `/synaptic-maintain weave`.
 
 **After confirmation:** 2 new pattern/evolution nodes (fully linked + MOC-registered), 1 orphan
 rescued. The brain is now more *connected*, with no SSOT mutated without approval.
@@ -140,7 +139,7 @@ rescued. The brain is now more *connected*, with no SSOT mutated without approva
 - **Do not silently merge or delete:** merges and rewrites are propose-then-approve; deletion is human-only.
 - **Do not claim auto-discovery:** synthesis reasons over authored edges/content; it does not infer hidden links.
 - **Do not duplicate consolidation:** synthesize runs over the *curated* brain; routing raw session/playground material is `/synaptic-consolidate`'s job.
-- **Do not invent a home for a true orphan:** rescue where a real cluster fits; otherwise flag for `/synaptic-weave`. Deletion is human-only.
+- **Do not invent a home for a true orphan:** rescue where a real cluster fits; otherwise flag for `/synaptic-maintain weave`. Deletion is human-only.
 
 ---
 

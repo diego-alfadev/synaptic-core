@@ -86,12 +86,15 @@ Every team pays a **knowledge tax**: re-briefing the agent each session, onboard
 | `/synaptic-consolidate` | Run the 6-step capture contract on the current session's output; promotion aggressiveness is a tunable dial (`selective` / `balanced` / `capture-all`) |
 | `/synaptic-ingest [file]` | Distil a document into an atomic node + reference entry |
 | `/synaptic-audit` | **Diagnose only:** orphans, broken links, stale nodes, MOC coverage, cross-link coverage, unconsolidated work, registry integrity, tag hygiene |
-| `/synaptic-weave` | Retroactive graph-gardening: missing links (+ typed-edge proposals), near-duplicates, theme promotion |
-| `/synaptic-synthesize` | Generative pass: writes new synthesis nodes (cross-source patterns, concept evolution, orphan rescue), each MOC-registered at write time |
-| `/synaptic-maintain` | Orchestrated diagnose-then-treat sweep, approval-gated |
-| `/synaptic-upgrade` | Migrate a v0.3 / v0.4 / v0.5 brain to v1 (interactive, two-engine) |
+| `/synaptic-maintain [weave\|synthesize]` | Orchestrated diagnose-then-treat sweep, approval-gated. Named passes run alone: `weave` = retroactive graph-gardening (missing links + typed-edge proposals, near-duplicates, theme promotion); `synthesize` = generative pass (cross-source patterns, concept evolution, orphan rescue, each MOC-registered at write time) |
+| `/synaptic-handover` | Generate a new-joiner / covering-colleague handover brief from the brain |
 
-> **MOC** = Map of Content — a hub/index node that lists what is under it, one line each (used by `/synaptic-audit` and `/synaptic-synthesize`).
+**Routine:** `/synaptic-upgrade` migrates an older brain (v0.3 / v0.4 / v0.5 → v1) or re-deploys wiring
+after a skill update; `/synaptic-init` offers it when it finds an older brain. **Deprecated in 1.6:**
+`/synaptic-weave` and `/synaptic-synthesize` still work as aliases for the two `maintain` passes and
+are removed in the next minor release.
+
+> **MOC** = Map of Content — a hub/index node that lists what is under it, one line each (used by `/synaptic-audit` and the `synthesize` pass).
 
 ---
 

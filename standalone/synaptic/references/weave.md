@@ -1,15 +1,17 @@
-<!-- summary: Graph-gardening pass — propose missing typed-edge [[links]] (propose-never-write), flag under-connected nodes, detect concept gaps, suggest merges, promote recurring themes. -->
+<!-- summary: The weave pass of /synaptic-maintain (graph-gardening) — propose missing typed-edge [[links]] (propose-never-write), flag under-connected nodes, detect concept gaps, suggest merges, promote recurring themes. -->
 
-# /synaptic-weave — Graph-Gardening Operation
+# Weave pass — `/synaptic-maintain weave` (graph-gardening)
 
-A deliberate re-wiring and connection-quality pass over the brain. Run periodically or on
+A named pass of `/synaptic-maintain`: a deliberate re-wiring and connection-quality pass over the brain.
+`/synaptic-maintain` runs it as its weave leg; `/synaptic-maintain weave` runs it alone (the 1.6 alias
+`/synaptic-weave` still resolves here, until the next minor). Run periodically or on
 demand. Distinct from `/synaptic-audit` — see the table below.
 
 ---
 
-## /synaptic-audit vs /synaptic-weave
+## /synaptic-audit vs /synaptic-maintain weave
 
-| | `/synaptic-audit` | `/synaptic-weave` |
+| | `/synaptic-audit` | `/synaptic-maintain weave` |
 |---|---|---|
 | **Focus** | Correctness & health | Connection quality & completeness |
 | **Finds** | Broken `[[links]]`, orphans, stale nodes, missing frontmatter, budget violations | Missing edges, thin clusters, implied-but-unwritten concepts, near-duplicates, underused themes |
@@ -94,10 +96,8 @@ Search for nodes whose titles, descriptions, or tag sets overlap significantly:
 - If the user declines a merge, note it in the node's frontmatter as
   `weave-reviewed: "not-duplicate — differs because …"` to suppress future proposals.
 
-> **Deletion ledger (standing rule — not migration-only).** When a confirmed merge deletes/redirects a
-> node (or a Pass moves/archives one), record a one-line ledger entry (*what, why, loser→winner or
-> destination, recoverable-via-git*) — the same discipline `references/upgrade-to-v1.md` uses, applied
-> to every weave pass. Justify every delete/move/archive; **git is the archive.**
+> **Deletion ledger:** a confirmed merge, move or archive records a one-line ledger entry — the
+> standing rule in the `/synaptic-maintain` CORE-safety contract (`references/maintain.md`).
 
 ### Pass 5 — Theme promotion (journal/playground → knowledge)
 

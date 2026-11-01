@@ -88,3 +88,27 @@
   pointer self-contained (docs/ is not in the bundle). A person's name used as a codename for "a real
   run" removed from the bundle and from two `tools/check.js` comments (historical CHANGELOG entries
   left as they are). **Net bytes:** always-loaded SKILL.md −~1.1 KB; repo total slightly up.
+- **Q6-X7:** verb fold. Public menu 9 → 6 (+1 routine, +2 deprecated aliases for one minor).
+  `SKILL.md` frontmatter trigger list, bridge Commands line, Cursor shim, Operations table (weave and
+  synthesize rows **moved** into the maintain row as named passes; upgrade row **moved** to a new
+  "Routine and aliases" table with the two alias rows); init row routes older brains to the upgrade
+  routine. `maintain.md` gains an Invocation paragraph. `weave.md` / `synthesize.md` keep their
+  procedures, re-headed as passes; synthesize's general safety bullets and weave's deletion-ledger
+  paragraph **replaced by pointers** to maintain's CORE-safety contract. `command-discovery.md`: which
+  rows get stubs, alias-stub body, drift check keyed on the tables (not `references/*.md`). Every
+  in-procedure `/synaptic-weave` / `/synaptic-synthesize` reference repointed (audit routing, consolidate,
+  upgrade, MIGRATION_DONE, recipe cadence output + table, concept docs, README, tools/README,
+  verb-contract note). Sizes (LF): SKILL.md 60,748 → 61,205 (+457: the routine/alias table; Q8 moves
+  it out); synthesize 8,192 → 8,088; weave 8,416 → 8,483; maintain 8,177 → 8,698; command-discovery
+  8,997 → 9,754.
+- **Q6 review (3 lenses + refuter):** token, host and contract lenses each NO-GO (one claimed
+  blocker: no argument pass-through in the stub body). The refuter narrowed everything to five fixes,
+  all applied: a named pass uses the latest audit findings or scans only what it needs (never loads
+  audit.md); the sweep's steps 4–5 say "the synthesize/weave pass" (no self-reference); the maintain
+  summary names the passes; stub bodies gain an argument clause (`$ARGUMENTS` in Claude Code; other
+  hosts UNVERIFIED) and the bridge is generated from the Operations rows + the routine row via the
+  Reference column; init **offers** the upgrade routine (it never silently ran it). User-facing
+  alias mentions repointed: `tools/check.js` advisories (two output strings; **needs-CI**), both
+  v0.3→v1 runbooks, ROADMAP's forward-looking lines. Dropped by the refuter: the "1.6 aliases" bytes
+  in the skill description (trigger vocabulary), a hand-authored "Deprecated" menu prefix (breaks the
+  no-hand-authored-description rule), historical docs.

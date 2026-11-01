@@ -96,13 +96,13 @@ The v1 file contract (frontmatter + tags + INDEX + `[[wikilinks]]` + registries)
 1. **Embeddings over nodes and registry rows** — find the most relevant node for a query even when the exact wikilink is unknown. Candidates: Smart Connections (Obsidian plugin), SQLite-vec sidecar, an embedding layer.
 2. **Nugget / proposition index** — extract atomic facts and entities from the narrative pages, embed and index them. Enables (a) fine-grained semantic retrieval over propositions, not whole pages, and (b) **proposing** candidate `[[links]]` for the `/synaptic-weave` graph-gardening operation to review.
 
-**Honesty line:** we are **not** GraphRAG and make **no auto-discovery-of-non-intuitive-links claim**. GraphRAG / LightRAG are cited as *the direction*. Edges stay **authored**; this layer **proposes, never auto-writes** — `/synaptic-weave` and a human confirm. Multi-hop relational retrieval here runs over **authored directional edges** an embedding cannot infer.
+**Honesty line:** we are **not** GraphRAG and make **no auto-discovery-of-non-intuitive-links claim**. GraphRAG / LightRAG are cited as *the direction*. Edges stay **authored**; this layer **proposes, never auto-writes** — `/synaptic-maintain weave` and a human confirm. Multi-hop relational retrieval here runs over **authored directional edges** an embedding cannot infer.
 
 **Why:** the MOC-of-MOCs navigation is efficient when you know *where* to look; the semantic sidecar is the **designed answer to the ticket → playbook seam at scale**, when you do not. It degrades to grep/MOC and is never required at CORE.
 
 **Relationship to the wiki:** the wiki (narrative pages) stays the authored, authoritative layer. The derived index does not replace pages, and nothing in CORE reads it. Think of it as a computed view over the same content.
 
-**Dependency:** an embedding runtime; the v1 `tags` frontmatter and `description` field as the primary embedding surface. The derived index is deletable; files remain authoritative. The `/synaptic-weave` skill operation can use this layer when available, but falls back to tag/term overlap when it is not.
+**Dependency:** an embedding runtime; the v1 `tags` frontmatter and `description` field as the primary embedding surface. The derived index is deletable; files remain authoritative. The `/synaptic-maintain weave` skill operation can use this layer when available, but falls back to tag/term overlap when it is not.
 
 **Constraint:** CORE remains 0-install-capable. This entire layer is **Cortex**, never CORE. The authored pages are the substrate; the index is an optional acceleration.
 

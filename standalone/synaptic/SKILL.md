@@ -7,8 +7,8 @@ description: >
   daily work into structured, indexable, agent-usable knowledge. Two planes: wiki (what you
   know) + harness (deployable operating-rules source). Triggers: `.synaptic/` present in the
   workspace, user wants persistent project memory or an AI brain, or user invokes
-  /synaptic-init /synaptic-consolidate /synaptic-ingest /synaptic-audit /synaptic-weave
-  /synaptic-synthesize /synaptic-maintain /synaptic-handover /synaptic-upgrade.
+  /synaptic-init /synaptic-consolidate /synaptic-ingest /synaptic-audit /synaptic-maintain
+  /synaptic-handover (routine: /synaptic-upgrade; 1.6 aliases: /synaptic-weave /synaptic-synthesize).
 ---
 
 ## Bootstrap / self-install
@@ -234,7 +234,7 @@ Write the answer to `capture_policy:` in `BRAIN.md` frontmatter (default `balanc
 *into the wiki*. It does **not** change the six-step formula, and it does **not** govern the
 always-on journal breadcrumbs (those are a fixed-cost, best-effort instruction — see
 Harness Self-Wire, capture mechanism). Reassurance if they hesitate: "You can change this one word later;
-`/synaptic-weave` can also prune a `capture-all` brain back toward `selective`."
+`/synaptic-maintain weave` can also prune a `capture-all` brain back toward `selective`."
 
 **Round 2 — Main clusters:**
 > "What are the main areas, products, or systems this brain will cover?"
@@ -391,7 +391,7 @@ This project has a Synaptic brain at `.synaptic/`. Before working: read `.synapt
 and follow its capture contract (route durable knowledge, lessons, playbooks, and task
 workspaces as specified; files are authoritative over any agent-native memory).
 Operating rules (conventions, guardrails) are in the SYNAPTIC-RULES section below.
-Commands (synaptic skill): /synaptic-init /synaptic-consolidate /synaptic-ingest /synaptic-audit /synaptic-weave /synaptic-synthesize /synaptic-handover /synaptic-maintain /synaptic-upgrade
+Commands (synaptic skill): /synaptic-init /synaptic-consolidate /synaptic-ingest /synaptic-audit /synaptic-maintain /synaptic-handover · routine: /synaptic-upgrade
 <!-- END:SYNAPTIC -->
 ```
 
@@ -773,7 +773,7 @@ If `.cursor/` exists in the project root, write `.cursor/rules/synaptic.mdc`:
 
 ```
 This project has a Synaptic brain. See AGENTS.md (BEGIN:SYNAPTIC block) for instructions.
-Read `.synaptic/BRAIN.md` at session start. Commands: /synaptic-init /synaptic-consolidate /synaptic-ingest /synaptic-audit /synaptic-weave /synaptic-synthesize /synaptic-handover /synaptic-maintain /synaptic-upgrade
+Read `.synaptic/BRAIN.md` at session start. Commands: /synaptic-init /synaptic-consolidate /synaptic-ingest /synaptic-audit /synaptic-maintain /synaptic-handover (routine: /synaptic-upgrade)
 ```
 
 ### f. Cross-agent sync
@@ -794,14 +794,20 @@ guardrails) change only when the user approves the exact change; `harness/setup/
 
 | Command | What it does | Reference |
 |---|---|---|
-| `/synaptic-init` | No brain → topology (reach) intake + interview + generate (from `templates/`) + wire (project OR user-global) + deploy operating rules + deploy capture hooks + generate discovery stubs, then **OFFER the optional Day-1 guided first-value walkthrough** on the fresh empty brain. Brain present but unwired → run host-setup detection, wire + deploy. Brain present + wired → extend (add cluster / registries / ingest). Always runs host-setup detection first. | This file · `references/day-one.md` (Day-1 flow — optional, fresh brain only) |
+| `/synaptic-init` | No brain → topology (reach) intake + interview + generate (from `templates/`) + wire (project OR user-global) + deploy operating rules + deploy capture hooks + generate discovery stubs, then **OFFER the optional Day-1 guided first-value walkthrough** on the fresh empty brain. Brain present but unwired → run host-setup detection, wire + deploy. Brain present + wired → extend (add cluster / registries / ingest). Brain from an older schema (< 1.0) → **offers** the upgrade routine (below); an older engine's wiring → the shared host-setup detection + stub-drift step re-deploys it. Always runs host-setup detection first. | This file · `references/day-one.md` (Day-1 flow — optional, fresh brain only) |
 | `/synaptic-consolidate` | Run the six-step capture contract on session output (journal + playground artifacts); the manual fallback when no capture hooks are wired | `references/consolidate.md` |
 | `/synaptic-ingest [file]` | Distill a document into an atomic node + reference entry | `references/ingest.md` |
 | `/synaptic-audit` | DIAGNOSE: staleness, orphans, broken `[[wikilinks]]`, MOC coverage, cross-link coverage, **god-nodes (over-connected hubs, degree ≥ 15 or ≥ 3× median) + surprising edges (cross-cluster links)**, half-done/unconsolidated + pending-breadcrumb check, **capture-yield + used-but-capture-dead advisory**, **status/lifecycle typo advisory**, registry integrity, oversized untyped nodes, tag hygiene. Reads ALL statuses and ALL lifecycles. | `references/audit.md` |
-| `/synaptic-weave` | Graph-gardening pass: propose missing `[[links]]` (typed-edge proposals, propose-never-write), flag under-connected nodes, detect concept gaps, suggest merges, promote recurring themes | `references/weave.md` |
-| `/synaptic-synthesize` | Generative pass over the curated brain: write synthesis nodes (cross-source patterns, concept evolution, orphan rescue), each with `[[wikilinks]]` + MOC registration at write time; propose/confirm for merges. Does not replace consolidate. | `references/synthesize.md` |
-| `/synaptic-maintain` | Portable maintenance procedure: reconcile flagged `contradicts`/`supersedes` + synthesize + orphan/cross-link repair via diagnose-then-treat, approval-gated; bounded-reversible, diff-traced, archive-before-delete | `references/maintain.md` |
+| `/synaptic-maintain [weave\|synthesize]` | The diagnose-then-treat sweep: audit, then consolidate, reconcile flagged `contradicts`/`supersedes`, **synthesize** and **weave**, approval-gated; bounded-reversible, diff-traced, archive-before-delete. A named pass runs alone: **`weave`** = graph-gardening (missing links + typed-edge proposals, under-connected nodes, concept gaps, near-duplicate merges, theme promotion; propose-never-write); **`synthesize`** = generative (cross-source patterns, concept evolution, orphan rescue; new nodes MOC-registered at write time). | `references/maintain.md` · passes: `references/weave.md`, `references/synthesize.md` |
 | `/synaptic-handover` | Generate a new-joiner / covering-colleague day-1 **handover brief** FROM the brain (extractive, reproducible-from-files, leak-safe): project summary · owns · key decisions · where-to-look · open threads. Reads ALL statuses and ALL lifecycles (a binding `dormant`+`active` decision still appears). | `references/handover.md` |
-| `/synaptic-upgrade` | Migrate v0.3 / v0.4 / v0.5 brain to v1 (schema/format change); ALWAYS runs host-setup detection first (re-deploys the correct project- or user-level wiring, incl. a global brain's user-level re-assert on the light already-`1.0` path) + stub-drift check; redeploys operating rules + capture hooks | `references/upgrade-to-v1.md` |
+
+**Routine and aliases (not on the main menu).** These stay invocable by name; the bridge and stubs
+list them separately.
+
+| Name | What it is | Reference |
+|---|---|---|
+| `/synaptic-upgrade` | **Routine.** Migrate an older brain (v0.3 / v0.4 / v0.5 → v1; schema/format change), or re-deploy wiring after a skill update on the light already-`1.0` path. Always runs host-setup detection + stub-drift check; redeploys operating rules + capture hooks. `/synaptic-init` offers it when it finds an older brain; the upgrade runbooks call it by name. | `references/upgrade-to-v1.md` |
+| `/synaptic-weave` | **Deprecated alias (1.6)** for `/synaptic-maintain weave`. Removed in the next minor release. | `references/weave.md` |
+| `/synaptic-synthesize` | **Deprecated alias (1.6)** for `/synaptic-maintain synthesize`. Removed in the next minor release. | `references/synthesize.md` |
 
 **Tools awareness:** if a runtime is available, prefer `tools/` scripts (check/migrate/export/vault-open) for the mechanical steps. If no runtime, perform the operation manually as described in the reference files.

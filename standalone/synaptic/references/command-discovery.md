@@ -21,8 +21,9 @@ exist and can **invoke them by name** — even a chat-only host with no slash-me
   Layer-2 stubs). Each command's one-liner = the `summary:` / first line of its `references/<cmd>.md`.
   This preserves single-source (hub-and-spoke): the description lives in **one** place; the floor and
   the stubs both derive from it.
-- **How to generate:** for each command in the Operations table (`SKILL.md`), read its
-  `references/<cmd>.md` `summary:` line and emit `  /synaptic-<cmd> — <summary>` into the bridge block.
+- **How to generate:** for each row of the Operations table (`SKILL.md`), then the routine row of
+  its "Routine and aliases" table (never the alias rows), read the `summary:` line of the file in the
+  row's Reference column and emit `  /synaptic-<cmd> — <summary>` into the bridge block.
   **Deterministic fallback:** when a `references/<cmd>.md` has **no** `<!-- summary: … -->` line, use
   the **H1 title tail** — the text after the `# /synaptic-<cmd> — ` prefix on the file's first heading
   — as the description. Never hand-author or invent a description; the `summary:` line is preferred and
@@ -64,7 +65,18 @@ stale and gets regenerated or pruned.
   user who does not want them shared gitignores both. One stub per command, with frontmatter
   `description:` so the command surfaces in the `/` menu with its one-liner. Body (every host's stub):
   *"Run the synaptic skill's `<cmd>`: load the skill's `SKILL.md` first (its Operations preamble
-  applies to every command), then follow `references/<cmd>.md`."*
+  applies to every command), then follow `references/<cmd>.md`."* A command that takes an argument
+  (`maintain [weave|synthesize]`, `ingest [file]`) ends its body with *"Argument: `<host token>`
+  (empty → the default)"*, using the host's own token (`$ARGUMENTS` in Claude Code; the
+  host's equivalent elsewhere, UNVERIFIED per host). Where the host substitutes nothing, the text typed
+  after the command name is the argument.
+- **Which commands get a stub (v1.6).** Every row of `SKILL.md`'s Operations table (the six public
+  verbs) **and** of its "Routine and aliases" table (`/synaptic-upgrade`, plus the deprecated 1.6
+  aliases `/synaptic-weave` and `/synaptic-synthesize`). An **alias stub** says what it maps to:
+  *"Deprecated alias (1.6, removed in the next minor): run `/synaptic-maintain weave` — load the
+  skill's `SKILL.md`, then follow `references/weave.md` under the `references/maintain.md` CORE-safety
+  contract."* When the alias rows leave the table, the drift check below prunes their stubs. The
+  Layer-1 bridge line lists the six verbs plus the routine, never the aliases.
 - **VS Code Copilot** → `*.prompt.md` files (the Copilot prompt-file mechanism), one per command.
 - **Cursor** → its prompt-file mechanism (native equivalent).
 - **MCP-capable hosts** → MCP "prompts" can **also** surface the commands (complementary, not
@@ -90,7 +102,8 @@ command dirs (`<project>/.claude/commands/` or `~/.claude/commands/`, the Copilo
 When `/synaptic-upgrade` runs host-setup detection, it MUST perform a **stub-drift check**:
 
 1. Compare the **recorded stub set + generating version** (from `harness/setup/<host>.md` / the stub
-   provenance lines) against the **current SOT command list** (the `references/*.md` command set).
+   provenance lines) against the **current SOT command list**: the rows of `SKILL.md`'s Operations
+   and "Routine and aliases" tables (not every `references/*.md` file is a command).
 2. **Report** added / removed / renamed commands (SOT gained a command → stub missing; SOT dropped or
    renamed one → stub stale).
 3. **REGENERATE** stubs for added/changed commands and **PRUNE** stale stubs — stubs for commands **no

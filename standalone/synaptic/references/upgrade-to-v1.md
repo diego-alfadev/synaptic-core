@@ -155,7 +155,7 @@
   NON-GIT brain only: delete the v1 brain and **rename** `*-v0.3-backup` back.
 - **Optional deep clean (on request only).** After the strict migration, a diagnose-then-treat sweep =
   `/synaptic-maintain` (`references/maintain.md`): pre-check → `/synaptic-audit` → consolidate /
-  reconcile / `/synaptic-synthesize` / `/synaptic-weave` → post-check, approval-gated, with a
+  reconcile / `/synaptic-maintain synthesize` / `/synaptic-maintain weave` → post-check, approval-gated, with a
   before/after diff against the backup.
 - **Mode: guided (DEFAULT) vs interactive vs autonomous.** Run **guided** by default =
   supervised-but-quiet: hide the internals, drive the migration, and ask the owner ONLY on genuine
@@ -348,7 +348,7 @@ This project has a Synaptic brain at `.synaptic/`. Before working: read `.synapt
 and follow its capture contract (route durable knowledge, lessons, playbooks, and task
 workspaces as specified; files are authoritative over any agent-native memory).
 Operating rules (conventions, guardrails) are in the SYNAPTIC-RULES section below.
-Commands (synaptic skill): /synaptic-init /synaptic-consolidate /synaptic-ingest /synaptic-audit /synaptic-weave /synaptic-synthesize /synaptic-handover /synaptic-maintain /synaptic-upgrade
+Commands (synaptic skill): /synaptic-init /synaptic-consolidate /synaptic-ingest /synaptic-audit /synaptic-maintain /synaptic-handover · routine: /synaptic-upgrade
 <!-- END:SYNAPTIC -->
 ```
 
@@ -367,7 +367,7 @@ If `.cursor/` exists at the project root, write `.cursor/rules/synaptic.mdc`:
 
 ```
 This project has a Synaptic brain. See AGENTS.md (BEGIN:SYNAPTIC block) for instructions.
-Read `.synaptic/BRAIN.md` at session start. Commands: /synaptic-init /synaptic-consolidate /synaptic-ingest /synaptic-audit /synaptic-weave /synaptic-synthesize /synaptic-handover /synaptic-maintain /synaptic-upgrade
+Read `.synaptic/BRAIN.md` at session start. Commands: /synaptic-init /synaptic-consolidate /synaptic-ingest /synaptic-audit /synaptic-maintain /synaptic-handover (routine: /synaptic-upgrade)
 ```
 
 ### M6 — BRAIN.md frontmatter update
@@ -628,7 +628,7 @@ Question-selection recipe (deterministic — pick the same way every run):
 - [ ] 1 **cross-cluster synthesis** question attempted (answer needs two nodes in different top-level
       clusters).
 - [ ] **Pass bar:** all 5 fact-lookups answered via MOC navigation with **0 grep-fallbacks**. The
-      synthesis question MAY miss — a miss is a `/synaptic-weave` content gap (per the v1.0 benchmark
+      synthesis question MAY miss — a miss is a `/synaptic-maintain weave` content gap (per the v1.0 benchmark
       caveat), not a navigation failure. A fact-lookup that needs grep is a navigation failure — fix
       the MOC/links and re-run.
 

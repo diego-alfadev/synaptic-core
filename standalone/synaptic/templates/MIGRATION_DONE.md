@@ -118,7 +118,7 @@ fallback is allowed** — a question that needs grep to answer is a navigation f
 **Pass bar (binary):**
 
 - [ ] **All 5 fact-lookups (Q1–Q5) answered via MOC navigation, with 0 grep-fallbacks required.**
-- [ ] The synthesis question (Q6) MAY miss — a miss is a `/synaptic-weave` content gap, not a
+- [ ] The synthesis question (Q6) MAY miss — a miss is a `/synaptic-maintain weave` content gap, not a
       navigation failure (per the v1.0 benchmark caveat). If it missed, it is noted as a weave to-do.
 
 **Phase V DONE only when V.1 is all-checked AND the V.2 pass bar is met.**

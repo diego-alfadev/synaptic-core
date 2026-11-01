@@ -245,6 +245,19 @@ Do the steps in this order.
   `description:`. Consolidate Step 4, day-one and both MOC templates say so. `/synaptic-audit` Step 4
   flags empty or over-long lines (advisory), with optional grep one-liners. Existing MOCs need no
   change unless the audit flags them.
+- **Six public commands: weave and synthesize are now passes of maintain.** The menu is `/synaptic-init`,
+  `/synaptic-consolidate`, `/synaptic-ingest`, `/synaptic-audit`, `/synaptic-maintain` and
+  `/synaptic-handover`. `/synaptic-maintain weave` and `/synaptic-maintain synthesize` run one pass
+  alone. Both passes keep their procedures, now headed as passes and under maintain's CORE-safety
+  contract, which they no longer restate. **`/synaptic-upgrade` becomes a routine.** It leaves the main
+  menu but stays invocable by name. `/synaptic-init` offers it when it finds an older brain, and the
+  upgrade runbooks call it.
+
+  **Not breaking in 1.6:** `/synaptic-weave` and `/synaptic-synthesize` still work as deprecated
+  aliases, and their stubs are regenerated as alias stubs. Both are **removed in the next minor
+  release**, when the stub-drift check prunes their stubs. The bridge's command line, the Cursor shim,
+  the skill description and the README list the six commands plus the routine. Re-run
+  `/synaptic-upgrade` (or `/synaptic-init`) to redeploy them.
 
 #### Removed (simplification round)
 - **Project skills (`harness/skills/`) are no longer part of CORE.** Deploy used to copy a brain's

@@ -18,11 +18,11 @@ The vocabulary is **frozen at seven edges** — small enough to stay consistent,
 | `causes` | `caused_by` | A produces / triggers B |
 | `part_of` | `has_part` | real composition (system → subsystem → component) |
 
-Why frozen? A small closed vocabulary stays consistent across every agent and every session — anyone (or any agent) reading the brain knows exactly what the seven edges mean, and `/synaptic-weave` can propose them reliably. An open-ended set of relationship types would drift into synonyms (`needs`, `requires`, `uses`, `depends`) that mean the same thing inconsistently, and the graph would stop being machine-reasonable.
+Why frozen? A small closed vocabulary stays consistent across every agent and every session — anyone (or any agent) reading the brain knows exactly what the seven edges mean, and `/synaptic-maintain weave` can propose them reliably. An open-ended set of relationship types would drift into synonyms (`needs`, `requires`, `uses`, `depends`) that mean the same thing inconsistently, and the graph would stop being machine-reasonable.
 
 ## Three rules that keep it honest and portable
 
-- **Authored, not inferred.** Edges are written at capture time (or *proposed* by `/synaptic-weave` and confirmed). The brain makes **no auto-discovery-of-links claim** — we cite [GraphRAG](https://github.com/microsoft/graphrag) only as **the direction** (multi-hop relational retrieval), not as something we run.
+- **Authored, not inferred.** Edges are written at capture time (or *proposed* by `/synaptic-maintain weave` and confirmed). The brain makes **no auto-discovery-of-links claim** — we cite [GraphRAG](https://github.com/microsoft/graphrag) only as **the direction** (multi-hop relational retrieval), not as something we run.
 - **One direction only.** You write `depends_on`; the inverse `required_by` is computed by `grep`, never stored. No index to keep in sync — there is no second copy of the relationship that can rot or disagree with the first.
 - **The frontmatter wikilink *is* the edge.** No separate edges file, no derived graph DB — typed edges are parser-safe block-list `[[wikilinks]]` in a node's frontmatter. Adding them is **backward-compatible** and never bumps the brain `schema_version`.
 
@@ -30,7 +30,7 @@ Why frozen? A small closed vocabulary stays consistent across every agent and ev
 
 This matters enough to state plainly: synaptic-core is **not** GraphRAG and makes **no auto-discovery-of-non-intuitive-links claim**. GraphRAG (and LightRAG) are cited only as **the direction** — multi-hop relational retrieval over a typed graph is the destination the field is heading toward, and the typed-edge model is built so a brain can evolve toward it.
 
-But the edges here are **authored**, not inferred by an embedding pipeline. When a semantic layer arrives (a horizon Cortex item), it **proposes** candidate links for `/synaptic-weave` and a human to confirm — it never auto-writes edges. The multi-hop retrieval that runs over this graph runs over **authored directional edges an embedding cannot infer**: a human (or an agent at capture time) decided that A `depends_on` B, and that decision is the authoritative fact.
+But the edges here are **authored**, not inferred by an embedding pipeline. When a semantic layer arrives (a horizon Cortex item), it **proposes** candidate links for `/synaptic-maintain weave` and a human to confirm — it never auto-writes edges. The multi-hop retrieval that runs over this graph runs over **authored directional edges an embedding cannot infer**: a human (or an agent at capture time) decided that A `depends_on` B, and that decision is the authoritative fact.
 
 This keeps the honesty line clean: we get the *relational* payoff (typed, navigable, reasoning-friendly edges) without overclaiming the *automatic-discovery* magic we do not perform.
 

@@ -244,7 +244,7 @@ if [ "$pending_crumbs" -gt 0 ] || [ "$open_playgrounds" -gt 0 ]; then
   echo "=== Synaptic: consolidation reminder ==="
   echo "${pending_crumbs} pending breadcrumb(s) and ${open_playgrounds} open playground(s) are not yet consolidated."
   echo "Run /synaptic-consolidate to distil durable conclusions before context is lost."
-  echo "Cadence: consolidate at flush/exit · /synaptic-audit weekly · /synaptic-weave monthly"
+  echo "Cadence: consolidate at flush/exit · /synaptic-audit weekly · /synaptic-maintain weave monthly"
   echo "========================================"
 fi
 ```
@@ -267,7 +267,7 @@ if ($crumbs -gt 0 -or $open -gt 0) {
     Write-Output "=== Synaptic: consolidation reminder ==="
     Write-Output "$crumbs pending breadcrumb(s) and $open open playground(s) are not yet consolidated."
     Write-Output "Run /synaptic-consolidate to distil durable conclusions before context is lost."
-    Write-Output "Cadence: consolidate at flush/exit | /synaptic-audit weekly | /synaptic-weave monthly"
+    Write-Output "Cadence: consolidate at flush/exit | /synaptic-audit weekly | /synaptic-maintain weave monthly"
     Write-Output "========================================"
 }
 ```
@@ -393,7 +393,7 @@ The cadence to remember:
 |---|---|---|
 | Mid-/end of session | `/synaptic-consolidate` | Apply the capture contract; scan journal **and playgrounds**; close playgrounds; update the brain |
 | Weekly | `/synaptic-audit` | Diagnose orphans, broken links, stale nodes, MOC gaps, **half-done / unconsolidated** debt, pending breadcrumbs |
-| Monthly | `/synaptic-weave` | Retroactive graph-gardening: missing links, near-duplicates, theme promotion |
+| Monthly | `/synaptic-maintain weave` | Retroactive graph-gardening: missing links, near-duplicates, theme promotion |
 
 Without hooks you lose the *automatic* breadcrumb layer, the **activity-marker floor**, and the rescue
 sweep — so consolidate more deliberately, especially before long sessions that may hit compaction. With

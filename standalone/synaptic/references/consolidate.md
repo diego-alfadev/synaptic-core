@@ -22,7 +22,7 @@ deployed copy exists); the steps below name the action, and that table sets its 
 > **Capture policy.** Read `capture_policy:` from `BRAIN.md` frontmatter (`selective` | `balanced` | `capture-all`; default `balanced`, or a custom 1-line rule). It is the **PROMOTION axis** — how aggressively things reach the wiki — and is **orthogonal to the passivity dial** (when capture triggers). It tunes the *threshold* of Step 2 (promotion) and Step 6 (quality gate) — not the steps themselves:
 > - `selective` → promote crown-jewels only (reusable decision/lesson, or pattern seen 3+ times); strict gate, small wiki.
 > - `balanced` → promote at 2+ instances or clearly-reusable knowledge; standard gate.
-> - `capture-all` → promote durable-ish notes on first sight; lenient gate; prune later via `/synaptic-weave`.
+> - `capture-all` → promote durable-ish notes on first sight; lenient gate; prune later via `/synaptic-maintain weave`.
 >
 > Capture policy does **NOT** govern journal breadcrumbs — the per-turn `Stop` breadcrumb is a
 > fixed-cost, best-effort safety net that always applies, regardless of this dial.
@@ -178,7 +178,7 @@ For each item being consolidated, ask: **does this contradict an existing node?*
      node's `## bias-check` section** (the other side / contradicting evidence). This is epistemic
      honesty on the page, not agent hedging.
 5. **If unsure which is correct:** do **not** guess. Flag it for the user / leave it for
-   `/synaptic-weave` or `/synaptic-maintain` to surface as a proposal. Reconciliation that needs a
+   `/synaptic-maintain weave` or `/synaptic-maintain` to surface as a proposal. Reconciliation that needs a
    human judgment is proposed, never auto-applied.
 
 > **CORE-safety:** every rewrite here is **diff-traced in the consolidation log**, recoverable via
@@ -203,7 +203,7 @@ Before marking consolidation complete, every new or updated node must pass:
 - [ ] `[[wikilinks]]` resolve to real files; no broken links introduced.
 - [ ] Professional & verifiable only: no opinions, rumors, blame, PII, credentials, or application data.
 - [ ] `updated:` stamped with today's date.
-- [ ] **Capture-policy strictness:** `selective` prunes hard (split/merge aggressively, keep the wiki small); `capture-all` keeps more and defers pruning to `/synaptic-weave`; `balanced` applies the budgets as written.
+- [ ] **Capture-policy strictness:** `selective` prunes hard (split/merge aggressively, keep the wiki small); `capture-all` keeps more and defers pruning to `/synaptic-maintain weave`; `balanced` applies the budgets as written.
 
 If any check fails, fix before proceeding. Do not skip this gate.
 

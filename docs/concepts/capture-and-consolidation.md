@@ -61,8 +61,8 @@ Not "zero overhead" — a deliberate trade of a little write-time cost for large
 |---|---|
 | **Each session** | `/synaptic-consolidate` (or let the event-driven hook offer it) — apply the 6-step capture contract to what was produced |
 | **Weekly** | `/synaptic-audit` — **diagnose** staleness, orphans, broken links, MOC gaps, cross-link (horizontal) coverage, and half-done / unconsolidated work + pending breadcrumbs (audit diagnoses; weave/consolidate/synthesize treat) |
-| **Periodically** (after a stretch of consolidation) | `/synaptic-synthesize` — generative pass that writes new synthesis nodes over the curated brain (cross-source patterns, concept evolution, orphan rescue), MOC-validated at write time |
-| **Monthly** | `/synaptic-weave` — retroactive graph-gardening: missing links (+ typed-edge proposals), near-duplicates, theme promotion |
+| **Periodically** (after a stretch of consolidation) | `/synaptic-maintain synthesize` — generative pass that writes new synthesis nodes over the curated brain (cross-source patterns, concept evolution, orphan rescue), MOC-validated at write time |
+| **Monthly** | `/synaptic-maintain weave` — retroactive graph-gardening: missing links (+ typed-edge proposals), near-duplicates, theme promotion |
 | **Monthly, or when audit reports debt** | `/synaptic-maintain` — the orchestrated diagnose-then-treat sweep that runs all of the above in order, approval-gated (CORE procedure; an unattended schedule would be optional Cortex) |
 
 Without some cadence the brain drifts. With it, quality compounds.
@@ -73,7 +73,7 @@ Without some cadence the brain drifts. With it, quality compounds.
 
 **Related:**
 - [Navigation and planes](./navigation-and-planes.md) — where step 4 ("place & link") puts a node and how it stays reachable
-- [Typed edges](./typed-edges.md) — the relationships `/synaptic-weave` proposes during graph-gardening
+- [Typed edges](./typed-edges.md) — the relationships `/synaptic-maintain weave` proposes during graph-gardening
 - [Epistemic honesty](./epistemic-honesty.md) — the source/confidence metadata stamped at the quality gate
 - [Architecture (Matrioshka)](./architecture-matrioshka.md) — why hooks are CORE, not a shipped runtime
 - [RAG vs wiki vs brain](./rag-vs-wiki-vs-brain.md) — the write-time-curation bet this formula implements

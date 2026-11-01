@@ -4,6 +4,8 @@
 
 Synaptic exposes a small, deliberately non-overlapping set of verbs. This note lines them up against Cognee's — the strongest engine-class reference point in this space — to keep our contract crisp and to record *why* we are not adding a `memify` verb yet.
 
+> **Since v1.6** `weave` and `synthesize` are named passes of `maintain` (`/synaptic-maintain weave`, `/synaptic-maintain synthesize`), not separate commands. Their contracts below are unchanged; only how you invoke them moved.
+
 ## The two verb sets
 
 | Ours (authored) | Cognee's | Overlap |

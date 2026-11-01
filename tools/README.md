@@ -237,7 +237,7 @@ disagree on the graph.
 The force simulation (charge/repulsion + link spring + centering) is driven by a **seeded PRNG**
 (`mulberry32`, seeded from node count) — **never `Math.random`, never time-based**. Two runs on
 the same brain converge to the same layout, so comparing a brain before and after
-`/synaptic-weave` or `/synaptic-audit` is meaningful.
+`/synaptic-maintain weave` or `/synaptic-audit` is meaningful.
 
 **Robustness:**
 

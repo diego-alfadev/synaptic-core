@@ -937,7 +937,7 @@ function printRetrievalReadiness() {
 
     if (godNodes.length || crossClusterEdges.length) {
       console.log('');
-      console.log('  Graph-health (advisory — WARN only; run /synaptic-weave to confirm/split; ' +
+      console.log('  Graph-health (advisory — WARN only; run /synaptic-maintain weave to confirm/split; ' +
         'does NOT fail the check):');
       console.log(`  God-nodes        : ${godNodes.length} ` +
         `(degree >= ${godThreshold} = min(15, 3x median ${median}))`);
@@ -967,7 +967,7 @@ function printRetrievalReadiness() {
     console.log('  0 errors, but this brain shows low connectivity ' +
       `(orphan ratio ${orphanPctStr} > 20% OR edges/node ${epnStr} < 0.5).`);
     console.log('  A brain can pass every structural check and still be hard to retrieve from.');
-    console.log('  Run /synaptic-weave to author missing edges, and do a retrieval drill ' +
+    console.log('  Run /synaptic-maintain weave to author missing edges, and do a retrieval drill ' +
       '(BRAIN -> INDEX -> cluster _index -> node). This is advisory; it does NOT fail the check.');
   }
 }

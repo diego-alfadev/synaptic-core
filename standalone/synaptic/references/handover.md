@@ -7,7 +7,7 @@ or a colleague covering for someone on leave — can be productive **without the
 This is the concrete, testable form of the knowledge-tax thesis (onboarding, handovers, context
 reconstruction, less tribal-knowledge dependency).
 
-> **This is a NEW top-level verb — not a mode of `/synaptic-synthesize`.** It is clearer to a
+> **This is a top-level verb — not a pass of `/synaptic-maintain` (such as its `synthesize` pass).** It is clearer to a
 > non-technical user and it is purely additive: optional, files-only, no schema bump.
 
 ## Contract (what makes this trustworthy)

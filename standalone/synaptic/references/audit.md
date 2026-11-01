@@ -14,9 +14,9 @@ Cortex utility; CORE never depends on it — every check here is grep-able by ha
 
 > **Audit DIAGNOSES; it does not TREAT.** This procedure only *finds and reports* problems. The
 > fixes live in other procedures:
-> - broken links / orphans / missing edges / near-duplicates → **`/synaptic-weave`**
+> - broken links / orphans / missing edges / near-duplicates → **`/synaptic-maintain weave`**
 > - unconsolidated playgrounds, pending breadcrumbs, half-done work → **`/synaptic-consolidate`**
-> - cross-source synthesis, orphan rescue, concept evolution → **`/synaptic-synthesize`**
+> - cross-source synthesis, orphan rescue, concept evolution → **`/synaptic-maintain synthesize`**
 > - the orchestrated diagnose-then-treat sweep → **`/synaptic-maintain`**
 >
 > **`/synaptic-audit` + `SessionStart`-rescue = the abandonment safety sweep:** on next boot, the
@@ -175,7 +175,7 @@ Scaffolding-exclusion note above) — flag **plausible-but-missing** horizontal 
 - Two nodes that **share 2+ tags or are co-cited from a third node** but do not link to each other →
   flag as a missing cross-link candidate.
 
-> **Diagnose only.** Do not add the links here — surface them and route to **`/synaptic-weave`**
+> **Diagnose only.** Do not add the links here — surface them and route to **`/synaptic-maintain weave`**
 > (Pass 1), which proposes the link **and a typed edge type** for confirmation. Cite GraphRAG only
 > as *the direction* (multi-hop relational retrieval); make **no auto-discovery claim** — edges are
 > authored, never inferred (C5).
@@ -213,7 +213,7 @@ orphans — the "3× median" rule collapses to 0 and would flag every connected 
 apply the absolute **≥ 15** bar only. The 3× rule is meant to *tighten* the bar on a well-connected
 brain, never to flood a sparse one.)
 
-> **Diagnose only.** Route the split option to **`/synaptic-weave`** (near-duplicate / split
+> **Diagnose only.** Route the split option to **`/synaptic-maintain weave`** (near-duplicate / split
 > proposals) or the owner. Remediation prompt: *"candidate to split into atomic sub-nodes, or a
 > legitimate hub — confirm."* A god-node is not an error — a genuinely central concept legitimately
 > has many edges; the owner confirms split-vs-keep.
@@ -240,7 +240,7 @@ For each cross-cluster edge, list the **endpoint pair + the edge type** (the typ
 `wikilink` for an untyped body link), e.g. `knowledge/auth/jwt-decode.md —[depends_on]→
 knowledge/infra/key-vault.md`. Advisory — **WARN, never ERROR**.
 
-> **Diagnose only.** Route confirmation to **`/synaptic-weave`** (which proposes / confirms edge
+> **Diagnose only.** Route confirmation to **`/synaptic-maintain weave`** (which proposes / confirms edge
 > types). Make **no auto-discovery claim** — Synaptic does **not** infer edges; every edge here was
 > **authored** by hand or by a prior weave, never discovered from embeddings (C5), consistent with
 > Step 4b. This check only *surfaces* edges that already exist for the owner to confirm or correct.
@@ -481,11 +481,11 @@ Brain audit — N findings (showing top N):  [audit DIAGNOSES; weave/consolidate
 
 ## Orphan nodes (not in any _index.md)
 2. knowledge/infra/old-deploy-notes.md — not registered in any sub-MOC
-   → [/synaptic-weave] Register, move, or delete?
+   → [/synaptic-maintain weave] Register, move, or delete?
 
 ## Broken [[wikilinks]]
 3. knowledge/api-integration/retry-policy.md [[rate-limiter]] — target not found
-   → [/synaptic-weave] Create rate-limiter.md, rename, or remove link?
+   → [/synaptic-maintain weave] Create rate-limiter.md, rename, or remove link?
 
 ## MOC coverage gaps (vertical)
 4. knowledge/auth/ cluster — _index.md missing
@@ -493,15 +493,15 @@ Brain audit — N findings (showing top N):  [audit DIAGNOSES; weave/consolidate
 
 ## Cross-link coverage gaps (horizontal)
 5. knowledge/ci-cd/deploy-playbook.md (type: playbook) — no link to any system it applies to
-   → [/synaptic-weave Pass 1] Propose [[deploy-service]] + applies_to edge?
+   → [/synaptic-maintain weave Pass 1] Propose [[deploy-service]] + applies_to edge?
 
 ## God-nodes (over-connected)
 6. knowledge/architecture/platform-overview.md — degree 18 (≥ 15, and ≥ 3× median 4) [WARN]
-   → [/synaptic-weave] Candidate to split into atomic sub-nodes, or a legitimate hub — confirm.
+   → [/synaptic-maintain weave] Candidate to split into atomic sub-nodes, or a legitimate hub — confirm.
 
 ## Surprising edges (cross-cluster)
 7. knowledge/auth/jwt-decode.md —[depends_on]→ knowledge/infra/key-vault.md (auth ↔ infra) [WARN]
-   → [/synaptic-weave] Confirm the interdisciplinary link (keep + ensure typed) or fix a mis-file.
+   → [/synaptic-maintain weave] Confirm the interdisciplinary link (keep + ensure typed) or fix a mis-file.
       (No auto-discovery — this edge was authored, not inferred.)
 
 ## Registry integrity

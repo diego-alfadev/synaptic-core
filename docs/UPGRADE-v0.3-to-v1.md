@@ -96,7 +96,7 @@ already present. Per-repo wiring is only a fallback for hosts that can't do user
 
 Beyond the strict schema migration, you can ask for a deep clean-up. It's a **diagnose-then-treat**
 pass (what `/synaptic-maintain` orchestrates): a health check first, then `/synaptic-audit` to find
-issues, then consolidate / reconcile / `/synaptic-synthesize` / `/synaptic-weave` to fix them
+issues, then consolidate / reconcile / `/synaptic-maintain synthesize` / `/synaptic-maintain weave` to fix them
 (everything proposed before it's written), then a re-check — with a before/after diff against your
 backup. Entirely optional and approval-gated.
 
