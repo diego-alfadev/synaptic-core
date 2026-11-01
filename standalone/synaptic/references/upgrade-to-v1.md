@@ -98,7 +98,7 @@
   knowledge deletion is human-only. Mostly this migration is *refactor + construction*, not deletion.
 - **Content-conservation gate REPLACES the node-count gate.** "v1 count ≥ v0.3 count" cannot prove
   no-loss (dedupe lowers it, splits raise it). Instead: before Phase C, snapshot every node as
-  `(path, title, sha256(body-minus-frontmatter))`; afterwards each must be **present, logged-merged
+  `(path, title, body fingerprint)` (`references/fingerprint.md`); afterwards each must be **present, logged-merged
   (loser→winner), or logged-split**. Any node neither present nor logged = SILENT DROP = STOP. Keep the
   count only as a smoke check, defined identically on both sides.
 - **Re-file, don't rewrite.** `description:` is EXTRACTIVE (condense the node's own first sentence —

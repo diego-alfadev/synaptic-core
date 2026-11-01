@@ -159,7 +159,7 @@ repo, plus the history warning above.
   re-wire** (file-count + size parity logged). *(Both sub-cases.)*
 - **AC2.2 [relocate (b) only]** After the **copy** (copy, not move — rollback depends on the source
   still existing until step 8), the destination `.synaptic/` contains **every** file the original had
-  (path + `sha256(body)` parity for all `knowledge/**`, `registries/**`, `references/**`, `journal/**`,
+  (path + whole-file fingerprint parity, `references/fingerprint.md`, for all `knowledge/**`, `registries/**`, `references/**`, `journal/**`,
   `harness/**`). *(In re-wire (a): the check reduces to confirming the brain folder is byte-identical
   to its backup — no relocation occurred.)*
 - **AC2.2a On-disk hydration.** For **every** file asserted above (and, in sub-case (a), every file of

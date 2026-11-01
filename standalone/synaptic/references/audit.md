@@ -316,23 +316,20 @@ playground artifacts) but never reached the knowledge store. **Diagnose only —
 
 - A `## bias-check` or note that records an **unresolved** `contradicts` pair never reconciled.
 - TODO/`{{placeholder}}` markers, or an off-vocabulary `status:` (Step 1b), left in otherwise-promoted nodes.
-- A `references/raw/` artifact whose distilled node carries a `content_hash` that **no longer matches**
-  the raw file (the artifact drifted; re-distillation is pending — see consolidate.md Step 4).
-  Recompute with the hash command in consolidate.md Step 4 (anchored with `-C "<brain>"`) — never
-  compute a hash yourself; with no shell or no git, every hash is unverifiable. **Unverifiable, not
-  drifted:** a `TBD` hash, or a legacy `sha256:` value (written before 1.5.1; it may be a
-  `git hash-object` prefix, a real SHA-256 prefix, or invented). If a legacy hex equals the recomputed
-  prefix, propose re-labelling it `git:`. If the brain sits in a git repo (`git -C "<brain>" rev-parse
-  --git-dir` succeeds), still report a mismatch as drift, adding *"may come from the repository (moved
-  brain, changed attributes, SHA-256 repo, git-lfs on some machines only), not an edit"*. Re-record or
-  re-distil only with the user's OK.
+- A `references/raw/` artifact that **drifted** since its node was distilled (re-distillation is
+  pending). Check it with `references/fingerprint.md`: in a git brain, the raw file's last commit against the
+  node's (an uncommitted raw change is pending); outside git, the recomputed fingerprint against
+  `content_hash`. Never compute a hash
+  yourself; no shell → **unknown**. **Unverifiable, not drifted:** `TBD`, or a legacy `git:`/`sha256:`
+  value outside git (propose re-recording it as `sha256-lf:`). Re-record or re-distil only with the
+  user's OK.
 
 **Warn (not error)** when a threshold is exceeded; present as advisory — the user decides whether to
 consolidate now or defer:
 
 - Open playgrounds ≥ 3: "Half-done — N open playgrounds. Run `/synaptic-consolidate` to process and close completed task workspaces."
 - Journal lines since last consolidation ≥ 60: "Half-done — journal at N pending breadcrumbs since last consolidation. Run `/synaptic-consolidate` before the journal nears 80 lines."
-- Any untracked playground, stale active-playground entry, drifted `content_hash`, or unresolved `contradicts`: list each as a half-done finding routed to `/synaptic-consolidate` (or `/synaptic-maintain` for the orchestrated sweep).
+- Any untracked playground, stale active-playground entry, drifted raw artifact, or unresolved `contradicts`: list each as a half-done finding routed to `/synaptic-consolidate` (or `/synaptic-maintain` for the orchestrated sweep).
 
 ---
 

@@ -208,7 +208,7 @@ This is the "refactor" phase and the heart of the upgrade. Execute Phase C of
 references/upgrade-to-v1.md, with these BINDING reinforcements (they close real failure modes):
 
   • CONTENT-CONSERVATION MANIFEST (do this FIRST, before editing). Snapshot every existing node as
-    (path, title, sha256 of the body-minus-frontmatter). This is the no-loss ground truth — the file
+    (path, title, body fingerprint — the command is in references/fingerprint.md). This is the no-loss ground truth — the file
     COUNT is only a smoke check (dedupe lowers it, splits raise it, so a count alone can hide a drop).
   • Work CLUSTER BY CLUSTER with a LEDGER (cluster | C3 links | C4 MOC | C5 consolidate | C11
     frontmatter | every-node-in-_index?). "Phase C complete" = all clusters ticked. This survives a

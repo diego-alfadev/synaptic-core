@@ -55,3 +55,13 @@
   reports when skipped; raw-host test checks the name prefix (hex-only host names); `git -C`
   for the `rm --cached` offer; audit counts `*.log` day-files; CHANGELOG wording (unsalted token,
   mtime timing, the 15-character split, dedup by file list). Suites: bash 45/45, PS 48/48.
+- **Q4-X4/S4/S5:** one drift/fingerprint primitive in the new `references/fingerprint.md` (5,547 B,
+  on demand). **Moved there** from consolidate Step 4 (the anchored `git hash-object` command and its
+  caveats, replaced by a pointer: consolidate 29,000 → 28,218 B) and audit's drift paragraph (33,726 →
+  33,345 B). **Repointed:** ingest, command-discovery `<sot-hash>`, upgrade content-conservation,
+  convert-to-global AC2.2, MIGRATION_DONE, the AGENT runbook. Git brains drop `content_hash` (the drift
+  signal is the raw file's last commit vs its node's, `%ct`); others record `sha256-lf:`. The v1.5.1
+  CHANGELOG lines that taught the old command are marked superseded, not deleted. Tests: bash 45 → 53,
+  PS 48 → 55, including a real sh = PS parity loop over 6 fixtures and a fixed known answer
+  (`911169ddaaf1`). Review: NO-GO (day-granular `updated:` rule, missing tracked-check command,
+  leftover docs, quoting); all fixed.

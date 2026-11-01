@@ -94,7 +94,7 @@ Before writing:
 3a. **Lifecycle (OPTIONAL):** set `lifecycle:` **only** if the node is a live project (`lifecycle: project`) or clearly a lazy-pull resource (`lifecycle: resource`); otherwise **leave it absent** (absent → treated as `area`, loads by default). Enum: `project | area | resource | dormant`. It is **orthogonal to `status`** — see the table below. A `project` node SHOULD link OUT to a durable `area`/`resource` node so its knowledge survives when it later cools to `dormant`.
 4. **Register** the node in `knowledge/{cluster}/_index.md` (one-line entry: `[[node-name]] — {description}`). If the cluster does not exist, create the `_index.md` from `templates/node.md` pattern and add the cluster to `knowledge/INDEX.md`.
 5. **Tabular data** → update or create the relevant `registries/{table}.md`; register in `registries/_index.md`.
-6. **Large verbatim artifact** → copy to `references/raw/`; add one-line entry to `references/_index.md`; create a distilled knowledge node with `type: reference` that links to the artifact entry. **Record a source `content_hash`** on the distilled node (see below) so future runs can detect that the raw artifact changed.
+6. **Large verbatim artifact** → copy to `references/raw/`; add one-line entry to `references/_index.md`; create a distilled knowledge node with `type: reference` that links to the artifact entry. **Record its `source`** on the distilled node, plus a `content_hash` when the brain is outside git (see below), so future runs can detect that the raw artifact changed.
 
 **`status` vs `lifecycle` — two orthogonal fields (do not conflate):**
 
@@ -128,30 +128,22 @@ current and correct?*; `lifecycle` answers *is this in the current working set?*
   `active`.** A hand-edit typo (`Active`, `dorment`) surfaces via the `/synaptic-audit` typo advisory
   rather than failing open.
 
-**Source `content_hash` (drift detection — an inline captured fact, NOT a materialized index):**
+**Source provenance + drift (an inline captured fact, NOT a materialized index):**
 
-When you distil a raw artifact into a `type: reference` node, capture the source provenance and a
-content hash directly in the node's authored frontmatter:
+When you distil a raw artifact into a `type: reference` node, record its source in the node's
+authored frontmatter. **Brain in git:** that is all — git history is the drift signal. **Brain outside
+git:** also record the whole-file fingerprint at capture time:
 
 ```yaml
 source: "references/raw/{filename.ext}"
-content_hash: "git:{first-12-hex}"   # the hash command below, on references/raw/{filename.ext} at capture time; TBD if no shell/git
+content_hash: "sha256-lf:{12-hex}"   # brains OUTSIDE git only; TBD if no shell
 ```
 
-- This is an **authored fact written once at capture time**, the same as any other frontmatter
-  value — it is **not** a generated index, never a must-sync cache, and nothing recomputes it
-  automatically. It exists purely so a later consolidation/audit pass can notice "the raw file's
-  hash no longer matches what the node recorded → the artifact drifted → re-distil."
-- **The hash command** (the same in every shell; the one place it is defined):
-  `git -C "<brain>" -c core.autocrlf=input -c core.attributesFile=/dev/null hash-object "references/raw/<filename>"`
-  — always with `-C "<brain>"` and the forward-slash path relative to it, never from the host's cwd
-  (another repo's `.gitattributes` would apply there). The two `-c` pins remove each machine's
-  line-ending setting and user-level attributes. Attributes of a repo that holds the brain itself
-  (e.g. `text`/`-text`, `eol`, `crlf`, a filter such as LFS, `ident`, `working-tree-encoding`) or a
-  SHA-256 repo still change the result. `<brain>` is the resolved brain root (the folder holding
-  `BRAIN.md`); on Windows pass it in drive form (`C:/…`), not `/c/…`. Store the first 12 hex characters. Never "compute" a hash yourself — a model cannot hash,
-  so the value would be invented. No shell or no git → write `content_hash: TBD` and keep the source
-  path — CORE never requires a runtime.
+- An **authored fact written once at capture time** — never a generated index or a must-sync cache;
+  nothing recomputes it automatically. It lets a later pass notice "the raw file changed since the
+  node was distilled → re-distil."
+- **Which form applies, and the exact commands:** `references/fingerprint.md` (the only place a hash
+  or drift command is defined). Never compute a hash yourself; no shell → `TBD`, keep the source path.
 
 ---
 
@@ -238,7 +230,7 @@ For each playground in the journal's **Active playgrounds** list:
 2. Classify its contents (Steps 1–6 above). Apply the promotion test and quality gate strictly:
    unfinished, outdated, or superseded artifacts do **not** pass — distil any durable conclusion and
    discard the rest.
-3. Move durable findings → knowledge cluster nodes; procedures → `type: playbook` nodes in their cluster; lessons → `knowledge/lessons/`; verbatim artifacts worth preserving → `references/raw/` (with a `content_hash`, per Step 4).
+3. Move durable findings → knowledge cluster nodes; procedures → `type: playbook` nodes in their cluster; lessons → `knowledge/lessons/`; verbatim artifacts worth preserving → `references/raw/` (with `source`, and `content_hash` outside git, per Step 4).
 4. Confirm with user: "Playground `{task-id}` consolidated — burn (delete) or archive?"
    - **Default: burn** — delete the directory (the scratch is gone; the distilled conclusions live in the wiki).
    - Archive (exception): move to `playgrounds/archive/` only on explicit user request.
@@ -306,7 +298,7 @@ Consolidated:
   - N contradictions reconciled: {old-node → resolution (superseded / contradicts-linked / flagged)}
   - N lessons added: knowledge/lessons/{names}
   - N registry entries updated: registries/{tables}
-  - N artifacts stored: references/raw/{filenames} (_index.md entries + content_hash added)
+  - N artifacts stored: references/raw/{filenames} (_index.md entries + `source`; `content_hash` outside git)
   - N playground(s) closed: {task-ids} (scratch burned / archived; durable conclusions distilled)
   - N items discarded (temporal noise / superseded scratch)
 
@@ -330,7 +322,7 @@ BRAIN.md updated: field bumped to {date}.
 - Retry note → lesson (specific failure → reusable principle).
 - Token caching note → durable knowledge / pattern (performance decision that recurs).
 - Implementation draft (playground scratch) → conclusion already distilled into the two notes; burn.
-- OpenAPI spec → large verbatim artifact → `references/raw/` (record `content_hash` on the distilled node).
+- OpenAPI spec → large verbatim artifact → `references/raw/` (record `source`, plus `content_hash` outside git, on the distilled node).
 
 **Step 2 — Atomicity test:** both notes are distinct concepts; two separate nodes.
 

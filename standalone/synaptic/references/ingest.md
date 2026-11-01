@@ -55,7 +55,7 @@ single file, identify type and size:
    - **Provenance + drift marker in frontmatter** (an authored fact, not an index — see consolidate.md Step 4):
      ```yaml
      source: "references/raw/{filename.ext}"
-     content_hash: "git:{first-12-hex}"   # the hash command in consolidate.md Step 4; TBD if no shell/git
+     content_hash: "sha256-lf:{12-hex}"   # brains OUTSIDE git only (references/fingerprint.md); TBD if no shell
      ```
    - A source pointer at the bottom:
      ```

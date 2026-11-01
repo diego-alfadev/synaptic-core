@@ -44,7 +44,7 @@ Closed: `{{YYYY-MM-DD HH:MM}}`  ·  commit: `{{migrate: Phase M mechanical file 
 `check.js` expectation at this boundary: **0 ERRORS** (this is the phase that reaches structural green).
 
 - [ ] CONTENT-CONSERVATION MANIFEST snapshotted BEFORE editing: every node as `(path, title,
-      sha256(body-minus-frontmatter))`.
+      body fingerprint)` — the command is in `references/fingerprint.md`.
 - [ ] Every cluster ticked in the Phase-C ledger (C3 links · C4 MOC · C5 consolidate · C11 frontmatter ·
       every-node-in-`_index`?).
 - [ ] Identity/boot, CONTACTS, PRINCIPLES/working-agreements, brain-root context files all routed per

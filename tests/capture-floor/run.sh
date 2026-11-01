@@ -292,6 +292,51 @@ else
   nok "extract SKILL.md's deployed sh one-liner" "anchor '- **Encoding PINNED' or the sh fence moved"
 fi
 
+# --- The fingerprint primitive (references/fingerprint.md) [X4/S4] -----------------------------
+# The one hash definition. Both forms must ignore CR, the body form must ignore the frontmatter and a
+# missing final newline, and sh must equal PowerShell on every fixture (checked further below).
+FPDOC="$ROOT/standalone/synaptic/references/fingerprint.md"
+extract_doc() {   # <file> <## heading prefix> <fence-lang> <out>: first such fence before the next "## "
+  awk -v h="$2" -v lang="$3" '
+    { sub(/\r$/, "") }
+    !inh && index($0, h) == 1 { inh = 1; next }
+    inh && /^## /             { exit }
+    inh && !inb && $0 == "```" lang { inb = 1; next }
+    inb && $0 == "```"        { exit }
+    inb                       { print }
+  ' "$1" > "$4"
+  [ -s "$4" ]
+}
+FPW="$WORK/fp-whole.sh"; FPB="$WORK/fp-body.sh"
+if extract_doc "$FPDOC" "## Whole-file fingerprint" sh "$FPW" && extract_doc "$FPDOC" "## Body fingerprint" sh "$FPB"; then
+  ok "extract the sh fingerprint commands from references/fingerprint.md"
+  fx="$WORK/fp"; mkdir -p "$fx"
+  printf -- '---\ntitle: x\n---\nBody line 1\nBody line 2\n' > "$fx/lf.md"
+  printf -- '---\r\ntitle: x\r\n---\r\nBody line 1\r\nBody line 2\r\n' > "$fx/crlf.md"
+  printf -- '---\ntitle: x\n---\nBody line 1\nBody line 2' > "$fx/nofinal.md"
+  printf -- '---\ntitle: y\nextra: 1\n---\nBody line 1\nBody line 2\n' > "$fx/fm2.md"
+  printf -- 'Body line 1\nBody line 2\n' > "$fx/nofm.md"
+  printf -- '---\ntitle: x\nBody line 1\n' > "$fx/unterminated.md"
+  printf 'a\r\nb\r\n' > "$fx/known.txt"
+  fp() { sed "s#<file>#$2#g" "$1" > "$WORK/fp-run.sh"; sh "$WORK/fp-run.sh"; }
+  w_lf="$(fp "$FPW" "$fx/lf.md")"; w_crlf="$(fp "$FPW" "$fx/crlf.md")"; w_fm2="$(fp "$FPW" "$fx/fm2.md")"
+  printf '%s' "$w_lf" | grep -Eqx '[0-9a-f]{12}' && ok "fingerprint is 12 lower-case hex" || nok "fingerprint is 12 lower-case hex" "got '$w_lf'"
+  [ "$w_lf" = "$w_crlf" ] && ok "whole-file fingerprint: CRLF and LF copies agree" || nok "whole-file fingerprint: CRLF and LF copies agree" "$w_lf vs $w_crlf"
+  [ "$w_lf" != "$w_fm2" ] && ok "whole-file fingerprint changes when the frontmatter changes" || nok "whole-file fingerprint changes when the frontmatter changes"
+  want=911169ddaaf1   # SHA-256 of "a\nb\n", first 12 hex: a fixed literal, independent of any tool here
+  [ "$(fp "$FPW" "$fx/known.txt")" = "$want" ] && ok "whole-file fingerprint = SHA-256 of the CR-stripped bytes (known answer)" \
+    || nok "whole-file fingerprint = SHA-256 of the CR-stripped bytes (known answer)" "$(fp "$FPW" "$fx/known.txt") vs $want"
+  b_lf="$(fp "$FPB" "$fx/lf.md")"; bad=""
+  for f in crlf nofinal fm2 nofm; do [ "$(fp "$FPB" "$fx/$f.md")" = "$b_lf" ] || bad="$bad $f"; done
+  [ -z "$bad" ] && ok "body fingerprint ignores CR, a missing final newline and the frontmatter" \
+    || nok "body fingerprint ignores CR, a missing final newline and the frontmatter" "differs for:$bad"
+  [ "$(fp "$FPB" "$fx/unterminated.md")" = "$(fp "$FPW" "$fx/unterminated.md")" ] \
+    && ok "body fingerprint: an unterminated frontmatter is part of the body" \
+    || nok "body fingerprint: an unterminated frontmatter is part of the body"
+else
+  nok "extract the sh fingerprint commands from references/fingerprint.md" "heading or fence changed"
+fi
+
 # --- Cross-shell consistency ------------------------------------------------------------------
 # The sh marker hashes `hostname`; the PowerShell copy hashes $env:COMPUTERNAME on Windows and
 # [Net.Dns]::GetHostName() elsewhere, both lower-cased. Mixed sh + PowerShell hooks on one host must land
@@ -314,8 +359,25 @@ if [ -n "$PSX" ]; then
   else
     nok "extract A.0 activity-marker (PowerShell) from the recipe" "heading or fence changed"
   fi
+  # Fingerprint parity [X4]: the PowerShell forms must print exactly what the sh forms print.
+  if [ -n "${b_lf:-}" ] && extract_doc "$FPDOC" "## Whole-file fingerprint" powershell "$WORK/fpw.ps1.in" \
+     && extract_doc "$FPDOC" "## Body fingerprint" powershell "$WORK/fpb.ps1.in"; then
+    winp() { cygpath -w "$1" 2>/dev/null || echo "$1"; }
+    psfp() { sed "s#<file>#$(winp "$2" | sed 's#\\#\\\\#g')#g" "$1" > "$WORK/fp-run.ps1"
+             "$PSX" -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$(winp "$WORK/fp-run.ps1")" 2>/dev/null | tr -d '\r'; }
+    bad=""
+    for f in lf crlf nofinal fm2 nofm unterminated; do
+      pw="$(psfp "$WORK/fpw.ps1.in" "$fx/$f.md")"; printf '%s' "$pw" | grep -Eqx '[0-9a-f]{12}' || bad="$bad shape:$f"
+      [ "$pw" = "$(fp "$FPW" "$fx/$f.md")" ] || bad="$bad whole:$f"
+      [ "$(psfp "$WORK/fpb.ps1.in" "$fx/$f.md")" = "$(fp "$FPB" "$fx/$f.md")" ] || bad="$bad body:$f"
+    done
+    [ -z "$bad" ] && ok "fingerprint: PowerShell = sh on LF, CRLF, no-final-newline and frontmatter fixtures [X4]" \
+      || nok "fingerprint: PowerShell = sh on LF, CRLF, no-final-newline and frontmatter fixtures [X4]" "differs:$bad"
+  else
+    nok "extract the PowerShell fingerprint commands from references/fingerprint.md" "heading or fence changed (or the sh half failed)"
+  fi
 else
-  info "cross-shell ledger test skipped: no powershell.exe or pwsh on PATH"
+  info "cross-shell ledger + fingerprint tests skipped: no powershell.exe or pwsh on PATH"
 fi
 
 echo "1..$n"

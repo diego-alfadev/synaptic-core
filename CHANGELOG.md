@@ -77,7 +77,8 @@
   file named `playgrounds`, matching bash. A long-lived open playground keeps the reminder firing on
   purpose: it is unconsolidated work until it is burned or archived.
 - **Skill prose defects** (no runtime involved; checked by review, not by tests):
-  - **`content_hash` has one command, defined once in consolidate Step 4:**
+  - **`content_hash` has one command, defined once in consolidate Step 4** *(superseded on the
+    simplification branch by `references/fingerprint.md`, see "Simplification round" below)*:
     `git -C "<brain>" -c core.autocrlf=input -c core.attributesFile=/dev/null hash-object
     "references/raw/<filename>"`, stored as `git:{first-12}`. Before, the field was labelled `sha256:`
     but could hold a `git hash-object` prefix, a real SHA-256 prefix, or a value the agent "computed",
@@ -147,7 +148,8 @@ Do the steps in this order.
 - **Re-run `/synaptic-upgrade` (or `/synaptic-init`)** to re-wire the guarded one-liners, re-deploy
   the edited rules, and regenerate the `/`-menu stubs (they now load `SKILL.md` first). For its drift
   check to notice, the release must bump `SKILL.md`'s `version:`.
-- **Existing `content_hash` values** are labelled `sha256:`. Each one may be a `git hash-object`
+- **Existing `content_hash` values** *(superseded by the simplification round: git brains ignore the
+  field, others re-record as `sha256-lf:`)* are labelled `sha256:`. Each one may be a `git hash-object`
   prefix, a real SHA-256 prefix, or an invented value. Audit reports them as unverifiable, not drifted.
   Where the hex matches the recomputed prefix, re-label it `git:`. Otherwise, re-record it only with
   your OK.
@@ -205,6 +207,21 @@ Do the steps in this order.
   but the manifest lists a 0-byte `.gitkeep`. Placeholders are exempt.
 
 #### Changed (simplification round)
+- **One drift and fingerprint primitive, `references/fingerprint.md`.** The raw-artifact hash went
+  through several versions in 1.5.1, each depending on some git setting. Its uses now point at one file:
+  consolidate, ingest, audit, the stub `<sot-hash>`, and the upgrade and convert-to-global no-loss
+  checks.
+  - **Brains in git** no longer write `content_hash`. The drift signal is the raw file's last commit,
+    compared with the last commit of its node (exact to the second; not the day-granular `updated:`).
+    Files committed together compare equal; a shallow clone is reported as unknown, never as drifted.
+  - **Brains outside git** record `content_hash: "sha256-lf:<12 hex>"`. That is SHA-256 over the
+    bytes with CR removed, so CRLF and LF copies agree, and it uses no git at all. The value comes
+    from a pinned sh command or its PowerShell twin.
+  - A body form, which ignores frontmatter and a missing final newline, serves the no-loss checks.
+  - Legacy `git:` and `sha256:` values are reported as unverifiable, never as drifted.
+
+  Tests: 6 cases per shell, plus a check that PowerShell prints exactly what sh prints on LF, CRLF,
+  no-final-newline and frontmatter fixtures. Manifest: 28 → 29 entries (the new reference).
 - **Fewer agent-written breadcrumbs where the hook is wired.** Where the `Stop` hook already records
   which files changed, the agent now writes only at decision points (a decision, a lesson, a blocker,
   a change of plan) plus the session-boundary summary. Without hooks, nothing changes: one line per

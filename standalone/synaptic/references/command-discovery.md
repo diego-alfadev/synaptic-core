@@ -47,8 +47,9 @@ Regenerate them from the SOT when it changes; the user still maintains only **on
 generated-from: synaptic-skill@<engine-version> <sot-hash>
 ```
 
-`<engine-version>` = the skill/engine `version:` that generated it; `<sot-hash>` = a hash of the SOT
-command list / that command's `references/<cmd>.md`. This is the anchor the drift check and the
+`<engine-version>` = the skill/engine `version:` that generated it; `<sot-hash>` = the whole-file
+fingerprint of that command's `references/<cmd>.md` (`references/fingerprint.md`; no shell → omit it
+and rely on the version). This is the anchor the drift check and the
 uninstall cleanup key off — a stub whose provenance version/hash no longer matches the current SOT is
 stale and gets regenerated or pruned.
 

@@ -19,6 +19,7 @@ $PsExe   = (Get-Process -Id $PID).Path
 $Root    = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).ProviderPath
 $Recipe  = Join-Path $Root 'recipes/session-end-consolidate.md'
 $Skill   = Join-Path $Root 'standalone/synaptic/SKILL.md'
+$FpDoc   = Join-Path $Root 'standalone/synaptic/references/fingerprint.md'
 $Work    = Join-Path ([IO.Path]::GetTempPath()) ('syncf-' + [guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $Work | Out-Null
 # Any write that wrongly resolves against the .NET process directory lands here, never in a real brain.
@@ -45,14 +46,14 @@ function Info([string]$m) {
     if ($InCi) { Write-Output "::notice title=capture-floor ($Label)::$(Format-GhMessage $m)" }
 }
 
-function Get-Block([string]$Heading, [string]$Lang) {
-    $lines = [IO.File]::ReadAllLines($Recipe, [Text.Encoding]::UTF8)
+function Get-Block([string]$Heading, [string]$Lang, [string]$Path = $Recipe, [string]$Stop = '### ') {
+    $lines = [IO.File]::ReadAllLines($Path, [Text.Encoding]::UTF8)
     $inH = $false; $inB = $false; $out = New-Object System.Collections.Generic.List[string]
     foreach ($raw in $lines) {
         $l = $raw.TrimEnd("`r")
         if (-not $inH) { if ($l.StartsWith($Heading)) { $inH = $true }; continue }
         if (-not $inB) {
-            if ($l.StartsWith('### ')) { break }
+            if ($l.StartsWith($Stop)) { break }
             if ($l -eq ('```' + $Lang)) { $inB = $true }
             continue
         }
@@ -148,7 +149,7 @@ try {
     #    PowerShell accepts as a string delimiter, so the hook stops parsing. Comments are harmless.
     #    Covers the recipe AND SKILL.md, whose blocks sit inside a blockquote (`> ` prefix stripped).
     $blk = 0; $bad = @()
-    foreach ($src in @($Recipe, $Skill)) {
+    foreach ($src in @($Recipe, $Skill, $FpDoc)) {
         $inB = $false; $ln = 0
         foreach ($raw in [IO.File]::ReadAllLines($src, [Text.Encoding]::UTF8)) {
             $ln++; $l = ($raw.TrimEnd("`r")) -replace '^> ?', ''
@@ -467,6 +468,39 @@ try {
     $r = Get-HookResult $A2 $ws
     if ($r.Rc -eq 0 -and $r.Out -match '1 pending breadcrumb\(s\)') { Ok 'chain (PS): a real project edit becomes a breadcrumb and triggers the reminder' }
     else { Nok 'chain (PS): a real project edit becomes a breadcrumb and triggers the reminder' "out='$($r.Out)'" }
+
+    # --- The fingerprint primitive (references/fingerprint.md) [X4/S4] -------------------------------
+    # In-process here; run.sh checks PowerShell = sh on the same fixture set.
+    $fpW = Get-Block '## Whole-file fingerprint' 'powershell' $FpDoc '## '
+    $fpB = Get-Block '## Body fingerprint' 'powershell' $FpDoc '## '
+    if ($fpW.Count -eq 0 -or $fpB.Count -eq 0) { Nok 'extract the PowerShell fingerprint commands from references/fingerprint.md' 'heading or fence changed' }
+    else {
+        Ok 'extract the PowerShell fingerprint commands from references/fingerprint.md'
+        $fx = Join-Path $Work 'fp'; [IO.Directory]::CreateDirectory($fx) | Out-Null
+        $fixtures = @{
+            'lf.md' = "---`ntitle: x`n---`nBody line 1`nBody line 2`n"; 'crlf.md' = "---`r`ntitle: x`r`n---`r`nBody line 1`r`nBody line 2`r`n"
+            'nofinal.md' = "---`ntitle: x`n---`nBody line 1`nBody line 2"; 'fm2.md' = "---`ntitle: y`nextra: 1`n---`nBody line 1`nBody line 2`n"
+            'nofm.md' = "Body line 1`nBody line 2`n"; 'unterminated.md' = "---`ntitle: x`nBody line 1`n"; 'known.txt' = "a`r`nb`r`n"
+        }
+        foreach ($k in $fixtures.Keys) { [IO.File]::WriteAllText((Join-Path $fx $k), $fixtures[$k], (New-Object Text.UTF8Encoding $false)) }
+        function Get-Fp([string[]]$Body, [string]$Name) {
+            $code = ($Body -join "`n").Replace('<file>', (Join-Path $fx $Name))
+            return [string](& ([scriptblock]::Create($code)))
+        }
+        $wLf = Get-Fp $fpW 'lf.md'
+        if ($wLf -cmatch '^[0-9a-f]{12}$') { Ok 'fingerprint is 12 lower-case hex' } else { Nok 'fingerprint is 12 lower-case hex' "got '$wLf'" }
+        if ((Get-Fp $fpW 'crlf.md') -eq $wLf) { Ok 'whole-file fingerprint: CRLF and LF copies agree' } else { Nok 'whole-file fingerprint: CRLF and LF copies agree' }
+        if ((Get-Fp $fpW 'fm2.md') -ne $wLf) { Ok 'whole-file fingerprint changes when the frontmatter changes' } else { Nok 'whole-file fingerprint changes when the frontmatter changes' }
+        $want = '911169ddaaf1'   # SHA-256 of "a`nb`n", first 12 hex: a fixed literal
+        if ((Get-Fp $fpW 'known.txt') -eq $want) { Ok 'whole-file fingerprint = SHA-256 of the CR-stripped bytes (known answer)' }
+        else { Nok 'whole-file fingerprint = SHA-256 of the CR-stripped bytes (known answer)' "$(Get-Fp $fpW 'known.txt') vs $want" }
+        $bLf = Get-Fp $fpB 'lf.md'
+        $bad = @('crlf.md', 'nofinal.md', 'fm2.md', 'nofm.md') | Where-Object { (Get-Fp $fpB $_) -ne $bLf }
+        if (@($bad).Count -eq 0) { Ok 'body fingerprint ignores CR, a missing final newline and the frontmatter' }
+        else { Nok 'body fingerprint ignores CR, a missing final newline and the frontmatter' "differs for: $($bad -join ', ')" }
+        if ((Get-Fp $fpB 'unterminated.md') -eq (Get-Fp $fpW 'unterminated.md')) { Ok 'body fingerprint: an unterminated frontmatter is part of the body' }
+        else { Nok 'body fingerprint: an unterminated frontmatter is part of the body' }
+    }
 
     # --- The DEPLOYED copy: SKILL.md's pinned one-liner -------------------------------------------
     # /synaptic-init and /synaptic-upgrade wire THIS block into the host, so it is what users run.
