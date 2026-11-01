@@ -87,7 +87,7 @@ Run on consolidation (manual `/synaptic-consolidate`, or offered at session end 
 | `knowledge/` | Wiki — what you know | On demand via `knowledge/INDEX.md` |
 | `registries/` | Wiki — tabular SSOTs (resources, repos, glossary) | On demand; never eager-load |
 | `references/` | Wiki — existence index + verbatim artifacts (`raw/`) | On demand |
-| `harness/` | Harness — conventions, guardrails, project skills | On demand; top subset above |
+| `harness/` | Harness — conventions, guardrails | On demand; top subset above |
 | `playgrounds/` | Working memory — per-task burnable workspaces | Registered in journal only |
 | `journal/` | Working memory — thin anchor/watch/log | Resume: read `_current.md` |
 | `templates/` | Scaffolding — node, registry, playbook, lesson | When creating a new node |

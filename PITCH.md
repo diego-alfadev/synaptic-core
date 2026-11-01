@@ -38,7 +38,7 @@ An explicit, agent-agnostic algorithm embedded in every `BRAIN.md` as the **capt
 ### 3-concern separation — knowledge · operating rules · persona
 Three concerns are explicitly separated and never mixed:
 - **Knowledge** lives in the brain (`knowledge/`, `registries/`, `references/`) and is read on demand via MOC.
-- **Operating rules** (commit conventions, guardrails, project skills) live in `harness/` as a **deployable source**: `/synaptic-init` and `/synaptic-upgrade` deploy them into the outer harness (AGENTS.md / CLAUDE.md); at work-time the agent reads the outer harness, not the brain's `harness/` folder. The brain keeps the copy so the harness is regenerable on any machine.
+- **Operating rules** (commit conventions, guardrails) live in `harness/` as a **deployable source**: `/synaptic-init` and `/synaptic-upgrade` deploy them into the outer harness (AGENTS.md / CLAUDE.md); at work-time the agent reads the outer harness, not the brain's `harness/` folder. The brain keeps the copy so the harness is regenerable on any machine.
 - **Persona** (tone, chat language, agent personality) lives in the outer harness only — never in the brain.
 The brain stays knowledge-focused; the harness stays rule-focused; portability is preserved. A Jarvis-persona agent and a vanilla agent share the same brain without conflict.
 

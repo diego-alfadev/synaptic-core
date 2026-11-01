@@ -14,7 +14,7 @@ These tools are governed by **Decision D3**:
   run transparently when available.
 - **No-runtime fallback:** when Node is absent, the `synaptic` skill instructs
   the agent to perform the equivalent operation manually. Each tool's fallback
-  is documented in the skill file (`harness/skills/` or the installed lifecycle skill).
+  is documented in the installed lifecycle skill.
 
 **Matrioshka note:** CORE (files) → TOOLS (these scripts) → ECOSYSTEM (MCP/RAG/Engram).
 Each layer is independently optional; removing the outer layers does not break the inner ones.
@@ -99,7 +99,7 @@ Automates **Phase M** (deterministic file operations) of a v0.x → v1 upgrade.
 
 **What it does (deterministic, idempotent, non-destructive):**
 - Detects source version (`BOOTSTRAP.md` → v0.3; `BRAIN.md` version field → v0.4/v0.5)
-- Creates missing v1 directories: `registries/`, `harness/`, `harness/skills/`,
+- Creates missing v1 directories: `registries/`, `harness/`,
   `references/`, `references/raw/`, `playgrounds/`, `templates/`
 - Renames `inventory/` → `registries/` (merges if both exist)
 - Stages v0.x boot files (`BOOTSTRAP.md`, `MANIFEST.md`, `identity/HEARTBEAT.md`,

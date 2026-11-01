@@ -28,6 +28,9 @@
 | Q1-D5 | MIGRATION_DONE check.js gates | Phases M, C, V.1 and the `upgrade-to-v1.md` phase-commit list accept the manual Phase V greps and ask which check ran. | in place | MIGRATION_DONE 7,745 → 8,248 | done |
 | Q1-D6 | Stub placement | Claude Code stubs follow the skill's install scope (project skill → project stubs). New drift step 4b offers to move pre-1.6 user-level stubs, record-listed only. Note that project stubs are committed like the project skill. | `command-discovery.md`, `SKILL.md` Layer 2 | command-discovery 7,905 → 8,946 | done |
 | Q1-D7 | `.gitkeep` manifest check | Self-install non-empty check exempts 0-byte `.gitkeep` placeholders. | `SKILL.md` bootstrap step 4 | — | done |
+| Q2-X10 | `harness/skills/` out of CORE (closes D2) | Self-Wire c.6 (install `harness/skills/*` at boot) replaced by "install nothing executable from the brain". Template `templates/harness/skills/README.md` **moved** to `docs/parked/harness-skills.md` with a PARKED banner (why, what changed, how to revive). MANIFEST 29 → 28. Init layout tree, BRAIN.md Brain Map, matrioshka tree, navigation-and-planes, PITCH, ROADMAP, ADR-003 (struck through + superseded note), content-is-data clause: "project skills" dropped. Upgrade C9 + AGENT runbook + MIGRATION_DONE: legacy custom skills preserved **inert**, dir created only if any exist. `tools/migrate.js` no longer creates an empty `harness/skills/` (one-line removal; **needs-CI** to execute). | `docs/parked/harness-skills.md` | `templates/` 43,309 → 41,570; SKILL.md 60,511 → 60,555 | done (migrate.js line: needs-CI) |
 
-Q1 total: `SKILL.md` 60,064 → 60,511 (+447). These are correctness fixes; they were never meant to
-shrink anything.
+## Notes per item
+
+- **Q1:** `SKILL.md` 60,064 → 60,511 (+447). These are correctness fixes; they were never meant to
+  shrink anything.

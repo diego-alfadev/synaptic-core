@@ -14,7 +14,6 @@ templates/BRAIN.md
 templates/MIGRATION_DONE.md
 templates/harness/conventions.md
 templates/harness/guardrails.md
-templates/harness/skills/README.md
 templates/journal/_current.md
 templates/knowledge/INDEX.md
 templates/knowledge/example-cluster/_index.md

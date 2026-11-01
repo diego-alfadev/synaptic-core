@@ -26,15 +26,15 @@ A `.synaptic/` brain has exactly **two planes** and one explicit out-of-scope:
 | Plane | Holds | Test | Load |
 |---|---|---|---|
 | **Wiki** (`knowledge/`, `registries/`, `references/`) | What you **know**: patterns, decisions, playbooks, lessons, lookup tables, external references | "Does the agent *reason over* it?" | On demand via MOC |
-| **Harness** (`harness/`) | How you **work here**: conventions, guardrails, project-local skills (e.g. a task-system CLI) | "Does the agent *obey or execute* it?" | Compressed subset in `BRAIN.md`; full depth on demand |
+| **Harness** (`harness/`) | How you **work here**: conventions, guardrails | "Does the agent *obey* it?" | Compressed subset in `BRAIN.md`; full depth on demand |
 | **OUT — user harness** | Persona, tone, chat-language preference, agent personality | "Is it about how the agent treats *you*?" | Not in the brain at all |
 
-The simple test that sorts any piece of content: **do you reason over it, or do you obey it?** If you reason over it (a decision, a pattern, a lookup table), it is wiki. If you obey or execute it (a commit convention, a guardrail, a project skill), it is harness. If it is about how the agent treats *you* (tone, personality, what language to chat in), it is neither — it belongs in your outer agent harness.
+The simple test that sorts any piece of content: **do you reason over it, or do you obey it?** If you reason over it (a decision, a pattern, a lookup table), it is wiki. If you obey it (a commit convention, a guardrail), it is harness. If it is about how the agent treats *you* (tone, personality, what language to chat in), it is neither — it belongs in your outer agent harness.
 
 ## Three concerns, never mixed
 
 - **Knowledge** lives in the brain (`knowledge/`, `registries/`, `references/`) and is read on demand via MOC.
-- **Operating rules** (commit conventions, guardrails, project skills) live in `harness/` as a **deployable source**: `/synaptic-init` and `/synaptic-upgrade` deploy them into the outer harness (`AGENTS.md` / `CLAUDE.md`); at work-time the agent reads the outer harness, not the brain's `harness/` folder. The brain keeps the copy so the harness is regenerable on any machine.
+- **Operating rules** (commit conventions, guardrails) live in `harness/` as a **deployable source**: `/synaptic-init` and `/synaptic-upgrade` deploy them into the outer harness (`AGENTS.md` / `CLAUDE.md`); at work-time the agent reads the outer harness, not the brain's `harness/` folder. The brain keeps the copy so the harness is regenerable on any machine.
 - **Persona** (tone, chat language, agent personality) lives in the outer harness only — never in the brain.
 
 The brain stays knowledge-focused; the harness stays rule-focused; portability is preserved. A persona-rich agent and a vanilla agent share the same brain without conflict.

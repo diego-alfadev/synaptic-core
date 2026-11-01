@@ -12,7 +12,7 @@
 
 ### The two-plane model
 
-The `.synaptic/` brain is structured around a clean separation between the **wiki** (what you know: patterns, decisions, playbooks, lessons, registries, references) and the **harness** (how you work here: conventions, guardrails, project-local skills). Persona and behavior are explicitly out of scope — they belong in the user harness (AGENTS.md / CLAUDE.md), not in the brain.
+The `.synaptic/` brain is structured around a clean separation between the **wiki** (what you know: patterns, decisions, playbooks, lessons, registries, references) and the **harness** (how you work here: conventions, guardrails). Persona and behavior are explicitly out of scope — they belong in the user harness (AGENTS.md / CLAUDE.md), not in the brain.
 
 ### Capture contract
 

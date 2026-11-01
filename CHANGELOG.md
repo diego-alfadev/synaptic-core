@@ -182,6 +182,16 @@ Do the steps in this order.
 - **The self-install check no longer always fails.** It required every manifest file to be non-empty,
   but the manifest lists a 0-byte `.gitkeep`. Placeholders are exempt.
 
+#### Removed (simplification round)
+- **Project skills (`harness/skills/`) are no longer part of CORE.** Deploy used to copy a brain's
+  `harness/skills/*` into the host's skill folders at boot, with no per-item approval. That made a
+  shared or handed-over brain a channel for delivering code. Deploy now installs nothing from a brain.
+  New brains no longer get `harness/skills/`, and the template is gone from the bundle (29 → 28
+  manifest entries). The idea is parked in `docs/parked/harness-skills.md`. **Existing brains:** a
+  `harness/skills/` folder stays where it is, inert. `/synaptic-upgrade` still preserves a pre-v1
+  brain's custom skill dirs, without installing them. If you relied on auto-install, install those
+  skills by hand.
+
 ## [1.5.0] - 2026-07-27
 
 > **"Capture you can actually trust."** A MINOR that closes the **floor half of issue #2a** — the

@@ -60,7 +60,9 @@ deployed — not loaded — by `/synaptic-init` and `/synaptic-upgrade`.
 **Mechanism:** `/synaptic-init` and `/synaptic-upgrade` run a **Deploy step** that:
 1. Reads `harness/conventions.md` + `harness/guardrails.md` from the brain.
 2. Writes a `<!-- BEGIN:SYNAPTIC-RULES --> … <!-- END:SYNAPTIC-RULES -->` block in AGENTS.md.
-3. Installs `harness/skills/*` into `.claude/skills/` and `.agents/skills/`.
+3. ~~Installs `harness/skills/*` into `.claude/skills/` and `.agents/skills/`.~~ **Superseded
+   2026-11 (X10):** deploy installs nothing executable from a brain; the feature is parked in
+   `docs/parked/harness-skills.md`.
 4. Is idempotent: the marked block is fully replaced on re-deploy; unmarked user content is
    never touched.
 

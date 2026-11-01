@@ -23,8 +23,8 @@ Brain: `{{brain-path}}`  ·  Source schema: `{{v0.3 | v0.4 | v0.5}}`  ·  Run st
 scaffolded-but-empty). That is expected and documented — running the check early is the point.
 
 - [ ] All v0.x boot files MOVED (never deleted) into `_migration-staging/` (per source-version list).
-- [ ] v1 directories created (`registries/ harness/ harness/skills/ references/ references/raw/
-      playgrounds/ templates/ _migration-staging/`).
+- [ ] v1 directories created (`registries/ harness/ references/ references/raw/
+      playgrounds/ templates/ _migration-staging/`; `harness/skills/` only to hold legacy custom skills).
 - [ ] `worklines/` and `inventory/` moved into staging (if present).
 - [ ] M7 frontmatter scaffold added to every `knowledge/` node that lacked D1 fields.
 - [ ] v1 templates copied into `templates/`.
@@ -50,7 +50,7 @@ Closed: `{{YYYY-MM-DD HH:MM}}`  ·  commit: `{{migrate: Phase M mechanical file 
 - [ ] Identity/boot, CONTACTS, PRINCIPLES/working-agreements, brain-root context files all routed per
       the runbook (knowledge vs `harness/` vs `HARNESS_ORIGINALS/`; `harness/` text is held for
       question 5, not written in this phase).
-- [ ] `inventory/` → `registries/`; `worklines/` → playgrounds/task system; `skills/` → `harness/skills/`.
+- [ ] `inventory/` → `registries/`; `worklines/` → playgrounds/task system; custom `skills/` → `harness/skills/` (inert, never installed).
 - [ ] `knowledge/INDEX.md` + every cluster `_index.md` rebuilt from real files only (no phantom entries).
 - [ ] Every `[[wikilink]]` resolves AND passes a link-IDENTITY spot-check (new target == old path's file).
 - [ ] `updated:` stamped ONLY on nodes actually rewritten this pass (NOT mass-stamped, NOT from mtime).

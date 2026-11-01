@@ -186,7 +186,7 @@ Phase M only MOVES files into the v1 layout and STAGES v0.x boot files — it de
                 node tools/migrate.js ./synaptic-v1-work/.synaptic .claude/skills/synaptic/templates
 
   [no Node] fallback — do Phase M by hand exactly as references/upgrade-to-v1.md "Phase M" says:
-    create the v1 dirs (registries/ harness/ harness/skills/ references/ references/raw/ playgrounds/
+    create the v1 dirs (registries/ harness/ references/ references/raw/ playgrounds/
     templates/ _migration-staging/); MOVE (never delete) the v0.3 boot files into _migration-staging/
     (BOOTSTRAP.md, MANIFEST.md, identity/HEARTBEAT.md, knowledge/_tree.yaml), MOVE worklines/ and
     inventory/ into staging; M7 frontmatter scaffold; copy v1 templates. COLLISION RULE for manual
@@ -232,7 +232,7 @@ references/upgrade-to-v1.md, with these BINDING reinforcements (they close real 
     harness/guardrails.md in Phase C; brain-root
     context/bridge files → extract knowledge, then MOVE
     originals to HARNESS_ORIGINALS/ (they are harness material); inventory/ → registries/; worklines/
-    → playgrounds or your task system; skills/ → harness/skills/; rebuild knowledge/INDEX.md + each
+    → playgrounds or your task system; custom skills/ → harness/skills/ (only if any exist; inert, never installed); rebuild knowledge/INDEX.md + each
     cluster _index.md from real files only; journal → thin 3-section format.
   • DO NOT delete _migration-staging/ here — keep it through Step 6 and the soak (Step 10). This
     OVERRIDES the referenced procedure's step C12 ("delete staging as the final step of Phase C") —

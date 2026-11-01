@@ -187,7 +187,7 @@ function buildPlan() {
 
   // v1 directories to create if missing
   const v1Dirs = [
-    'registries', 'harness', 'harness/skills',
+    'registries', 'harness',
     'references', 'references/raw', 'playgrounds', 'templates',
   ];
   for (const d of v1Dirs) {

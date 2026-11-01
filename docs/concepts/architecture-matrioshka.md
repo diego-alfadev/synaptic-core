@@ -98,8 +98,7 @@ These are optional **Cortex** utilities — **zero-dependency** (Node ≥ 18 sta
 ├── references/                # Existence index (_index.md) + raw/ verbatim drop-zone (DDL, specs, exports)
 ├── harness/                   # HARNESS — how you work here (depth-on-demand)
 │   ├── conventions.md         # Working agreements: languages per channel, commit style, etiquette
-│   ├── guardrails.md          # Hard rules: security, never-push-without-confirm, runner discipline
-│   └── skills/                # Project-local executable skills — travel with the brain
+│   └── guardrails.md          # Hard rules: security, never-push-without-confirm, runner discipline
 ├── playgrounds/               # Per-task workspaces {task-id}/ — fat, burnable; registered in journal
 ├── journal/_current.md        # Thin working memory: resume anchor / watch list / consolidation log (≤80 lines)
 └── templates/                 # Node, registry, playbook, lesson templates

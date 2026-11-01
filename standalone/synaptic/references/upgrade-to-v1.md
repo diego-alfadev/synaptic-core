@@ -241,8 +241,8 @@ ask into `_migration-staging/harness-pending.md` in the work copy: each rule bou
 `harness/conventions.md` / `harness/guardrails.md`, each personal agent-behaviour item, the
 SYNAPTIC-RULES deploy, and the intake answers (including whether (3) was asked or guessed). Every item
 carries a status line: `pending`, `approved → <destination>`, or `discarded`. Phase C never writes
-`harness/conventions.md` / `harness/guardrails.md` and never deploys (other `harness/` moves, such as
-`skills/` → `harness/skills/`, are unaffected).
+`harness/conventions.md` / `harness/guardrails.md` and never deploys (other moves, such as legacy
+`skills/` → `harness/skills/` as inert files, are unaffected).
 - **Guided:** (5) is asked from this file; record each answer as its status, then write and deploy the
   approved items.
 - **Autonomous:** nothing is written or deployed; items stay `pending`. Phase V reports the Layout
@@ -270,7 +270,7 @@ carries a status line: `pending`, `approved → <destination>`, or `discarded`. 
 | `identity/PRINCIPLES.md` (v0.4) | Split: project constraints → knowledge node; team norms → `harness/conventions.md`; agent behavior → AGENTS.md/CLAUDE.md (user harness, not brain) | Ownership test: "would a teammate inheriting this brain need it?" |
 | `inventory/` (v0.3) | `registries/` | Tabular SSOTs reinstated as first-class |
 | `worklines/` (v0.3/0.4) | Active → `playgrounds/`; BAU → playbook node; stale → discard with consent | Never auto-delete |
-| `skills/` inside `.synaptic/` | `harness/skills/` | Project-local skills travel with brain |
+| `skills/` inside `.synaptic/` (custom only) | `harness/skills/`, preserved as **inert** files (never installed; the feature is parked) | Non-destructive: nothing is lost, nothing executes |
 | `knowledge/_tree.yaml` (v0.3) | Replaced by `knowledge/INDEX.md` (only real files) | Phantom entries dropped |
 | `playbooks/` directory (v0.5) | Nodes moved to `knowledge/{cluster}/` (type: playbook) | Playbooks are typed co-located nodes, not a silo |
 | `knowledge/working-agreements.md` (v0.5 pattern) | `harness/conventions.md` | Team conventions belong in harness |
@@ -319,7 +319,7 @@ Tick each item. Work in order.
 Create these if absent:
 
 - [ ] `.synaptic/harness/`
-- [ ] `.synaptic/harness/skills/`
+- [ ] `.synaptic/harness/skills/` — only if M1 preserved custom skill dirs (N/A if none)
 - [ ] `.synaptic/registries/`
 - [ ] `.synaptic/references/`
 - [ ] `.synaptic/references/raw/`
@@ -410,7 +410,6 @@ Create from the skill bundle's `templates/` (the single source of truth — ther
 - [ ] `references/_index.md`
 - [ ] `registries/_index.md`
 - [ ] `playgrounds/README.md`
-- [ ] `harness/skills/README.md`
 - [ ] `knowledge/INDEX.md` (if truly absent — preserve if it exists)
 - [ ] `journal/_current.md` (if absent)
 
@@ -520,8 +519,10 @@ For each node in `knowledge/`:
 
 **Custom skill dirs preserved from M1:**
 
-- MOVE each custom skill dir to `harness/skills/{skill-name}/`.
-- Register in `harness/skills/README.md`.
+- MOVE each custom skill dir to `harness/skills/{skill-name}/` (create `harness/skills/` only now,
+  and only if there is something to move). List them in a short `harness/skills/README.md` that says
+  they are **inert**: preserved content, never installed by Synaptic (the project-skills feature is
+  parked). Tell the user they can install any of them by hand if they still want it.
 
 ### C10 — Journal rewrite
 
@@ -561,7 +562,7 @@ otherwise use manual greps / inspection.
 > `knowledge/`) — a phase is DONE only when every box under it is checked.
 
 **Layout (v1):**
-- [ ] `BRAIN.md`, `knowledge/INDEX.md`, `registries/_index.md`, `references/_index.md`, `journal/_current.md`, `harness/conventions.md`, `harness/guardrails.md`, `harness/skills/README.md`, `playgrounds/README.md`, `templates/node.md`, `templates/registry.md`, `templates/playbook.md`, `templates/lesson.md`
+- [ ] `BRAIN.md`, `knowledge/INDEX.md`, `registries/_index.md`, `references/_index.md`, `journal/_current.md`, `harness/conventions.md`, `harness/guardrails.md`, `playgrounds/README.md`, `templates/node.md`, `templates/registry.md`, `templates/playbook.md`, `templates/lesson.md`
 
 **BRAIN.md:**
 - [ ] ≤110 lines; `schema_version: 1.0` in frontmatter (matches `templates/BRAIN.md` + the SKILL.md compat-check `supported_schema`)
@@ -582,11 +583,11 @@ otherwise use manual greps / inspection.
 **Harness (source):**
 - [ ] `harness/conventions.md` exists with team norms (no persona content) — header says "(source — deployed)"
 - [ ] `harness/guardrails.md` exists with hard rules — header says "(source — deployed)"
-- [ ] Custom project skills in `harness/skills/` (if any existed)
+- [ ] Custom project skills preserved, inert, in `harness/skills/` (if any existed)
 
 **Harness (deployed — outer harness):**
 - [ ] `AGENTS.md` contains `<!-- BEGIN:SYNAPTIC-RULES --> … <!-- END:SYNAPTIC-RULES -->` block with deployed conventions + guardrails
-- [ ] Project skills from `harness/skills/` installed in `.claude/skills/` and/or `.agents/skills/`
+- [ ] Nothing from `harness/skills/` was installed into host skill folders (nothing is installed from the brain's contents; the skill bundle and hook commands come from the release)
 
 **Registries:**
 - [ ] `registries/_index.md` lists every registry file; all files exist
