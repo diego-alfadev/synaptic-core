@@ -82,8 +82,15 @@ function Start-Hook([string]$File, [string]$Arg, [string]$Cwd, [hashtable]$Vars)
     $psi.RedirectStandardError = $true
     if ($psi.EnvironmentVariables.ContainsKey('SYNAPTIC_BRAIN_DIR')) { $psi.EnvironmentVariables.Remove('SYNAPTIC_BRAIN_DIR') }
     if ($Vars) { foreach ($k in $Vars.Keys) { $psi.EnvironmentVariables[$k] = $Vars[$k] } }
-    return [Diagnostics.Process]::Start($psi)
+    # Stdin is always redirected and closed, like a host does: $script:HookIn is the hook's JSON (empty =
+    # the host gave no session id). A hook that reads stdin must never hang a test.
+    $psi.RedirectStandardInput = $true
+    $p = [Diagnostics.Process]::Start($psi)
+    if ($script:HookIn) { $p.StandardInput.Write($script:HookIn) }
+    $p.StandardInput.Close()
+    return $p
 }
+$script:HookIn = ''
 function Invoke-Hook([string]$File, [string]$Arg, [string]$Cwd, [hashtable]$Vars) {
     $p = Start-Hook $File $Arg $Cwd $Vars
     $p.WaitForExit()
@@ -379,35 +386,77 @@ try {
     $crumb = "- 2026-10-29T10:00Z breadcrumb: touched a.md`n"
     $utf8 = New-Object Text.UTF8Encoding $false
 
+    function Get-SidJson([string]$Sid) { return '{"session_id":"' + $Sid + '","hook_event_name":"x"}' }
+    # An earlier hook run of another session (the boot=X / beat=X / end=X setup tokens).
+    function Invoke-Side([string]$Ws, [string]$Mode, [string]$Sid) {
+        $keep = $script:HookIn; $script:HookIn = Get-SidJson $Sid
+        try { $null = Get-HookResult $A2 $Ws $Mode } finally { $script:HookIn = $keep }
+    }
+    # Every ';'-separated expect item must hold; returns why it failed (empty = all held).
+    function Get-ExpectFailure([string]$Ws, $R, [string]$Expect) {
+        $why = ''; $act = Join-Path $Ws '.synaptic/journal/_activity'
+        if ($R.Rc -ne 0) { $why += " rc=$($R.Rc)" }
+        foreach ($e in $Expect.Split(';')) {
+            if ($e -eq 'quiet') { if ($R.Out -or $R.Err) { $why += " not-quiet(out='$($R.Out)' err='$($R.Err)')" } }
+            elseif ($e.StartsWith('say:')) { if (-not $R.Out.Contains($e.Substring(4))) { $why += " missing:'$($e.Substring(4))'(out='$($R.Out)')" } }
+            elseif ($e.StartsWith('nosay:')) { if ($R.Out.Contains($e.Substring(6))) { $why += " unexpected:'$($e.Substring(6))'" } }
+            elseif ($e.StartsWith('has:')) { if (-not (Test-Path -LiteralPath (Join-Path $Ws ('.synaptic/' + $e.Substring(4))))) { $why += " absent:$($e.Substring(4))" } }
+            elseif ($e.StartsWith('no:')) { if (Test-Path -LiteralPath (Join-Path $Ws ('.synaptic/' + $e.Substring(3)))) { $why += " present:$($e.Substring(3))" } }
+            elseif ($e.StartsWith('owner:') -or $e.StartsWith('notowner:')) {
+                # .owner: line 1 is the signature; one claimant session id per line after it.
+                $of = Join-Path $act '.owner'; $cl = @()
+                if ([IO.File]::Exists($of)) { $cl = @([IO.File]::ReadAllText($of).Replace("`r", '').Split("`n") | Select-Object -Skip 1 | Where-Object { $_ -ne '' }) }
+                $want = $e.Substring($e.IndexOf(':') + 1); $is = ($cl -ccontains $want)
+                if ($e.StartsWith('owner:') -and -not $is) { $why += " not-claimant:$want($($cl -join '|'))" }
+                if ($e.StartsWith('notowner:') -and $is) { $why += " claimant:$want" }
+            }
+            elseif ($e.StartsWith('sig:')) {
+                $of = Join-Path $act '.owner'; $s1 = ''
+                if ([IO.File]::Exists($of)) { $s1 = [IO.File]::ReadAllText($of).Replace("`r", '').Split("`n")[0] }
+                if ($s1 -cne $e.Substring(4)) { $why += " sig='$s1'" }
+            }
+            else { $why += " unknown-expect:'$e'" }
+        }
+        return $why
+    }
+
     $cases = [IO.File]::ReadAllLines((Join-Path $Root 'tests/capture-floor/pending-cases.txt'), [Text.Encoding]::UTF8)
     $rows = 0; $wantRows = @($cases | Where-Object { $_.Trim() -and -not $_.Trim().StartsWith("#") }).Count
     foreach ($line in $cases) {
         $f = $line.Split('|'); if ($f.Count -lt 4) { continue }
         $name = $f[0].Trim(); if (-not $name -or $name.StartsWith('#')) { continue }
         $setup = @($f[1].Split(',') | ForEach-Object { $_.Trim() } | Where-Object { $_ }); $mode = $f[2].Trim(); $expect = $f[3].Trim()
-        $rows++
+        $rows++; $script:HookIn = ''; $sidIn = ''
         if ($setup -contains 'nobrain') { $ws = New-Workspace "pc-$name" }
         elseif ($setup -contains 'bare') { $ws = New-Workspace "pc-$name" -Brain; New-Item -ItemType Directory -Path (Join-Path $ws '.synaptic/knowledge') | Out-Null }
         elseif ($setup -contains 'pgfile') { $ws = New-Workspace "pc-$name" -Brain; New-Item -ItemType Directory -Path (Join-Path $ws '.synaptic/journal') | Out-Null; [IO.File]::WriteAllText((Join-Path $ws '.synaptic/journal/_current.md'), "# Journal`n", $utf8); [IO.File]::WriteAllText((Join-Path $ws '.synaptic/playgrounds'), '') }
         else { $ws = New-BrainWs "pc-$name" }
         $jf = Join-Path $ws '.synaptic/journal/_current.md'
+        $ad = Join-Path $ws '.synaptic/journal/_activity'
         foreach ($item in $setup) {
             if ($item -like 'crumbs=*') { 1..([int]$item.Substring(7)) | ForEach-Object { [IO.File]::AppendAllText($jf, $crumb, $utf8) } }
             elseif ($item -eq 'crumbcase') { [IO.File]::AppendAllText($jf, "- 2026-10-29T10:00Z Breadcrumb: touched a.md`n", $utf8) }
             elseif ($item -eq 'pg') { New-Item -ItemType Directory -Path (Join-Path $ws '.synaptic/playgrounds/task') | Out-Null }
+            elseif ($item -eq 'pgz') { foreach ($p in @('Zed', 'a b')) { New-Item -ItemType Directory -Path (Join-Path $ws (".synaptic/playgrounds/" + $p)) | Out-Null } }
             elseif ($item -eq 'archive') { New-Item -ItemType Directory -Path (Join-Path $ws '.synaptic/playgrounds/archive/old') -Force | Out-Null }
             elseif ($item -eq 'ledger') {
-                $ad = Join-Path $ws '.synaptic/journal/_activity'; New-Item -ItemType Directory -Path $ad | Out-Null
+                [IO.Directory]::CreateDirectory($ad) | Out-Null
                 [IO.File]::WriteAllText((Join-Path $ad '0123456789ab-2026-10-29.log'), "boot`nstop`n", $utf8)
             }
+            elseif ($item -like 'sid=*') { $sidIn = Get-SidJson $item.Substring(4) }
+            elseif ($item -like 'boot=*') { Invoke-Side $ws 'rescue' $item.Substring(5) }
+            elseif ($item -like 'beat=*') { Invoke-Side $ws 'beat' $item.Substring(5) }
+            elseif ($item -like 'end=*') { Invoke-Side $ws 'end' $item.Substring(4) }
+            elseif ($item -like 'age=*') { [IO.File]::SetLastWriteTimeUtc((Join-Path $ad ('.live/' + $item.Substring(4))), (New-Object DateTime 2020, 1, 1, 0, 0, 0, ([DateTimeKind]::Utc))) }
+            elseif ($item -eq 'degraded') { [IO.Directory]::CreateDirectory($ad) | Out-Null; [IO.File]::WriteAllText((Join-Path $ad '_degraded'), "2026-10-29 breadcrumb write-failed`n", $utf8) }
+            elseif ($item -eq 'livefile') { [IO.Directory]::CreateDirectory($ad) | Out-Null; [IO.File]::WriteAllText((Join-Path $ad '.live'), '') }
+            elseif ($item -eq 'endedfile') { [IO.Directory]::CreateDirectory($ad) | Out-Null; [IO.File]::WriteAllText((Join-Path $ad '.ended'), '') }
         }
+        $script:HookIn = $sidIn
         $r = Get-HookResult $A2 $ws $mode
-        if ($expect -eq 'quiet') {
-            if (Test-Quiet $r) { Ok "A.2 [$mode] ${name}: quiet" } else { Nok "A.2 [$mode] ${name}: quiet" "rc=$($r.Rc) out='$($r.Out)' err='$($r.Err)'" }
-        } elseif ($expect.StartsWith('say:')) {
-            $want = $expect.Substring(4)
-            if ($r.Rc -eq 0 -and $r.Out.Contains($want)) { Ok "A.2 [$mode] ${name}: says '$want'" } else { Nok "A.2 [$mode] ${name}: says '$want'" "out='$($r.Out)' err='$($r.Err)'" }
-        } else { Nok "A.2 fixture row $name" "unknown expect '$expect'" }
+        $script:HookIn = ''
+        $why = Get-ExpectFailure $ws $r $expect
+        if (-not $why) { Ok "A.2 [$mode] ${name}: $expect" } else { Nok "A.2 [$mode] ${name}: $expect" $why }
     }
     if ($rows -eq $wantRows) { Ok "A.2 fixture table: all $wantRows rows ran" } else { Nok "A.2 fixture table: all $wantRows rows ran" "ran $rows" }
 
@@ -473,6 +522,34 @@ try {
     $r = Get-HookResult $A2 $ws 'rescue'
     if ($r.Rc -eq 0 -and $r.Out -match '1 pending breadcrumb\(s\)') { Ok 'chain (PS): a real project edit becomes a breadcrumb and triggers the reminder' }
     else { Nok 'chain (PS): a real project edit becomes a breadcrumb and triggers the reminder' "out='$($r.Out)'" }
+
+    # Fail open, but visibly [K1 2.2]: a breadcrumb that cannot be written leaves one _degraded line, and
+    # the next rescue prints it exactly once (here the journal is a directory, so the append fails).
+    $ws = New-BrainWs 'chainps-degraded'
+    [IO.File]::WriteAllText((Join-Path $ws 'app.txt'), "a`n"); Save-Commit $ws
+    [IO.File]::AppendAllText((Join-Path $ws 'app.txt'), "b`n")
+    $jd = Join-Path $ws '.synaptic/journal/_current.md'; [IO.File]::Delete($jd); [IO.Directory]::CreateDirectory($jd) | Out-Null
+    $r1 = Get-HookResult $A1 $ws; $r2 = Get-HookResult $A1 $ws
+    $dg = Join-Path $ws '.synaptic/journal/_activity/_degraded'
+    $dn = 0; if ([IO.File]::Exists($dg)) { $dn = @([IO.File]::ReadAllLines($dg) | Where-Object { $_ -match ' breadcrumb write-failed$' }).Count }
+    if ($r1.Rc -eq 0 -and $r2.Rc -eq 0 -and -not $r1.Err -and -not $r2.Err -and $dn -eq 1) { Ok 'A.1 that cannot write the journal exits 0 silently and leaves ONE _degraded line [K1]' }
+    else { Nok 'A.1 that cannot write the journal exits 0 silently and leaves ONE _degraded line [K1]' "rc=$($r1.Rc)/$($r2.Rc) err='$($r1.Err)' lines=$dn" }
+    $first = Get-HookResult $A2 $ws 'rescue'; $second = Get-HookResult $A2 $ws 'rescue'
+    if ($first.Out.Contains('breadcrumb write-failed') -and -not $second.Out.Contains('could not run')) { Ok 'chain (PS): the next rescue prints the _degraded line once, then it is gone [K1]' }
+    else { Nok 'chain (PS): the next rescue prints the _degraded line once, then it is gone [K1]' "first='$($first.Out)'" }
+
+    # Liveness in the A.4 order [K1]: a turn whose only change is its own breadcrumb (A.1, then beat) is
+    # claimed by that session. Once it has ended another session is offered the work; its own resume is not.
+    $ws = New-BrainWs 'chainps-live'
+    [IO.File]::WriteAllText((Join-Path $ws 'app.txt'), "a`n"); Save-Commit $ws
+    [IO.File]::AppendAllText((Join-Path $ws 'app.txt'), "b`n")
+    $script:HookIn = Get-SidJson 'L1'; $null = Get-HookResult $A2 $ws 'rescue'
+    $script:HookIn = ''; $null = Invoke-Hook $A1 '' $ws
+    $script:HookIn = Get-SidJson 'L1'; $null = Get-HookResult $A2 $ws 'beat'; $null = Get-HookResult $A2 $ws 'end'
+    $script:HookIn = Get-SidJson 'L2'; $other = Get-HookResult $A2 $ws 'rescue'
+    $script:HookIn = Get-SidJson 'L1'; $own = Get-HookResult $A2 $ws 'rescue'; $script:HookIn = ''
+    if ($other.Out.Contains('1 pending breadcrumb(s)') -and -not $own.Out) { Ok "chain (PS): a session's own breadcrumb is claimed (A.1 then beat); offered to the next session, not to its own resume [K1]" }
+    else { Nok "chain (PS): a session's own breadcrumb is claimed (A.1 then beat); offered to the next session, not to its own resume [K1]" "other='$($other.Out)' own='$($own.Out)'" }
 
     # --- The fingerprint primitive (references/fingerprint.md) [X4/S4] -------------------------------
     # In-process here; run.sh checks PowerShell = sh on the same fixture set.

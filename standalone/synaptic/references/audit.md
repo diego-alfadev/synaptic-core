@@ -441,6 +441,12 @@ and mask a real capture-dead condition as `not-used (benign)`. Read the activity
 step's denominator — it is a `.log` under `journal/`, never knowledge, and never a node (the
 knowledge-scoped checks above never see it).
 
+**Hook failures and liveness files (v1.7).** If `journal/_activity/_degraded` exists, report each line as
+`HOOK-DEGRADED: <date> <hook> write-failed` and route it to the hook smoke-test. Audit never deletes it
+(the next SessionStart rescue prints it once and removes it, so audit sees only failures since the last
+rescue). The liveness files (`.live/`, `.ended/`,
+`.owner`) are bookkeeping: never findings, never knowledge, never part of the Step 9b counts.
+
 **No runtime required.** Degree/count math over files (journal timestamps + frontmatter/git), LLM-free.
 *The activity marker's actual firing is author-complete; verify on a real run — and note its
 host coverage is confirmed only for Claude Code (see `references/capture-hooks.md` "Per-host activity marker support").*

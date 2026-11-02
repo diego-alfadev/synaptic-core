@@ -2,6 +2,36 @@
 
 ## [Unreleased]
 
+### Added
+- **Fewer false rescue offers (hook liveness, K1).** `synaptic-pending` gains two silent modes: `beat` on
+  `Stop` (a heartbeat that records the pending state this session last saw, and claims the work when
+  that state changed during its turns) and `end` on `SessionEnd` (bookkeeping only). The `SessionStart`
+  rescue never offers a session its own work (a resume), and stays quiet while another live session has
+  claimed the unchanged pending work. It offers when nobody claimed it, the work changed after the last claim, or every claimant ended or
+  went silent past a 2 h TTL. Files only, under `journal/_activity/` (git-ignored). Needs a session id on
+  the hook stdin (Claude Code per its docs); without one the v1.6 behaviour stays, and the offer says it
+  may include this session's own work. Two concurrent sessions can both claim a change; the rule then
+  errs toward quiet until both are gone.
+  `beat` runs after the breadcrumb in one `Stop` command, so it sees the turn's own breadcrumb (Claude
+  Code runs the hooks of one event in parallel); a claimant of an older state also re-claims at its next
+  `beat` or `rescue`.
+- **Fail open, but visibly.** A hook that cannot write (the breadcrumb, the heartbeat, the end marker)
+  leaves one `journal/_activity/_degraded` line. The next `SessionStart` rescue prints it once, naming
+  the hook, and deletes it; until then `/synaptic-audit` reports it as `HOOK-DEGRADED`.
+- **Specified, not shipped:** an opt-in `SubagentStop` Key-Learnings harvest (recipe A.5), off by
+  default and never turned on by init or upgrade.
+
+### Changed
+- `SessionEnd` is wired again, for the silent `end` only (v1.6 retired it as a reminder channel), with a
+  10 s `timeout`: Claude Code's default budget for `SessionEnd` hooks is 1.5 s (per its docs), less than
+  a script start took on an endpoint-protected Windows machine. `end` writes only its marker, with bash
+  builtins; the next rescue tidies up.
+- `SessionStart` is registered once per source (startup, resume, clear, fork) instead of one alternation
+  matcher; `fork` is new.
+- The recipe's per-host table records that current Copilot docs list `sessionEnd` and that VS Code
+  Copilot also reads `.claude/settings.json` (deploy the hooks in one place, never both).
+- **Upgrade:** re-deploy the hooks (`references/upgrade-to-v1.md`, "v1.7 liveness").
+
 ## [1.6.0] - 2026-11-01
 
 > **Simpler and cheaper to run.** `SKILL.md`, which every command reads, drops from 60 KB to a 12 KB

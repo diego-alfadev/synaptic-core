@@ -49,7 +49,7 @@ One terse line appended to `journal/_current.md → ## Log` per meaningful turn.
 | Activity marker (mechanical floor) | `Stop` + `SessionStart` — host shell appends one content-free line to `journal/_activity/` | Shell-hook-capable hosts only |
 | Breadcrumb (workhorse) | `Stop` — per-turn cheap line to the journal | UNIVERSAL across agents |
 | Recovery after compaction | `SessionStart` (`compact`) — the hook injects one line: re-read the journal and write the session summary there | Host-conditional (Claude Code) |
-| Rescue net | `SessionStart` — detect unconsolidated breadcrumbs/active playgrounds, OFFER to consolidate | Universal on next boot |
+| Rescue net | `SessionStart` — detect unconsolidated breadcrumbs/active playgrounds, OFFER to consolidate (not for work a live session claimed) | Universal on next boot |
 
 > Honest limit: **no agent has native idle detection.** Capture is event-driven + journal fallback + `SessionStart`-rescue — never an unattended idle daemon at CORE.
 

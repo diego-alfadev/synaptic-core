@@ -3,16 +3,31 @@
 # the given mode, and compare. One table = sh/PowerShell parity by construction.
 #
 # name | setup | mode | expect
-#   setup (comma-separated, empty = a brain with an empty journal and an empty playgrounds/):
+#   setup (comma-separated, applied in order; empty = a brain with an empty journal and an empty playgrounds/):
 #     crumbs=N   append N lowercase "breadcrumb: touched a.md" lines to journal/_current.md
 #     crumbcase  append one "Breadcrumb:" line (wrong case: must NOT count)
 #     pg         create playgrounds/task/ (an open playground)
+#     pgz        also create playgrounds/Zed/ and "playgrounds/a b/" (byte order: Zed < a b < task)
 #     archive    create playgrounds/archive/old/ (finished work: must NOT count)
 #     ledger     create journal/_activity/<x>.log with boot/stop lines (bookkeeping: must NOT count)
 #     bare       a brain with knowledge/ only: no journal, no playgrounds/
 #     nobrain    no .synaptic/ at all
 #     pgfile     playgrounds is a FILE, not a directory (must NOT count, no error)
-#   expect: quiet (exit 0, no stdout, no stderr) | say:<substring of stdout> (exit 0)
+#   liveness (K1, v1.7):
+#     sid=X      the run under test gets the hook stdin {"session_id":"X"} (default: empty stdin = no id)
+#     boot=X     first run the script in mode rescue with session id X (session X starts and sees the state)
+#     beat=X     first run the script in mode beat with session id X (a Stop of session X)
+#     end=X      first run the script in mode end with session id X (a SessionEnd of session X)
+#     age=X      give journal/_activity/.live/X an old mtime (a heartbeat past the 2 h TTL)
+#     degraded   write one journal/_activity/_degraded line (a hook failed earlier)
+#     livefile   journal/_activity/.live is a FILE (the heartbeat write fails)
+#     endedfile  journal/_activity/.ended is a FILE (the end-marker write fails)
+#   expect: ';'-separated; every item must hold, and the exit code is always 0:
+#     quiet      no stdout and no stderr
+#     say:S      stdout contains S          nosay:S   stdout does not contain S
+#     has:P      .synaptic/P exists         no:P      .synaptic/P does not exist
+#     owner:X    session X is a claimant in journal/_activity/.owner   notowner:X  it is not
+#     sig:S      line 1 of journal/_activity/.owner is exactly S (the same literal in both shells = parity)
 zero         |                 | rescue  | quiet
 archive      | archive         | rescue  | quiet
 ledger       | ledger          | rescue  | quiet
@@ -26,3 +41,35 @@ crumb-only   | crumbs=1        | rescue  | say:1 pending breadcrumb(s) and 0 ope
 c-zero       |                 | compact | say:context was just compacted
 c-pending    | crumbs=1,pg     | compact | say:1 pending breadcrumb(s), 1 open playground(s)
 c-nobrain    | nobrain         | compact | quiet
+# Liveness: no rescue offer for work a live session owns, never for the current session (K1 2.1)
+live-self        | pg,beat=A,sid=A          | rescue  | quiet;has:journal/_activity/.live/A
+live-other-fresh | pg,beat=B,sid=A          | rescue  | quiet;has:journal/_activity/.live/A
+ended-other      | pg,beat=B,end=B,sid=A    | rescue  | say:from a previous session;nosay:this session's own work
+stale-heartbeat  | pg,beat=B,age=B,sid=A    | rescue  | say:1 open playground(s)
+changed-since    | pg,beat=B,crumbs=1,sid=A | rescue  | say:1 pending breadcrumb(s)
+no-owner         | pg,sid=A                 | rescue  | say:from a previous session
+race-self        | pg,beat=A,crumbs=1,sid=A | rescue  | quiet;owner:A;sig:1 task
+healed-at-boot   | pg,beat=A,crumbs=1,boot=A,sid=C | rescue | quiet
+healed-at-beat   | pg,beat=A,crumbs=1,beat=A,sid=C | rescue | quiet
+resume-after-end | pg,beat=A,end=A,sid=A    | rescue  | quiet;has:journal/_activity/.live/A;no:journal/_activity/.ended/A
+sig-order        | pg,pgz,sid=A             | beat    | quiet;sig:0 Zed/a b/task
+concurrent-live  | boot=A,boot=B,pg,beat=B,beat=A,end=B,sid=C | rescue | quiet
+claimants-gone   | boot=A,boot=B,pg,beat=B,beat=A,end=A,end=B,sid=C | rescue | say:from a previous session
+no-sid           | pg,beat=B                | rescue  | say:this session's own work
+bad-sid          | pg,beat=B,sid=a/b        | rescue  | say:this session's own work;no:journal/_activity/.live/a
+live-zero        | sid=A                    | rescue  | quiet;has:journal/_activity/.live/A
+beat-claims      | pg,sid=A                 | beat    | quiet;has:journal/_activity/.live/A;owner:A
+beat-joins       | pg,beat=B,sid=A          | beat    | quiet;owner:B;owner:A
+beat-keeps       | pg,beat=B,boot=A,sid=A   | beat    | quiet;owner:B;notowner:A
+beat-reclaims    | pg,beat=B,crumbs=1,sid=A | beat    | quiet;owner:A;notowner:B
+beat-nosid       | pg                       | beat    | quiet;no:journal/_activity/.live;no:journal/_activity/.owner
+beat-nobrain     | nobrain,sid=A            | beat    | quiet;no:journal
+end-marks        | beat=A,sid=A             | end     | quiet;has:journal/_activity/.ended/A
+end-tidied       | beat=A,end=A,sid=B       | rescue  | quiet;has:journal/_activity/.ended/A;no:journal/_activity/.live/A
+end-nosid        | beat=A                   | end     | quiet;no:journal/_activity/.ended
+c-live           | pg,beat=A,sid=A          | compact | say:1 open playground(s)
+# Fail open, but visibly: a failed hook leaves one _degraded line; the next rescue prints it once (K1 2.2)
+degraded-shown   | degraded                 | rescue  | say:a capture hook could not run;no:journal/_activity/_degraded
+degraded-compact | degraded                 | compact | nosay:could not run;has:journal/_activity/_degraded
+beat-fails       | livefile,sid=A           | beat    | quiet;has:journal/_activity/_degraded
+end-fails        | beat=A,endedfile,sid=A   | end     | quiet;has:journal/_activity/_degraded

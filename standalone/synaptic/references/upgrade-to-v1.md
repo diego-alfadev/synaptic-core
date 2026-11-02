@@ -30,7 +30,7 @@
 - **Deploy the layer-(a0) activity marker** per `references/capture-hooks.md` "Deterministic activity marker": wire the
   pinned platform-appropriate one-liner (**UTF-8 no-BOM**; `[IO.File]::AppendAllText` on PowerShell —
   never `>>` (UTF-16LE+BOM) or `Add-Content` (ANSI by default; a BOM with `-Encoding utf8` on 5.1)) to `Stop` (`stop`) and `SessionStart`
-  startup / resume / clear (`boot`; never on the `compact` source), writing to `journal/_activity/<host-token>-<YYYY-MM-DD>.log`. Marker-wrapped + idempotent like
+  startup / resume / clear / fork (`boot`; never on the `compact` source), writing to `journal/_activity/<host-token>-<YYYY-MM-DD>.log`. Marker-wrapped + idempotent like
   every other hook write.
 - **Migrate the boot ledger:** stop emitting the old `- boot:` line into `journal/_current.md`; the boot
   event now lives ONLY in the activity ledger. Existing `- boot:` lines are harmless history and are
@@ -50,7 +50,7 @@
   the Journal-Trim rollup; never rename them silently.
 - **v1.6 hook shape (re-deploy on every host).** Inside the `BEGIN:SYNAPTIC-HOOKS` block (or the
   hand-wired entries the host record lists), with the owner's OK:
-  1. **Remove** the `PreCompact` and `SessionEnd` entries and the old `SessionStart` rescue entry;
+  1. **Remove** the `PreCompact` entry, the old `SessionEnd` *reminder* entry (`synaptic-consolidate-reminder`) and the old `SessionStart` rescue entry; keep a v1.7 `synaptic-pending end` entry;
      delete the old script files (`synaptic-consolidate-reminder.sh` / `.ps1`, `synaptic-rescue.sh`),
      or the old and new rescue double-fire.
   2. **Split `SessionStart`:** startup / resume / clear → A.0 `boot` + `synaptic-pending rescue`;
@@ -61,6 +61,12 @@
      Step 9b).
   4. **Claude Code with a project `CLAUDE.md`:** offer the `SYNAPTIC-BOOT` block
      (`references/init.md` §a2), then run the boot check (`references/audit.md` Step 10b).
+- **v1.7 liveness (re-deploy the hooks).** Add `synaptic-pending beat` to `Stop`, chained after the breadcrumb in the same command (recipe A.4); where the host has
+  `SessionEnd` (not Cursor; Copilot only in its newer docs), add an entry with `synaptic-pending end` and a
+  10 s `timeout` (recipe A.4); elsewhere the heartbeat TTL covers it. Register `SessionStart` once per
+  source (startup, resume, clear, fork) instead of one alternation matcher. Replace
+  `synaptic-pending.{sh,ps1}` with the v1.7 script. Both new entries are silent. A host that sends no session id keeps the v1.6 rescue; nothing
+  to migrate. Never turn on the opt-in SubagentStop harvest (recipe A.5) during an upgrade.
 
 ## v1.4.0 addendum — host-setup detection is an ALWAYS-RUN step (not migration-only)
 

@@ -239,6 +239,8 @@ After routing all items:
 5. **Activity-log rollup (v1.5.0 — this is the step `/synaptic-audit` routes to; the hook never prunes,
    and audit never writes).** The layer-(a0) activity marker (`references/capture-hooks.md`) only ever blind-appends to
    `journal/_activity/<host-token>-<date>.log` (one `boot` or `stop` per line; pre-1.6 files are `<host>-<date>.log` with `<ts> <event>` lines — count the last field), so trimming it is **this** step's job:
+   - **Leave the A.2 liveness files alone** (`.live/`, `.ended/`, `.owner`, `_degraded`): the pending
+     script prunes its markers itself, and only the rescue deletes `_degraded`. The rollup is for day-files.
    - **Retention contract (binding):** **never prune inside the audit window.** Keep **raw** per-day logs
      covering at least Step 9b's window (default: the last ~30 days). Only beyond it may a day-file be
      collapsed to a single line `<date> boot=N stop=M`, and the **per-day `boot` count must survive the

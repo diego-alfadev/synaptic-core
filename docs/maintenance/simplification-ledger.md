@@ -256,3 +256,17 @@
     `synaptic` name + provenance line); conflict-copy cleanup narrowed to `synaptic-*-DESKTOP-*` in
     command-discovery, init, host-setup and upgrade-to-v1. Nothing removed. Portability of users'
     skills (registry, own skills repo) is a v1.7 spec, not built.
+
+## v1.7.0 round (loop 2, branch `feat/v1.7.0-work-items`, base `release/v1.6.0` = `4e420ad`)
+
+Same rules as above: one home per text, pointers, nothing deleted without a parked copy. Specs:
+`strategy/specs/v1.7-*.md` in the workspace (not in this repo). Defaults relied on: decisions Round 5.
+
+| # | Item | What changed | Where | Status |
+|---|---|---|---|---|
+| R1-K1 | Hook liveness + `_degraded` | `synaptic-pending` gains `beat` (Stop) and `end` (SessionEnd, silent); liveness files `.live/<sid>` (last-seen signature), `.ended/<sid>`, `.owner` (signature + claimants) under `journal/_activity/`; rescue never offers a session its own work, is quiet while a live claimant holds the unchanged state, offers otherwise; TTL 2 h; a claimant re-claims at its next beat/rescue (parallel Stop hooks). A.1/A.2 write one `_degraded` line on a failed write; the next rescue prints it once. SessionEnd wired again (silent, 10 s `timeout`); SessionStart one entry per source incl. `fork` (Round 5 default 4). SubagentStop harvest specified only (A.5, off). Audit reports `HOOK-DEGRADED`; consolidate's rollup leaves liveness files alone; upgrade has a v1.7 bullet. | recipe A.2/A.4/A.5, `capture-hooks.md`, `audit.md`, `consolidate.md`, `upgrade-to-v1.md`, `templates/BRAIN.md` (one cell) | done |
+
+Not done in R1 (spec §2.3, §2.5): no boot-proof hook (Round 5 default 3: the nonce stays the only
+proof); the PowerShell launcher hardening (`SystemRoot`-qualified path, `-NonInteractive`, UTF-8 console)
+and `-EncodedCommand` (default 5: not adopted) are left for the host-adapter item. Relative hook paths
+in A.4 vs `$CLAUDE_PROJECT_DIR` (review F8, pre-existing) are left for R6(a).
