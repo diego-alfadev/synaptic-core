@@ -1,3 +1,4 @@
 *.svg text eol=lf
 standalone/synaptic/MANIFEST.txt text eol=lf
 *.sh text eol=lf
+standalone/synaptic/templates/playgrounds/.gitignore text eol=lf
