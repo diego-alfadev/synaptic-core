@@ -18,7 +18,8 @@ acceptance criterion in the CHANGELOG was by-inspection.
   scripts under test are the scripts a user pastes. If a heading or a fence moves, extraction fails loudly.
 - **Launch hooks the way a host does**: a new process whose working directory is the workspace — plus one
   deliberate in-process run, because that is how a user checks a hook from their own terminal.
-- **Fixtures live in the OS temp directory.** No suite reads or writes a real brain.
+- **Fixtures live in the OS temp directory.** No suite reads or writes a real brain. The one exception
+  is `capture-floor/fixtures/`: small static indexes, read only, never written.
 - **Every failure is also a GitHub annotation**, so results are readable from the run page.
 
 ## Hazards these suites found, and still guard

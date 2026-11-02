@@ -71,7 +71,9 @@
   the three new files in the brain's `templates/` (`task-index.md`, `proposal-index.md`, `tasks.md`).
   Offer to move the journal's *Active playgrounds* list into `tasks/INDEX.md` (one row per playground,
   `home: playgrounds/<id>/`, with the next free `T<n>`), leaving one pointer line in the journal. If the
-  owner declines, nothing changes: the journal list keeps working (`references/contract.md` §6).
+  owner declines, nothing changes: the journal list keeps working (`references/contract.md` §6). Offer
+  the two v1.7 tier additions to the brain's own tier table (AUTO: add a proposal row; PROPOSE-THEN-APPROVE:
+  promote or drop a proposal); until the owner accepts, adding a row is proposed, not automatic (§5).
 
 ## v1.4.0 addendum — host-setup detection is an ALWAYS-RUN step (not migration-only)
 

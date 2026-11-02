@@ -5,7 +5,8 @@
      references/contract.md §6 (Work items).
      status: [ ] open · [x] promoted or done (with proof) · [-] dropped (with a reason)
      from:   where it came from (a journal date, a node, session YYYY-MM-DD)
-     to:     T<n> once promoted to a task
+     to:     T<n> once promoted to a task, else —. Promote or drop only with the owner's OK
+             (procedure: contract.md §6, "Promotion")
      note:   the proof when [x], the reason when [-]; empty while open
      A candidate that needs more than a row gets proposals/P<n>-<slug>/ with its details and references.
      Ids P<n> are never reused or renumbered. -->

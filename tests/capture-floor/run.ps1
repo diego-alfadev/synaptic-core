@@ -577,6 +577,66 @@ try {
     if (-not (Get-Schema 'proposals/INDEX.md') -or (Get-Schema 'proposals/INDEX.md') -cne (Get-Header 'proposal-index.md')) { $bad += ' proposals' }
     if (-not $bad) { Ok 'work-item row schemas in contract.md = the index template headers [T2]' } else { Nok 'work-item row schemas in contract.md = the index template headers [T2]' "differs:$bad" }
 
+    # --- Proposal -> task promotion [R4] ------------------------------------------------------------
+    # A promoted pair (fixtures/promotion, read-only) keeps the contract section 6 provenance invariants; a
+    # broken copy must be caught, so the check is not vacuous. Columns are found by header name, never by position.
+    function Read-Rows([string]$Path) {
+        $r = @{ Header = ''; Rows = (New-Object System.Collections.Generic.List[object]) }; $col = $null
+        if (-not [IO.File]::Exists($Path)) { return $r }
+        foreach ($l in [IO.File]::ReadAllText($Path, [Text.Encoding]::UTF8).Replace("`r", '').Split("`n")) {
+            if (-not $l.StartsWith('| ')) { continue }
+            $parts = $l.Split('|'); $c = @(); for ($i = 1; $i -lt $parts.Count - 1; $i++) { $c += $parts[$i].Trim() }
+            if ($c[0] -ceq 'id') { $r.Header = $l.TrimEnd(); $col = @{}; for ($i = 0; $i -lt $c.Count; $i++) { $col[$c[$i]] = $i }; continue }
+            if ($null -eq $col) { continue }
+            $o = @{}; foreach ($k in $col.Keys) { $o[$k] = [string]$c[$col[$k]] }; $r.Rows.Add($o)
+        }
+        return $r
+    }
+    function Get-ProvDefects([string]$Brain) {
+        $d = New-Object System.Collections.Generic.List[string]
+        $p = Read-Rows (Join-Path $Brain 'proposals/INDEX.md'); $t = Read-Rows (Join-Path $Brain 'tasks/INDEX.md')
+        if (-not $p.Header -or $p.Header -cne (Get-Header 'proposal-index.md')) { $d.Add('header:proposals') }
+        if (-not $t.Header -or $t.Header -cne (Get-Header 'task-index.md')) { $d.Add('header:tasks') }
+        $seen = @{}; $to = @{}; $from = @{}
+        foreach ($set in @(@{ Rows = $p.Rows; Id = '^P[0-9]+$'; Map = $to }, @{ Rows = $t.Rows; Id = '^T[0-9]+$'; Map = $from })) {
+            foreach ($r in $set.Rows) {
+                $id = $r['id']
+                if ($seen.ContainsKey($id)) { $d.Add("dup:$id") }; $seen[$id] = 1; $set.Map[$id] = $r
+                if ($id -cnotmatch $set.Id) { $d.Add("id:$id") }
+                if (@('[ ]', '[x]', '[-]') -cnotcontains $r['status']) { $d.Add("status:$id") }
+                if ($r['updated'] -cnotmatch '^[0-9]{4}-[0-9]{2}-[0-9]{2}$') { $d.Add("updated:$id") }
+                if ($r['status'] -ceq '[-]' -and -not $r['note']) { $d.Add("no-reason:$id") }
+            }
+        }
+        foreach ($k in $to.Keys) {
+            $tn = $to[$k]['to']; if ($tn -cnotmatch '^T[0-9]+$') { continue }
+            if ($to[$k]['status'] -cne '[x]') { $d.Add("promoted-not-x:$k") }
+            if (-not $to[$k]['note'].Contains($tn)) { $d.Add("no-proof:$k") }
+            if (-not $from.ContainsKey($tn) -or $from[$tn]['from'] -cne $k) { $d.Add("to-without-from:$k") }
+        }
+        foreach ($k in $from.Keys) {
+            $pn = $from[$k]['from']; if ($pn -cnotmatch '^P[0-9]+$') { continue }
+            if (-not $to.ContainsKey($pn) -or $to[$pn]['to'] -cne $k) { $d.Add("from-without-to:$k") }
+            $h = $from[$k]['home']
+            if ($h -cne 'inline' -and -not $h.StartsWith('playgrounds/') -and -not $h.StartsWith("proposals/$pn-")) { $d.Add("home:$k") }
+        }
+        return ,$d
+    }
+    $fix = Join-Path $Root 'tests/capture-floor/fixtures/promotion'
+    $d = (Get-ProvDefects $fix) -join ' '
+    $promo = @((Read-Rows (Join-Path $fix 'proposals/INDEX.md')).Rows | Where-Object { $_['status'] -ceq '[x]' -and $_['to'] -cmatch '^T[0-9]+$' }).Count
+    if (-not $d -and $promo -ge 1) { Ok 'promotion fixture: the promoted pair keeps its provenance (from/to, proof, status, ids) [R4]' }
+    else { Nok 'promotion fixture: the promoted pair keeps its provenance (from/to, proof, status, ids) [R4]' "defects: $d promoted rows: $promo" }
+    $ws = New-Workspace 'prov-broken'
+    foreach ($i in @('proposals', 'tasks')) { [IO.Directory]::CreateDirectory((Join-Path $ws $i)) | Out-Null }
+    $src = Join-Path $fix 'proposals/INDEX.md'; if ([IO.File]::Exists($src)) { [IO.File]::Copy($src, (Join-Path $ws 'proposals/INDEX.md')) }
+    $src = Join-Path $fix 'tasks/INDEX.md'; $keep = @()
+    if ([IO.File]::Exists($src)) { $keep = @([IO.File]::ReadAllText($src, [Text.Encoding]::UTF8).Replace("`r", '').Split("`n") | Where-Object { $_ -cnotmatch '^\| T[0-9]+ \|.*\| P[0-9]+ \|' }) }
+    [IO.File]::WriteAllText((Join-Path $ws 'tasks/INDEX.md'), ($keep -join "`n"), (New-Object Text.UTF8Encoding $false))
+    $d = (Get-ProvDefects $ws) -join ' '
+    if ($d.Contains('to-without-from:')) { Ok 'promotion check: a proposal whose task row is gone is broken provenance [R4]' }
+    else { Nok 'promotion check: a proposal whose task row is gone is broken provenance [R4]' "defects: $d" }
+
     # --- The fingerprint primitive (references/fingerprint.md) [X4/S4] -------------------------------
     # In-process here; run.sh checks PowerShell = sh on the same fixture set.
     $fpW = Get-Block '## Whole-file fingerprint' 'powershell' $FpDoc '## '

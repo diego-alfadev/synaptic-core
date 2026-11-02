@@ -438,6 +438,50 @@ miss=""; for f in templates/playgrounds/.gitignore templates/templates/task-inde
   tr -d '\r' < "$ROOT/standalone/synaptic/MANIFEST.txt" | grep -qx "$f" && [ -s "$ROOT/standalone/synaptic/$f" ] || miss="$miss $f"; done
 [ -z "$miss" ] && ok "the work-item templates exist and are listed in MANIFEST.txt [T2]" || nok "the work-item templates exist and are listed in MANIFEST.txt [T2]" "missing:$miss"
 
+# --- Proposal -> task promotion [R4] -----------------------------------------------------------
+# A promoted pair (fixtures/promotion, read-only) keeps the contract §6 provenance invariants; a broken
+# copy must be caught, so the check is not vacuous. Columns are found by header name, never by position.
+rd() { tr -d '\r' < "$1"; } 2>/dev/null   # a CR-free read; a missing file reads as empty
+prov() {  # <brain> -> one line per defect; nothing when the indexes are sound
+  for i in proposals tasks; do
+    [ "$(rd "$1/$i/INDEX.md" | grep -m1 '^| id |' | sed 's/ *$//')" = "$(header "${i%s}-index.md")" ] || echo "header:$i"
+  done
+  rd "$1/proposals/INDEX.md" > "$WORK/prov-p"; rd "$1/tasks/INDEX.md" > "$WORK/prov-t"
+  awk -F'|' '
+    function t(s) { gsub(/^ +| +$/, "", s); return s }
+    FNR == 1 { f++ }
+    !/^\| / { next }
+    t($2) == "id" { for (i = 2; i < NF; i++) col[f, t($i)] = i; next }
+    { id = t($2); st = t($(col[f, "status"])); nt = t($(col[f, "note"])); up = t($(col[f, "updated"])) }
+    seen[id]++ { print "dup:" id }
+    st != "[ ]" && st != "[x]" && st != "[-]" { print "status:" id }
+    up !~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/ { print "updated:" id }
+    st == "[-]" && nt == "" { print "no-reason:" id }
+    f == 1 { if (id !~ /^P[0-9]+$/) print "id:" id; to[id] = t($(col[1, "to"])); pst[id] = st; pnt[id] = nt }
+    f == 2 { if (id !~ /^T[0-9]+$/) print "id:" id; from[id] = t($(col[2, "from"])); home[id] = t($(col[2, "home"])) }
+    END {
+      for (p in to) if (to[p] ~ /^T[0-9]+$/) {
+        if (pst[p] != "[x]") print "promoted-not-x:" p
+        if (index(pnt[p], to[p]) == 0) print "no-proof:" p
+        if (!(to[p] in from) || from[to[p]] != p) print "to-without-from:" p
+      }
+      for (k in from) if (from[k] ~ /^P[0-9]+$/) {
+        if (!(from[k] in to) || to[from[k]] != k) print "from-without-to:" k
+        if (home[k] != "inline" && home[k] !~ /^playgrounds\// && index(home[k], "proposals/" from[k] "-") != 1) print "home:" k
+      }
+    }' "$WORK/prov-p" "$WORK/prov-t"
+}
+FIX="$ROOT/tests/capture-floor/fixtures/promotion"
+d="$(prov "$FIX" | tr '\n' ' ')"
+promo="$(rd "$FIX/proposals/INDEX.md" | grep -cE '^\| P[0-9]+ \| \[x\] \|.*\| T[0-9]+ \|')"
+[ -z "$d" ] && [ "${promo:-0}" -ge 1 ] && ok "promotion fixture: the promoted pair keeps its provenance (from/to, proof, status, ids) [R4]" \
+  || nok "promotion fixture: the promoted pair keeps its provenance (from/to, proof, status, ids) [R4]" "defects: ${d:-none} promoted rows: ${promo:-0}"
+ws="$WORK/prov-broken"; mkdir -p "$ws/proposals" "$ws/tasks"; cp "$FIX/proposals/INDEX.md" "$ws/proposals/" 2>/dev/null
+rd "$FIX/tasks/INDEX.md" | grep -vE '^\| T[0-9]+ \|.*\| P[0-9]+ \|' > "$ws/tasks/INDEX.md"
+d="$(prov "$ws" | tr '\n' ' ')"
+case "$d" in *to-without-from:*) ok "promotion check: a proposal whose task row is gone is broken provenance [R4]" ;;
+  *) nok "promotion check: a proposal whose task row is gone is broken provenance [R4]" "defects: ${d:-none}" ;; esac
+
 # --- Cross-shell consistency ------------------------------------------------------------------
 # The sh marker hashes `hostname`; the PowerShell copy hashes $env:COMPUTERNAME on Windows and
 # [Net.Dns]::GetHostName() elsewhere, both lower-cased. Mixed sh + PowerShell hooks on one host must land

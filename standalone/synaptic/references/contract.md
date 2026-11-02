@@ -120,8 +120,8 @@ much approval is required.
 
 | Tier | Scope | Examples |
 |---|---|---|
-| **AUTO** (bounded + reversible) | Act without asking; the change is small, reversible, and on record. | Append a journal breadcrumb · reindex / regenerate a derived cache · author the `contradicts` / `supersedes` edge for a pair the user confirmed · capture a decision EXPLICITLY stated in the session · fix a broken `[[wikilink]]`. |
-| **PROPOSE-THEN-APPROVE** | Draft the change and surface it; apply only on a yes. | Promote a node / merge or split nodes · restructure a cluster or MOC · rewrite an existing node during consolidation · author a `contradicts` / `supersedes` edge the user has not confirmed · change a registry's schema · supersede a page's substance. |
+| **AUTO** (bounded + reversible) | Act without asking; the change is small, reversible, and on record. | Append a journal breadcrumb · reindex / regenerate a derived cache · author the `contradicts` / `supersedes` edge for a pair the user confirmed · capture a decision EXPLICITLY stated in the session · fix a broken `[[wikilink]]` · consolidate may add a proposal row (a candidate nobody committed to; reversible). |
+| **PROPOSE-THEN-APPROVE** | Draft the change and surface it; apply only on a yes. | Promote a node / merge or split nodes · restructure a cluster or MOC · rewrite an existing node during consolidation · author a `contradicts` / `supersedes` edge the user has not confirmed · change a registry's schema · supersede a page's substance · promote or drop a proposal. |
 | **HUMAN-ONLY** | Never automate; the human does it (or explicitly directs it each time). | Delete knowledge · purge / burn anything beyond a consolidated playground · edit persona/behavior (lives in the harness, not the brain) · irreversible ops (force-push, schema migration, secret rotation). |
 
 Self-improving is bounded and reversible only: structural change is propose-then-approve; deletion
@@ -155,7 +155,7 @@ stale. Audit and the situation report use the same rule.
 | Mark | Meaning | Rule |
 |---|---|---|
 | `[ ]` | open | the default |
-| `[x]` | done | only with observed proof: a path, a result, a link. No proof → it stays open |
+| `[x]` | done | only with observed proof: a path, a result, a link (for a promoted proposal, its `T<n>`). No proof → it stays open |
 | `[-]` | dropped | always with a reason |
 
 A checkbox grants no approval: ticking `[x]` never authorises an action the autonomy tiers (§5) gate.
@@ -176,8 +176,21 @@ A checkbox grants no approval: ticking `[x]` never authorises an action the auto
 
 - `from` is the provenance: a journal date, a node, a session (`session YYYY-MM-DD`).
 - `note` is the proof or the reason, as for tasks.
-- `to` is `T<n>` once promoted (promotion: `references/consolidate.md`, "Proposals and tasks").
+- `to` is `T<n>` once promoted (*Promotion*, below), else `—`.
 - A proposal that needs more than a row gets `proposals/P<n>-<slug>/` with its details and references.
+
+**Promotion (proposal → task; the one home of this procedure).** PROPOSE-THEN-APPROVE (§5): the owner
+approves each promotion. Then the agent:
+
+1. takes the next free `T<n>`;
+2. writes the task row with `from: P<n>` and a `home`: a playground if the resume test (below) fails;
+   otherwise `inline`, or the proposal's `proposals/P<n>-<slug>/` when its details live there;
+3. sets the proposal row to `[x]` with `to: T<n>` and the task id as the proof in `note`;
+4. stamps `updated` on both rows.
+
+Never renumber; never delete the proposal row. Dropping a proposal is `[-]` with the reason in `note`,
+also owner-approved. Consolidate may add proposal rows (AUTO in the default tiers) and list candidates to promote; it never
+promotes by itself. Promotion grants no approval for the work itself: the task's actions stay gated by §5.
 
 **The resume test (the playground gate, workflow-neutral).** Open a playground, with a `tasks.md`, only
 when the work is **not** resumable from the request plus the work's current state: a diff, a document,

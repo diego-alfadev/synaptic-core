@@ -31,6 +31,13 @@
   the indexes (broken home, done without proof, broken provenance); consolidate reads Key Learnings first
   and closes rows. Older brains keep the journal's *Active playgrounds* list until they adopt the index
   (upgrade offers the move).
+- **Proposal → task promotion.** One procedure, in `references/contract.md` §6: the owner approves each
+  promotion or drop; the agent takes the next free `T<n>`, writes the task row (`from: P<n>`, `home`
+  `inline` unless the resume test fails), marks the proposal `[x]` with `to: T<n>` and the task id as
+  proof, and stamps both rows. Nothing is renumbered or deleted; promotion approves no work. New tier
+  rows (contract §5 = the guardrails template): consolidate may add a proposal row (AUTO); promote or
+  drop a proposal (PROPOSE-THEN-APPROVE). Consolidate lists candidates to promote, never promotes. Both
+  capture-floor suites check a promoted-pair fixture and that a broken pair is caught.
 
 ### Changed
 - `SessionEnd` is wired again, for the silent `end` only (v1.6 retired it as a reminder channel), with a

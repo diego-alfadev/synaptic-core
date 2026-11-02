@@ -54,7 +54,7 @@ For every item, assign one of the following destinations:
 | Lesson | "X caused Y", failure post-mortem, changed understanding | `knowledge/lessons/` node |
 | Decision | Ratified choice + rationale | `knowledge/{cluster}/` node (`type: decision`) |
 | Task | Work to do or in flight | a `tasks/INDEX.md` row (`inline`); a playground with `tasks.md` only when it is not resumable from the request plus its current state (`references/contract.md` §6) |
-| Candidate | A "we should…" nobody has committed to | a `proposals/INDEX.md` row, `from:` the journal date |
+| Candidate | A "we should…" nobody has committed to | a `proposals/INDEX.md` row, `from:` the journal date (AUTO in the default tiers; a brain whose tier table does not name it: propose. Promotion: `references/contract.md` §6) |
 | Large verbatim artifact | DDL, spec, exported sheet | `references/raw/` + existence entry + distilled node |
 | Temporal/journal noise | Debug output, session status, one-off lookups | Discard |
 | Playground scratch | Drafts, dead-ends, intermediate outputs, superseded analysis | Distil any durable conclusion, then **burn** |
@@ -232,6 +232,9 @@ Consolidate keeps the work-item indexes honest (formats: `references/contract.md
 - A task row whose `home` no longer resolves is reported, not deleted (audit Step 9 (d) flags it).
 - Never copy another tool's task file into the brain; link it from a row.
 - Record the proof or the reason in the row's `note` column.
+- Add a proposal row for a candidate (AUTO in the default tiers; in a brain whose own tier table does not
+  name it, propose the row instead, `references/contract.md` §5). Never promote or drop one by yourself: list *candidates to
+  promote* for the owner's approval, then, on a yes, follow *Promotion* in `references/contract.md` §6.
 
 ---
 
