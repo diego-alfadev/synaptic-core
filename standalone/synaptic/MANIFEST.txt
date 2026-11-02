@@ -23,6 +23,7 @@ templates/journal/_current.md
 templates/knowledge/INDEX.md
 templates/knowledge/example-cluster/_index.md
 templates/knowledge/lessons/README.md
+templates/playgrounds/.gitignore
 templates/playgrounds/README.md
 templates/references/_index.md
 templates/references/raw/.gitkeep
@@ -30,4 +31,7 @@ templates/registries/_index.md
 templates/templates/lesson.md
 templates/templates/node.md
 templates/templates/playbook.md
+templates/templates/proposal-index.md
 templates/templates/registry.md
+templates/templates/task-index.md
+templates/templates/tasks.md

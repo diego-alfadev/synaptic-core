@@ -67,6 +67,11 @@
   source (startup, resume, clear, fork) instead of one alternation matcher. Replace
   `synaptic-pending.{sh,ps1}` with the v1.7 script. Both new entries are silent. A host that sends no session id keeps the v1.6 rescue; nothing
   to migrate. Never turn on the opt-in SubagentStop harvest (recipe A.5) during an upgrade.
+- **v1.7 work items (offer, never forced).** Add `playgrounds/.gitignore` (`*/scratch/`) when absent, and
+  the three new files in the brain's `templates/` (`task-index.md`, `proposal-index.md`, `tasks.md`).
+  Offer to move the journal's *Active playgrounds* list into `tasks/INDEX.md` (one row per playground,
+  `home: playgrounds/<id>/`, with the next free `T<n>`), leaving one pointer line in the journal. If the
+  owner declines, nothing changes: the journal list keeps working (`references/contract.md` §6).
 
 ## v1.4.0 addendum — host-setup detection is an ALWAYS-RUN step (not migration-only)
 
@@ -562,7 +567,8 @@ Rewrite `journal/_current.md` to v1 three-section format:
 - **Watch List** — carry forward unresolved open questions.
 - **Log** — dated one-liners; summarize older entries; keep the narrative thread.
 
-Trim to ≤80 lines total. Register any in-flight playgrounds in the Active playgrounds list.
+Trim to ≤80 lines total. Register any in-flight playgrounds in the Active playgrounds list (then offer the v1.7 move into
+`tasks/INDEX.md`, "v1.7 work items" above).
 
 ### C11 — Frontmatter fill
 

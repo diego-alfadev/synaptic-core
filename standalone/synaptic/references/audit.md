@@ -311,9 +311,10 @@ playground artifacts) but never reached the knowledge store. **Diagnose only —
 - Count all directories directly under `playgrounds/` that contain at least one `.md` file, **excluding
   `playgrounds/archive/`** (finished work kept on request). These are **open playgrounds** — task
   workspaces not yet consolidated into the wiki or explicitly closed.
-- Cross-check against the journal's **Active playgrounds** list: flag playgrounds **present on disk
-  but missing from the list** (untracked) and entries **listed but with no directory** (stale entry).
-  `archive/` is never in that list and is never flagged.
+- Cross-check against the registry: `tasks/INDEX.md` rows whose `home` is a playground (an older brain
+  without the index: the journal's **Active playgrounds** list). Flag playgrounds **present on disk but
+  missing from the registry** (untracked) and entries **registered but with no directory** (stale entry).
+  `archive/` is never registered and is never flagged.
 
 **(b) Pending journal breadcrumbs (unconsolidated `Stop` lines):**
 
@@ -334,12 +335,29 @@ playground artifacts) but never reached the knowledge store. **Diagnose only —
   value outside git (propose re-recording it as `sha256-lf:`). Re-record or re-distil only with the
   user's OK.
 
+**(d) Work-item index integrity** (`tasks/INDEX.md`, `proposals/INDEX.md`; skip what does not exist;
+formats in `references/contract.md` §6):
+
+- A row whose `home` (tasks; brain-relative, another tool's file from the workspace root) or detail
+  folder (proposals) does not resolve: **broken home**. Never
+  rewrite or delete the row; report it.
+- A row marked `[x]` with an empty `note` (no path, result or link): **done without
+  proof**. A `[-]` row with an empty `note`: **dropped without reason**.
+- A duplicated or reused id, or an off-vocabulary status mark: **index defect**.
+- A promoted proposal (`to: T<n>`) whose task row is missing, or a task with `from: P<n>` whose
+  proposal row is missing: **broken provenance**.
+- Advisory only: a stale open row (`references/contract.md` §6: `stale_after`, else 14 days), for
+  example a proposal never promoted or dropped.
+- `scratch/` folders are never audited.
+
 **Warn (not error)** when a threshold is exceeded; present as advisory — the user decides whether to
 consolidate now or defer:
 
 - Open playgrounds ≥ 3: "Half-done — N open playgrounds. Run `/synaptic-consolidate` to process and close completed task workspaces."
 - Journal lines since last consolidation ≥ 60: "Half-done — journal at N pending breadcrumbs since last consolidation. Run `/synaptic-consolidate` before the journal nears 80 lines."
-- Any untracked playground, stale active-playground entry, drifted raw artifact, or unresolved `contradicts`: list each as a half-done finding routed to `/synaptic-consolidate` (or `/synaptic-maintain` for the orchestrated sweep).
+- Any untracked playground, stale registry entry, drifted raw artifact, unresolved `contradicts`, or (d)
+  finding: list each as a half-done finding routed to `/synaptic-consolidate` (or `/synaptic-maintain`
+  for the orchestrated sweep).
 
 ---
 

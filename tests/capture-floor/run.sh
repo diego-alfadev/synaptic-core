@@ -412,6 +412,32 @@ else
   nok "autonomy-tier default in contract.md = the guardrails template table (3 rows) [S3]" "the two tables differ or a row is missing"
 fi
 
+# --- Work items [R2: P1, T2] -------------------------------------------------------------------
+# scratch/ never enters git history: the playgrounds/.gitignore template ignores <id>/scratch/ only.
+TPL="$ROOT/standalone/synaptic/templates"
+ws="$WORK/wi-scratch"; mkdir -p "$ws/playgrounds/t1/scratch" "$ws/playgrounds/t1/notes"
+cp "$TPL/playgrounds/.gitignore" "$ws/playgrounds/.gitignore" 2>/dev/null
+: > "$ws/playgrounds/t1/scratch/plot.png"; : > "$ws/playgrounds/t1/tasks.md"; : > "$ws/playgrounds/t1/scratch-notes.md"; : > "$ws/playgrounds/t1/notes/a.md"
+( cd "$ws" && git init -q ) >/dev/null 2>&1
+ign() { ( cd "$ws" && git check-ignore -q "$1" ) 2>/dev/null; }
+if ign playgrounds/t1/scratch/plot.png && ! ign playgrounds/t1/tasks.md && ! ign playgrounds/t1/scratch-notes.md && ! ign playgrounds/t1/notes/a.md; then
+  ok "templates/playgrounds/.gitignore ignores <id>/scratch/ and nothing else [P1]"
+else
+  nok "templates/playgrounds/.gitignore ignores <id>/scratch/ and nothing else [P1]" "$(cat "$ws/playgrounds/.gitignore" 2>/dev/null || echo 'template missing')"
+fi
+# The row schemas in references/contract.md §6 are the header rows of the two index templates.
+schema() { tr -d '\r' < "$ROOT/standalone/synaptic/references/contract.md" | grep -F "**\`$1\` row:**" | sed 's/.*row:\*\* `\(.*\)`$/\1/'; }
+header() { tr -d '\r' < "$TPL/templates/$1" | grep -m1 '^| id |' | sed 's/ *$//'; }
+bad=""
+[ -n "$(schema tasks/INDEX.md)" ] && [ "$(schema tasks/INDEX.md)" = "$(header task-index.md)" ] || bad="$bad tasks"
+[ -n "$(schema proposals/INDEX.md)" ] && [ "$(schema proposals/INDEX.md)" = "$(header proposal-index.md)" ] || bad="$bad proposals"
+[ -z "$bad" ] && ok "work-item row schemas in contract.md = the index template headers [T2]" \
+  || nok "work-item row schemas in contract.md = the index template headers [T2]" "differs:$bad"
+# Every new template is in MANIFEST.txt (the self-install fetches exactly that list).
+miss=""; for f in templates/playgrounds/.gitignore templates/templates/task-index.md templates/templates/proposal-index.md templates/templates/tasks.md; do
+  tr -d '\r' < "$ROOT/standalone/synaptic/MANIFEST.txt" | grep -qx "$f" && [ -s "$ROOT/standalone/synaptic/$f" ] || miss="$miss $f"; done
+[ -z "$miss" ] && ok "the work-item templates exist and are listed in MANIFEST.txt [T2]" || nok "the work-item templates exist and are listed in MANIFEST.txt [T2]" "missing:$miss"
+
 # --- Cross-shell consistency ------------------------------------------------------------------
 # The sh marker hashes `hostname`; the PowerShell copy hashes $env:COMPUTERNAME on Windows and
 # [Net.Dns]::GetHostName() elsewhere, both lower-cased. Mixed sh + PowerShell hooks on one host must land

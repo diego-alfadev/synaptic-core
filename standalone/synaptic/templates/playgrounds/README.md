@@ -1,20 +1,38 @@
 # Playgrounds
 
-A playground is an extended-journal workspace for tasks that are too big for `journal/_current.md`:
-multi-day work, multiple artifacts, analysis, data pulls, drafts, deliverables. No structure is
-imposed — use whatever layout the task needs.
+A playground is an extended-journal workspace for tasks that are too big for one row in
+`tasks/INDEX.md`: multi-day work, multiple artifacts, analysis, data pulls, drafts, deliverables.
+Open one only when the work is **not resumable from the request plus its current state** (a diff, a
+document, a spreadsheet); otherwise the task is a single `inline` row. No other structure is imposed.
+
+## Layout
+
+```
+playgrounds/<task-id>/
+  tasks.md     # Specs / Tasks / Log / Key Learnings (copy of templates/tasks.md)
+  <artifacts>  # free layout; consolidate scans these
+  scratch/     # intermediates (images, generated files, data pulls): never consolidated unless
+               # tasks.md or an artifact references a file in it; deleted at burn
+```
+
+`playgrounds/.gitignore` (`*/scratch/`) keeps every `scratch/` out of git history. A synced folder
+still syncs it.
 
 ## Lifecycle
 
-1. **Open** — create `playgrounds/{{task-id}}/` and register it in `journal/_current.md`.
-2. **Work** — artifacts accumulate freely; no required structure.
-3. **Consolidate** — run the capture contract: durable findings → atomic knowledge nodes in the right cluster; repeatable procedures → `type: playbook` node in its cluster; lessons → `knowledge/lessons/`; deliverables shipped.
-4. **Burn (default)** — delete the playground after consolidation. Archiving is the exception, not the rule.
+1. **Open** — create `playgrounds/{{task-id}}/` with its `tasks.md`, and register it (below).
+2. **Work** — artifacts accumulate freely; keep `tasks.md` current (statuses, Log, Key Learnings).
+3. **Consolidate** — run the capture contract: Key Learnings first, then the artifacts. Durable findings → atomic knowledge nodes in the right cluster; repeatable procedures → `type: playbook` node in its cluster; lessons → `knowledge/lessons/`; deliverables shipped.
+4. **Burn (default)** — delete the playground, `scratch/` included, after consolidation. Archiving is the exception, not the rule.
 
 ## Registry
 
-Playgrounds are **not** indexed in `knowledge/INDEX.md`. Their registry is `journal/_current.md`
-(the `### Active playgrounds` list). If it's not in the journal, it's invisible.
+Playgrounds are **not** indexed in `knowledge/INDEX.md`. Their registry is `tasks/INDEX.md` (the first task, inline
+or not, creates it from `templates/task-index.md`): one row whose `home` is the playground's `tasks.md`.
+An older brain with no `tasks/INDEX.md` keeps the journal's `### Active playgrounds` list until it
+adopts the index. If it is in neither, it is invisible.
+
+Formats and status marks: the synaptic skill's `references/contract.md` §6 (Work items).
 
 ## Naming
 

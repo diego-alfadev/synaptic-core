@@ -551,6 +551,32 @@ try {
     if ($other.Out.Contains('1 pending breadcrumb(s)') -and -not $own.Out) { Ok "chain (PS): a session's own breadcrumb is claimed (A.1 then beat); offered to the next session, not to its own resume [K1]" }
     else { Nok "chain (PS): a session's own breadcrumb is claimed (A.1 then beat); offered to the next session, not to its own resume [K1]" "other='$($other.Out)' own='$($own.Out)'" }
 
+    # --- Work items [R2: P1, T2] ---------------------------------------------------------------------
+    # scratch/ never enters git history: the playgrounds/.gitignore template ignores <id>/scratch/ only.
+    $tpl = Join-Path $Root 'standalone/synaptic/templates'
+    $ws = New-Workspace 'wips-scratch'
+    foreach ($d in @('playgrounds/t1/scratch', 'playgrounds/t1/notes')) { [IO.Directory]::CreateDirectory((Join-Path $ws $d)) | Out-Null }
+    $gsrc = Join-Path $tpl 'playgrounds/.gitignore'
+    if ([IO.File]::Exists($gsrc)) { [IO.File]::Copy($gsrc, (Join-Path $ws 'playgrounds/.gitignore')) }
+    foreach ($f in @('playgrounds/t1/scratch/plot.png', 'playgrounds/t1/tasks.md', 'playgrounds/t1/scratch-notes.md', 'playgrounds/t1/notes/a.md')) { [IO.File]::WriteAllText((Join-Path $ws $f), '') }
+    $eap = $ErrorActionPreference; $ErrorActionPreference = 'Continue'
+    Push-Location -LiteralPath $ws
+    try {
+        git init -q 2>$null | Out-Null
+        $ign = @{}
+        foreach ($f in @('playgrounds/t1/scratch/plot.png', 'playgrounds/t1/tasks.md', 'playgrounds/t1/scratch-notes.md', 'playgrounds/t1/notes/a.md')) { git check-ignore -q $f 2>$null; $ign[$f] = ($LASTEXITCODE -eq 0) }
+    } finally { Pop-Location; $ErrorActionPreference = $eap }
+    if ($ign['playgrounds/t1/scratch/plot.png'] -and -not $ign['playgrounds/t1/tasks.md'] -and -not $ign['playgrounds/t1/scratch-notes.md'] -and -not $ign['playgrounds/t1/notes/a.md']) { Ok 'templates/playgrounds/.gitignore ignores <id>/scratch/ and nothing else [P1]' }
+    else { Nok 'templates/playgrounds/.gitignore ignores <id>/scratch/ and nothing else [P1]' "ignored: $(($ign.Keys | Where-Object { $ign[$_] }) -join ', ')" }
+    # The row schemas in references/contract.md section 6 are the header rows of the two index templates.
+    $contract = [IO.File]::ReadAllText((Join-Path $Root 'standalone/synaptic/references/contract.md')).Replace("`r", '').Split("`n")
+    function Get-Schema([string]$Index) { $l = @($contract | Where-Object { $_.Contains('**`' + $Index + '` row:** `') }); if ($l.Count -eq 0) { return '' }; return ($l[0] -replace '^.*row:\*\* `(.*)`$', '$1') }
+    function Get-Header([string]$File) { $l = @([IO.File]::ReadAllText((Join-Path $tpl ('templates/' + $File))).Replace("`r", '').Split("`n") | Where-Object { $_.StartsWith('| id |') }); if ($l.Count -eq 0) { return '' }; return $l[0].TrimEnd() }
+    $bad = ''
+    if (-not (Get-Schema 'tasks/INDEX.md') -or (Get-Schema 'tasks/INDEX.md') -cne (Get-Header 'task-index.md')) { $bad += ' tasks' }
+    if (-not (Get-Schema 'proposals/INDEX.md') -or (Get-Schema 'proposals/INDEX.md') -cne (Get-Header 'proposal-index.md')) { $bad += ' proposals' }
+    if (-not $bad) { Ok 'work-item row schemas in contract.md = the index template headers [T2]' } else { Nok 'work-item row schemas in contract.md = the index template headers [T2]' "differs:$bad" }
+
     # --- The fingerprint primitive (references/fingerprint.md) [X4/S4] -------------------------------
     # In-process here; run.sh checks PowerShell = sh on the same fixture set.
     $fpW = Get-Block '## Whole-file fingerprint' 'powershell' $FpDoc '## '

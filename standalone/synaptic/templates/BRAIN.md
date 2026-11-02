@@ -57,7 +57,7 @@ One terse line appended to `journal/_current.md → ## Log` per meaningful turn.
 
 Run on consolidation (manual `/synaptic-consolidate` at a wrap-up, or when the next boot's rescue offers it):
 
-1. **Classify** — durable knowledge · tabular record → registry · lesson · decision · big task → playground · temporal → journal · noise → drop.
+1. **Classify** — durable knowledge · tabular record → registry · lesson · decision · task → `tasks/INDEX.md` row (playground only if not resumable from the request + current state) · candidate → `proposals/INDEX.md` row · temporal → journal · noise → drop.
 2. **Atomicity test** — one concept per node; promote only when it recurs (2+ instances → pattern) or is a reusable decision/lesson, per `capture_policy`. Incident-specifics stay in playground/journal.
 3. **Generalize** — strip the anecdote, keep the reusable pattern; name = the concept, not the ticket.
 4. **Place & link** — atomic node in the right cluster; fill frontmatter (incl. optional `source` / `confidence` / typed edges, and the optional `lifecycle: project|area|resource|dormant` actionability label — absent → `area`); add `[[wikilinks]]`; register in cluster `_index.md`.
@@ -87,9 +87,10 @@ Run on consolidation (manual `/synaptic-consolidate` at a wrap-up, or when the n
 | `registries/` | Wiki — tabular SSOTs (resources, repos, glossary) | On demand; never eager-load |
 | `references/` | Wiki — existence index + verbatim artifacts (`raw/`) | On demand |
 | `harness/` | Harness — conventions, guardrails | On demand; top subset above |
-| `playgrounds/` | Working memory — per-task burnable workspaces | Registered in journal only |
+| `tasks/`, `proposals/` | Working memory — task index and candidate index (one row each); created on first use | Resume: `tasks/INDEX.md` |
+| `playgrounds/` | Working memory — per-task burnable workspaces (`tasks.md`, `scratch/`) | Registered in `tasks/INDEX.md` |
 | `journal/` | Working memory — thin anchor/watch/log | Resume: read `_current.md` |
-| `templates/` | Scaffolding — node, registry, playbook, lesson | When creating a new node |
+| `templates/` | Scaffolding — node, registry, playbook, lesson, task/proposal index, `tasks.md` | When creating a node or a work item |
 
 **Navigation rule:** `BRAIN.md` → `knowledge/INDEX.md` (hub MOC) → `{cluster}/_index.md` (sub-MOC, 1-line per node) → open only the 1–2 relevant nodes. A node not reachable from a MOC does not exist.
 
@@ -97,7 +98,7 @@ Run on consolidation (manual `/synaptic-consolidate` at a wrap-up, or when the n
 
 ## Session Start
 
-**Resuming work:** read `journal/_current.md` (active playgrounds + next step), then proceed.
+**Resuming work:** read `journal/_current.md` (next step), then `tasks/INDEX.md` if it exists (open tasks and playgrounds), then proceed.
 **Starting fresh:** just work; load knowledge on demand through `knowledge/INDEX.md`.
 **Load trigger examples:** "before CI work → read `harness/guardrails.md`"; "for a domain insight → INDEX → cluster `_index` → 1–2 nodes."
 **Commands:** provided by the `synaptic` skill (installed in `.claude/skills/` or `.agents/skills/`) — see the bridge command listing (the `BEGIN:SYNAPTIC` block in AGENTS.md) or the `SKILL.md` Operations table for the full, current set. This file keeps no separate command list, so nothing here can drift out of sync with the skill.

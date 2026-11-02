@@ -34,10 +34,14 @@ deployed copy exists); the steps below name the action, and that table sets its 
 
 Read **two sources**, not one:
 
-1. `journal/_current.md` — session breadcrumbs and the **Active playgrounds** section.
-2. **The artifacts inside each open `playgrounds/{task}/` directory** — drafts, analyses, notes,
-   scratch files, intermediate outputs. Consolidation distils **durable conclusions** from these
-   and **burns the scratch**; it does not promote raw working material wholesale. (See *Playground
+1. `journal/_current.md` — session breadcrumbs (and, in an older brain without `tasks/INDEX.md`,
+   the **Active playgrounds** section), plus the work-item indexes when they exist: `tasks/INDEX.md`
+   and `proposals/INDEX.md` (`references/contract.md` §6). A row whose `home` is another tool's file
+   (for example `odd/tasks/<feature>.md`) is read in place, never copied.
+2. **The artifacts inside each open `playgrounds/{task}/` directory** — its `tasks.md` first (Key
+   Learnings, then Specs and Log), then drafts, analyses, notes and intermediate outputs.
+   `scratch/` is skipped except for files that `tasks.md` or an artifact references. Consolidation
+   distils **durable conclusions** from these and **burns the scratch**; it does not promote raw working material wholesale. (See *Playground
    Artifact Scan* below for the discipline that keeps unfinished/outdated artifacts out — the
    "email" lesson: distil the conclusion, discard the draft.)
 
@@ -49,7 +53,8 @@ For every item, assign one of the following destinations:
 | Tabular record | Infra resources, repo inventory, glossary term, environment | `registries/{table}.md` |
 | Lesson | "X caused Y", failure post-mortem, changed understanding | `knowledge/lessons/` node |
 | Decision | Ratified choice + rationale | `knowledge/{cluster}/` node (`type: decision`) |
-| Active big task | Multi-day work, drafts, analysis in flight | `playgrounds/{task-id}/` (keep) |
+| Task | Work to do or in flight | a `tasks/INDEX.md` row (`inline`); a playground with `tasks.md` only when it is not resumable from the request plus its current state (`references/contract.md` §6) |
+| Candidate | A "we should…" nobody has committed to | a `proposals/INDEX.md` row, `from:` the journal date |
 | Large verbatim artifact | DDL, spec, exported sheet | `references/raw/` + existence entry + distilled node |
 | Temporal/journal noise | Debug output, session status, one-off lookups | Discard |
 | Playground scratch | Drafts, dead-ends, intermediate outputs, superseded analysis | Distil any durable conclusion, then **burn** |
@@ -198,9 +203,12 @@ are the filter** that keeps unfinished or outdated artifacts out.
 > not the five drafts. Distil the conclusion; discard the drafts. Same for half-finished analyses,
 > abandoned experiments, and outputs already superseded later in the same task.
 
-For each playground in the journal's **Active playgrounds** list:
+For each open playground (a `tasks/INDEX.md` row whose `home` is a playground; in an older brain, each
+entry of the journal's **Active playgrounds** list):
 
-1. Read the playground directory (`playgrounds/{task-id}/`) — **all its artifacts**, not only a summary.
+1. Read the playground directory (`playgrounds/{task-id}/`) — `tasks.md` first (its **Key Learnings**
+   are the first candidates), then **all its artifacts**, not only a summary. Skip `scratch/` except
+   files that `tasks.md` or an artifact references.
 2. Classify its contents (Steps 1–6 above). Apply the promotion test and quality gate strictly:
    unfinished, outdated, or superseded artifacts do **not** pass — distil any durable conclusion and
    discard the rest.
@@ -211,7 +219,19 @@ For each playground in the journal's **Active playgrounds** list:
    - **CORE-safety:** burn is preceded by the consolidation having captured everything durable, the
      log recording what was distilled, and git retaining the deleted content — archive-before-delete
      in spirit (git is the archive).
-5. Remove the playground entry from `journal/_current.md`.
+5. Close its row in `tasks/INDEX.md`: `[x]` with the proof (the nodes written, the deliverable) or `[-]`
+   with a reason, and today's `updated`. In an older brain, remove the entry from `journal/_current.md`.
+   Burning deletes `scratch/` with the rest of the playground.
+
+### Proposals and tasks
+
+Consolidate keeps the work-item indexes honest (formats: `references/contract.md` §6):
+
+- Close an `inline` task row only with observed proof (`[x]` + where the result is) or a reason
+  (`[-]`). A checkbox grants no approval for anything the task describes.
+- A task row whose `home` no longer resolves is reported, not deleted (audit Step 9 (d) flags it).
+- Never copy another tool's task file into the brain; link it from a row.
+- Record the proof or the reason in the row's `note` column.
 
 ---
 
@@ -228,7 +248,8 @@ For each playground in the journal's **Active playgrounds** list:
 After routing all items:
 
 1. Rewrite `journal/_current.md` keeping only three sections:
-   - **Resume Anchor** — where work stopped, next step, updated active-playground list.
+   - **Resume Anchor** — where work stopped, next step, and the one-line pointer to `tasks/INDEX.md`
+     (an older brain without the index keeps its updated active-playground list here).
    - **Watch List** — open questions and risks; carry forward unresolved items.
    - **Log** — dated one-liners: decisions, consolidation events (keep narrative thread; discard detail).
 2. **Prune consumed + stale breadcrumbs:** drop every breadcrumb already promoted into the wiki

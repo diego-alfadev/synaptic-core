@@ -20,6 +20,17 @@
   the hook, and deletes it; until then `/synaptic-audit` reports it as `HOOK-DEGRADED`.
 - **Specified, not shipped:** an opt-in `SubagentStop` Key-Learnings harvest (recipe A.5), off by
   default and never turned on by init or upgrade.
+- **Work items (format).** One shape for candidates and tasks, defined once in
+  `references/contract.md` §6: `proposals/INDEX.md` (one row per candidate, a folder only when it needs
+  more) and `tasks/INDEX.md` (one row per task; `home` is `inline`, a playground's `tasks.md`, or another
+  tool's task file read in place, never copied). Both appear on first use, never at init. A playground
+  opens only when the work is not resumable from the request plus its current state, and then carries
+  a `tasks.md` (Specs / Tasks / Log / Key Learnings; ODD-compatible, no workflow). One status
+  vocabulary: `[ ]`, `[x]` only with proof, `[-]` with a reason. `playgrounds/<id>/scratch/` holds
+  intermediates and is git-ignored by the new `playgrounds/.gitignore` template. Audit Step 9 (d) checks
+  the indexes (broken home, done without proof, broken provenance); consolidate reads Key Learnings first
+  and closes rows. Older brains keep the journal's *Active playgrounds* list until they adopt the index
+  (upgrade offers the move).
 
 ### Changed
 - `SessionEnd` is wired again, for the silent `end` only (v1.6 retired it as a reminder channel), with a

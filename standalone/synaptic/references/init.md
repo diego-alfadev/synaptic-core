@@ -151,15 +151,21 @@ the user.
 │   ├── conventions.md          ← from Round 3
 │   └── guardrails.md           ← from Round 3
 ├── playgrounds/
-│   └── README.md
+│   ├── README.md
+│   └── .gitignore              ← `*/scratch/` (intermediates never enter git history)
 ├── journal/
 │   └── _current.md
 └── templates/
     ├── node.md
     ├── registry.md
     ├── playbook.md
-    └── lesson.md
+    ├── lesson.md
+    ├── task-index.md           ← copied to tasks/INDEX.md by the first task
+    ├── proposal-index.md       ← copied to proposals/INDEX.md by the first proposal
+    └── tasks.md                ← a playground's task file
 ```
+
+No `tasks/` or `proposals/` folder at init: work items are created on first use (`references/contract.md` §6).
 
 Use real data — no `{{placeholder}}` values in generated files. Report the full file list when done.
 
