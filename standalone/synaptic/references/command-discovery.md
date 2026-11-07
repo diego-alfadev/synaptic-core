@@ -77,8 +77,17 @@ stale and gets regenerated or pruned.
   skill's `SKILL.md`, then follow `references/weave.md` under the `references/maintain.md` CORE-safety
   contract."* When the alias rows leave the table, the drift check below prunes their stubs. The
   Layer-1 bridge line lists the six verbs plus the routine, never the aliases.
-- **VS Code Copilot** → `*.prompt.md` files (the Copilot prompt-file mechanism), one per command.
-- **Cursor** → its prompt-file mechanism (native equivalent).
+- **VS Code Local harness** → `.github/prompts/synaptic-*.prompt.md`, one per command,
+  or the user's VS Code profile through its Customizations editor. The current prompt-file docs
+  describe Local sessions; do not claim the same menu support for every Copilot session target.
+  Extra text after `/command` is the argument. `${input:name}` is model-interpreted input guidance,
+  not a guaranteed host substitution mechanism. Preserve the Layer-1 textual fallback.
+  [Official prompt files, checked 2026-11-07](https://code.visualstudio.com/docs/agent-customization/prompt-files).
+- **Codex** → invoke the installed skill explicitly as `$synaptic` and name its operation in
+  the request. Keep Layer 1; do not invent per-operation slash stubs. Repo/personal skill locations
+  are in `references/init.md` §b. [Official skills](https://learn.chatgpt.com/docs/build-skills).
+- **Cursor / Gemini** → no first-class menu/support claim until documented and live-tested.
+  Existing user-owned shims are not removed by this qualification.
 - **MCP-capable hosts** → MCP "prompts" can **also** surface the commands (complementary, not
   required) — a host exposing Cortex over MCP may list the commands as MCP prompts.
 
@@ -153,3 +162,11 @@ its name clashes; report the clash instead.
 
 Runtime confirmation that a given host actually renders the `/` menu from the stubs — and the
 drift/cleanup filesystem behavior — is author-complete; verify on a real / Node host.
+
+## New-adapter menu check
+
+For Codex or VS Code, record the exact target harness/version, discovery location and result in
+the host setup record. In a fresh synthetic workspace test one parameterised command, such as
+`maintain weave`, and verify the selected operation and argument. Record menu rendering separately
+from the boot nonce and hook smoke-test; one successful check does not prove the others. User-level
+prompt/skill installation remains approval-gated and is never inferred from a global brain's path.

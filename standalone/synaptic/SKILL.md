@@ -44,6 +44,13 @@ If the bundle IS complete beside this file — every path in `MANIFEST.txt` is p
 
 # Synaptic Brain Skill
 
+**Runtime routing (local candidate).** Prefer an already-configured, available Cortex surface for
+the read-only operations it exposes; files remain authoritative. If that surface is absent, stops,
+or cannot verify a source, use the CORE procedures and direct file access. Do not install or start
+a runtime merely to boot the brain. Cortex CLI/MCP, lexical capability checks and both fallback
+levels are documented in `docs/concepts/cortex-local.md` in the product repository; the standalone
+skill works without that optional documentation or runtime.
+
 > **Two version numbers, one bundle (v1-final §5.4 / §8).** `version:` above is the **skill
 > ENGINE semver** (the code in this bundle). The **templates define the SCHEMA**, whose
 > **schema/format version is stamped in `BRAIN.md`** — a separate number. A skill-code update =

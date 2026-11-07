@@ -399,6 +399,31 @@ test('migrate.js: --dry-run detects a v0.3 brain and changes nothing', () => {
     'a v1 directory was created under --dry-run');
 });
 
+
+// Work-item portability and non-authoritative scratch (v1.7).
+test('check.js: ignores playground scratch but still diagnoses ordinary task artifacts', () => {
+  const b = validBrain();
+  write(b, 'playgrounds/spike/scratch/raw.md', '[[missing-scratch-target]]');
+  check(b, 0);
+  write(b, 'playgrounds/spike/result.md', '[[missing-real-target]]');
+  check(b, 1, ['missing-real-target']);
+});
+test('export.js: preserves tasks and proposal details in single and split exports', () => {
+  const b = validBrain();
+  write(b, 'tasks/INDEX.md', '# Task index');
+  write(b, 'proposals/P1-example/details.md', '# Proposal detail');
+  write(b, 'playgrounds/spike/scratch/raw.md', 'SCRATCH-MUST-NOT-EXPORT');
+  const out = path.join(tmp('work-export'), 'brain.md');
+  assert(tool('export.js', [b, out]).code === 0, 'single export failed');
+  const text = fs.readFileSync(out, 'utf8');
+  assert(text.includes('## FILE: tasks/INDEX.md') && text.includes('## FILE: proposals/P1-example/details.md'), 'work records lost');
+  assert(!text.includes('SCRATCH-MUST-NOT-EXPORT'), 'scratch leaked');
+  const prefix = path.join(tmp('work-split'), 'brain');
+  assert(tool('export.js', [b, prefix, '--split']).code === 0, 'split export failed');
+  const split = fs.readFileSync(prefix + '-refs-harness.md', 'utf8');
+  assert(split.includes('## FILE: tasks/INDEX.md') && split.includes('## FILE: proposals/P1-example/details.md'), 'split lost work records');
+});
+
 // --- done ----------------------------------------------------------------------------------------------
 for (const d of scratch) { try { fs.rmSync(d, { recursive: true, force: true }); } catch (_) { /* best effort */ } }
 console.log(`1..${n}`);

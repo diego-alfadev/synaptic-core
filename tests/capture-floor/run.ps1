@@ -611,7 +611,7 @@ try {
         foreach ($k in $to.Keys) {
             $tn = $to[$k]['to']; if ($tn -cnotmatch '^T[0-9]+$') { continue }
             if ($to[$k]['status'] -cne '[x]') { $d.Add("promoted-not-x:$k") }
-            if (-not $to[$k]['note'].Contains($tn)) { $d.Add("no-proof:$k") }
+            if ($to[$k]['note'] -cnotmatch ('(^|[^A-Za-z0-9_])' + [regex]::Escape($tn) + '([^A-Za-z0-9_]|$)')) { $d.Add("no-proof:$k") }
             if (-not $from.ContainsKey($tn) -or $from[$tn]['from'] -cne $k) { $d.Add("to-without-from:$k") }
         }
         foreach ($k in $from.Keys) {
@@ -636,6 +636,16 @@ try {
     $d = (Get-ProvDefects $ws) -join ' '
     if ($d.Contains('to-without-from:')) { Ok 'promotion check: a proposal whose task row is gone is broken provenance [R4]' }
     else { Nok 'promotion check: a proposal whose task row is gone is broken provenance [R4]' "defects: $d" }
+
+    # Token-bound proof: T20 is not proof for T2.
+    $ws = New-Workspace 'prov-token'
+    foreach ($i in @('proposals', 'tasks')) { [IO.Directory]::CreateDirectory((Join-Path $ws $i)) | Out-Null }
+    $proposal = [IO.File]::ReadAllText((Join-Path $fix 'proposals/INDEX.md')).Replace('promoted to T2', 'promoted to T20')
+    [IO.File]::WriteAllText((Join-Path $ws 'proposals/INDEX.md'), $proposal, (New-Object Text.UTF8Encoding $false))
+    [IO.File]::Copy((Join-Path $fix 'tasks/INDEX.md'), (Join-Path $ws 'tasks/INDEX.md'))
+    $d = (Get-ProvDefects $ws) -join ' '
+    if ($d.Contains('no-proof:P2')) { Ok 'promotion check: T20 is not proof for T2 [R4]' }
+    else { Nok 'promotion check: T20 is not proof for T2 [R4]' 'wrong proof accepted' }
 
     # --- The fingerprint primitive (references/fingerprint.md) [X4/S4] -------------------------------
     # In-process here; run.sh checks PowerShell = sh on the same fixture set.

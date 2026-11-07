@@ -375,3 +375,5 @@ contract". Cadence: `templates/BRAIN.md`.
 - **Do not embed verbatim artifacts inline:** large files go to `references/raw/`; knowledge nodes hold distilled facts + a link.
 - **Do not treat `content_hash` as a must-sync index:** it is an authored fact captured once; nothing recomputes it automatically.
 - **Do not skip the quality gate:** a node registered in the MOC but failing the gate is worse than no node.
+
+For a recoverability gap in an owner skill, propose a registries/skills.md row under contract.md §7; registration remains owner-approved. Do not copy skill code or run registry text.

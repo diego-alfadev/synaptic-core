@@ -462,7 +462,7 @@ prov() {  # <brain> -> one line per defect; nothing when the indexes are sound
     END {
       for (p in to) if (to[p] ~ /^T[0-9]+$/) {
         if (pst[p] != "[x]") print "promoted-not-x:" p
-        if (index(pnt[p], to[p]) == 0) print "no-proof:" p
+        if (pnt[p] !~ ("(^|[^A-Za-z0-9_])" to[p] "([^A-Za-z0-9_]|$)")) print "no-proof:" p
         if (!(to[p] in from) || from[to[p]] != p) print "to-without-from:" p
       }
       for (k in from) if (from[k] ~ /^P[0-9]+$/) {
@@ -481,6 +481,14 @@ rd "$FIX/tasks/INDEX.md" | grep -vE '^\| T[0-9]+ \|.*\| P[0-9]+ \|' > "$ws/tasks
 d="$(prov "$ws" | tr '\n' ' ')"
 case "$d" in *to-without-from:*) ok "promotion check: a proposal whose task row is gone is broken provenance [R4]" ;;
   *) nok "promotion check: a proposal whose task row is gone is broken provenance [R4]" "defects: ${d:-none}" ;; esac
+
+# Token-bound proof: T20 is not proof for T2.
+ws="$WORK/prov-token"; mkdir -p "$ws/proposals" "$ws/tasks"
+rd "$FIX/proposals/INDEX.md" | sed 's/promoted to T2/promoted to T20/g' > "$ws/proposals/INDEX.md"
+cp "$FIX/tasks/INDEX.md" "$ws/tasks/INDEX.md"
+d="$(prov "$ws" | tr '\n' ' ')"
+case "$d" in *no-proof:P2*) ok "promotion check: T20 is not proof for T2 [R4]" ;;
+  *) nok "promotion check: T20 is not proof for T2 [R4]" "wrong proof accepted" ;; esac
 
 # --- Cross-shell consistency ------------------------------------------------------------------
 # The sh marker hashes `hostname`; the PowerShell copy hashes $env:COMPUTERNAME on Windows and

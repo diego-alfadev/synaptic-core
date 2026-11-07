@@ -345,7 +345,7 @@ formats in `references/contract.md` §6):
   proof**. A `[-]` row with an empty `note`: **dropped without reason**.
 - A duplicated or reused id, or an off-vocabulary status mark: **index defect**.
 - A promoted proposal (`to: T<n>`) whose task row is missing, or a task with `from: P<n>` whose
-  proposal row is missing: **broken provenance**.
+  proposal row is missing, or whose from/to values do not name each other: **broken provenance**.
 - Advisory only: a stale open row (`references/contract.md` §6: `stale_after`, else 14 days), for
   example a proposal never promoted or dropped.
 - `scratch/` folders are never audited.
@@ -491,10 +491,17 @@ This check closes the silent drift vector where a user edits the deployed block 
 
 1. **Static check (CORE-floor, by reading files).** On Claude Code, for a project-reach brain: if any
    of `CLAUDE.md`, `.claude/CLAUDE.md`, `CLAUDE.local.md` exists and none carries an `@AGENTS.md` line
-   outside a code fence, the bridge is **not loaded** → finding *"Claude Code skips AGENTS.md here; add
-   the boot block (`references/init.md` §a2)"*. If the import is there (or no CLAUDE file exists) and
+   outside a code fence, loading is **unproven** → finding *"Claude Code boot import is absent;
+   inspect the adapter (`references/init.md` §a2) and run a fresh-session boot check"*. If the import is there (or no CLAUDE file exists) and
    `AGENTS.md` holds the `BEGIN:SYNAPTIC` bridge, report `wired: expected`. A record that says
    `boot: declined` is reported once, not re-asked.
+1a. **Codex:** inspect the effective global/project instruction chain and any `AGENTS.override.md`
+    that excludes the recorded carrier; check the combined instruction byte limit. Use
+    `references/init.md` §a3, not the Claude import rule. Report static compatibility as
+    `expected` and actual loading as `unproven` until a fresh-session proof exists.
+1b. **VS Code:** read the recorded session harness and versions first; check the bridge carrier
+    against §a4. Local discovery settings do not establish Copilot/Codex wiring. Inspect hook
+    configuration separately; an instruction proof is not evidence that capture ran.
 2. **The live proof (a new session only).** It cannot run inside this audit: this session has already
    read brain and skill files. Tell the user to open a new session and, as the first message, ask
    `synaptic status` (Claude Code: `claude -p "synaptic status"`). A reply with
@@ -582,3 +589,10 @@ After the main audit, quick-check `BRAIN.md` itself:
 - Is the **Brain Map** table consistent with the actual directory layout?
 
 Flag anything materially out of date. These drifts are low-severity but compound over time.
+
+## Skills portability and situation routing (v1.7)
+
+When registries/skills.md exists, use contract.md §7 to inspect files without executing registry data.
+Report missing/drift only from readable, resolved local evidence; plugin layout and ref drift remain
+unknown when not established. Audit installs nothing. For a read-only view of work, follow
+references/situation.md; it is separate from fresh-session boot proof.

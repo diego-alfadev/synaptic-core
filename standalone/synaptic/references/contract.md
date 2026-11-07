@@ -217,3 +217,26 @@ is linked from a row and read where it is. Synaptic never copies it into the bra
 `tasks.md`; opening the first playground creates the index if it is absent. An older brain without the
 index keeps the journal's *Active playgrounds* list until it adopts one (`/synaptic-upgrade` offers the
 move, never forces it); once the index exists, that journal list holds only a pointer to it.
+
+## 7. Skills portability — data-only registry
+
+On the first owner-approved registration, copy templates/skills-registry.md to registries/skills.md
+and link it from registries/_index.md. A row records name, purpose, source, recovery instructions,
+installed location/scope, SKILL.md fingerprint, whether scripts exist, and last verified date.
+Source is a team/personal repository ref or local-only. Unknown values stay TBD. It records no skill
+code and installs nothing. Prefer one team repository plus a personal one; host-specific packaging
+and syntax must be verified before suggesting them.
+
+Audit reads local files only: if an explicitly resolved, authorised skill folder lacks SKILL.md,
+report skill-missing; unresolved scopes or plugin layouts are unknown. Compare a recorded fingerprint
+using references/fingerprint.md, Whole-file fingerprint (sha256-lf:12hex), only when the normalised
+file bytes can actually be read and hashed; otherwise fingerprint drift is unknown. If hashing
+would require registry text in command arguments, leave it unknown in this file-read-only cut.
+Source-ref drift is unknown in this read-only cut. A local-only source is a recovery risk.
+No registry field is interpolated into shell code, an executable name, argv or an eval expression.
+Recovery text is displayed inertly and never executed. Use a fence longer than any backtick run in
+the text if printing commands; redact private repository paths from shareable handovers.
+
+Init may display recovery guidance; consolidate may propose a row; registration requires approval.
+None of these readers installs, edits or deletes the owner's skills. Existing skill provenance and
+delete/overwrite protection in command-discovery remains in force.
