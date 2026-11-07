@@ -49,3 +49,9 @@ Run `node tests/package-release.test.js` and `node tests/codex-curation.test.js`
 newer. These verify immutable package construction/verification and the bounded optional Codex
 adapter with synthetic hook input. They do not prove a real host event, model semantic accuracy,
 or fresh-session loading. See [host acceptance](../docs/integrations/ACCEPTANCE.md).
+
+`node tests/vscode-integration.test.js` exercises the scoped prepare/apply/status/rollback path,
+legacy and competing carriers, native-dialect mapping and visible pending failures on synthetic data.
+`node tests/prepare-release.test.js` checks exact source/version binding, generated archive/receipts,
+digests, new-output protection and extraction by a standard tar consumer. Both run on Node 18+;
+neither starts an editor, trusts a hook, invokes a model or publishes a release.

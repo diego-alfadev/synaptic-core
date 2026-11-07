@@ -41,12 +41,16 @@ function version(skill) {
   return m[1];
 }
 function build(repoArg,ref,outArg) {
+  // Verification is a single-file, builtin-only trust bootstrap. Do not load
+  // sibling source code before verifyPackage has authenticated supplied bytes.
+  // Build is an explicitly trusted full-source operation and may use this helper.
+  const {publishNewDirectory,destinationExists} = require('./lib/publish-new-directory');
   if(typeof ref!=='string' || !ref || ref.startsWith('-') || /[\x00-\x1f]/.test(ref)) fail('EXPLICIT_SOURCE_REF_REQUIRED');
   const repo=path.resolve(repoArg);
   const commit=git(repo,['rev-parse','--verify','--end-of-options',ref+'^{commit}']).trim();
   if(!/^[a-f0-9]{40}$/.test(commit)) fail('INVALID_SOURCE_COMMIT');
   const out=path.resolve(outArg);
-  if(fs.existsSync(out)) fail('OUTPUT_ALREADY_EXISTS');
+  if(destinationExists(out)) fail('OUTPUT_ALREADY_EXISTS');
   const parent=path.dirname(out);
   if(!fs.existsSync(parent) || !fs.statSync(parent).isDirectory()) fail('OUTPUT_PARENT_REQUIRED');
   const payload=new Map();
@@ -81,6 +85,7 @@ function build(repoArg,ref,outArg) {
   // in a sibling directory; rename only after self-verification. On failure leave
   // the private staging evidence and never recursively delete a computed path.
   const stage=fs.mkdtempSync(path.join(parent,'.synaptic-package-'));
+  let publication;
   try {
     for(const [name,{bytes,mode}] of payload) {
       const file=path.join(stage,...name.split('/'));
@@ -89,10 +94,9 @@ function build(repoArg,ref,outArg) {
     }
     fs.writeFileSync(path.join(stage,MANIFEST),manifestBytes,{flag:'wx'});
     verifyPackage(stage);
-    if(fs.existsSync(out)) fail('OUTPUT_ALREADY_EXISTS');
-    fs.renameSync(stage,out);
+    publication=publishNewDirectory(stage,out);
   } catch(e) {e.stagingPath=stage;throw e;}
-  return {operation:'package-build',source,engineVersion,path:out,files:manifest.files.length,manifestSha256:hash(manifestBytes)};
+  return {operation:'package-build',source,engineVersion,path:out,files:manifest.files.length,manifestSha256:hash(manifestBytes),publicationAttempts:publication.attempts};
 }
 function checkedRoot(input) {
   const root=fs.realpathSync(path.resolve(input));

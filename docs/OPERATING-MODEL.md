@@ -138,13 +138,16 @@ choice, not a support claim. No host configuration/trust change or live activati
 The source candidate repairs the previous bootstrap's implicit-main/live-write path: it prepares
 one committed package, retains source metadata and verifies completeness/content before the agent
 applies selected targets. Same-version content checks and same-source migration dependencies are
-included. Package application remains an agent-run recoverable procedure, not an executable installer.
+included. General package application remains an agent-run recoverable procedure. The VS Code helper
+adds a bounded, explicit project-file transaction when Node is available: staged candidates and
+preimages, current-byte checks, apply and targeted rollback. The no-Node path remains procedural.
+Neither path can establish loading or native execution merely by installing files.
 
 The optional Codex adapter has synthetic state/structure tests and creates unpromoted curated drafts
 from selected saved sources. Native firing, model quality, cold-session retrieval and the host's
 retention/recovery journey still need live evidence. It does not curate unsaved chat facts or maintain
 the canonical wiki automatically.
 
-Published parent 6c7956f passed its 12 CI jobs. The maintainer's limited engine/bridge deployment
-remains pinned to that parent; these new source changes are not applied to the active brain.
-The new candidate needs its own CI and real Codex/VS Code acceptance. No new tag/release is assigned.
+The integrated engine identity is 2.0.0-rc.1; brain schema stays 1.0. CI results belong to their exact
+source commit. Real host acceptance remains independent. Preparing source, workflow assets or a
+project transaction does not create a release or satisfy the stable integration gates.

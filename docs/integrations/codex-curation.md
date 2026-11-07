@@ -93,8 +93,8 @@ The receipt binds the request id, `artifactKind`, `promotionState`, exact source
 artifact SHA-256 and `outcome` (`curated-draft`, `no-durable-change`, or `approval-needed`). The checker
 re-reads source/result files, verifies the request fingerprint and provenance links, rejects empty,
 duplicate or reordered sections, and compares protected-file hashes. All brain files are protected
-except adapter state, its own draft output area and git metadata; workspace AGENTS.md/CLAUDE.md are
-also checked. A changed/missing source, edited protected file, wrong hash or missing artifact is pending.
+except adapter state, its own draft output area and git metadata; workspace AGENTS.md/CLAUDE.md, .github/copilot-instructions.md and the selected Synaptic VS Code hook file are
+also checked when present. A changed/missing source, edited protected file, wrong hash or missing artifact is pending.
 The adapter does not undo another process's edits.
 
 This is structural evidence, not proof the model's interpretation is correct. Same-user files and

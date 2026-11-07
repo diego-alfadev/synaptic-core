@@ -8,7 +8,7 @@ captures how a concept has evolved, and rescues orphans by giving them a home.
 
 Run when: user invokes `/synaptic-maintain synthesize`, after a stretch of consolidation has added many
 nodes, or as the generative leg of a full `/synaptic-maintain` sweep (see `references/maintain.md`). The 1.6
-alias `/synaptic-synthesize` still resolves here, until the next minor.
+alias `/synaptic-synthesize` remains available in this candidate.
 
 > **Synthesize does NOT replace `/synaptic-consolidate`.** They are different lifecycle stages:
 > - **Consolidate** = the *promotion* stage. Routes raw session/journal/playground material **into**

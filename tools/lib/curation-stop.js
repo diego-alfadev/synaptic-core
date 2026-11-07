@@ -80,7 +80,7 @@ function protectedSnapshot(config){
     }
   }
   walk('');
-  for(const ref of ['AGENTS.md','CLAUDE.md'])if(fs.existsSync(path.join(config.workspace,ref)))add(config.workspace,ref,'workspace:'+ref);
+  for(const ref of ['AGENTS.md','CLAUDE.md','.github/copilot-instructions.md','.github/hooks/synaptic-vscode.json'])if(fs.existsSync(path.join(config.workspace,ref)))add(config.workspace,ref,'workspace:'+ref);
   return hashes;
 }
 function equal(a,b){return JSON.stringify(a)===JSON.stringify(b);}

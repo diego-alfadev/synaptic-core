@@ -288,6 +288,9 @@ Source: [Codex instruction discovery](https://learn.chatgpt.com/docs/agent-confi
 
 ### a4. VS Code adapter (identify the session harness first)
 
+Use `references/vscode.md` for the complete project setup/upgrade and no-Node/no-MCP route.
+The optional Node helper stages an explicit file transaction; it does not establish live host proof.
+
 The session target/harness, **not the selected language model**, decides discovery and hook semantics.
 Record VS Code, extension and harness versions; a model change is not a new adapter test.
 Documentation snapshot: **2026-11-07**. Sources:

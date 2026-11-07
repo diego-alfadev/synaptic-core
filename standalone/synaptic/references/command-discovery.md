@@ -73,7 +73,7 @@ stale and gets regenerated or pruned.
 - **Which commands get a stub (v1.6).** Every row of `SKILL.md`'s Operations table (the six public
   verbs) **and** of its "Routine and aliases" table (`/synaptic-upgrade`, plus the deprecated 1.6
   aliases `/synaptic-weave` and `/synaptic-synthesize`). An **alias stub** says what it maps to:
-  *"Deprecated alias (1.6, removed in the next minor): run `/synaptic-maintain weave` — load the
+  *"Compatibility alias (deprecated since 1.6, retained in this candidate): run `/synaptic-maintain weave` — load the
   skill's `SKILL.md`, then follow `references/weave.md` under the `references/maintain.md` CORE-safety
   contract."* When the alias rows leave the table, the drift check below prunes their stubs. The
   Layer-1 bridge line lists the six verbs plus the routine, never the aliases.

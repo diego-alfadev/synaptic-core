@@ -78,6 +78,13 @@ try{
     const f=fixture(),r=stop(f.config,f.event());complete(f,r);f.put('registries/owner-record.md','# Unauthorised addition\n');
     assert.equal(stop(f.config,f.event('continued',true)).status.reason,'PROTECTED_SCOPE_CHANGED');
   });
+  test('Copilot instruction and selected hook changes invalidate pending model work',()=>{
+    for(const ref of ['.github/copilot-instructions.md','.github/hooks/synaptic-vscode.json']){
+      const f=fixture(),file=path.join(f.workspace,ref);fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,'Original project configuration\n');
+      const r=stop(f.config,f.event());complete(f,r);fs.writeFileSync(file,'Changed project configuration\n');
+      assert.equal(stop(f.config,f.event('continued',true)).status.reason,'PROTECTED_SCOPE_CHANGED');
+    }
+  });
   test('cross-session pointer forgery and orphan continuation are rejected',()=>{
     const f=fixture(),r=stop(f.config,f.event());complete(f,r);
     const other=sha('another-session');f.put(`.curation-state/sessions/${other}.json`,JSON.stringify({id:r.status.requestId}));

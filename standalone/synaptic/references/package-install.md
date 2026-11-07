@@ -57,7 +57,8 @@ release artifact or permission to fetch the rest from `main`.
 use the host's existing independent hashing capability to compare `RELEASE-MANIFEST.json` with
 the digest published by the intended release through a trusted channel. Read that authenticated
 manifest as data, then independently hash `tools/package-release.js` and compare its file entry
-before executing the received verifier. It imports only Node built-ins. File presence, a self-check
+before executing the received verifier. Its verification path loads only Node built-ins; the local
+build helper is loaded only for an explicitly trusted build operation. File presence, a self-check
 performed by unverified received code, or a model's assertion is not this trust bootstrap. If no
 trusted checker or independent hash capability is available, do not execute package code; retain
 the assisted file-only path and state its limits, or stop if its minimum safety checks cannot run.

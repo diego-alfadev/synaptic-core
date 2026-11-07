@@ -38,3 +38,4 @@ templates/templates/tasks.md
 references/situation.md
 templates/templates/skills-registry.md
 references/package-install.md
+references/vscode.md

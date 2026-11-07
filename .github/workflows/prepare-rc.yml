@@ -1,0 +1,61 @@
+name: prepare-rc
+run-name: Prepare RC assets for ${{ inputs.source_commit || github.sha }}
+
+# Artifact preparation only: no tag, merge or release publication.
+# The push trigger makes this useful before this new workflow is on the default branch.
+on:
+  push:
+    branches: [feat/operating-contract-2026-11-07]
+  workflow_dispatch:
+    inputs:
+      source_commit:
+        description: Exact reviewed 40-character source commit
+        required: true
+        type: string
+      version:
+        description: Candidate tag matching the committed engine version
+        required: true
+        default: v2.0.0-rc.1
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      SOURCE_COMMIT: ${{ inputs.source_commit || github.sha }}
+      RC_VERSION: ${{ inputs.version || 'v2.0.0-rc.1' }}
+    steps:
+      - name: Validate source identity and candidate syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$SOURCE_COMMIT" =~ ^[a-f0-9]{40}$ ]]
+          [[ "$RC_VERSION" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)-rc\.[1-9][0-9]*$ ]]
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ env.SOURCE_COMMIT }}
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Build and verify exact source package and generated receipts
+        shell: bash
+        run: |
+          set -euo pipefail
+          node tools/prepare-release.js --repo "$GITHUB_WORKSPACE" --ref "$SOURCE_COMMIT" --version "$RC_VERSION" --out "$RUNNER_TEMP/synaptic-rc"
+          node tools/prepare-release.js --verify "$RUNNER_TEMP/synaptic-rc"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: synaptic-${{ env.RC_VERSION }}-prepared
+          path: |
+            ${{ runner.temp }}/synaptic-rc/*.tar.gz
+            ${{ runner.temp }}/synaptic-rc/SHA256SUMS
+            ${{ runner.temp }}/synaptic-rc/PREPARED-RELEASE.json
+            ${{ runner.temp }}/synaptic-rc/RELEASE-NOTES.md
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14

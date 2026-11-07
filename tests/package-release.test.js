@@ -8,6 +8,7 @@ const path=require('node:path');
 const {spawnSync}=require('node:child_process');
 const crypto=require('node:crypto');
 const {build,verifyPackage,verifySkill,MANIFEST,RECEIPT}=require('../tools/package-release');
+const {publishNewDirectory}=require('../tools/lib/publish-new-directory');
 const temp=fs.mkdtempSync(path.join(os.tmpdir(),'syn-package-'));
 const repo=path.join(temp,'repo é [source]');fs.mkdirSync(repo);
 const emptyHooks=path.join(temp,'empty-hooks');fs.mkdirSync(emptyHooks);
@@ -109,6 +110,45 @@ try {
     const r=spawnSync(process.execPath,[cli,'--verify',out,'--sha256',result.manifestSha256],{encoding:'utf8',env:{...process.env,PATH:''}});
     assert.equal(r.status,0,r.stderr);assert.equal(JSON.parse(r.stdout).source.commit,pinned);
     assert.equal(hash(fs.readFileSync(path.join(out,MANIFEST))),result.manifestSha256);
+  });
+  test('trusted bootstrap verifier runs from its single authenticated file, without local helper imports',()=>{
+    const isolated=path.join(temp,'single-file-verifier');fs.mkdirSync(isolated);
+    const verifier=path.join(isolated,'package-release.js');fs.copyFileSync(path.resolve(__dirname,'../tools/package-release.js'),verifier);
+    const run=()=>spawnSync(process.execPath,[verifier,'--verify',out,'--sha256',result.manifestSha256],{encoding:'utf8',env:{...process.env,PATH:''}});
+    const alone=run();assert.equal(alone.status,0,alone.stderr);assert.equal(JSON.parse(alone.stdout).source.commit,pinned);
+    // An unverified sibling must not execute merely because it is present before validation.
+    fs.mkdirSync(path.join(isolated,'lib'));const sentinel=path.join(isolated,'untrusted-helper-executed');
+    fs.writeFileSync(path.join(isolated,'lib','publish-new-directory.js'),`require('node:fs').writeFileSync(${JSON.stringify(sentinel)},'executed');throw Error('UNTRUSTED_HELPER_LOADED');`);
+    const poisoned=run();assert.equal(poisoned.status,0,poisoned.stderr);assert(!fs.existsSync(sentinel));
+  });
+  test('Windows transient sharing errors retry briefly without modifying contents or permissions',()=>{
+    for(const code of ['EPERM','EACCES','EBUSY']){
+      const source=path.join(temp,'rename-'+code),target=source+'-published';fs.mkdirSync(source);fs.writeFileSync(path.join(source,'payload.md'),'Unchanged staging bytes');
+      let attempts=0;const delays=[];
+      const publication=publishNewDirectory(source,target,{platform:'win32',rename:(from,to)=>{attempts++;if(attempts===1){const e=Error('simulated transient sharing denial');e.code=code;throw e;}fs.renameSync(from,to);},wait:ms=>delays.push(ms)});
+      assert.equal(publication.attempts,2);assert.deepEqual(delays,[25]);assert.equal(fs.readFileSync(path.join(target,'payload.md'),'utf8'),'Unchanged staging bytes');
+    }
+  });
+  test('permanent Windows denial exhausts a bounded retry and retains staging unchanged',()=>{
+    const source=path.join(temp,'permanent-denial'),target=source+'-published';fs.mkdirSync(source);fs.writeFileSync(path.join(source,'payload.md'),'Keep evidence');
+    const original=Error('permanent denial');original.code='EPERM';let attempts=0;const delays=[];
+    assert.throws(()=>publishNewDirectory(source,target,{platform:'win32',rename:()=>{attempts++;throw original;},wait:ms=>delays.push(ms)}),e=>e===original);
+    assert.equal(attempts,6);assert.equal(delays.reduce((a,b)=>a+b,0),575);assert(!fs.existsSync(target));assert.equal(fs.readFileSync(path.join(source,'payload.md'),'utf8'),'Keep evidence');
+  });
+  test('a destination appearing after a failed rename is preserved, never overwritten by retry',()=>{
+    const source=path.join(temp,'collision-source'),target=path.join(temp,'late-destination');fs.mkdirSync(source);fs.writeFileSync(path.join(source,'payload.md'),'Keep staging');
+    let attempts=0;
+    assert.throws(()=>publishNewDirectory(source,target,{platform:'win32',rename:()=>{attempts++;fs.mkdirSync(target);fs.writeFileSync(path.join(target,'owner.md'),'Concurrent owner data');const e=Error('sharing failure');e.code='EBUSY';throw e;},wait:()=>{throw Error('must not wait once destination exists');}}),/OUTPUT_ALREADY_EXISTS/);
+    assert.equal(attempts,1);assert.equal(fs.readFileSync(path.join(target,'owner.md'),'utf8'),'Concurrent owner data');assert.equal(fs.readFileSync(path.join(source,'payload.md'),'utf8'),'Keep staging');
+  });
+  test('non-Windows or non-transient errors are not silently retried',()=>{
+    const source=path.join(temp,'no-retry'),target=source+'-published';fs.mkdirSync(source);let attempts=0;
+    const denial=Error('denied');denial.code='EACCES';
+    assert.throws(()=>publishNewDirectory(source,target,{platform:'linux',rename:()=>{attempts++;throw denial;},wait:()=>{throw Error('unexpected wait');}}),e=>e===denial);
+    assert.equal(attempts,1);assert(fs.existsSync(source));assert(!fs.existsSync(target));
+    attempts=0;const unexpected=Error('I/O failure');unexpected.code='EIO';
+    assert.throws(()=>publishNewDirectory(source,target,{platform:'win32',rename:()=>{attempts++;throw unexpected;},wait:()=>{throw Error('unexpected wait');}}),e=>e===unexpected);
+    assert.equal(attempts,1);
   });
   console.log(`1..${number}`);
 } finally {

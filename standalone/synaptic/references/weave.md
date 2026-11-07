@@ -4,7 +4,7 @@
 
 A named pass of `/synaptic-maintain`: a deliberate re-wiring and connection-quality pass over the brain.
 `/synaptic-maintain` runs it as its weave leg; `/synaptic-maintain weave` runs it alone (the 1.6 alias
-`/synaptic-weave` still resolves here, until the next minor). Run periodically or on
+`/synaptic-weave` remains available in this candidate). Run periodically or on
 demand. Distinct from `/synaptic-audit` — see the table below.
 
 ---

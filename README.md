@@ -6,9 +6,9 @@ Synaptic keeps decisions, lessons and playbooks in linked Markdown files you own
 those files to resume work and curates useful knowledge from it. Optional local tools provide
 current-file search and structural checks. The files remain usable without those tools.
 
-> This branch is an unreleased candidate. The previous candidate passed CI; real Codex acceptance,
-> a GitHub RC and the owner-run VS Code migration remain ahead. Stable also requires a demonstrated
-> bounded automatic-curation workflow. See [release preparation](RELEASE-NOTES.md).
+> **v2.0.0-rc.1 is a candidate; brain schema stays 1.0.** Source CI, installation checks and real host
+> acceptance are separate evidence. Stable requires the VS Code pilot and a demonstrated bounded
+> automatic-curation profile. See [candidate notes](RELEASE-NOTES.md).
 
 ## Start or upgrade
 
@@ -21,12 +21,17 @@ first. Stage and verify the full bundle, show the changes, preserve my knowledge
 then verify which capabilities actually work here. Do not install MCP if unavailable.
 ```
 
-The agent needs permitted file access; downloading additionally needs network access or a supplied
-local bundle. It must report a missing capability before relying on it. Candidate packaging is being
-prepared; this is the intended release journey, not a published installer claim.
+Use the prepared `synaptic-<version>.tar.gz` asset or an authorised local package. GitHub's automatic
+Source code archives omit generated package receipts. The agent needs permitted file access;
+downloading additionally needs network access. It must report a missing capability before relying on it.
 
 Already have a brain? [Keep it and upgrade the engine](UPGRADING.md). Engine and brain-format versions
 are separate. Updating the skill does not activate hooks or MCP.
+
+For VS Code, follow [the project setup guide](docs/integrations/vscode.md). Start with the permitted
+file-based profile; optional native hooks need their own actual-harness checks. Node users can stage,
+apply, inspect and restore project wiring with the integration helper. A no-Node/no-MCP environment
+uses the explicit assisted path; it is not labelled automatic.
 
 ## What works, and what starts it?
 
@@ -79,6 +84,7 @@ The adapter curates selected saved sources into drafts; unsaved chat facts and w
 - [Concept map](docs/concepts/_index.md) and [brain reach](docs/concepts/reach.md)
 - [Guide for managers and product owners](docs/FOR-MANAGERS-AND-POS.md)
 - [Executable checks and evidence limits](tests/README.md)
+- [Owner handoff: prepare assets and create a draft with gh](docs/RELEASING.md)
 - [Changelog](CHANGELOG.md), [roadmap](ROADMAP.md), and [acknowledgments](docs/CREDITS.md)
 
 MIT licensed. Contributions of bug reports, examples and verified host integrations are welcome.

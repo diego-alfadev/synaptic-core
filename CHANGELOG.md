@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+Prepared engine identity: **2.0.0-rc.1**, integrating the CORE work and minimum Cortex cut.
+Brain schema remains **1.0**. No tag, stable support claim or publication is implied.
+
 ### Operating-contract and release preparation
 
 - Added an immutable local package builder/verifier, retained source receipts and same-version

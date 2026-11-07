@@ -1,7 +1,13 @@
 # Upgrade an existing brain
 
-Guide for the unreleased candidate; the final version/tag is not assigned here. The owner-run RC
-pilot and real host acceptance remain pending.
+Guide for the prepared candidate source. The owner-run RC pilot and real host acceptance remain
+pending; preparing source does not create its tag or release.
+
+The integrated candidate engine is **2.0.0-rc.1**; its brain format remains **1.0**. This is not a
+knowledge-format migration. The owner creates the tag/release separately after reviewing the evidence.
+
+VS Code users have a [project setup and recovery guide](docs/integrations/vscode.md), including the
+assisted no-Node/no-MCP route. Package integrity and project-file transactions do not prove host loading.
 
 ## Start from one exact release
 

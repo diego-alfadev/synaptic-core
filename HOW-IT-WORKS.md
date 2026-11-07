@@ -51,9 +51,13 @@ will be captured, or that all model judgments are correct. Keep source links and
 
 The first stable release must demonstrate at least one supported profile where a real event starts
 model curation, the agent saves its result, a checker verifies persisted output, and failures remain
-visible. Restricted profiles may remain assisted. An optional Codex adapter is being prepared;
-its synthetic tests alone cannot satisfy this gate. The model still makes semantic judgments.
+visible. Restricted profiles may remain assisted. Optional event adapters are candidate code;
+their synthetic tests alone cannot satisfy this gate. The model still makes semantic judgments.
 
 The first adapter targets selected saved source files and produces a curated draft. It does not
 retain every conversation message or promote the whole wiki automatically. Getting an unsaved fact
 into those source files remains separate capture work; that dependency must be visible in setup.
+
+These drafts remain working memory. Current Cortex knowledge search does not index playground
+drafts; find them through the adapter's explicit status or recorded file path. Discovery, promotion
+and fresh-session retrieval are separate steps, not an automatic whole-memory recall guarantee.
