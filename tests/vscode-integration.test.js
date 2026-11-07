@@ -1,4 +1,5 @@
 'use strict';
+const {copyFixtureTree}=require('./lib/fixture-copy');
 // Synthetic filesystem/transport tests. No VS Code process or live model is invoked.
 const assert=require('node:assert/strict');
 const fs=require('node:fs'),os=require('node:os'),path=require('node:path');
@@ -90,7 +91,7 @@ try{
     const before=snapshot(f.workspace);assert.throws(()=>api.rollback(f.out),/LATER_EDIT_REQUIRES_REVIEW/);assert.deepEqual(snapshot(f.workspace),before);
   });
   test('same-version existing complete skill is content-checked, not mistaken for a new install',()=>{
-    const f=fixture();fs.mkdirSync(path.join(f.workspace,'.github/skills'),{recursive:true});fs.cpSync(path.join(packageRoot,'standalone/synaptic'),path.join(f.workspace,'.github/skills/synaptic'),{recursive:true});
+    const f=fixture();fs.mkdirSync(path.join(f.workspace,'.github/skills'),{recursive:true});copyFixtureTree(path.join(packageRoot,'standalone/synaptic'),path.join(f.workspace,'.github/skills/synaptic'));
     api.prepare(f.input);assert(plan(f).entries.some(e=>!e.changed));assert.equal(api.apply(f.out).state,'applied');
     fs.appendFileSync(path.join(f.workspace,'.github/skills/synaptic/SKILL.md'),'User edit with same version\n');
     assert.throws(()=>api.prepare({...f.input,out:path.join(base,'repair-plan')}),/PACKAGE_CONTENT_MISMATCH/);
@@ -112,7 +113,7 @@ try{
     assert.throws(()=>api.prepare(legacy.input),/LEGACY_SKILL_CARRIER_REQUIRES_REVIEW/);assert.deepEqual(snapshot(legacy.workspace),before);assert(!fs.existsSync(path.join(legacy.workspace,'.github/skills')));
   });
   test('recognised legacy .github skill gets a reviewable unknown-source plan, not a false verified skip',()=>{
-    const f=fixture();fs.mkdirSync(path.join(f.workspace,'.github/skills'),{recursive:true});fs.cpSync(path.join(packageRoot,'standalone/synaptic'),path.join(f.workspace,'.github/skills/synaptic'),{recursive:true});
+    const f=fixture();fs.mkdirSync(path.join(f.workspace,'.github/skills'),{recursive:true});copyFixtureTree(path.join(packageRoot,'standalone/synaptic'),path.join(f.workspace,'.github/skills/synaptic'));
     fs.unlinkSync(path.join(f.workspace,'.github/skills/synaptic/SOURCE.json'));fs.appendFileSync(path.join(f.workspace,'.github/skills/synaptic/SKILL.md'),'Legacy local modification\n');
     api.prepare(f.input);assert.equal(plan(f).installedSkill.state,'legacy-source-unknown');assert.equal(plan(f).installedSkill.reviewRequired,true);
     const before=snapshot(f.workspace);assert.throws(()=>api.apply(f.out),/LEGACY_SOURCE_REVIEW_REQUIRED/);assert.deepEqual(snapshot(f.workspace),before);

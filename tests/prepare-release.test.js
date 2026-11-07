@@ -4,6 +4,7 @@ const assert=require('node:assert/strict');const fs=require('node:fs');const os=
 const {spawnSync}=require('node:child_process');const crypto=require('node:crypto');
 const {prepare,verifyPrepared,tarPath}=require('../tools/prepare-release');
 const {verifyPackage,RECEIPT,MANIFEST}=require('../tools/package-release');
+const {copyFixtureTree}=require('./lib/fixture-copy');
 const root=fs.mkdtempSync(path.join(os.tmpdir(),'syn-prepare-'));
 const repo=path.join(root,'source é [exact]'),hooks=path.join(root,'empty-hooks');fs.mkdirSync(repo);fs.mkdirSync(hooks);
 const tag='v2.0.0-rc.1',hash=b=>crypto.createHash('sha256').update(b).digest('hex');
@@ -63,7 +64,7 @@ try{
   });
   test('changed asset, metadata or notes fail local verification',()=>{
     for(const ref of [result.archive,'PREPARED-RELEASE.json','RELEASE-NOTES.md']){
-      const copy=path.join(root,'tampered-'+ref.replace(/[^A-Za-z0-9]/g,'_'));fs.cpSync(out,copy,{recursive:true});
+      const copy=path.join(root,'tampered-'+ref.replace(/[^A-Za-z0-9]/g,'_'));copyFixtureTree(out,copy);
       fs.appendFileSync(path.join(copy,ref),'tampered');assert.throws(()=>verifyPrepared(copy));
     }
   });

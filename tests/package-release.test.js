@@ -9,13 +9,14 @@ const {spawnSync}=require('node:child_process');
 const crypto=require('node:crypto');
 const {build,verifyPackage,verifySkill,MANIFEST,RECEIPT}=require('../tools/package-release');
 const {publishNewDirectory}=require('../tools/lib/publish-new-directory');
+const {copyFixtureTree}=require('./lib/fixture-copy');
 const temp=fs.mkdtempSync(path.join(os.tmpdir(),'syn-package-'));
 const repo=path.join(temp,'repo é [source]');fs.mkdirSync(repo);
 const emptyHooks=path.join(temp,'empty-hooks');fs.mkdirSync(emptyHooks);
 const hash=b=>crypto.createHash('sha256').update(b).digest('hex');
 function put(rel,bytes){const file=path.join(repo,rel);fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,bytes);}
 function git(args){const r=spawnSync('git',['-C',repo,'-c','commit.gpgSign=false','-c','tag.gpgSign=false','-c','core.hooksPath='+emptyHooks,...args],{encoding:'utf8'});assert.equal(r.status,0,r.stderr);return r.stdout.trim();}
-function copy(source,name){const out=path.join(temp,name);fs.cpSync(source,out,{recursive:true});return out;}
+function copy(source,name){const out=path.join(temp,name);copyFixtureTree(source,out);return out;}
 let number=0;
 function test(name,fn){fn();console.log(`ok ${++number} - ${name}`);}
 try {
