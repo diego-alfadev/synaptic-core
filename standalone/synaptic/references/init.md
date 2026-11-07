@@ -320,7 +320,9 @@ Documentation snapshot: **2026-11-07**. Sources:
 
 ### b. Skill install
 
-Copy this skill package directory (where `SKILL.md` lives, with its `references/` and `templates/`) into:
+Prepare the selected immutable package with `references/package-install.md` first. Resolve the
+host and project/user scope before selecting a destination; the locations below are choices, not
+a command to mirror every carrier. Do not overwrite installed files during package acquisition.
 
 - `.claude/skills/synaptic/` — Claude Code project skill location.
 - `.agents/skills/synaptic/` — Codex project skill location; for personal Codex skills the documented
@@ -329,7 +331,12 @@ Copy this skill package directory (where `SKILL.md` lives, with its `references/
 - Other hosts: verify the selected harness's supported skill location first; a shared folder name
   alone is not a support claim. Cursor/Gemini remain unverified, not first-class adapters.
 
-Create directories if absent. If a target already contains a `SKILL.md` with the same `version:`, skip and report "already present". Otherwise overwrite.
+Compare the complete selected bundle, retained manifest/source receipt and installed bytes even
+when `version:` matches. Only an exact inventory/content match is already present; a missing file,
+unknown receipt or modified same-version file needs a reviewed repair. Archive current preimages
+and apply only the selected carrier through the recoverable procedure in
+`references/package-install.md`. Do not prune unrelated or unrecognised user content. An approved
+install still needs independent fresh-session loading and lifecycle/tool verification.
 
 **Command discoverability (layered floor + per-host stubs).** Full procedure:
 `references/command-discovery.md`. Two layers:

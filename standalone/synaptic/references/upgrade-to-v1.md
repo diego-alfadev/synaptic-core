@@ -1,6 +1,23 @@
 <!-- summary: Migrate a v0.3 / v0.4 / v0.5 brain to v1 (schema/format change) via the supervised M→C→V flow; always runs host-setup detection first + stub-drift check; redeploys operating rules + capture hooks. -->
 
-# /synaptic-upgrade — Migration Guide to v1.0
+# /synaptic-upgrade — source-pinned dispatch and migration to v1.0
+
+## Entry dispatcher — apply before the historical migration phases
+
+Follow `references/package-install.md` first: identify the existing brain/schema, host and scope;
+stage and verify one immutable source package before selected live writes. Keep its source receipt
+and current-state backup. For an already-schema-1.0 brain, this is a light engine/wiring update,
+not M→C→V or a knowledge rewrite. Offer the applicable additive changes; preserve stricter rules.
+
+Only a pre-v1 brain enters the historical migration below. Its canonical `docs/` guides, recipes
+and optional `tools/` come from the **same selected package/source commit**. Open them at the
+package root; they are not installed inside the standalone skill. Older instructions to fetch the
+current/latest engine never override the selected release. If dependencies cannot be obtained,
+stop before live writes; do not substitute main. With no Node, use the guide's manual path and
+report the checks that real tools could or could not perform.
+
+Neither a completed file update nor the historical wording “fully wired” proves fresh loading,
+capture events, MCP discovery or model curation. Report those integration results separately.
 
 > **Canonical runbook:** the authoritative, user-facing v0.3-beta → v1-beta migration runbook is
 > **`docs/UPGRADE-v0.3-to-v1.md`**. Point all real migration work there — it is the deliverable the
@@ -118,8 +135,9 @@
   size parity). If the brain is on OneDrive/a sync share, move the backup + work copy to a **local**
   path first (a sync client can upload half-written files and corrupt the rollback / leak confidential
   content). Back up the **existing harness wiring** too (chatmode/instructions/AGENTS files) — the
-  upgrade rewrites them. No-clone case: the agent self-installs the skill from GitHub raw (see SKILL.md
-  Bootstrap) and fetches `tools/` separately (they are NOT in the skill manifest).
+  upgrade rewrites them. No-clone case: use the complete selected release package or an authorised local copy
+  (`references/package-install.md`). Its `tools/` and migration guides retain the same immutable
+  source as the skill; do not fetch missing dependencies from another ref.
 - **No silent deletions.** Every merge/split/removal goes in a DELETIONS LEDGER, shown and confirmed;
   knowledge deletion is human-only. Mostly this migration is *refactor + construction*, not deletion.
 - **Content-conservation gate REPLACES the node-count gate.** "v1 count ≥ v0.3 count" cannot prove
@@ -387,10 +405,10 @@ marker-wrapped `SYNAPTIC-BOOT` block, only with approval. Never anything else th
 
 ### M4 — Skill install
 
-Copy the synaptic skill package (this skill directory) into:
-
-- `.claude/skills/synaptic/` (create if absent; skip if present at same version)
-- `.agents/skills/synaptic/` (create if absent; skip if present at same version)
+Apply `references/package-install.md` and `references/init.md` §b to the selected host/scope only.
+Stage and verify its complete source package, archive current preimages and show the bounded diff
+before any live copy. Same-version contents still need comparison; never mirror both carriers
+without selecting them explicitly. Keep the installed manifest and source receipt.
 
 ### M5 — Optional Cursor shim
 

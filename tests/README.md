@@ -42,3 +42,10 @@ On Node 24 with node:sqlite/FTS5, run `node tests/core-conformance.test.js`,
 The benchmark suite exercises synthetic dry-run controls and never invokes a model.
 The MCP suite uses a real stdio subprocess. These are local/runtime proofs, not a live-host
 installation or fresh-session boot proof. See `docs/concepts/cortex-local.md` and `bench/README.md`.
+
+## Candidate package and event adapter
+
+Run `node tests/package-release.test.js` and `node tests/codex-curation.test.js` on Node 18 or
+newer. These verify immutable package construction/verification and the bounded optional Codex
+adapter with synthetic hook input. They do not prove a real host event, model semantic accuracy,
+or fresh-session loading. See [host acceptance](../docs/integrations/ACCEPTANCE.md).

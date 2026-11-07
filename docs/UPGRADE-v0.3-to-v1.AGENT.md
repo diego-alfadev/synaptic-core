@@ -86,27 +86,21 @@ The brain almost certainly does NOT have the v1 `synaptic` skill installed under
 existing skill copy — (re)install the current one first, because `/synaptic-upgrade` and its
 procedure file come WITH the skill.
 
-A) Install the skill (no clone needed — the agent self-installs from GitHub raw):
-   1. RAW_BASE = https://raw.githubusercontent.com/diego-alfadev/synaptic-core/main/standalone/synaptic/
-      (append a release tag instead of `main` to pin: .../synaptic-core/<tag>/standalone/synaptic/)
-   2. Fetch ${RAW_BASE}MANIFEST.txt.
-   3. For each path listed (trim whitespace/CR), fetch ${RAW_BASE}<path> and WRITE it to BOTH
-      .claude/skills/synaptic/<path> AND .agents/skills/synaptic/<path> (create dirs as needed).
-   4. VERIFY: count of files written == manifest entries; each file non-empty and does NOT start
-      with "<!DOCTYPE" or "<html" (GitHub raw can return an HTML error page). Re-fetch failures once.
-   5. The skill bundle now includes references/upgrade-to-v1.md — that is the procedure you execute.
-   • If you CANNOT fetch URLs (no egress — common on locked corporate networks): do not improvise.
-     Ask me to provide the skill bundle another way (a colleague's copy of standalone/synaptic/, a
-     `degit diego-alfadev/synaptic-core` on a machine with egress, or a manual folder copy), then continue.
-   • CONFIDENTIALITY: this only DOWNLOADS public skill code; it uploads nothing. Your brain content
-     never leaves the machine. (If even outbound HTTPS to github is disallowed, use the manual copy.)
+A) Prepare one exact source package; do not update live carriers yet:
+   1. Follow UPGRADING.md and standalone/synaptic/references/package-install.md from the selected
+      release package. Pin all metadata, skill files and migration dependencies to its source commit.
+   2. Stage the complete package, authenticate its source/manifest and verify inventory and content.
+      Preserve MANIFEST.txt and SOURCE.json. Never substitute main or mix release versions.
+   3. If network access is unavailable, use an authorised complete local package. Without Node,
+      use permitted host file/hash tools; if verification cannot be established, stop before writes.
+   4. Carry the staged skill forward to STEP 1 intake. Resolve brain/host/scope before selecting
+      destinations. Review the bounded diff and preserve fresh byte-faithful preimages before applying
+      the selected carrier(s). Do not overwrite user modifications or write both carriers by default.
+   5. Use references/upgrade-to-v1.md from that same verified package for the migration procedure.
+B) Optional tools (Node >=18): use tools/ and their dependencies from this same package. Do not
+   fetch single scripts or migration references from main. With no Node, use the documented agent
+   procedure and state which mechanical checks could not run.
 
-B) Get the Node tools (only if you intend to use Node — they are NOT in the skill manifest):
-   Fetch each to a local tools/ dir from ${RAW_BASE%standalone/synaptic/}tools/ :
-     migrate.js  check.js  deploy.js  graph.js  export.js
-   (i.e. https://raw.githubusercontent.com/diego-alfadev/synaptic-core/main/tools/<name>.js)
-   They are zero-dependency single files (Node >= 18). If you have no Node or no egress, skip this —
-   every tool has a manual fallback in this runbook.
 
 ────────────────────────────────────────────────────────────────────────
 STEP 1 — Intake: identify the brain and its topology (ASK me; do not assume)   [no Node]

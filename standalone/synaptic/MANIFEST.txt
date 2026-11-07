@@ -37,3 +37,4 @@ templates/templates/task-index.md
 templates/templates/tasks.md
 references/situation.md
 templates/templates/skills-registry.md
+references/package-install.md

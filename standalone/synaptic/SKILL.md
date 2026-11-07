@@ -13,34 +13,32 @@ description: >
 
 ## Bootstrap / self-install
 
-**DETECT bootstrap mode.** If you were invoked but the bundle next to this SKILL.md is
-**incomplete** — not every path listed in `MANIFEST.txt` is present beside this file (a partial
-fetch leaves gaps even when `references/` and `templates/` exist) — the user likely fetched only
-`SKILL.md` by URL into a clean project. Self-install the rest:
+A raw SKILL.md is an entry point, not a complete installation. If its bundle/manifest is absent
+or incomplete, **do not write either live skill carrier yet**. Resolve the existing brain,
+schema, selected host and project/user scope before choosing destinations. An unreachable bridge
+is not permission to create another brain.
 
-1. Set `RAW_BASE = https://raw.githubusercontent.com/diego-alfadev/synaptic-core/main/standalone/synaptic/`
-2. Fetch `${RAW_BASE}MANIFEST.txt`.
-3. For each path listed (trim surrounding whitespace and any trailing carriage return first),
-   fetch `${RAW_BASE}<path>` and WRITE it to **both** `.claude/skills/synaptic/<path>` **and**
-   `.agents/skills/synaptic/<path>` (create directories as needed). This SKILL.md is in the
-   manifest, so both copies get it too.
-4. **Verify the install before proceeding.** Confirm the count of files written equals the number
-   of manifest entries. Confirm each written file is non-empty (except `.gitkeep` placeholders,
-   which are 0 bytes by design) and does NOT start with `<!DOCTYPE`
-   or `<html` (GitHub raw can return an HTML error page on rate-limit). Re-fetch only the paths that
-   failed either check; if any still fail after a retry, report the failed paths and fall back to
-   the HONEST fallback below.
-5. Then run **Harness Self-Wire** (`references/init.md`) and offer `/synaptic-init`.
+Use the exact release/candidate package the owner selected, or an authorised complete local copy.
+Its generated RELEASE-MANIFEST.json and skill SOURCE.json retain one source commit and file hashes.
+Never silently fetch the rest from main/latest. A tagged entry point must keep the same selected
+source throughout; if its origin or complete package is unknown, ask for it instead of guessing.
+An explicitly selected mutable branch must be resolved once to a commit before preparation.
 
-**CORE-purity note.** This uses the agent's OWN fetch + file-write capability — Synaptic ships no
-runtime, downloader, or daemon. `MANIFEST.txt` makes the install deterministic (you get exactly
-the listed files); pulling from `main` installs the current stable skill. Append a release tag to
-the path (e.g. `.../synaptic-core/<tag>/standalone/synaptic/`) if you need an exact pinned version.
+Follow references/package-install.md from that same source: private staging → inventory/content
+verification → scope-aware diff and fresh backup → recoverable agent-run apply → separate
+installation and host-integration checks. Preserve MANIFEST.txt and SOURCE.json with the skill.
+If only this file was supplied, obtain the package or that reference from its known immutable
+origin first, without changing installed files. A same version header never skips content checks.
 
-**HONEST fallback.** If you cannot fetch URLs (no network or no fetch tool), do not improvise —
-tell the user to use the `degit` one-liner or the manual folder-copy from the README, then stop.
+CORE needs no new runtime. With no Node/network/MCP, use the permitted file tools and an approved
+local package; report verification limits. If a complete source or safe backup/copy cannot be
+obtained, stop before live writes. Do not suggest a network/package-manager command as the fix
+for a denied fetch. Existing readable files remain usable while an upgrade is pending.
 
-If the bundle IS complete beside this file — every path in `MANIFEST.txt` is present — skip this section entirely and proceed to Detect on Load.
+If the complete bundle is already present and no install/repair was requested, boot normally.
+Legacy bundles with unknown source metadata are not prevented from being read; their origin and
+installation integrity remain unverified until checked. Package tooling prepares/verifies files;
+it is not an installer or a mechanism that starts curation.
 
 # Synaptic Brain Skill
 

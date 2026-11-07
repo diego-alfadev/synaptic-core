@@ -44,6 +44,12 @@ jobs:
       - name: Behavioural tests
         if: ${{ !cancelled() }}
         run: node tests/tools.test.js
+      - name: Immutable release package checks
+        if: ${{ !cancelled() }}
+        run: node tests/package-release.test.js
+      - name: Bounded Codex curation adapter (synthetic)
+        if: ${{ !cancelled() }}
+        run: node tests/codex-curation.test.js
 
   cortex:
     name: cortex (node 24, ${{ matrix.os }})

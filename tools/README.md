@@ -18,8 +18,8 @@ These tools are governed by **Decision D3**:
 
 - **Optional:** CORE is 0-install-capable. No tool is ever a hard requirement.
 - **Zero external dependencies:** Node built-ins only — no npm install.
-- **Runtime auto-detected:** a runtime is present in most agentic contexts; tools
-  run transparently when available.
+- **Invocation is explicit:** the host/agent must detect permitted runtime capability and invoke
+  the selected tool. A runtime being installed does not cause execution.
 - **No-runtime fallback:** when Node is absent, the `synaptic` skill instructs
   the agent to perform the equivalent operation manually. Each tool's fallback
   is documented in the installed lifecycle skill.

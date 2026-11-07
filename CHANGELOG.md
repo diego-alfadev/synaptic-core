@@ -2,6 +2,18 @@
 
 ## [Unreleased]
 
+### Operating-contract and release preparation
+
+- Added an immutable local package builder/verifier, retained source receipts and same-version
+  content checks. Bootstrap and legacy migration acquisition now keep one selected source;
+  applying a live upgrade remains a reviewed agent-run procedure.
+- Added a preparatory opt-in Codex Stop adapter for bounded source-grounded curation drafts,
+  checked persisted output and retained pending failures. Real event/model/fresh-session acceptance
+  is still required; no hooks are installed by this change and wiki promotion is separate.
+- Simplified README, upgrade and release-note drafts around explicit triggers, evidence and
+  no-MCP assisted operation. The first stable requires a demonstrated automatic-curation profile
+  and the owner-run VS Code journey; no publication is implied.
+
 ### Local CORE completion and Cortex candidate
 
 - Read-only situation reporting follows task sources in place; skill portability is a data-only

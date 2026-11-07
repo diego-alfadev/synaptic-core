@@ -2,7 +2,10 @@
 
 *What this is: how a Synaptic brain grows — two orthogonal dials that control when and how much gets captured, the always-on breadcrumbs underneath them (and the one mechanical floor), the six-step consolidation formula that turns raw work into navigable knowledge, the honest manual trade, and a suggested cadence.*
 
-The #1 question people ask is *"do I have to babysit this?"* The answer is **no — capture is a dial, and the default leans passive.** You decide how much the agent does for you versus how much you do by hand. There are **two orthogonal dials**, plus always-on breadcrumbs underneath them.
+Capture depends on the selected and verified host profile. Files and agent instructions provide an
+assisted baseline; native hooks can add actual event-driven recording. An optional model workflow
+can curate saved sources when its trigger and persisted result have been demonstrated. These are
+separate capabilities. See the [operating contract](../OPERATING-MODEL.md) for current evidence limits.
 
 ## Dial 1 — the passivity dial: *when* capture triggers
 
@@ -11,8 +14,8 @@ Set it where you like:
 | Setting | What happens | Good for |
 |---|---|---|
 | **Manual** | You run `/synaptic-consolidate` when you choose | Maximum control |
-| **Event-driven (recommended)** | Hooks fire on agent events — a one-line journal breadcrumb every turn, a recovery line right after the context window compacts, a rescue sweep on next session start | Most people; the agent does the remembering |
-| **Where-supported automation** | On hosts that support it, more of the lifecycle runs without prompting | Long or heavy sessions |
+| **Event-driven recording** | Verified native hooks record their configured event evidence; changed paths require a tested source | Hosts permitting the specific hook dialect |
+| **Bounded automatic curation** | A real event requests model work on selected saved sources, with a checked persisted outcome and visible failure | Separately tested profiles; not enabled merely by writing instructions |
 
 ### The always-on breadcrumbs (and the one mechanical floor)
 
@@ -20,7 +23,11 @@ Underneath all settings is an **always-on, fixed-cost instruction**: a terse one
 
 ### The honest limit on "passive"
 
-**No agent has native idle detection.** "Passive" here means *event-driven on hook-capable hosts* (a per-turn `Stop` breadcrumb on all agents; a recovery line after a compaction and a next-session rescue where the host supports them) — plus the journal as the universal fallback. It is **not** an unattended daemon watching you work. We say this plainly so the dial is not mistaken for magic.
+Synaptic supplies no universal idle detector. Event-driven behaviour requires a permitted, enabled
+and genuinely fired native event in the actual host. A per-turn instruction remains best-effort
+agent work. An event marker does not prove semantic capture of the conversation, and a source-based
+curation adapter cannot curate unsaved facts it never receives. No running observer means a later
+failure may remain unnoticed until an explicit check.
 
 ## Dial 2 — the `capture_policy` dial: *how much* reaches the wiki
 
@@ -34,7 +41,10 @@ A separate, orthogonal valve set in `BRAIN.md`. Where the passivity dial control
 
 Same 6-step formula, one tunable valve — it changes *how much* gets promoted, never *how* the graph is built. A custom 1-line policy overrides the presets. (The journal breadcrumbs are unaffected — `capture_policy` governs promotion to the wiki, not the breadcrumbs.)
 
-The two dials are genuinely **orthogonal**: passivity decides *when* the formula fires (manual / hooks / more automation), `capture_policy` decides *how much* survives the formula into the wiki. You can run fully manual with `capture-all`, or fully event-driven with `selective` — any combination is valid.
+The two choices are independent: a verified trigger determines when its configured operation runs;
+`capture_policy` guides what the model promotes when consolidation actually runs. A recording hook
+does not execute the consolidation formula. The candidate's optional automatic curation draft is
+also distinct from promotion into the wiki.
 
 ## The consolidation formula (6 steps)
 
