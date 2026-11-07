@@ -35,3 +35,10 @@ acceptance criterion in the CHANGELOG was by-inspection.
   script stops parsing. PowerShell blocks in the recipe, SKILL.md, capture-hooks.md and fingerprint.md must be ASCII outside comments.
 - **CRLF shell scripts.** Git for Windows defaults to `core.autocrlf=true`; a CRLF `.sh` does not run
   under bash. `.gitattributes` pins `*.sh` to LF.
+# Local Cortex and benchmark checks
+
+On Node 24 with node:sqlite/FTS5, run `node tests/core-conformance.test.js`,
+`node tests/cortex.test.js`, `node tests/mcp.test.js` and `node tests/bench.test.js`.
+The benchmark suite exercises synthetic dry-run controls and never invokes a model.
+The MCP suite uses a real stdio subprocess. These are local/runtime proofs, not a live-host
+installation or fresh-session boot proof. See `docs/concepts/cortex-local.md` and `bench/README.md`.

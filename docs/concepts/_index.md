@@ -19,3 +19,6 @@ Read it newcomer-first, top to bottom — each doc is self-contained, opens with
 ---
 
 See also: the [README](../../README.md) (front door) · the [ROADMAP](../../ROADMAP.md) (what shipped and the honest Cortex horizon).
+# Local runtime candidate
+
+- [Minimum local Cortex](cortex-local.md) — read-only CLI/MCP and explicit fallback levels.

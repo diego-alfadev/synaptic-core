@@ -1,5 +1,13 @@
 # tools/ — Optional Synaptic Brain Helpers
 
+## Local Cortex candidate
+
+See [Minimum local Cortex](../docs/concepts/cortex-local.md) for the read-only CLI, lexical SQLite
+retrieval and stdio MCP adapter. These use Node built-ins; SQLite is loaded lazily and degrades to
+current-file lexical search. Existing tools retain their Node 18 baseline; the Cortex/FTS5 candidate
+is locally validated on Node 24. No package install, model, daemon or network service is required.
+The authoritative layering is [architecture-matrioshka](../docs/concepts/architecture-matrioshka.md).
+
 The optional **TOOLS** layer of synaptic-core. The CORE layer (plain Markdown files)
 never requires these scripts — everything they do can be performed manually by an agent.
 Use when a Node runtime is available (the common case in agentic setups).
@@ -9,14 +17,14 @@ Use when a Node runtime is available (the common case in agentic setups).
 These tools are governed by **Decision D3**:
 
 - **Optional:** CORE is 0-install-capable. No tool is ever a hard requirement.
-- **Zero dependencies:** only `node:fs`, `node:path`, `node:process` — no npm install.
+- **Zero external dependencies:** Node built-ins only — no npm install.
 - **Runtime auto-detected:** a runtime is present in most agentic contexts; tools
   run transparently when available.
 - **No-runtime fallback:** when Node is absent, the `synaptic` skill instructs
   the agent to perform the equivalent operation manually. Each tool's fallback
   is documented in the installed lifecycle skill.
 
-**Matrioshka note:** CORE (files) → TOOLS (these scripts) → ECOSYSTEM (MCP/RAG/Engram).
+**Matrioshka note:** CORE (files) → Cortex (optional tools including MCP) → Ecosystem.
 Each layer is independently optional; removing the outer layers does not break the inner ones.
 
 ---

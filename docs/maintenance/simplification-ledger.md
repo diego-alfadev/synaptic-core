@@ -272,3 +272,15 @@ Not done in R1 (spec §2.3, §2.5): no boot-proof hook (Round 5 default 3: the n
 proof); the PowerShell launcher hardening (`SystemRoot`-qualified path, `-NonInteractive`, UTF-8 console)
 and `-EncodedCommand` (default 5: not adopted) are left for the host-adapter item. Relative hook paths
 in A.4 vs `$CLAUDE_PROJECT_DIR` (review F8, pre-existing) are left for R6(a).
+# Local B+C checkpoint — 2026-11-07
+
+- Preserve built K1/work-item routing; no destructive branch operation or automatic parked-branch merge.
+- Recover R3 as a runtime-free procedure; leave the dual-shell script on its existing parked ref.
+- Recover R5's registry intent with inert recovery text and file-read-only audit; source-ref/plugin
+  evidence remains unknown unless established. No skill code is installed from a brain.
+- Fix scratch lint and work-item export with red-first executable regressions; tighten task-id proof
+  boundaries and reciprocal provenance diagnostics.
+- Reuse canonical graph/metadata parsing, replace the inspection-only spike contract/cache, and add
+  independent golden conformance before retrieval/CLI/MCP. No external QMD code is copied.
+- Add offline benchmark controls and adapter procedures. No model batch, user/global installation,
+  live-host compatibility assertion, schema migration or release performed.

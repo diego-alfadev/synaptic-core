@@ -1,5 +1,20 @@
 # Matrioshka architecture — CORE, Cortex, Ecosystem
 
+## Runtime selection for the local candidate
+
+Where capabilities allow, Cortex is the preferred delivery path; CORE remains the guaranteed
+file/prose fallback. The local cut and its limits are defined in
+[ADR-004](../architecture/adr-004-local-cortex-cut.md), with commands and protocol scope in
+[Minimum local Cortex](cortex-local.md). Capability probes test Node, node:sqlite and FTS5 at runtime;
+an explicitly selected persistent cache also needs an accessible private directory. The default
+index is in-memory and requires no cache directory. A missing SQLite capability selects direct-file
+lexical search inside Node; missing Node means the agent follows CORE procedures.
+
+CORE-host retains its existing capture floor. New domain behaviour is not duplicated in sh and
+PowerShell; launchers, payloads and host events still require their own verified adapters. Optional
+does not mean unavailable by default: it means the runtime may always be removed without losing the
+brain or its operating procedures.
+
 *What this is: the layered architecture of synaptic-core — the single runtime test that draws the CORE/Cortex line, the proven ideas the substrate is built on, the deliberately-deferred horizon, the optional tooling, and the full directory layout.*
 
 ## Three nested rings, one runtime test

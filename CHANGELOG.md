@@ -2,6 +2,20 @@
 
 ## [Unreleased]
 
+### Local CORE completion and Cortex candidate
+
+- Read-only situation reporting follows task sources in place; skill portability is a data-only
+  registry and file-read audit. Registry text is never executed or interpolated into commands.
+- Work-item export retains task/proposal records; lint skips playground scratch while still
+  checking ordinary artifacts. Promotion proof checks distinguish a task id from a longer id.
+- Codex and VS Code adapter procedures distinguish the selected harness from the model and keep
+  file evidence separate from a fresh-session boot proof. Global configuration writes remain gated.
+- A small optional Cortex library, CLI, lexical FTS5 adapter and read-only stdio MCP share current-file
+  semantics, capability declarations and CORE fallbacks. Synthetic conformance/protocol checks and an
+  offline resume benchmark verify local behaviour; no live-host efficacy claim is made.
+- CONF-1 remains a specification. MemoryLog, embeddings and multi-brain implementation are deferred.
+  This is an unreleased local candidate: no version bump, tag or publication is implied.
+
 ### Added
 - **Fewer false rescue offers (hook liveness, K1).** `synaptic-pending` gains two silent modes: `beat` on
   `Stop` (a heartbeat that records the pending state this session last saw, and claims the work when
