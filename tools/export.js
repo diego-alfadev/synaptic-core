@@ -191,6 +191,12 @@ function collectSections(brainRoot) {
     sections.push({ label: 'Journal', files: journalWalk.mdFiles, binaries: [] });
   }
 
+  // Work-item records are portable state; playground scratch remains excluded.
+  for (const name of ['tasks', 'proposals']) {
+    const work = walkDir(path.join(brainRoot, name));
+    if (work.mdFiles.length) sections.push({label: name === 'tasks' ? 'Tasks' : 'Proposals', files: work.mdFiles, binaries: []});
+  }
+
   // 9. playgrounds/ — only README if present; actual task dirs omitted (burnable)
   const playgroundsReadme = path.join(brainRoot, 'playgrounds', 'README.md');
   if (fs.existsSync(playgroundsReadme)) {
@@ -281,7 +287,7 @@ function exportSplit(brainRoot, prefix) {
     },
     {
       outFile: `${prefix}-refs-harness.md`,
-      labels:  new Set(['References', 'Templates', 'Journal', 'Playgrounds (README only)']),
+      labels:  new Set(['References', 'Templates', 'Journal', 'Tasks', 'Proposals', 'Playgrounds (README only)']),
     },
   ];
 

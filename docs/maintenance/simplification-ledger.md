@@ -256,3 +256,31 @@
     `synaptic` name + provenance line); conflict-copy cleanup narrowed to `synaptic-*-DESKTOP-*` in
     command-discovery, init, host-setup and upgrade-to-v1. Nothing removed. Portability of users'
     skills (registry, own skills repo) is a v1.7 spec, not built.
+
+## v1.7.0 round (loop 2, branch `feat/v1.7.0-work-items`, base `release/v1.6.0` = `4e420ad`)
+
+Same rules as above: one home per text, pointers, nothing deleted without a parked copy. Specs:
+`strategy/specs/v1.7-*.md` in the workspace (not in this repo). Defaults relied on: decisions Round 5.
+
+| # | Item | What changed | Where | Status |
+|---|---|---|---|---|
+| R1-K1 | Hook liveness + `_degraded` | `synaptic-pending` gains `beat` (Stop) and `end` (SessionEnd, silent); liveness files `.live/<sid>` (last-seen signature), `.ended/<sid>`, `.owner` (signature + claimants) under `journal/_activity/`; rescue never offers a session its own work, is quiet while a live claimant holds the unchanged state, offers otherwise; TTL 2 h; a claimant re-claims at its next beat/rescue (parallel Stop hooks). A.1/A.2 write one `_degraded` line on a failed write; the next rescue prints it once. SessionEnd wired again (silent, 10 s `timeout`); SessionStart one entry per source incl. `fork` (Round 5 default 4). SubagentStop harvest specified only (A.5, off). Audit reports `HOOK-DEGRADED`; consolidate's rollup leaves liveness files alone; upgrade has a v1.7 bullet. | recipe A.2/A.4/A.5, `capture-hooks.md`, `audit.md`, `consolidate.md`, `upgrade-to-v1.md`, `templates/BRAIN.md` (one cell) | done |
+| R2-T1/T2/P1 | Work items, format | Contract §6 (one home): index + folder-per-item shape for `proposals/` and `tasks/`, ids `P<n>`/`T<n>` per brain (Round 5 default 2), status vocabulary, resume test as the playground gate (workflow-neutral, T1), `tasks.md` skeleton, `scratch/` rule, SRC-1 read-in-place, playground registry moves to `tasks/INDEX.md` (journal list kept for older brains). New templates: `templates/task-index.md`, `proposal-index.md`, `tasks.md`, `playgrounds/.gitignore`; MANIFEST updated. Playground README, journal template and BRAIN.md Brain Map (108 lines) point at the index. Consolidate reads Key Learnings first, skips unreferenced `scratch/`, closes rows; audit Step 9 (a) uses the index, new (d) integrity checks. Init tree and an upgrade bullet (offer the move, never forced). | `contract.md`, templates, `consolidate.md`, `audit.md`, `init.md`, `upgrade-to-v1.md` | done |
+| R4 | Proposal → task promotion | Contract §6 gains the one *Promotion* procedure: owner approves each promotion or drop (PROPOSE-THEN-APPROVE); next free `T<n>`, task row `from: P<n>` with `home` `inline` (or the proposal's folder) unless the resume test fails, proposal `[x]` + `to: T<n>` + task id as proof in `note`, `updated` on both; never renumber or delete; promotion approves no work. Tier rows added identically to contract §5 and `templates/harness/guardrails.md` (S3 parity test). Consolidate's Candidate route and "Proposals and tasks" point at §6 and list candidates to promote, never promote. Audit Step 9 (d) unchanged (no contradiction). Fixture `tests/capture-floor/fixtures/promotion/` + a provenance check and a broken-pair control in both suites. | `contract.md`, `guardrails.md`, `consolidate.md`, `proposal-index.md`, `tests/capture-floor/` | done |
+
+Not done in R1 (spec §2.3, §2.5): no boot-proof hook (Round 5 default 3: the nonce stays the only
+proof); the PowerShell launcher hardening (`SystemRoot`-qualified path, `-NonInteractive`, UTF-8 console)
+and `-EncodedCommand` (default 5: not adopted) are left for the host-adapter item. Relative hook paths
+in A.4 vs `$CLAUDE_PROJECT_DIR` (review F8, pre-existing) are left for R6(a).
+# Local B+C checkpoint — 2026-11-07
+
+- Preserve built K1/work-item routing; no destructive branch operation or automatic parked-branch merge.
+- Recover R3 as a runtime-free procedure; leave the dual-shell script on its existing parked ref.
+- Recover R5's registry intent with inert recovery text and file-read-only audit; source-ref/plugin
+  evidence remains unknown unless established. No skill code is installed from a brain.
+- Fix scratch lint and work-item export with red-first executable regressions; tighten task-id proof
+  boundaries and reciprocal provenance diagnostics.
+- Reuse canonical graph/metadata parsing, replace the inspection-only spike contract/cache, and add
+  independent golden conformance before retrieval/CLI/MCP. No external QMD code is copied.
+- Add offline benchmark controls and adapter procedures. No model batch, user/global installation,
+  live-host compatibility assertion, schema migration or release performed.

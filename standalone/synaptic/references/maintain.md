@@ -14,7 +14,7 @@ the weave pass (`references/weave.md`); `/synaptic-maintain synthesize` = only t
 (`references/synthesize.md`). A named pass uses the latest audit findings if there are any; otherwise
 it scans only what the pass itself needs (it does not load `references/audit.md`). It still obeys the
 CORE-safety contract below. The 1.6 aliases `/synaptic-weave` and
-`/synaptic-synthesize` map to the two passes and are removed in the next minor release.
+`/synaptic-synthesize` map to the two passes and remain available in this candidate.
 
 > **The procedure is CORE-safe; the *timer* is Cortex.** `/synaptic-maintain` is plain skill
 > guidance over plain files — pure CORE. Wanting it to run **on a schedule** (e.g. nightly) needs an

@@ -42,28 +42,15 @@ whose schema is genuinely `< 1.0` (a pre-v1 brain), which is the v0.3→v1 path,
 
 ## The one required step: update the skill to engine 1.3.0
 
-Update the skill wherever your host discovers it — `.claude/skills/synaptic/` and/or
-`.agents/skills/synaptic/`. Pick whichever install path you already use:
+This is the historical engine-1.3.0 feature guide. For a current upgrade, use
+[the release upgrade path](../UPGRADING.md) and one exact source package. Discover the existing
+host/scope, stage and verify the complete bundle, review modified files and preserve fresh preimages
+before applying selected targets. Do not mix files from main or overwrite both carriers by default.
+Keep MANIFEST.txt and generated SOURCE.json; compare actual content even when versions match.
 
-- **Agent self-install (no Node needed):** point your agent at the skill's bootstrap. It fetches the
-  bundle deterministically via `MANIFEST.txt` from GitHub raw and writes it into the skill paths.
-  The install tracks `main`:
-  `RAW_BASE = https://raw.githubusercontent.com/diego-alfadev/synaptic-core/main/standalone/synaptic/`
-  (append a release tag instead of `main` — `.../synaptic-core/<tag>/standalone/synaptic/` — once one
-  is published, to pin an exact release). Overwrite the existing skill dir with the fetched files.
-- **`degit` (needs Node):**
-  `npx degit diego-alfadev/synaptic-core/standalone/synaptic .claude/skills/synaptic`
-  (use `.agents/skills/synaptic` for non-Claude hosts; `degit` pulls the latest from `main` — append
-  `#<tag>` to pin an exact release once one is published).
-- **Manual folder copy:** copy `standalone/synaptic/` over your installed skill dir.
-
-Verify: `SKILL.md` now reads `version: 1.3.0`. That is the whole required upgrade. Your `BRAIN.md`,
-your nodes, your harness wiring, your links — **all untouched.**
-
-> The `tools/*.js` accelerators (`check.js`, `graph.js`) are **not** in the skill manifest and need
-> **Node ≥ 18**. Re-fetch them separately if you use them
-> (`https://raw.githubusercontent.com/diego-alfadev/synaptic-core/main/tools/<name>.js`). They are
-> optional — the skill works without them.
+Engine and brain format are separate: this engine update does not itself migrate schema1.0 nodes.
+Optional tools and dependencies must come from the same package/source commit. Node is optional
+for CORE; report verification limits when permitted host capabilities cannot perform a check.
 
 ---
 

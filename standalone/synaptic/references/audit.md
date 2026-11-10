@@ -311,9 +311,10 @@ playground artifacts) but never reached the knowledge store. **Diagnose only —
 - Count all directories directly under `playgrounds/` that contain at least one `.md` file, **excluding
   `playgrounds/archive/`** (finished work kept on request). These are **open playgrounds** — task
   workspaces not yet consolidated into the wiki or explicitly closed.
-- Cross-check against the journal's **Active playgrounds** list: flag playgrounds **present on disk
-  but missing from the list** (untracked) and entries **listed but with no directory** (stale entry).
-  `archive/` is never in that list and is never flagged.
+- Cross-check against the registry: `tasks/INDEX.md` rows whose `home` is a playground (an older brain
+  without the index: the journal's **Active playgrounds** list). Flag playgrounds **present on disk but
+  missing from the registry** (untracked) and entries **registered but with no directory** (stale entry).
+  `archive/` is never registered and is never flagged.
 
 **(b) Pending journal breadcrumbs (unconsolidated `Stop` lines):**
 
@@ -334,12 +335,29 @@ playground artifacts) but never reached the knowledge store. **Diagnose only —
   value outside git (propose re-recording it as `sha256-lf:`). Re-record or re-distil only with the
   user's OK.
 
+**(d) Work-item index integrity** (`tasks/INDEX.md`, `proposals/INDEX.md`; skip what does not exist;
+formats in `references/contract.md` §6):
+
+- A row whose `home` (tasks; brain-relative, another tool's file from the workspace root) or detail
+  folder (proposals) does not resolve: **broken home**. Never
+  rewrite or delete the row; report it.
+- A row marked `[x]` with an empty `note` (no path, result or link): **done without
+  proof**. A `[-]` row with an empty `note`: **dropped without reason**.
+- A duplicated or reused id, or an off-vocabulary status mark: **index defect**.
+- A promoted proposal (`to: T<n>`) whose task row is missing, or a task with `from: P<n>` whose
+  proposal row is missing, or whose from/to values do not name each other: **broken provenance**.
+- Advisory only: a stale open row (`references/contract.md` §6: `stale_after`, else 14 days), for
+  example a proposal never promoted or dropped.
+- `scratch/` folders are never audited.
+
 **Warn (not error)** when a threshold is exceeded; present as advisory — the user decides whether to
 consolidate now or defer:
 
 - Open playgrounds ≥ 3: "Half-done — N open playgrounds. Run `/synaptic-consolidate` to process and close completed task workspaces."
 - Journal lines since last consolidation ≥ 60: "Half-done — journal at N pending breadcrumbs since last consolidation. Run `/synaptic-consolidate` before the journal nears 80 lines."
-- Any untracked playground, stale active-playground entry, drifted raw artifact, or unresolved `contradicts`: list each as a half-done finding routed to `/synaptic-consolidate` (or `/synaptic-maintain` for the orchestrated sweep).
+- Any untracked playground, stale registry entry, drifted raw artifact, unresolved `contradicts`, or (d)
+  finding: list each as a half-done finding routed to `/synaptic-consolidate` (or `/synaptic-maintain`
+  for the orchestrated sweep).
 
 ---
 
@@ -441,6 +459,12 @@ and mask a real capture-dead condition as `not-used (benign)`. Read the activity
 step's denominator — it is a `.log` under `journal/`, never knowledge, and never a node (the
 knowledge-scoped checks above never see it).
 
+**Hook failures and liveness files (v1.7).** If `journal/_activity/_degraded` exists, report each line as
+`HOOK-DEGRADED: <date> <hook> write-failed` and route it to the hook smoke-test. Audit never deletes it
+(the next SessionStart rescue prints it once and removes it, so audit sees only failures since the last
+rescue). The liveness files (`.live/`, `.ended/`,
+`.owner`) are bookkeeping: never findings, never knowledge, never part of the Step 9b counts.
+
 **No runtime required.** Degree/count math over files (journal timestamps + frontmatter/git), LLM-free.
 *The activity marker's actual firing is author-complete; verify on a real run — and note its
 host coverage is confirmed only for Claude Code (see `references/capture-hooks.md` "Per-host activity marker support").*
@@ -467,10 +491,17 @@ This check closes the silent drift vector where a user edits the deployed block 
 
 1. **Static check (CORE-floor, by reading files).** On Claude Code, for a project-reach brain: if any
    of `CLAUDE.md`, `.claude/CLAUDE.md`, `CLAUDE.local.md` exists and none carries an `@AGENTS.md` line
-   outside a code fence, the bridge is **not loaded** → finding *"Claude Code skips AGENTS.md here; add
-   the boot block (`references/init.md` §a2)"*. If the import is there (or no CLAUDE file exists) and
+   outside a code fence, loading is **unproven** → finding *"Claude Code boot import is absent;
+   inspect the adapter (`references/init.md` §a2) and run a fresh-session boot check"*. If the import is there (or no CLAUDE file exists) and
    `AGENTS.md` holds the `BEGIN:SYNAPTIC` bridge, report `wired: expected`. A record that says
    `boot: declined` is reported once, not re-asked.
+1a. **Codex:** inspect the effective global/project instruction chain and any `AGENTS.override.md`
+    that excludes the recorded carrier; check the combined instruction byte limit. Use
+    `references/init.md` §a3, not the Claude import rule. Report static compatibility as
+    `expected` and actual loading as `unproven` until a fresh-session proof exists.
+1b. **VS Code:** read the recorded session harness and versions first; check the bridge carrier
+    against §a4. Local discovery settings do not establish Copilot/Codex wiring. Inspect hook
+    configuration separately; an instruction proof is not evidence that capture ran.
 2. **The live proof (a new session only).** It cannot run inside this audit: this session has already
    read brain and skill files. Tell the user to open a new session and, as the first message, ask
    `synaptic status` (Claude Code: `claude -p "synaptic status"`). A reply with
@@ -558,3 +589,10 @@ After the main audit, quick-check `BRAIN.md` itself:
 - Is the **Brain Map** table consistent with the actual directory layout?
 
 Flag anything materially out of date. These drifts are low-severity but compound over time.
+
+## Skills portability and situation routing (v1.7)
+
+When registries/skills.md exists, use contract.md §7 to inspect files without executing registry data.
+Report missing/drift only from readable, resolved local evidence; plugin layout and ref drift remain
+unknown when not established. Audit installs nothing. For a read-only view of work, follow
+references/situation.md; it is separate from fresh-session boot proof.

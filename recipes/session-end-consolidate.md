@@ -41,7 +41,7 @@ the on-disk journal as the universal floor*, not an unattended idle daemon.
 
 ## The layered capture model
 
-Two host events are wired, `Stop` and `SessionStart`, carrying four layers. **Only `Stop` is universal**; the rest are host-conditional
+Two host events carry the four capture layers, `Stop` and `SessionStart`; a third, `SessionEnd`, is wired only for silent liveness bookkeeping (v1.7). **Only `Stop` is universal**; the rest are host-conditional
 bonuses that strengthen capture where the host exposes them.
 
 | Layer | Hook event | Role | Cost | Availability |
@@ -49,8 +49,9 @@ bonuses that strengthen capture where the host exposes them.
 | **(a0) Activity marker** | `Stop` + `SessionStart` | **UNCONDITIONAL** one-line proof-of-life to `journal/_activity/` — no git, no gate, no LLM. **The only mechanical non-empty floor**; also the capture-yield denominator | Fixed, one short append | Any host that runs a **shell command** on a hook (confirmed: Claude Code; others UNVERIFIED) |
 | **(a) Breadcrumb** | `Stop` (per turn) | One terse *semantic* journal line per meaningful turn — the workhorse. **Conditional by design** (reports what changed), so it can legitimately write nothing | Fixed, tiny; **not** governed by `capture_policy` | **Universal** — all 5 agents |
 | **(b) Compaction recovery** | `SessionStart` (`compact` source) | Right after a compaction, inject one line: re-read `journal/_current.md`, write the session summary there, and what is pending (A.2 `compact`) | One check after compaction | Claude Code (SessionStart sources); other hosts: check their docs |
-| **(c) Rescue** | `SessionStart` (startup / resume / clear) | On next boot, detect unconsolidated breadcrumbs / open playgrounds and **offer** to consolidate (A.2 `rescue`) | One check at boot | Where supported |
-| *(retired in v1.6)* | `PreCompact`, `SessionEnd` | Their stdout does not reach the model on Claude Code (A.2), so nothing is wired there | — | — |
+| **(c) Rescue** | `SessionStart` (startup / resume / clear / fork) | On next boot, detect unconsolidated breadcrumbs / open playgrounds and **offer** to consolidate, unless a live session owns them (A.2 `rescue`) | One check at boot | Where supported |
+| *(liveness, v1.7)* | `Stop` (`beat`) + `SessionEnd` (`end`) | Silent bookkeeping in `journal/_activity/`: which session is alive and which one last changed the pending work, so the rescue never offers a live session its own work (A.2) | One touch per turn | Needs a session id on the hook stdin (Claude Code per its docs; others UNVERIFIED); without it, v1.6 behaviour |
+| *(retired in v1.6)* | `PreCompact` | Its stdout does not reach the model on Claude Code (A.2), so nothing is wired there | — | — |
 
 Why this shape:
 
@@ -63,8 +64,9 @@ Why this shape:
   toward the journal. `PreCompact` stdout is not injected, so a reminder there reached no one.
 - **`SessionStart`-rescue + `/synaptic-audit` together = the abandonment safety sweep.** Even if no
   end event ever fired, the next boot finds the pending breadcrumbs and offers to consolidate.
-- **`SessionEnd` is not used.** It fires as the session closes and its stdout reaches no agent;
-  the next boot's rescue covers both a clean exit and an abandoned session.
+- **`SessionEnd` carries no message.** It fires as the session closes and its stdout reaches no agent,
+  so it only marks the session ended (A.2 `end`, silent). The next boot's rescue covers both a clean
+  exit and an abandoned session; a host without `SessionEnd` falls back to the 2 h heartbeat TTL.
 
 > **Capture is a dial, not a switch.** *When* capture triggers runs from manual → event-driven hooks
 > → where-supported automation; *how much* reaches the wiki is the separate `capture_policy` axis
@@ -74,7 +76,7 @@ Why this shape:
 
 ## Option A — Claude Code layered hooks (reference implementation)
 
-Claude Code exposes every event used here (`Stop`, `SessionStart` with its startup / resume / clear / compact sources). Configure them in your project's `.claude/settings.json` plus
+Claude Code exposes every event used here (`Stop`, `SessionStart` with its startup / resume / clear / fork / compact sources, and `SessionEnd`). Configure them in your project's `.claude/settings.json` plus
 small scripts under `.claude/hooks/`. The same shapes port to the other hosts (§4).
 
 ### A.0 The activity marker (v1.5.0 — the UNCONDITIONAL floor; fixes issue #2a)
@@ -151,7 +153,8 @@ denominator only** — it is *not* semantic capture, and nothing should mirror i
 **Privacy (v1.6).** The file name carries a 12-hex **host token**, not the machine's name, and each line
 is just `boot` or `stop`: no time of day, so the ledger holds per-day counts, not a per-turn work
 profile. `_activity/.gitignore` keeps it out of git by default; delete that file to commit the ledger
-(for a shared brain where per-host yield matters). A synced folder (OneDrive, Dropbox) still syncs it.
+(for a shared brain where per-host yield matters), but then re-ignore the A.2 liveness files
+(`.live/`, `.ended/`, `.owner`, `_degraded`): they change every turn and carry session ids. A synced folder (OneDrive, Dropbox) still syncs it.
 Nothing is ever sent anywhere: this is local data the audit reads. Ledgers from before v1.6
 (`<hostname>-<date>.log`, `<timestamp> <event>` lines) stay readable: count the last field of each line.
 
@@ -187,8 +190,12 @@ touched=$(git -C "$(pwd)" diff --name-only HEAD 2>/dev/null | grep -a -v -E '(^|
 last=$(awk -F' breadcrumb: touched ' 'NF>1{l=$2} END{sub(/\r$/,"",l); print l}' "$JOURNAL" 2>/dev/null)
 
 if [ -n "$touched" ] && [ "$touched" != "$last" ]; then
-  printf -- "- %s breadcrumb: touched %s\n" "$ts" "$touched" >> "$JOURNAL"
+  # Fail open, but visibly: a failed append leaves one journal/_activity/_degraded line (A.2 prints it once).
+  { printf -- "- %s breadcrumb: touched %s\n" "$ts" "$touched" >> "$JOURNAL"; } 2>/dev/null || {
+    A="$BRAIN_DIR/journal/_activity"; mkdir -p "$A" && { grep -qs ' breadcrumb write-failed$' "$A/_degraded" \
+      || printf '%s breadcrumb write-failed\n' "$(date -u +%Y-%m-%d)" >> "$A/_degraded"; }; } 2>/dev/null
 fi
+exit 0
 ```
 
 PowerShell equivalent (`.claude/hooks/synaptic-breadcrumb.ps1`):
@@ -206,7 +213,7 @@ try {
     $touched = (git diff --name-only HEAD 2>$null | Where-Object { $_ -cnotmatch '(^|/)journal/(_current\.md"?$|_activity/)' } | Select-Object -First 5) -join ','
     # Dedup: skip when the LAST breadcrumb already lists the same files - same rule as bash.
     $last = ''
-    if (Test-Path -LiteralPath $journal) {
+    if (Test-Path -LiteralPath $journal -PathType Leaf) {
         $m = [regex]::Matches([IO.File]::ReadAllText($journal), ' breadcrumb: touched ([^\r\n]*)')
         if ($m.Count -gt 0) { $last = $m[$m.Count - 1].Groups[1].Value }
     }
@@ -214,65 +221,191 @@ try {
         # NOT Add-Content. On Windows PowerShell 5.1 its default is the ANSI code page (a non-ASCII path
         # becomes invalid UTF-8), and `-Encoding utf8` means UTF-8 WITH a BOM, written whenever the
         # journal is new or empty. This writes UTF-8 without a BOM, and LF, on every version.
-        [IO.File]::AppendAllText($journal, "- $ts breadcrumb: touched $touched`n", (New-Object Text.UTF8Encoding $false))
+        $utf8 = New-Object Text.UTF8Encoding $false
+        try { [IO.File]::AppendAllText($journal, "- $ts breadcrumb: touched $touched`n", $utf8) }
+        catch {   # fail open, but visibly: one journal/_activity/_degraded line (A.2 prints it once)
+            $a = [IO.Path]::Combine([IO.Path]::GetDirectoryName($journal), "_activity"); [IO.Directory]::CreateDirectory($a) | Out-Null
+            $dg = [IO.Path]::Combine($a, "_degraded")
+            if (-not ([IO.File]::Exists($dg) -and [IO.File]::ReadAllText($dg).Contains(' breadcrumb write-failed'))) {
+                [IO.File]::AppendAllText($dg, "$((Get-Date).ToUniversalTime().ToString('yyyy-MM-dd')) breadcrumb write-failed`n", $utf8)
+            }
+        }
     }
 } catch { }   # a missed breadcrumb is acceptable; a broken turn is not
 exit 0
 ```
 
-### A.2 The pending-work check (`SessionStart`; one script, modes `rescue` and `compact`)
+### A.2 The pending-work check (one script: `rescue` and `compact` on `SessionStart`, `beat` on `Stop`, `end` on `SessionEnd`)
 
 Create `.claude/hooks/synaptic-pending.sh` (and `.ps1` on Windows). One git-free predicate:
 unconsolidated work = breadcrumb lines the A.1 hook wrote (`breadcrumb:`) in `journal/_current.md`, or
 open playground directories (`playgrounds/archive/` is not open; the A.0 ledger is not work). It reads
 no git, so it sees new untracked playgrounds and works for a brain outside git.
 
-- **`rescue`** (SessionStart on startup / resume / clear): if work is pending, offer to consolidate it.
-  This recovers sessions where **no** end event ever fired.
+- **`rescue`** (SessionStart on startup / resume / clear / fork): if work is pending **and no live session
+  owns it**, offer to consolidate it. This recovers sessions where **no** end event ever fired: at once when the work has no live claimant, and up to 2 h later (the heartbeat TTL) when the session died without `SessionEnd`, for example a killed terminal or a crash.
 - **`compact`** (SessionStart with the `compact` source, right after a compaction): print one short
   recovery line, always, naming what is pending.
+- **`beat`** (Stop) and **`end`** (SessionEnd): silent liveness bookkeeping (below). They print nothing.
 
-> **Why SessionStart and not PreCompact / SessionEnd (v1.6; from the hook docs and Engram's plugin source, not measured).** On Claude Code the plain stdout of only
+**Liveness (v1.7, K1): no rescue offer for work that this session or another live session has
+claimed while the pending state is unchanged.** Files only, no daemon, all under `journal/_activity/` (git-ignored with the A.0 ledger):
+- The session id comes from the hook's stdin JSON (`session_id`, which Claude Code sends to every hook
+  per its docs). Only ids made of `A-Z a-z 0-9 _ -`, 1–64 characters, count, so an id never becomes a
+  path. The read gives up after 2 s if a host keeps stdin open (Claude Code closes it); then there is no id. **No id → no liveness model:** the offer works as in v1.6 and says it may include this session's
+  own work. Other hosts' stdin: UNVERIFIED.
+- `.live/<sid>` is the session's heartbeat: `rescue` creates it, every `beat` rewrites it. `end` writes
+  only `.ended/<sid>` (builtins, no other work: the host gives `SessionEnd` a short budget); the next
+  `rescue` removes the `.live` file of every ended session.
+- The **signature** is the pending state: the breadcrumb count and the sorted open playground names.
+  Each session's `.live/<sid>` holds the signature it last saw (written at `rescue` and at every `beat`).
+- `.owner` holds the signature the work was claimed at (line 1) and the **claimants**, one session id per
+  line. A `beat` claims the work when the signature differs from what that session last saw, so a
+  session claims only a change that happened during its own turns. A claimant of an older signature
+  re-claims at its next `beat` or `rescue` (a safety net; A.4 already runs `beat` after the breadcrumb). A new signature starts a new list;
+  a session that also saw the change joins the list. Two concurrent sessions can both be listed (one of
+  them may only have watched); the rule then errs toward quiet until both are gone.
+- `rescue` never offers this session its own work: it stays quiet when this session is a claimant, of
+  any signature (a resume: Claude Code keeps the session id on `--resume`, per its docs, not measured).
+  It also stays quiet when a live claimant of the current state has a heartbeat younger than the TTL
+  (2 h). It offers when nobody claimed the current state, the state changed after the last claim, or
+  every claimant ended or went silent past the TTL. `/clear` starts a new session id, so the cleared
+  session's work is offered once it has ended. Markers older than about a week are pruned.
+- **Synced brains:** `.owner` is one shared file that sessions rewrite, unlike the per-host A.0 ledger.
+  On a synced folder two machines can produce a sync conflict copy of it; the copy is harmless (nothing
+  reads it) and the next claim rewrites the original.
+- **Fail open, but visibly.** When a hook cannot write its file, it leaves one line in
+  `journal/_activity/_degraded` (`<date> <hook> write-failed`, no paths, one line per hook and reason).
+  The next `rescue` prints it once, naming the hook, and deletes it; until then `/synaptic-audit` reports it
+  without deleting it. To diagnose, run the hook by hand (`references/capture-hooks.md`, per-host smoke-test).
+
+> **Why SessionStart and not PreCompact (v1.6; from the hook docs and Engram's plugin source, not measured).** On Claude Code the plain stdout of only
 > `SessionStart` and `UserPromptSubmit` hooks is added to the model's context (docs read 2026-11-01; JSON `additionalContext` can reach it from some other events); `PreCompact` and
 > `SessionEnd` stdout is shown at most to the user, and SessionEnd fires as the session closes, so the
 > old reminder there reached no one. Engram's Claude Code plugin (read 2026-11-01) wires no PreCompact
-> hook for the same reason and recovers through `SessionStart` with the `compact` matcher. Other hosts:
+> hook for the same reason and recovers through `SessionStart` with the `compact` matcher. v1.7 wires
+> `SessionEnd` again for **silent bookkeeping only** (`end`): it prints nothing, so it does not matter
+> that no one reads its output, and a host without it falls back to the heartbeat TTL. Other hosts:
 > check their docs before wiring (per-host table in §4). *(Claude Code behaviour from its hook docs, not
 > measured on a live host.)*
 
 ```bash
 #!/usr/bin/env bash
-# synaptic-pending.sh - SessionStart check. Arg 1 = mode: rescue (default) | compact.
-# Git-free predicate: pending breadcrumbs, or open playgrounds (not archive/).
+# synaptic-pending.sh - one script, four modes (Arg 1): rescue (default) | compact on SessionStart,
+# beat on Stop, end on SessionEnd. Git-free predicate: pending breadcrumbs, or open playgrounds (not archive/).
+# Fork-light on purpose: beat runs on every Stop and end has a short host budget, and each extra process
+# costs tenths of a second on an endpoint-protected machine. Their paths use bash builtins only.
 
 BRAIN_DIR="${SYNAPTIC_BRAIN_DIR:-.synaptic}"
 JOURNAL="${BRAIN_DIR}/journal/_current.md"
+ACT="${BRAIN_DIR}/journal/_activity"
 MODE="${1:-rescue}"
+TTL_MIN=120   # a heartbeat older than this belongs to a session that is gone
 
 [ -d "$BRAIN_DIR" ] || exit 0
+LC_ALL=C   # byte-wise ranges and glob order
 
-# grep -c already prints 0 when nothing matches (it just exits 1), so `|| echo 0` would yield "0\n0".
-pending_crumbs=$(grep -c "breadcrumb:" "$JOURNAL" 2>/dev/null); pending_crumbs=${pending_crumbs:-0}
-# playgrounds/archive/ holds finished work kept on request - it is not an open playground.
-open_playgrounds=$(find "${BRAIN_DIR}/playgrounds" -mindepth 1 -maxdepth 1 -type d ! -name archive 2>/dev/null | wc -l | tr -d ' ')
+# Session id from the hook's stdin JSON, without jq: the first "session_id" whose value is
+# [A-Za-z0-9_-]{1,64}, so it is never a path. Never read a terminal; give up after 2 s if the host keeps
+# stdin open. No id = no liveness model (the v1.6 behaviour).
+SID=; in=
+[ -t 0 ] || { IFS= read -r -t 2 -d '' -n 65536 in; [ $? -gt 128 ] && in=; }   # a timeout gives no id (as in PowerShell)
+re='"session_id"[[:space:]]*:[[:space:]]*"([A-Za-z0-9_-]{1,64})"'
+[[ $in =~ $re ]] && SID=${BASH_REMATCH[1]}
+# Fail open, but visibly: one line per hook and reason, which the next rescue prints once.
+degraded() { { mkdir -p "$ACT" && { grep -qs " $1 write-failed" "$ACT/_degraded" || printf '%s %s write-failed\n' "$(date -u +%Y-%m-%d)" "$1" >> "$ACT/_degraded"; }; } 2>/dev/null; }
+
+if [ "$MODE" = end ]; then   # SessionEnd: one marker, builtins only (a short host budget). Silent.
+  [ -n "$SID" ] || exit 0       # the next rescue removes this session's .live file
+  [ -d "$ACT/.ended" ] || mkdir -p "$ACT/.ended" 2>/dev/null
+  { : > "$ACT/.ended/$SID"; } 2>/dev/null || degraded end
+  exit 0
+fi
+
+# The predicate. A breadcrumb line contains "breadcrumb:"; playgrounds/archive/ holds finished work.
+pending_crumbs=0; ok=yes
+if [ -f "$JOURNAL" ]; then
+  { while IFS= read -r l || [ -n "$l" ]; do case $l in *breadcrumb:*) pending_crumbs=$((pending_crumbs+1)) ;; esac; done < "$JOURNAL"; } 2>/dev/null || ok=
+fi
+shopt -s nullglob dotglob
+names=(); for d in "$BRAIN_DIR"/playgrounds/*/; do d=${d%/}; d=${d##*/}; [ "$d" = archive ] || names+=("$d"); done
+open_playgrounds=${#names[@]}
+IFS=/; sig="$pending_crumbs ${names[*]}"; IFS=$' \t\n'   # the pending state: count + names in byte order
+# .owner: line 1 = the signature it was claimed at; then one session id per line (the claimants).
+owner_sig=; claimants=(); mine=
+if [ -f "$ACT/.owner" ]; then
+  { { IFS= read -r owner_sig; while IFS= read -r l; do l=${l%$'\r'}; [ -n "$l" ] && claimants+=("$l"); done; } < "$ACT/.owner"; } 2>/dev/null
+  owner_sig=${owner_sig%$'\r'}
+fi
+for l in "${claimants[@]}"; do [ -n "$SID" ] && [ "$l" = "$SID" ] && mine=yes; done
+# claim: list this session as a claimant of the current state (join the list, or start a new one).
+claim() {
+  if [ -f "$ACT/.owner" ] && [ "$owner_sig" = "$sig" ]; then
+    [ -n "$mine" ] || { printf '%s\n' "$SID" >> "$ACT/.owner"; } 2>/dev/null || degraded "$MODE"
+  else
+    { printf '%s\n%s\n' "$sig" "$SID" > "$ACT/.owner"; } 2>/dev/null || degraded "$MODE"
+  fi
+}
+
+if [ "$MODE" = beat ]; then   # Stop: heartbeat + claim. Silent.
+  [ -n "$SID" ] && [ -n "$ok" ] || exit 0
+  seen=; [ -f "$ACT/.live/$SID" ] && { IFS= read -r seen < "$ACT/.live/$SID"; } 2>/dev/null; seen=${seen%$'\r'}
+  [ -d "$ACT/.live" ] || mkdir -p "$ACT/.live" 2>/dev/null
+  { printf '%s\n' "$sig" > "$ACT/.live/$SID"; } 2>/dev/null || { degraded beat; exit 0; }
+  # Claim when the state changed since this session last looked, or when this session claimed an
+  # older state (a change its beat could not see in time; A.4 already runs beat after the breadcrumb).
+  if [ "$seen" != "$sig" ] || { [ -n "$mine" ] && [ "$owner_sig" != "$sig" ]; }; then claim; fi
+  exit 0
+fi
 
 if [ "$MODE" = compact ]; then
   echo "Synaptic: context was just compacted. Re-read journal/_current.md and write the session summary there (${pending_crumbs} pending breadcrumb(s), ${open_playgrounds} open playground(s))."
-elif [ "$pending_crumbs" -gt 0 ] || [ "$open_playgrounds" -gt 0 ]; then
+  exit 0
+fi
+
+# rescue: first any hook failure since the last boot, printed once.
+if [ -s "$ACT/_degraded" ]; then
+  n=0; first=
+  { while IFS= read -r l; do l=${l%$'\r'}; [ -n "$l" ] || continue; n=$((n+1)); [ -n "$first" ] || first=$l; done < "$ACT/_degraded"; } 2>/dev/null
+  [ "$n" -gt 0 ] && echo "Synaptic: a capture hook could not run since the last boot: $first ($n line(s)). Run that hook by hand to see why."
+  rm -f "$ACT/_degraded" 2>/dev/null
+fi
+offer=
+if [ "$pending_crumbs" -gt 0 ] || [ "$open_playgrounds" -gt 0 ]; then
+  offer=yes
+  if [ -n "$mine" ]; then offer=   # never offer this session its own work (a resume)
+  elif [ -n "$SID" ] && [ "$owner_sig" = "$sig" ]; then
+    for L in "${claimants[@]}"; do
+      if [ ! -e "$ACT/.ended/$L" ] && [ -e "$ACT/.live/$L" ] && [ -z "$(find "$ACT/.live/$L" -mmin +$TTL_MIN 2>/dev/null)" ]; then offer=; break; fi   # a live session claims it
+    done
+  fi
+fi
+if [ -n "$offer" ]; then
   echo ""
   echo "=== Synaptic: rescue sweep ==="
   echo "Found ${pending_crumbs} pending breadcrumb(s) and ${open_playgrounds} open playground(s)"
   echo "from a previous session. Run /synaptic-consolidate (or /synaptic-audit) to recover them."
+  [ -n "$SID" ] || echo "(The host sent no session id, so this may include this session's own work.)"
   echo "Cadence: /synaptic-audit weekly · /synaptic-maintain weave monthly"
   echo "=============================="
 fi
+if [ -n "$SID" ]; then   # register this session as live, having seen the current state; tidy up
+  [ -n "$mine" ] && [ "$owner_sig" != "$sig" ] && [ -n "$ok" ] && claim   # a resumed session re-claims its own work
+  if [ -n "$ok" ]; then { [ -d "$ACT/.live" ] || mkdir -p "$ACT/.live"; printf '%s\n' "$sig" > "$ACT/.live/$SID"; } 2>/dev/null || degraded rescue; fi
+  [ -e "$ACT/.ended/$SID" ] && rm -f "$ACT/.ended/$SID" 2>/dev/null
+  for e in "$ACT"/.ended/*; do [ -e "$ACT/.live/${e##*/}" ] && rm -f "$ACT/.live/${e##*/}" 2>/dev/null; done   # ended: no heartbeat
+  find "$ACT/.live" "$ACT/.ended" -type f -mtime +7 -exec rm -f {} + 2>/dev/null
+fi
+exit 0
 ```
+
+
 
 PowerShell equivalent (`.claude/hooks/synaptic-pending.ps1`):
 
 ```powershell
-# synaptic-pending.ps1 - SessionStart check. Param = mode: rescue (default) | compact.
-# Same git-free predicate as the bash script: pending breadcrumbs, or open playgrounds (not archive/).
+# synaptic-pending.ps1 - one script, four modes (Param): rescue (default) | compact on SessionStart,
+# beat on Stop, end on SessionEnd. Same git-free predicate and liveness files as the bash script.
 param([string]$Mode = "rescue")
 $brainDir = if ($env:SYNAPTIC_BRAIN_DIR) { $env:SYNAPTIC_BRAIN_DIR } else { ".synaptic" }
 # PowerShell 5.1 started in a folder whose path contains [ ] reports $PSHOME as its location: resolve a
@@ -285,27 +418,131 @@ if (-not [IO.Path]::IsPathRooted($brainDir)) {
 if (-not [IO.Directory]::Exists($brainDir)) { exit 0 }
 $journal = [IO.Path]::Combine($brainDir, "journal", "_current.md")
 $playgrounds = [IO.Path]::Combine($brainDir, "playgrounds")
-$crumbs = 0
-if ([IO.File]::Exists($journal)) { $crumbs = @([IO.File]::ReadAllLines($journal) | Where-Object { $_.Contains("breadcrumb:") }).Count }
-$open = 0
-if ([IO.Directory]::Exists($playgrounds)) { $open = @([IO.Directory]::GetDirectories($playgrounds) | Where-Object { [IO.Path]::GetFileName($_) -cne "archive" }).Count }
-if ($Mode -eq "compact") {
+$act = [IO.Path]::Combine($brainDir, "journal", "_activity")
+$ttlMin = 120   # a heartbeat older than this belongs to a session that is gone
+$utf8 = New-Object Text.UTF8Encoding $false
+# Session id from the hook's stdin JSON: the first "session_id" whose value is [A-Za-z0-9_-]{1,64}, as in
+# bash. Never read a console; give up after 2 s if the host keeps stdin open. No id = no liveness model.
+$sid = ''
+try {
+    if ([Console]::IsInputRedirected) {
+        # [Console]::In reads synchronously on Windows PowerShell 5.1, so its async read never times out.
+        $rt = (New-Object IO.StreamReader([Console]::OpenStandardInput())).ReadToEndAsync()
+        if ($rt.Wait(2000)) {
+            $m = [regex]::Match($rt.Result, '"session_id"\s*:\s*"([A-Za-z0-9_-]{1,64})"')
+            if ($m.Success) { $sid = $m.Groups[1].Value }
+        }
+    }
+} catch { }
+function Add-Degraded([string]$Hook) {   # fail open, but visibly: one line per hook and reason
+    try {
+        [IO.Directory]::CreateDirectory($act) | Out-Null
+        $f = [IO.Path]::Combine($act, "_degraded")
+        if ([IO.File]::Exists($f) -and ([IO.File]::ReadAllText($f).Contains(" $Hook write-failed"))) { return }
+        [IO.File]::AppendAllText($f, "$((Get-Date).ToUniversalTime().ToString('yyyy-MM-dd')) $Hook write-failed`n", $utf8)
+    } catch { }
+}
+function Set-Marker([string]$Sub, [string]$Text) {   # write journal/_activity/<Sub>/<sid> (also refreshes its mtime)
+    $d = [IO.Path]::Combine($act, $Sub); [IO.Directory]::CreateDirectory($d) | Out-Null
+    [IO.File]::WriteAllText([IO.Path]::Combine($d, $sid), $Text, $utf8)
+}
+
+if ($Mode -ceq "end") {    # SessionEnd: one marker (a short host budget). Silent.
+    if (-not $sid) { exit 0 }   # the next rescue removes this session's .live file
+    try { Set-Marker ".ended" '' } catch { Add-Degraded "end" }
+    exit 0
+}
+
+# The predicate. A breadcrumb line contains "breadcrumb:"; playgrounds/archive/ holds finished work.
+$crumbs = 0; $names = [string[]]@(); $ok = $true
+try { if ([IO.File]::Exists($journal)) { $crumbs = @([IO.File]::ReadAllLines($journal) | Where-Object { $_.Contains("breadcrumb:") }).Count } } catch { $ok = $false }
+try { if ([IO.Directory]::Exists($playgrounds)) { $names = [string[]]@([IO.Directory]::GetDirectories($playgrounds) | ForEach-Object { [IO.Path]::GetFileName($_) } | Where-Object { $_ -cne "archive" }) } } catch { }
+[Array]::Sort($names, [StringComparer]::Ordinal)   # string[]: an object[] would sort by culture
+$open = $names.Count
+$sig = "$crumbs " + ($names -join '/')   # the pending state: count + names in ordinal order
+# .owner: line 1 = the signature it was claimed at; then one session id per line (the claimants).
+$of = [IO.Path]::Combine($act, ".owner"); $ownerSig = ''; $claimants = @()
+try {
+    if ([IO.File]::Exists($of)) {
+        $ol = [IO.File]::ReadAllText($of).Replace("`r", '').Split("`n")
+        $ownerSig = $ol[0]; $claimants = @($ol | Select-Object -Skip 1 | Where-Object { $_ -ne '' })
+    }
+} catch { }
+$mine = [bool]($sid -and ($claimants -ccontains $sid))
+function Add-Claim {   # list this session as a claimant of the current state (join the list, or start a new one)
+    try {
+        if ([IO.File]::Exists($of) -and $ownerSig -ceq $sig) { if (-not $mine) { [IO.File]::AppendAllText($of, "$sid`n", $utf8) } }
+        else { [IO.File]::WriteAllText($of, "$sig`n$sid`n", $utf8) }
+    } catch { Add-Degraded $Mode }
+}
+
+if ($Mode -ceq "beat") {   # Stop: heartbeat + claim. Silent.
+    if (-not $sid -or -not $ok) { exit 0 }
+    $seen = ''; $lp = [IO.Path]::Combine($act, ".live", $sid)
+    try { if ([IO.File]::Exists($lp)) { $seen = [IO.File]::ReadAllText($lp).Replace("`r", '').Split("`n")[0] } } catch { }
+    try { Set-Marker ".live" "$sig`n" } catch { Add-Degraded "beat"; exit 0 }
+    # Claim when the state changed since this session last looked, or when this session claimed an
+    # older state (a change its beat could not see in time; A.4 already runs beat after the breadcrumb).
+    if ($seen -cne $sig -or ($mine -and $ownerSig -cne $sig)) { Add-Claim }
+    exit 0
+}
+
+if ($Mode -ceq "compact") {
     Write-Output "Synaptic: context was just compacted. Re-read journal/_current.md and write the session summary there ($crumbs pending breadcrumb(s), $open open playground(s))."
-} elseif ($crumbs -gt 0 -or $open -gt 0) {
+    exit 0
+}
+
+# rescue: first any hook failure since the last boot, printed once.
+$dg = [IO.Path]::Combine($act, "_degraded")
+try {
+    if ([IO.File]::Exists($dg) -and ([IO.FileInfo]$dg).Length -gt 0) {
+        $dl = @([IO.File]::ReadAllText($dg).Replace("`r", '').Split("`n") | Where-Object { $_ -ne '' })
+        if ($dl.Count -gt 0) { Write-Output "Synaptic: a capture hook could not run since the last boot: $($dl[0]) ($($dl.Count) line(s)). Run that hook by hand to see why." }
+        [IO.File]::Delete($dg)
+    }
+} catch { }
+$offer = $false
+if ($crumbs -gt 0 -or $open -gt 0) {
+    $offer = $true
+    if ($mine) { $offer = $false }   # never offer this session its own work (a resume)
+    elseif ($sid -and $ownerSig -ceq $sig) {
+        foreach ($l in $claimants) {
+            $lp = [IO.Path]::Combine($act, ".live", $l)
+            if (-not [IO.File]::Exists([IO.Path]::Combine($act, ".ended", $l)) -and [IO.File]::Exists($lp) -and ([DateTime]::UtcNow - [IO.File]::GetLastWriteTimeUtc($lp)).TotalMinutes -le $ttlMin) { $offer = $false; break }   # a live session claims it
+        }
+    }
+}
+if ($offer) {
     Write-Output ""
     Write-Output "=== Synaptic: rescue sweep ==="
     Write-Output "Found $crumbs pending breadcrumb(s) and $open open playground(s)"
     Write-Output "from a previous session. Run /synaptic-consolidate (or /synaptic-audit) to recover them."
+    if (-not $sid) { Write-Output "(The host sent no session id, so this may include this session's own work.)" }
     Write-Output "Cadence: /synaptic-audit weekly | /synaptic-maintain weave monthly"
     Write-Output "=============================="
+}
+if ($sid) {   # register this session as live, having seen the current state; tidy up
+    if ($mine -and $ownerSig -cne $sig -and $ok) { Add-Claim }   # a resumed session re-claims its own work
+    if ($ok) { try { Set-Marker ".live" "$sig`n" } catch { Add-Degraded "rescue" } }
+    try { $ep = [IO.Path]::Combine($act, ".ended", $sid); if ([IO.File]::Exists($ep)) { [IO.File]::Delete($ep) } } catch { }
+    try {   # ended: no heartbeat
+        $ed = [IO.Path]::Combine($act, ".ended")
+        if ([IO.Directory]::Exists($ed)) { foreach ($e in [IO.Directory]::GetFiles($ed)) { $lp = [IO.Path]::Combine($act, ".live", [IO.Path]::GetFileName($e)); if ([IO.File]::Exists($lp)) { [IO.File]::Delete($lp) } } }
+    } catch { }
+    foreach ($sub in @(".live", ".ended")) {
+        $d = [IO.Path]::Combine($act, $sub)
+        try { if ([IO.Directory]::Exists($d)) { foreach ($f in [IO.Directory]::GetFiles($d)) { if (([DateTime]::UtcNow - [IO.File]::GetLastWriteTimeUtc($f)).TotalDays -ge 8) { [IO.File]::Delete($f) } } } } catch { }
+    }
 }
 exit 0
 ```
 
+
+
 ### A.3 (merged into A.2 in v1.6)
 
 The old `synaptic-consolidate-reminder` (PreCompact / SessionEnd) and `synaptic-rescue` (SessionStart,
-bash only) scripts are now the two modes of A.2. Re-deploying the hooks replaces both; delete the old
+bash only) scripts are now modes of A.2 (v1.7 adds `beat` and `end`). Re-deploying the hooks replaces both; delete the old
 script files and their settings entries (A.4 shows the new registration).
 
 ### A.4 Register the hooks in `.claude/settings.json`
@@ -318,13 +555,34 @@ script files and their settings entries (A.4 shows the new registration).
         "matcher": "",
         "hooks": [
           { "type": "command", "command": "sh .claude/hooks/synaptic-activity.sh stop" },
-          { "type": "command", "command": "bash .claude/hooks/synaptic-breadcrumb.sh" }
+          { "type": "command", "command": "bash .claude/hooks/synaptic-breadcrumb.sh; bash .claude/hooks/synaptic-pending.sh beat" }
         ]
       }
     ],
     "SessionStart": [
       {
-        "matcher": "startup|resume|clear",
+        "matcher": "startup",
+        "hooks": [
+          { "type": "command", "command": "sh .claude/hooks/synaptic-activity.sh boot" },
+          { "type": "command", "command": "bash .claude/hooks/synaptic-pending.sh rescue" }
+        ]
+      },
+      {
+        "matcher": "resume",
+        "hooks": [
+          { "type": "command", "command": "sh .claude/hooks/synaptic-activity.sh boot" },
+          { "type": "command", "command": "bash .claude/hooks/synaptic-pending.sh rescue" }
+        ]
+      },
+      {
+        "matcher": "clear",
+        "hooks": [
+          { "type": "command", "command": "sh .claude/hooks/synaptic-activity.sh boot" },
+          { "type": "command", "command": "bash .claude/hooks/synaptic-pending.sh rescue" }
+        ]
+      },
+      {
+        "matcher": "fork",
         "hooks": [
           { "type": "command", "command": "sh .claude/hooks/synaptic-activity.sh boot" },
           { "type": "command", "command": "bash .claude/hooks/synaptic-pending.sh rescue" }
@@ -336,19 +594,34 @@ script files and their settings entries (A.4 shows the new registration).
           { "type": "command", "command": "bash .claude/hooks/synaptic-pending.sh compact" }
         ]
       }
+    ],
+    "SessionEnd": [
+      {
+        "matcher": "",
+        "hooks": [
+          { "type": "command", "command": "bash .claude/hooks/synaptic-pending.sh end", "timeout": 10 }
+        ]
+      }
     ]
   }
 }
 ```
 
-No `PreCompact` and no `SessionEnd` entry: their stdout does not reach the model (A.2). A compaction is
-not a new session, so it writes no `boot` marker. *(The `startup|resume|clear` alternation follows
-Claude Code's regex matchers; if a host rejects it, register the same pair once per source.)*
+No `PreCompact` entry: its stdout does not reach the model (A.2). The `SessionEnd` entry and the `Stop` `beat` print nothing; they only keep the liveness files (A.2). **`beat` runs after the breadcrumb, in the same command:** Claude Code runs the hooks of one event in parallel (per its docs), and a `beat` that read the journal before A.1 appended would miss the turn's own breadcrumb, so the session would never claim it. A.1 never reads stdin, so the hook JSON still reaches `beat` (checked on Git Bash and Windows PowerShell 5.1). A compaction is
+not a new session, so it writes no `boot` marker. One `SessionStart` entry per source (startup, resume, clear, fork): no matcher alternation to depend on.
+`fork` is a new session id (Claude Code `--fork-session` and its fork commands, per its docs), so it counts as a boot.
+The `SessionEnd` entry sets `"timeout": 10`. Claude Code's hook docs (read 2026-11-01): "SessionEnd hooks
+have a default timeout of 1.5 seconds"; a per-hook `timeout` raises the shared budget to match, up to 60 s,
+except for plugin-provided hooks (a plugin packaging of these hooks would keep 1.5 s). A bash or
+PowerShell start alone took about 1–1.3 s on an endpoint-protected Windows machine, which is why `end`
+does nothing but write its marker.
 
 On Windows, swap each command for
-`powershell -NoProfile -ExecutionPolicy Bypass -File .claude/hooks/<script>.ps1 <arg>` (the activity
+`powershell -NoProfile -ExecutionPolicy Bypass -File .claude/hooks/<script>.ps1 <arg>` (keep the breadcrumb
+and `beat` as two such commands joined by `;` in one entry; `;` separates commands in Git Bash and
+PowerShell, not in cmd.exe, where `&` does: which shell runs hook commands on Windows is UNVERIFIED here) (the activity
 marker takes its event: `... synaptic-activity.ps1 stop` / `... boot`; the pending check its mode:
-`... synaptic-pending.ps1 rescue` / `... compact`). Every script now has a PowerShell variant.
+`... synaptic-pending.ps1 rescue` / `... compact` / `... beat` / `... end`). Every script now has a PowerShell variant.
 Use `powershell` (Windows PowerShell 5.1, present on every Windows install), **not** `pwsh` (PowerShell
 7, which is not installed by default, so the hook would fail to start and write nothing). `-ExecutionPolicy
 Bypass` is needed because the Windows client default policy (`Restricted`) refuses to run any `.ps1`; if
@@ -359,20 +632,49 @@ or allowed. `-NoProfile` keeps a user profile from changing error handling or en
 > activity marker does not depend on its siblings — provided it is a separate entry and never chained
 > after another command in the same command string, where an earlier failure could stop it.
 
+### A.5 Opt-in: SubagentStop Key-Learnings harvest (specified, off by default, not shipped)
+
+A delegated worker (a subagent) often ends with a `## Key Learnings` block. Harvesting it turns
+delegation into capture without the main agent copying anything. It is **off by default** and is
+**not wired** unless the brain opts in, because it reads agent output (privacy).
+
+- **Opt-in:** the brain's host record (`harness/setup/<host>.md`) carries `subagent_harvest: on`.
+  Absent or any other value = off. `/synaptic-init` and `/synaptic-upgrade` never turn it on by
+  themselves; the owner asks for it.
+- **Event:** `SubagentStop` (Claude Code; other hosts UNVERIFIED). Per the Claude Code hook docs (read
+  2026-11-01, not measured) the subagent's final text is in `last_assistant_message`. Two caveats from the
+  same docs: with a hand-back tool the delivered report is not in that field (it is the hand-back tool's
+  input, seen by a `PostToolUse` hook), and `SubagentStop` also fires for internal agents, which the
+  harvest must skip (empty `agent_type`).
+- **What it writes:** for each item of a `## Key Learnings` block (at most 5, each cut to 200
+  characters), one journal line `- <ts> learned (subagent): <item>`. Nothing when the block is absent.
+  It never writes the rest of the message. The lines are candidates for consolidate, like breadcrumbs.
+- **How:** PowerShell parses the stdin with `ConvertFrom-Json`. sh needs a JSON string parser, which
+  is on the "do not copy" list (no large bash JSON parsers, no `jq` dependency), so the sh side waits
+  for a host field that is plain text, or for Cortex. Until then the harvest is PowerShell-only or not
+  built at all; there is no script in this recipe yet.
+- **Tests when built:** a fixture with and without a Key Learnings block, an over-long item, and a
+  message with six items (five are kept).
+
 ### Notes
 
 - The breadcrumb hook (A.1) fires on **every** `Stop`; it writes nothing while no tracked file differs
   from `HEAD`, and the brain's own journal and A.0 ledger never count. It reports the uncommitted
   state, not just this turn, so a consolidation that rewrites wiki nodes leaves one breadcrumb about
   its own edits; the next consolidation (or a commit before the turn ends) clears it.
-- Both A.2 modes report **standing state**: `rescue` fires while breadcrumbs are
-  pending or any playground is open, whether or not this session touched the brain. An open
+- Both A.2 messages report **standing state**: `rescue` fires while breadcrumbs are
+  pending or any playground is open, unless this session or another live one owns that work (A.2
+  liveness). Without a session id on the hook stdin it fires whether or not this session touched the brain. An open
   playground stays "unconsolidated" until it is burned or archived — that is by design.
 - If the project does not use git, A.1 writes nothing; replace its `git diff` check with a
   `find .synaptic/journal .synaptic/playgrounds -newer .synaptic/BRAIN.md` heuristic.
+- Claude Code runs the hooks of one event in parallel, which is why A.4 chains `beat` after the
+  breadcrumb in one command. Changes the `beat` cannot see in time (another process editing the brain
+  between turns) are caught by the re-claim: a claimant of an older state re-claims at its next `beat` or
+  `rescue`; until then another session's rescue errs toward offering.
 - The rescue offer and the compaction line are **informational** — they do not auto-run `/synaptic-consolidate`. Consolidation
-  is propose-then-approve (bounded, reversible). The breadcrumb write is the only thing that happens
-  unattended, and it is append-only to the journal (git-reversible, archive-before-delete discipline
+  is propose-then-approve (bounded, reversible). The breadcrumb write and the silent liveness bookkeeping
+  in `journal/_activity/` are the only things that happen unattended, and it is append-only to the journal (git-reversible, archive-before-delete discipline
   applies downstream at consolidation).
 
 ---
@@ -400,25 +702,33 @@ capture-yield as **unknown** rather than pretending to measure it.
 
 ---
 
-## 4. Per-host hook events (verified 2026-06)
+## 4. Per-host hook events (from host docs, 2026-06; Copilot rows re-read 2026-11-01)
 
 All five agents support **file-configured hooks**. The difference is *which lifecycle events each
 host fires* — so the layered model degrades gracefully: every host gets the universal `Stop`
 breadcrumb layer (and the **activity-marker floor** wherever the host runs a shell command on that
 event), and picks up `SessionStart` (rescue + compaction recovery) where exposed.
 
-| Agent | Config file | `Stop` (breadcrumb) | `PreCompact` (event exists; unused) | `SessionStart` (rescue, compact recovery) | `SessionEnd` (event exists; unused) |
+| Agent | Config file | `Stop` (breadcrumb) | `PreCompact` (event exists; unused) | `SessionStart` (rescue, compact recovery) | `SessionEnd` (silent liveness `end`, v1.7) |
 |---|---|---|---|---|---|
 | **Claude Code** | `.claude/settings.json` | yes | yes | yes | yes |
-| **GitHub Copilot** | `.github/hooks/*.json` (config-driven) | yes (stop/turn-end) | yes (pre-compaction) | yes (session-start) | **no** (Copilot-IDE has no clean SessionEnd) |
+| **GitHub Copilot** | `.github/hooks/*.json` (config-driven) | yes (stop/turn-end) | yes (pre-compaction) | yes (session-start; sources startup / resume / new, no compact) | listed in the current VS Code and GitHub hook docs (VS Code hooks are a Preview); UNVERIFIED live |
 | **Cursor** | `.cursor/hooks.json` | yes (stop/turn-end) | host-dependent | yes (session-start) | **no** |
 | **OpenAI Codex** | `AGENTS.md` / config-driven hooks | yes | yes (pre-compaction) | yes | yes |
 | **Gemini** | file-configured hooks | yes (turn-end) | host-dependent | yes | host-dependent |
 
 **Read this as:** `Stop` is the only event you can rely on everywhere — it is the capture floor.
-`SessionStart` carries both the rescue and, where the host reports a compaction source, the recovery line; `PreCompact` and `SessionEnd` are listed only to show what exists (their stdout does not reach the model on Claude Code; on other hosts, unverified). `SessionEnd` is also the weakest
-assumption (absent on Copilot-IDE and Cursor), which is one more reason the design does not wire it
-and leans on `SessionStart`-rescue instead. **No host exposes native idle detection** — only an
+`SessionStart` carries both the rescue and, where the host reports a compaction source, the recovery line; `PreCompact` is listed only to show what exists (its stdout does not reach the model on Claude Code; on other hosts, unverified); `SessionEnd` carries only the silent liveness `end`, and where it is absent the heartbeat TTL covers it. `SessionEnd` is also the weakest
+assumption (absent on Cursor; on Copilot only in the newer docs), which is why `end` is only an
+accelerator: where it is absent, the 2 h heartbeat TTL covers it. The liveness modes also need a session
+id on the hook stdin, UNVERIFIED beyond Claude Code (Copilot's docs name `sessionId` or `session_id`
+depending on the format; the script reads only `session_id`, so a `sessionId` payload falls back to the
+v1.6 rescue).
+
+**VS Code Copilot also reads `.claude/settings.json`** (per its hook docs, read 2026-11-01). Deploy the
+hooks in one of the two places, never both, or they run twice and the A.0 counts double. Its
+`sessionStart` consumes only `additionalContext`, so the plain-stdout rescue offer is likely not shown
+there (UNVERIFIED; the host adapter decides this). **No host exposes native idle detection** — only an
 OS-level cron/timer approximates it, and a cron/daemon Synaptic would ship is **Cortex**, not CORE.
 
 For the full per-host wiring details (config paths, discovery, idempotent install), see

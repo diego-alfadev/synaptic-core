@@ -44,6 +44,12 @@ the upgrade addendum, `references/upgrade-to-v1.md`, reuse this same detect+clas
    `*.chatmode.md` / `*.instructions.md`, `.github/copilot-instructions.md`, `AGENTS.md`, `CLAUDE.md`,
    `.cursor/rules/*`. Determine **where the bridge + rules currently live** (project vs user level) and
    **which host** (`.claude/`, `.github/`, `.cursor/`, `AGENTS.md`, Gemini).
+2a. **Identify the actual runtime, not a directory guess.** Follow `references/init.md` §a3–a4.
+   For Codex, inspect effective `$CODEX_HOME/AGENTS.override.md` / `AGENTS.md`, the project
+   instruction chain, byte limit and repo/user skill locations. For VS Code, record session
+   target/harness plus VS Code, extension and harness versions; inventory its native carriers.
+   The Local `chat.useAgentsMdFile` setting does not control Copilot or Codex discovery.
+   Existing `*.chatmode.md` files are historical inventory, not proof of an active carrier.
 3. **Reuse the recorded setup:** if `<brain>/harness/setup/<host>.md` exists, read it as the
    authoritative record of the last deployment; reconcile recorded-vs-actual and **report drift**.
 4. **Classify the setup** and **emit a one-line classification** stating brain location
@@ -69,3 +75,12 @@ the upgrade addendum, `references/upgrade-to-v1.md`, reuse this same detect+clas
 > discover user-level skill dirs can still locate + load the skill by reading the bridge. Surface any
 > such host-limitation in the setup report.
 
+
+## Adapter record and evidence (v1.7)
+
+Use `harness/setup/codex.md` or `harness/setup/vscode-<harness>.md` for the new adapters.
+Record host/harness/version, scope, effective carrier, skill path, nonce, `wired:` state,
+proof date/evidence, and (if deployed) hook source/dialect/output contract. Do not upgrade a
+static `expected` configuration to `proven`. Build a proposed diff for any user-level edit;
+the detection or upgrade routine does not bypass approval. Native paths and citations are kept
+once in `references/init.md` §a3–a4; menus in `references/command-discovery.md`.

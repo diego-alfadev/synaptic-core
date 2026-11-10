@@ -1,5 +1,9 @@
 # Concepts — the deep theory behind synaptic-core
 
+For current behaviour, trigger requirements and support evidence, start with the
+[operating contract](../OPERATING-MODEL.md). These concept pages explain the design;
+they do not prove that a host has loaded instructions or enabled automation.
+
 This folder holds the deep theory relocated out of the [README](../../README.md): the *why* behind the pattern, with the substance and nuance kept intact. The README is the captivating front door; this is where the depth lives. It is routed by this `_index.md` — a Map of Content that dogfoods the same MOC-of-MOCs pattern a Synaptic brain uses on itself.
 
 Read it newcomer-first, top to bottom — each doc is self-contained, opens with a one-line "what this is", and cross-links its siblings at the bottom.
@@ -19,3 +23,6 @@ Read it newcomer-first, top to bottom — each doc is self-contained, opens with
 ---
 
 See also: the [README](../../README.md) (front door) · the [ROADMAP](../../ROADMAP.md) (what shipped and the honest Cortex horizon).
+# Local runtime candidate
+
+- [Minimum local Cortex](cortex-local.md) — read-only CLI/MCP and explicit fallback levels.

@@ -44,6 +44,40 @@ jobs:
       - name: Behavioural tests
         if: ${{ !cancelled() }}
         run: node tests/tools.test.js
+      - name: Immutable release package checks
+        if: ${{ !cancelled() }}
+        run: node tests/package-release.test.js
+      - name: Bounded Codex curation adapter (synthetic)
+        if: ${{ !cancelled() }}
+        run: node tests/codex-curation.test.js
+      - name: VS Code project integration (synthetic)
+        if: ${{ !cancelled() }}
+        run: node tests/vscode-integration.test.js
+      - name: Owner RC handoff preparation
+        if: ${{ !cancelled() }}
+        run: node tests/prepare-release.test.js
+
+  cortex:
+    name: cortex (node 24, ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+      - name: Conformance before adapters
+        run: node tests/core-conformance.test.js
+      - name: Retrieval and CLI
+        run: node tests/cortex.test.js
+      - name: MCP stdio
+        run: node tests/mcp.test.js
+      - name: Offline benchmark controls
+        run: node tests/bench.test.js
 
   capture-floor:
     name: capture floor (${{ matrix.os }})

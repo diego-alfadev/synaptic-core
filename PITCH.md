@@ -1,3 +1,7 @@
+> Historical positioning material. Current behaviour, support and automation claims are defined
+> by [the operating contract](docs/OPERATING-MODEL.md) and scoped acceptance evidence. This document
+> predates the candidate integration work and is not its support matrix.
+
 # SYNAPTIC-CORE — v1 Pitch
 
 ---

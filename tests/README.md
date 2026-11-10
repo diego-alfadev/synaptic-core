@@ -6,7 +6,7 @@ acceptance criterion in the CHANGELOG was by-inspection.
 
 | Suite | What it verifies | Runs on | Run locally |
 |---|---|---|---|
-| `capture-floor/run.sh` | the v1.5.0 capture floor (issue #2a): the recipe's A.0–A.2 hooks (marker, breadcrumb, pending check in its rescue and compact modes, via the shared `pending-cases.txt` table), alone and chained in the A.4 order, **and** the deployed one-liners (`standalone/synaptic/references/capture-hooks.md`), POSIX side | Linux, macOS, Windows (Git Bash) | `bash tests/capture-floor/run.sh` |
+| `capture-floor/run.sh` | the v1.5.0 capture floor (issue #2a): the recipe's A.0–A.2 hooks (marker, breadcrumb, pending check in its rescue, compact, beat and end modes, including the v1.7 liveness and `_degraded` cases, via the shared `pending-cases.txt` table), alone and chained in the A.4 order, **and** the deployed one-liners (`standalone/synaptic/references/capture-hooks.md`), POSIX side | Linux, macOS, Windows (Git Bash) | `bash tests/capture-floor/run.sh` |
 | `capture-floor/run.ps1` | the same for the PowerShell scripts the recipe ships (A.0–A.2, the same `pending-cases.txt` table, plus the PowerShell 5.1 `[ ]`-folder cases). Runs under whichever engine executes it | Windows PowerShell 5.1, PowerShell 7 | `powershell -NoProfile -ExecutionPolicy Bypass -File tests/capture-floor/run.ps1` |
 | `tools.test.js` | `tools/*.js` behaviour: `check.js` rules and regressions, `graph.js` offline output, `export.js`, `deploy.js`, `vault-open.js`, `migrate.js --dry-run` | Node 18 / 22 / 24 on Linux and Windows | `node tests/tools.test.js` |
 | `probes/` | open research questions, not product checks — see `.github/workflows/probes.yml` | CI only | — |
@@ -18,7 +18,8 @@ acceptance criterion in the CHANGELOG was by-inspection.
   scripts under test are the scripts a user pastes. If a heading or a fence moves, extraction fails loudly.
 - **Launch hooks the way a host does**: a new process whose working directory is the workspace — plus one
   deliberate in-process run, because that is how a user checks a hook from their own terminal.
-- **Fixtures live in the OS temp directory.** No suite reads or writes a real brain.
+- **Fixtures live in the OS temp directory.** No suite reads or writes a real brain. The one exception
+  is `capture-floor/fixtures/`: small static indexes, read only, never written.
 - **Every failure is also a GitHub annotation**, so results are readable from the run page.
 
 ## Hazards these suites found, and still guard
@@ -34,3 +35,23 @@ acceptance criterion in the CHANGELOG was by-inspection.
   script stops parsing. PowerShell blocks in the recipe, SKILL.md, capture-hooks.md and fingerprint.md must be ASCII outside comments.
 - **CRLF shell scripts.** Git for Windows defaults to `core.autocrlf=true`; a CRLF `.sh` does not run
   under bash. `.gitattributes` pins `*.sh` to LF.
+# Local Cortex and benchmark checks
+
+On Node 24 with node:sqlite/FTS5, run `node tests/core-conformance.test.js`,
+`node tests/cortex.test.js`, `node tests/mcp.test.js` and `node tests/bench.test.js`.
+The benchmark suite exercises synthetic dry-run controls and never invokes a model.
+The MCP suite uses a real stdio subprocess. These are local/runtime proofs, not a live-host
+installation or fresh-session boot proof. See `docs/concepts/cortex-local.md` and `bench/README.md`.
+
+## Candidate package and event adapter
+
+Run `node tests/package-release.test.js` and `node tests/codex-curation.test.js` on Node 18 or
+newer. These verify immutable package construction/verification and the bounded optional Codex
+adapter with synthetic hook input. They do not prove a real host event, model semantic accuracy,
+or fresh-session loading. See [host acceptance](../docs/integrations/ACCEPTANCE.md).
+
+`node tests/vscode-integration.test.js` exercises the scoped prepare/apply/status/rollback path,
+legacy and competing carriers, native-dialect mapping and visible pending failures on synthetic data.
+`node tests/prepare-release.test.js` checks exact source/version binding, generated archive/receipts,
+digests, new-output protection and extraction by a standard tar consumer. Both run on Node 18+;
+neither starts an editor, trusts a hook, invokes a model or publishes a release.

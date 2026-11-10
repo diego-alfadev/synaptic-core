@@ -2,6 +2,83 @@
 
 ## [Unreleased]
 
+Prepared engine identity: **2.0.0-rc.1**, integrating the CORE work and minimum Cortex cut.
+Brain schema remains **1.0**. No tag, stable support claim or publication is implied.
+
+### Operating-contract and release preparation
+
+- Added an immutable local package builder/verifier, retained source receipts and same-version
+  content checks. Bootstrap and legacy migration acquisition now keep one selected source;
+  applying a live upgrade remains a reviewed agent-run procedure.
+- Added a preparatory opt-in Codex Stop adapter for bounded source-grounded curation drafts,
+  checked persisted output and retained pending failures. Real event/model/fresh-session acceptance
+  is still required; no hooks are installed by this change and wiki promotion is separate.
+- Simplified README, upgrade and release-note drafts around explicit triggers, evidence and
+  no-MCP assisted operation. The first stable requires a demonstrated automatic-curation profile
+  and the owner-run VS Code journey; no publication is implied.
+
+### Local CORE completion and Cortex candidate
+
+- Read-only situation reporting follows task sources in place; skill portability is a data-only
+  registry and file-read audit. Registry text is never executed or interpolated into commands.
+- Work-item export retains task/proposal records; lint skips playground scratch while still
+  checking ordinary artifacts. Promotion proof checks distinguish a task id from a longer id.
+- Codex and VS Code adapter procedures distinguish the selected harness from the model and keep
+  file evidence separate from a fresh-session boot proof. Global configuration writes remain gated.
+- A small optional Cortex library, CLI, lexical FTS5 adapter and read-only stdio MCP share current-file
+  semantics, capability declarations and CORE fallbacks. Synthetic conformance/protocol checks and an
+  offline resume benchmark verify local behaviour; no live-host efficacy claim is made.
+- CONF-1 remains a specification. MemoryLog, embeddings and multi-brain implementation are deferred.
+  This is an unreleased local candidate: no version bump, tag or publication is implied.
+
+### Added
+- **Fewer false rescue offers (hook liveness, K1).** `synaptic-pending` gains two silent modes: `beat` on
+  `Stop` (a heartbeat that records the pending state this session last saw, and claims the work when
+  that state changed during its turns) and `end` on `SessionEnd` (bookkeeping only). The `SessionStart`
+  rescue never offers a session its own work (a resume), and stays quiet while another live session has
+  claimed the unchanged pending work. It offers when nobody claimed it, the work changed after the last claim, or every claimant ended or
+  went silent past a 2 h TTL. Files only, under `journal/_activity/` (git-ignored). Needs a session id on
+  the hook stdin (Claude Code per its docs); without one the v1.6 behaviour stays, and the offer says it
+  may include this session's own work. Two concurrent sessions can both claim a change; the rule then
+  errs toward quiet until both are gone.
+  `beat` runs after the breadcrumb in one `Stop` command, so it sees the turn's own breadcrumb (Claude
+  Code runs the hooks of one event in parallel); a claimant of an older state also re-claims at its next
+  `beat` or `rescue`.
+- **Fail open, but visibly.** A hook that cannot write (the breadcrumb, the heartbeat, the end marker)
+  leaves one `journal/_activity/_degraded` line. The next `SessionStart` rescue prints it once, naming
+  the hook, and deletes it; until then `/synaptic-audit` reports it as `HOOK-DEGRADED`.
+- **Specified, not shipped:** an opt-in `SubagentStop` Key-Learnings harvest (recipe A.5), off by
+  default and never turned on by init or upgrade.
+- **Work items (format).** One shape for candidates and tasks, defined once in
+  `references/contract.md` §6: `proposals/INDEX.md` (one row per candidate, a folder only when it needs
+  more) and `tasks/INDEX.md` (one row per task; `home` is `inline`, a playground's `tasks.md`, or another
+  tool's task file read in place, never copied). Both appear on first use, never at init. A playground
+  opens only when the work is not resumable from the request plus its current state, and then carries
+  a `tasks.md` (Specs / Tasks / Log / Key Learnings; ODD-compatible, no workflow). One status
+  vocabulary: `[ ]`, `[x]` only with proof, `[-]` with a reason. `playgrounds/<id>/scratch/` holds
+  intermediates and is git-ignored by the new `playgrounds/.gitignore` template. Audit Step 9 (d) checks
+  the indexes (broken home, done without proof, broken provenance); consolidate reads Key Learnings first
+  and closes rows. Older brains keep the journal's *Active playgrounds* list until they adopt the index
+  (upgrade offers the move).
+- **Proposal → task promotion.** One procedure, in `references/contract.md` §6: the owner approves each
+  promotion or drop; the agent takes the next free `T<n>`, writes the task row (`from: P<n>`, `home`
+  `inline` unless the resume test fails), marks the proposal `[x]` with `to: T<n>` and the task id as
+  proof, and stamps both rows. Nothing is renumbered or deleted; promotion approves no work. New tier
+  rows (contract §5 = the guardrails template): consolidate may add a proposal row (AUTO); promote or
+  drop a proposal (PROPOSE-THEN-APPROVE). Consolidate lists candidates to promote, never promotes. Both
+  capture-floor suites check a promoted-pair fixture and that a broken pair is caught.
+
+### Changed
+- `SessionEnd` is wired again, for the silent `end` only (v1.6 retired it as a reminder channel), with a
+  10 s `timeout`: Claude Code's default budget for `SessionEnd` hooks is 1.5 s (per its docs), less than
+  a script start took on an endpoint-protected Windows machine. `end` writes only its marker, with bash
+  builtins; the next rescue tidies up.
+- `SessionStart` is registered once per source (startup, resume, clear, fork) instead of one alternation
+  matcher; `fork` is new.
+- The recipe's per-host table records that current Copilot docs list `sessionEnd` and that VS Code
+  Copilot also reads `.claude/settings.json` (deploy the hooks in one place, never both).
+- **Upgrade:** re-deploy the hooks (`references/upgrade-to-v1.md`, "v1.7 liveness").
+
 ## [1.6.0] - 2026-11-01
 
 > **Simpler and cheaper to run.** `SKILL.md`, which every command reads, drops from 60 KB to a 12 KB

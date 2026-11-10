@@ -181,17 +181,45 @@ mkbrain() { mkdir -p "$WORK/$1/.synaptic/journal" "$WORK/$1/.synaptic/playground
 commitall() { ( cd "$1" && git add -A \
                 && git -c user.name=ci -c user.email=ci@example.invalid -c commit.gpgsign=false commit -qm c ) >/dev/null 2>&1; }
 gitinit() { ( cd "$1" && git init -q ) >/dev/null 2>&1; commitall "$1"; }
-hook() { local d="$1" s="$2"; shift 2; ( cd "$d" && bash "$s" "$@" ) > "$WORK/out.txt" 2> "$WORK/err.txt"; echo $? > "$WORK/rc.txt"; }
+# Hooks get their stdin from $WORK/in.txt (empty = the host gave no session id). A file, never the
+# terminal: a hook that reads stdin must not hang a test.
+: > "$WORK/in.txt"
+hook() { local d="$1" s="$2"; shift 2; ( cd "$d" && bash "$s" "$@" ) < "$WORK/in.txt" > "$WORK/out.txt" 2> "$WORK/err.txt"; echo $? > "$WORK/rc.txt"; }
 quiet() { [ "$(cat "$WORK/rc.txt")" = 0 ] && [ ! -s "$WORK/out.txt" ] && [ ! -s "$WORK/err.txt" ]; }
 said()  { [ "$(cat "$WORK/rc.txt")" = 0 ] && grep -qF "$1" "$WORK/out.txt"; }
 crumb='- 2026-10-29T10:00Z breadcrumb: touched a.md'
+sidjson() { printf '{"session_id":"%s","hook_event_name":"x"}' "$1"; }
+# side <ws> <mode> <sid>: an earlier hook run of another session (boot=X / beat=X / end=X setup tokens).
+side() { ( cd "$1" && sidjson "$3" | bash "$A2" "$2" ) >/dev/null 2>&1; }
+# claimant <sid>: the session is listed in .owner (line 1 is the signature; one session id per line after it).
+claimant() { tail -n +2 "$act/.owner" 2>/dev/null | tr -d '\r' | grep -qx -- "$1"; }
+# expect <ws> <expect-list>: prints why it failed (empty = every item held). Items are ';'-separated.
+expect() {
+  local w="$1" e why="" act="$1/.synaptic/journal/_activity" parts
+  [ "$(cat "$WORK/rc.txt")" = 0 ] || why=" rc=$(cat "$WORK/rc.txt")"
+  IFS=';' read -ra parts <<< "$2"
+  for e in "${parts[@]}"; do
+    case "$e" in
+      quiet)   quiet || why="$why not-quiet(out=$(tr '\n' ' ' < "$WORK/out.txt" | head -c 160) err=$(head -c 120 "$WORK/err.txt"))" ;;
+      say:*)   grep -qF "${e#say:}" "$WORK/out.txt" || why="$why missing:'${e#say:}'(out=$(tr '\n' ' ' < "$WORK/out.txt" | head -c 160))" ;;
+      nosay:*) grep -qF "${e#nosay:}" "$WORK/out.txt" && why="$why unexpected:'${e#nosay:}'" ;;
+      has:*)   [ -e "$w/.synaptic/${e#has:}" ] || why="$why absent:${e#has:}" ;;
+      no:*)    [ -e "$w/.synaptic/${e#no:}" ] && why="$why present:${e#no:}" ;;
+      owner:*)    claimant "${e#owner:}" || why="$why not-claimant:${e#owner:}($(tr '\n' '|' < "$act/.owner" 2>/dev/null))" ;;
+      notowner:*) claimant "${e#notowner:}" && why="$why claimant:${e#notowner:}" ;;
+      sig:*)      [ "$(head -n 1 "$act/.owner" 2>/dev/null | tr -d '\r')" = "${e#sig:}" ] || why="$why sig='$(head -n 1 "$act/.owner" 2>/dev/null)'" ;;
+      *)       why="$why unknown-expect:'$e'" ;;
+    esac
+  done
+  printf '%s' "$why"
+}
 
 CASES="$ROOT/tests/capture-floor/pending-cases.txt"; rows=0
 trim() { printf '%s' "$1" | sed 's/^[[:space:]]*//; s/[[:space:]]*$//'; }
 while IFS='|' read -r c_name c_setup c_mode c_expect; do
   c_name=$(trim "$c_name"); case "$c_name" in ''|'#'*) continue ;; esac
   c_setup=$(trim "$c_setup"); c_mode=$(trim "$c_mode"); c_expect=$(trim "$c_expect")
-  ws="$WORK/pc-$c_name"; mkdir -p "$ws"
+  ws="$WORK/pc-$c_name"; mkdir -p "$ws"; : > "$WORK/in.txt"
   rows=$((rows+1))
   case ",$c_setup," in
     *,nobrain,*) ;;
@@ -199,22 +227,30 @@ while IFS='|' read -r c_name c_setup c_mode c_expect; do
     *,pgfile,*) mkdir -p "$ws/.synaptic/journal"; printf '# Journal\n' > "$ws/.synaptic/journal/_current.md"; : > "$ws/.synaptic/playgrounds" ;;
     *) mkbrain "pc-$c_name" >/dev/null ;;
   esac
+  act="$ws/.synaptic/journal/_activity"
   for item in $(printf '%s' "$c_setup" | tr ',' ' '); do
     case "$item" in
       crumbs=*) i=0; while [ "$i" -lt "${item#crumbs=}" ]; do echo "$crumb" >> "$ws/.synaptic/journal/_current.md"; i=$((i+1)); done ;;
       crumbcase) echo '- 2026-10-29T10:00Z Breadcrumb: touched a.md' >> "$ws/.synaptic/journal/_current.md" ;;
       pg) mkdir -p "$ws/.synaptic/playgrounds/task" ;;
+      pgz) mkdir -p "$ws/.synaptic/playgrounds/Zed" "$ws/.synaptic/playgrounds/a b" ;;
       archive) mkdir -p "$ws/.synaptic/playgrounds/archive/old" ;;
-      ledger) mkdir -p "$ws/.synaptic/journal/_activity"; printf 'boot\nstop\n' > "$ws/.synaptic/journal/_activity/0123456789ab-2026-10-29.log" ;;
+      ledger) mkdir -p "$act"; printf 'boot\nstop\n' > "$act/0123456789ab-2026-10-29.log" ;;
+      sid=*) sidjson "${item#sid=}" > "$WORK/in.txt" ;;
+      boot=*) side "$ws" rescue "${item#boot=}" ;;
+      beat=*) side "$ws" beat "${item#beat=}" ;;
+      end=*) side "$ws" end "${item#end=}" ;;
+      age=*) touch -t 202001010000 "$act/.live/${item#age=}" ;;
+      degraded) mkdir -p "$act"; printf '2026-10-29 breadcrumb write-failed\n' > "$act/_degraded" ;;
+      livefile) mkdir -p "$act"; : > "$act/.live" ;;
+      endedfile) mkdir -p "$act"; : > "$act/.ended" ;;
     esac
   done
   hook "$ws" "$A2" "$c_mode"
-  case "$c_expect" in
-    quiet) quiet && ok "A.2 [$c_mode] $c_name: quiet" || nok "A.2 [$c_mode] $c_name: quiet" "rc=$(cat "$WORK/rc.txt") out=$(tr '\n' ' ' < "$WORK/out.txt" | head -c 160) err=$(head -c 120 "$WORK/err.txt")" ;;
-    say:*) said "${c_expect#say:}" && ok "A.2 [$c_mode] $c_name: says '${c_expect#say:}'" || nok "A.2 [$c_mode] $c_name: says '${c_expect#say:}'" "out=$(tr '\n' ' ' < "$WORK/out.txt" | head -c 160)" ;;
-    *) nok "A.2 fixture row $c_name" "unknown expect '$c_expect'" ;;
-  esac
+  why=$(expect "$ws" "$c_expect")
+  [ -z "$why" ] && ok "A.2 [$c_mode] $c_name: $c_expect" || nok "A.2 [$c_mode] $c_name: $c_expect" "$why"
 done < <(tr -d '\r' < "$CASES")
+: > "$WORK/in.txt"
 want_rows=$(tr -d '\r' < "$CASES" | grep -cvE '^[[:space:]]*(#|$)')
 [ "${rows:-0}" -eq "$want_rows" ] && ok "A.2 fixture table: all $want_rows rows ran" \
   || nok "A.2 fixture table: all $want_rows rows ran" "ran ${rows:-0}"
@@ -248,6 +284,37 @@ ws=$(mkbrain chain-work); echo a > "$ws/app.txt"; gitinit "$ws"; echo b >> "$ws/
 ( cd "$ws" && bash "$A1" ) >/dev/null 2>&1; hook "$ws" "$A2" rescue
 said "1 pending breadcrumb(s)" && ok "chain: a real project edit becomes a breadcrumb and triggers the reminder" \
   || nok "chain: a real project edit becomes a breadcrumb and triggers the reminder" "$(tr '\n' ' ' < "$WORK/out.txt" | head -c 160)"
+# Fail open, but visibly [K1 2.2]: a breadcrumb that cannot be written leaves one _degraded line, and the
+# next rescue prints it exactly once (here the journal is a directory, so the append fails).
+ws=$(mkbrain chain-degraded); echo a > "$ws/app.txt"; gitinit "$ws"; echo b >> "$ws/app.txt"
+rm -f "$ws/.synaptic/journal/_current.md"; mkdir "$ws/.synaptic/journal/_current.md"
+( cd "$ws" && bash "$A1"; bash "$A1" ) > "$WORK/out.txt" 2> "$WORK/err.txt"; rc=$?
+dg="$ws/.synaptic/journal/_activity/_degraded"
+if [ "$rc" -eq 0 ] && [ ! -s "$WORK/err.txt" ] && [ "$(grep -c ' breadcrumb write-failed$' "$dg" 2>/dev/null)" = 1 ]; then
+  ok "A.1 that cannot write the journal exits 0 silently and leaves ONE _degraded line [K1]"
+else
+  nok "A.1 that cannot write the journal exits 0 silently and leaves ONE _degraded line [K1]" "rc=$rc err=$(head -c 120 "$WORK/err.txt") degraded=$(cat "$dg" 2>/dev/null)"
+fi
+hook "$ws" "$A2" rescue; first=$(cat "$WORK/out.txt"); hook "$ws" "$A2" rescue
+if printf '%s' "$first" | grep -qF 'breadcrumb write-failed' && ! grep -qF 'could not run' "$WORK/out.txt"; then
+  ok "chain: the next rescue prints the _degraded line once, then it is gone [K1]"
+else
+  nok "chain: the next rescue prints the _degraded line once, then it is gone [K1]" "first=$(printf '%s' "$first" | tr '\n' ' ' | head -c 160)"
+fi
+# Liveness in the A.4 order [K1]: a turn whose only change is its own breadcrumb (A.1, then beat in the
+# same Stop command, sharing the hook stdin) is claimed by that session. Once it has ended another
+# session is offered the work; the session itself, resumed, is not.
+ws=$(mkbrain chain-live); echo a > "$ws/app.txt"; gitinit "$ws"; echo b >> "$ws/app.txt"
+sidjson L1 > "$WORK/in.txt"; hook "$ws" "$A2" rescue
+( cd "$ws" && sidjson L1 | { bash "$A1"; bash "$A2" beat; } ) >/dev/null 2>&1
+( cd "$ws" && sidjson L1 | bash "$A2" end ) >/dev/null 2>&1
+sidjson L2 > "$WORK/in.txt"; hook "$ws" "$A2" rescue; other=$(cat "$WORK/out.txt")
+sidjson L1 > "$WORK/in.txt"; hook "$ws" "$A2" rescue; own=$(cat "$WORK/out.txt"); : > "$WORK/in.txt"
+if printf '%s' "$other" | grep -qF '1 pending breadcrumb(s)' && [ -z "$own" ]; then
+  ok "chain: a session's own breadcrumb is claimed (A.1 then beat); offered to the next session, not to its own resume [K1]"
+else
+  nok "chain: a session's own breadcrumb is claimed (A.1 then beat); offered to the next session, not to its own resume [K1]" "other=$(printf '%s' "$other" | tr '\n' ' ' | head -c 100) own=$(printf '%s' "$own" | tr '\n' ' ' | head -c 100)"
+fi
 
 # --- The DEPLOYED copy: the pinned one-liner in references/capture-hooks.md --------------------------------------------
 # /synaptic-init and /synaptic-upgrade wire THIS block into the host, not the recipe's script, so it is
@@ -344,6 +411,84 @@ if [ -n "$TDEF" ] && [ "$(printf '%s\n' "$TDEF" | wc -l | tr -d ' ')" -eq 3 ] &&
 else
   nok "autonomy-tier default in contract.md = the guardrails template table (3 rows) [S3]" "the two tables differ or a row is missing"
 fi
+
+# --- Work items [R2: P1, T2] -------------------------------------------------------------------
+# scratch/ never enters git history: the playgrounds/.gitignore template ignores <id>/scratch/ only.
+TPL="$ROOT/standalone/synaptic/templates"
+ws="$WORK/wi-scratch"; mkdir -p "$ws/playgrounds/t1/scratch" "$ws/playgrounds/t1/notes"
+cp "$TPL/playgrounds/.gitignore" "$ws/playgrounds/.gitignore" 2>/dev/null
+: > "$ws/playgrounds/t1/scratch/plot.png"; : > "$ws/playgrounds/t1/tasks.md"; : > "$ws/playgrounds/t1/scratch-notes.md"; : > "$ws/playgrounds/t1/notes/a.md"
+( cd "$ws" && git init -q ) >/dev/null 2>&1
+ign() { ( cd "$ws" && git check-ignore -q "$1" ) 2>/dev/null; }
+if ign playgrounds/t1/scratch/plot.png && ! ign playgrounds/t1/tasks.md && ! ign playgrounds/t1/scratch-notes.md && ! ign playgrounds/t1/notes/a.md; then
+  ok "templates/playgrounds/.gitignore ignores <id>/scratch/ and nothing else [P1]"
+else
+  nok "templates/playgrounds/.gitignore ignores <id>/scratch/ and nothing else [P1]" "$(cat "$ws/playgrounds/.gitignore" 2>/dev/null || echo 'template missing')"
+fi
+# The row schemas in references/contract.md §6 are the header rows of the two index templates.
+schema() { tr -d '\r' < "$ROOT/standalone/synaptic/references/contract.md" | grep -F "**\`$1\` row:**" | sed 's/.*row:\*\* `\(.*\)`$/\1/'; }
+header() { tr -d '\r' < "$TPL/templates/$1" | grep -m1 '^| id |' | sed 's/ *$//'; }
+bad=""
+[ -n "$(schema tasks/INDEX.md)" ] && [ "$(schema tasks/INDEX.md)" = "$(header task-index.md)" ] || bad="$bad tasks"
+[ -n "$(schema proposals/INDEX.md)" ] && [ "$(schema proposals/INDEX.md)" = "$(header proposal-index.md)" ] || bad="$bad proposals"
+[ -z "$bad" ] && ok "work-item row schemas in contract.md = the index template headers [T2]" \
+  || nok "work-item row schemas in contract.md = the index template headers [T2]" "differs:$bad"
+# Every new template is in MANIFEST.txt (the self-install fetches exactly that list).
+miss=""; for f in templates/playgrounds/.gitignore templates/templates/task-index.md templates/templates/proposal-index.md templates/templates/tasks.md; do
+  tr -d '\r' < "$ROOT/standalone/synaptic/MANIFEST.txt" | grep -qx "$f" && [ -s "$ROOT/standalone/synaptic/$f" ] || miss="$miss $f"; done
+[ -z "$miss" ] && ok "the work-item templates exist and are listed in MANIFEST.txt [T2]" || nok "the work-item templates exist and are listed in MANIFEST.txt [T2]" "missing:$miss"
+
+# --- Proposal -> task promotion [R4] -----------------------------------------------------------
+# A promoted pair (fixtures/promotion, read-only) keeps the contract §6 provenance invariants; a broken
+# copy must be caught, so the check is not vacuous. Columns are found by header name, never by position.
+rd() { tr -d '\r' < "$1"; } 2>/dev/null   # a CR-free read; a missing file reads as empty
+prov() {  # <brain> -> one line per defect; nothing when the indexes are sound
+  for i in proposals tasks; do
+    [ "$(rd "$1/$i/INDEX.md" | grep -m1 '^| id |' | sed 's/ *$//')" = "$(header "${i%s}-index.md")" ] || echo "header:$i"
+  done
+  rd "$1/proposals/INDEX.md" > "$WORK/prov-p"; rd "$1/tasks/INDEX.md" > "$WORK/prov-t"
+  awk -F'|' '
+    function t(s) { gsub(/^ +| +$/, "", s); return s }
+    FNR == 1 { f++ }
+    !/^\| / { next }
+    t($2) == "id" { for (i = 2; i < NF; i++) col[f, t($i)] = i; next }
+    { id = t($2); st = t($(col[f, "status"])); nt = t($(col[f, "note"])); up = t($(col[f, "updated"])) }
+    seen[id]++ { print "dup:" id }
+    st != "[ ]" && st != "[x]" && st != "[-]" { print "status:" id }
+    up !~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/ { print "updated:" id }
+    st == "[-]" && nt == "" { print "no-reason:" id }
+    f == 1 { if (id !~ /^P[0-9]+$/) print "id:" id; to[id] = t($(col[1, "to"])); pst[id] = st; pnt[id] = nt }
+    f == 2 { if (id !~ /^T[0-9]+$/) print "id:" id; from[id] = t($(col[2, "from"])); home[id] = t($(col[2, "home"])) }
+    END {
+      for (p in to) if (to[p] ~ /^T[0-9]+$/) {
+        if (pst[p] != "[x]") print "promoted-not-x:" p
+        if (pnt[p] !~ ("(^|[^A-Za-z0-9_])" to[p] "([^A-Za-z0-9_]|$)")) print "no-proof:" p
+        if (!(to[p] in from) || from[to[p]] != p) print "to-without-from:" p
+      }
+      for (k in from) if (from[k] ~ /^P[0-9]+$/) {
+        if (!(from[k] in to) || to[from[k]] != k) print "from-without-to:" k
+        if (home[k] != "inline" && home[k] !~ /^playgrounds\// && index(home[k], "proposals/" from[k] "-") != 1) print "home:" k
+      }
+    }' "$WORK/prov-p" "$WORK/prov-t"
+}
+FIX="$ROOT/tests/capture-floor/fixtures/promotion"
+d="$(prov "$FIX" | tr '\n' ' ')"
+promo="$(rd "$FIX/proposals/INDEX.md" | grep -cE '^\| P[0-9]+ \| \[x\] \|.*\| T[0-9]+ \|')"
+[ -z "$d" ] && [ "${promo:-0}" -ge 1 ] && ok "promotion fixture: the promoted pair keeps its provenance (from/to, proof, status, ids) [R4]" \
+  || nok "promotion fixture: the promoted pair keeps its provenance (from/to, proof, status, ids) [R4]" "defects: ${d:-none} promoted rows: ${promo:-0}"
+ws="$WORK/prov-broken"; mkdir -p "$ws/proposals" "$ws/tasks"; cp "$FIX/proposals/INDEX.md" "$ws/proposals/" 2>/dev/null
+rd "$FIX/tasks/INDEX.md" | grep -vE '^\| T[0-9]+ \|.*\| P[0-9]+ \|' > "$ws/tasks/INDEX.md"
+d="$(prov "$ws" | tr '\n' ' ')"
+case "$d" in *to-without-from:*) ok "promotion check: a proposal whose task row is gone is broken provenance [R4]" ;;
+  *) nok "promotion check: a proposal whose task row is gone is broken provenance [R4]" "defects: ${d:-none}" ;; esac
+
+# Token-bound proof: T20 is not proof for T2.
+ws="$WORK/prov-token"; mkdir -p "$ws/proposals" "$ws/tasks"
+rd "$FIX/proposals/INDEX.md" | sed 's/promoted to T2/promoted to T20/g' > "$ws/proposals/INDEX.md"
+cp "$FIX/tasks/INDEX.md" "$ws/tasks/INDEX.md"
+d="$(prov "$ws" | tr '\n' ' ')"
+case "$d" in *no-proof:P2*) ok "promotion check: T20 is not proof for T2 [R4]" ;;
+  *) nok "promotion check: T20 is not proof for T2 [R4]" "wrong proof accepted" ;; esac
 
 # --- Cross-shell consistency ------------------------------------------------------------------
 # The sh marker hashes `hostname`; the PowerShell copy hashes $env:COMPUTERNAME on Windows and

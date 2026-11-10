@@ -106,3 +106,5 @@ Files-first synthesis (every claim derivable from disk). Prose-CORE: an agent pr
 the MOC + frontmatter — the grep/MOC floor, zero-runtime. Optional tool assist (e.g. reusing the
 god-node degree math) is never required. Runtime confirmation of the exact output is author-complete;
 verify on a real run.
+
+For work-item status use references/situation.md. For skill recovery, read contract.md §7; redact titles, private source repositories and installed paths in shareable briefs. Never execute registry recovery text.

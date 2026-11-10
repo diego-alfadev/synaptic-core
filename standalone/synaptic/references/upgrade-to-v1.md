@@ -1,6 +1,23 @@
 <!-- summary: Migrate a v0.3 / v0.4 / v0.5 brain to v1 (schema/format change) via the supervised M→C→V flow; always runs host-setup detection first + stub-drift check; redeploys operating rules + capture hooks. -->
 
-# /synaptic-upgrade — Migration Guide to v1.0
+# /synaptic-upgrade — source-pinned dispatch and migration to v1.0
+
+## Entry dispatcher — apply before the historical migration phases
+
+Follow `references/package-install.md` first: identify the existing brain/schema, host and scope;
+stage and verify one immutable source package before selected live writes. Keep its source receipt
+and current-state backup. For an already-schema-1.0 brain, this is a light engine/wiring update,
+not M→C→V or a knowledge rewrite. Offer the applicable additive changes; preserve stricter rules.
+
+Only a pre-v1 brain enters the historical migration below. Its canonical `docs/` guides, recipes
+and optional `tools/` come from the **same selected package/source commit**. Open them at the
+package root; they are not installed inside the standalone skill. Older instructions to fetch the
+current/latest engine never override the selected release. If dependencies cannot be obtained,
+stop before live writes; do not substitute main. With no Node, use the guide's manual path and
+report the checks that real tools could or could not perform.
+
+Neither a completed file update nor the historical wording “fully wired” proves fresh loading,
+capture events, MCP discovery or model curation. Report those integration results separately.
 
 > **Canonical runbook:** the authoritative, user-facing v0.3-beta → v1-beta migration runbook is
 > **`docs/UPGRADE-v0.3-to-v1.md`**. Point all real migration work there — it is the deliverable the
@@ -30,7 +47,7 @@
 - **Deploy the layer-(a0) activity marker** per `references/capture-hooks.md` "Deterministic activity marker": wire the
   pinned platform-appropriate one-liner (**UTF-8 no-BOM**; `[IO.File]::AppendAllText` on PowerShell —
   never `>>` (UTF-16LE+BOM) or `Add-Content` (ANSI by default; a BOM with `-Encoding utf8` on 5.1)) to `Stop` (`stop`) and `SessionStart`
-  startup / resume / clear (`boot`; never on the `compact` source), writing to `journal/_activity/<host-token>-<YYYY-MM-DD>.log`. Marker-wrapped + idempotent like
+  startup / resume / clear / fork (`boot`; never on the `compact` source), writing to `journal/_activity/<host-token>-<YYYY-MM-DD>.log`. Marker-wrapped + idempotent like
   every other hook write.
 - **Migrate the boot ledger:** stop emitting the old `- boot:` line into `journal/_current.md`; the boot
   event now lives ONLY in the activity ledger. Existing `- boot:` lines are harmless history and are
@@ -50,7 +67,7 @@
   the Journal-Trim rollup; never rename them silently.
 - **v1.6 hook shape (re-deploy on every host).** Inside the `BEGIN:SYNAPTIC-HOOKS` block (or the
   hand-wired entries the host record lists), with the owner's OK:
-  1. **Remove** the `PreCompact` and `SessionEnd` entries and the old `SessionStart` rescue entry;
+  1. **Remove** the `PreCompact` entry, the old `SessionEnd` *reminder* entry (`synaptic-consolidate-reminder`) and the old `SessionStart` rescue entry; keep a v1.7 `synaptic-pending end` entry;
      delete the old script files (`synaptic-consolidate-reminder.sh` / `.ps1`, `synaptic-rescue.sh`),
      or the old and new rescue double-fire.
   2. **Split `SessionStart`:** startup / resume / clear → A.0 `boot` + `synaptic-pending rescue`;
@@ -61,6 +78,19 @@
      Step 9b).
   4. **Claude Code with a project `CLAUDE.md`:** offer the `SYNAPTIC-BOOT` block
      (`references/init.md` §a2), then run the boot check (`references/audit.md` Step 10b).
+- **v1.7 liveness (re-deploy the hooks).** Add `synaptic-pending beat` to `Stop`, chained after the breadcrumb in the same command (recipe A.4); where the host has
+  `SessionEnd` (not Cursor; Copilot only in its newer docs), add an entry with `synaptic-pending end` and a
+  10 s `timeout` (recipe A.4); elsewhere the heartbeat TTL covers it. Register `SessionStart` once per
+  source (startup, resume, clear, fork) instead of one alternation matcher. Replace
+  `synaptic-pending.{sh,ps1}` with the v1.7 script. Both new entries are silent. A host that sends no session id keeps the v1.6 rescue; nothing
+  to migrate. Never turn on the opt-in SubagentStop harvest (recipe A.5) during an upgrade.
+- **v1.7 work items (offer, never forced).** Add `playgrounds/.gitignore` (`*/scratch/`) when absent, and
+  the three new files in the brain's `templates/` (`task-index.md`, `proposal-index.md`, `tasks.md`).
+  Offer to move the journal's *Active playgrounds* list into `tasks/INDEX.md` (one row per playground,
+  `home: playgrounds/<id>/`, with the next free `T<n>`), leaving one pointer line in the journal. If the
+  owner declines, nothing changes: the journal list keeps working (`references/contract.md` §6). Offer
+  the two v1.7 tier additions to the brain's own tier table (AUTO: add a proposal row; PROPOSE-THEN-APPROVE:
+  promote or drop a proposal); until the owner accepts, adding a row is proposed, not automatic (§5).
 
 ## v1.4.0 addendum — host-setup detection is an ALWAYS-RUN step (not migration-only)
 
@@ -105,8 +135,9 @@
   size parity). If the brain is on OneDrive/a sync share, move the backup + work copy to a **local**
   path first (a sync client can upload half-written files and corrupt the rollback / leak confidential
   content). Back up the **existing harness wiring** too (chatmode/instructions/AGENTS files) — the
-  upgrade rewrites them. No-clone case: the agent self-installs the skill from GitHub raw (see SKILL.md
-  Bootstrap) and fetches `tools/` separately (they are NOT in the skill manifest).
+  upgrade rewrites them. No-clone case: use the complete selected release package or an authorised local copy
+  (`references/package-install.md`). Its `tools/` and migration guides retain the same immutable
+  source as the skill; do not fetch missing dependencies from another ref.
 - **No silent deletions.** Every merge/split/removal goes in a DELETIONS LEDGER, shown and confirmed;
   knowledge deletion is human-only. Mostly this migration is *refactor + construction*, not deletion.
 - **Content-conservation gate REPLACES the node-count gate.** "v1 count ≥ v0.3 count" cannot prove
@@ -374,10 +405,10 @@ marker-wrapped `SYNAPTIC-BOOT` block, only with approval. Never anything else th
 
 ### M4 — Skill install
 
-Copy the synaptic skill package (this skill directory) into:
-
-- `.claude/skills/synaptic/` (create if absent; skip if present at same version)
-- `.agents/skills/synaptic/` (create if absent; skip if present at same version)
+Apply `references/package-install.md` and `references/init.md` §b to the selected host/scope only.
+Stage and verify its complete source package, archive current preimages and show the bounded diff
+before any live copy. Same-version contents still need comparison; never mirror both carriers
+without selecting them explicitly. Keep the installed manifest and source receipt.
 
 ### M5 — Optional Cursor shim
 
@@ -556,7 +587,8 @@ Rewrite `journal/_current.md` to v1 three-section format:
 - **Watch List** — carry forward unresolved open questions.
 - **Log** — dated one-liners; summarize older entries; keep the narrative thread.
 
-Trim to ≤80 lines total. Register any in-flight playgrounds in the Active playgrounds list.
+Trim to ≤80 lines total. Register any in-flight playgrounds in the Active playgrounds list (then offer the v1.7 move into
+`tasks/INDEX.md`, "v1.7 work items" above).
 
 ### C11 — Frontmatter fill
 

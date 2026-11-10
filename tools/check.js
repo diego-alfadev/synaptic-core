@@ -103,6 +103,8 @@ function walkMd(dir) {
     for (const entry of fs.readdirSync(current, { withFileTypes: true })) {
       const full = path.join(current, entry.name);
       if (entry.isDirectory()) {
+        // Scratch is non-authoritative intermediate material, never audited (contract §6).
+        if (entry.name === 'scratch' && path.relative(brainRoot, full).split(path.sep)[0] === 'playgrounds') continue;
         walk(full);
       } else if (entry.isFile() && entry.name.endsWith('.md')) {
         results.push(full);

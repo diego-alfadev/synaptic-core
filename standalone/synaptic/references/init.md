@@ -151,15 +151,21 @@ the user.
 │   ├── conventions.md          ← from Round 3
 │   └── guardrails.md           ← from Round 3
 ├── playgrounds/
-│   └── README.md
+│   ├── README.md
+│   └── .gitignore              ← `*/scratch/` (intermediates never enter git history)
 ├── journal/
 │   └── _current.md
 └── templates/
     ├── node.md
     ├── registry.md
     ├── playbook.md
-    └── lesson.md
+    ├── lesson.md
+    ├── task-index.md           ← copied to tasks/INDEX.md by the first task
+    ├── proposal-index.md       ← copied to proposals/INDEX.md by the first proposal
+    └── tasks.md                ← a playground's task file
 ```
+
+No `tasks/` or `proposals/` folder at init: work items are created on first use (`references/contract.md` §6).
 
 Use real data — no `{{placeholder}}` values in generated files. Report the full file list when done.
 
@@ -258,16 +264,82 @@ weeks). Treat this as a claim the boot check verifies on each install, not as se
 
 The guarantee is therefore **"at most one marker-wrapped block (one `@AGENTS.md` import line) in a
 project `CLAUDE.md`, only with approval"** (ADR-002, amended in v1.6). User-level `~/.claude/CLAUDE.md`
-for a global brain, and every other host's adapter, are specified separately and not done here.
+for a global brain remains a separate, approval-gated operation. Codex and VS Code adapters follow.
+
+### a3. Codex boot adapter (native instructions)
+
+Documentation snapshot: **2026-11-07**; actual target version and live proof must be recorded per install.
+Codex reads global guidance from `$CODEX_HOME` (default `~/.codex`), preferring a non-empty
+`AGENTS.override.md` to `AGENTS.md`. In a project it walks the root-to-CWD instruction chain,
+again preferring an override; combined instruction bytes are limited (32 KiB by default).
+Source: [Codex instruction discovery](https://learn.chatgpt.com/docs/agent-configuration/agents-md).
+
+1. **Inspect before wiring.** Identify the effective Codex home, project root, working directory,
+   overrides and instruction-size limit. An existing override can hide the ordinary bridge carrier.
+2. **Project reach:** use the existing `AGENTS.md` bridge (§a) when effective. No Claude-style
+   `@AGENTS.md` import is needed. If an override excludes it, show the exact marker-block change
+   in the effective carrier for approval; preserve all unmarked content.
+3. **Global reach:** propose a marker block in the effective global guidance file with absolute brain
+   and skill pointers. Show the target, diff and all-workspaces effect; do not write without approval.
+   Never copy a private/global bridge into a foreign project to compensate for missing user wiring.
+4. **Record and prove:** write `harness/setup/codex.md` with carrier, scope, skill path, target
+   version and nonce; `wired: expected` is static evidence only. Apply §a's fresh-session canary;
+   until observed before tool/file reads, live loading is `unproven`.
+
+### a4. VS Code adapter (identify the session harness first)
+
+Use `references/vscode.md` for the complete project setup/upgrade and no-Node/no-MCP route.
+The optional Node helper stages an explicit file transaction; it does not establish live host proof.
+
+The session target/harness, **not the selected language model**, decides discovery and hook semantics.
+Record VS Code, extension and harness versions; a model change is not a new adapter test.
+Documentation snapshot: **2026-11-07**. Sources:
+[instruction reference](https://code.visualstudio.com/docs/agents/reference/custom-instructions-reference),
+[instructions guide](https://code.visualstudio.com/docs/agent-customization/custom-instructions).
+
+1. **Copilot harness:** project `AGENTS.md` or `.github/copilot-instructions.md`; targeted
+   `.github/instructions/**/*.instructions.md`. Personal guidance is under `~/.copilot/`.
+   Prefer the effective existing project carrier; if a fallback is necessary, propose one
+   marker-wrapped bridge in the native carrier, with approval and a removal record.
+2. **Local harness:** inspect its instruction settings, including `chat.useAgentsMdFile` and
+   `chat.useNestedAgentsMdFiles`. These Local settings do **not** control Copilot or Codex
+   discovery. Do not change them silently. Keep prompt-menu enhancement separate from boot wiring
+   (`references/command-discovery.md`).
+3. **Reach and proof:** the same private/global reach gate as §a3 applies. User-level changes need
+   an approved diff. Record `harness/setup/vscode-<harness>.md` (harness = `copilot` or
+   `local`), carrier, scope, versions, nonce and `wired: expected | unproven | proven <date>`.
+   A new chat's first response must pass the canary before file/tool reads to become proven.
+4. **Hooks are separate evidence.** Do not reuse Claude hook JSON merely because the folder or
+   event name looks familiar. The Copilot reference supports camelCase and VS Code-compatible
+   PascalCase events; the name selects the payload dialect. Record that dialect, supported sources,
+   output contract and timeout. `sessionStart` consumes `additionalContext`; lifecycle availability
+   varies by runtime. Keep instruction-only capture until an innocuous hook smoke-test passes.
+   Sources: [VS Code hooks (Preview)](https://code.visualstudio.com/docs/agent-customization/hooks),
+   [Copilot hook reference](https://docs.github.com/en/copilot/reference/hooks-reference).
+5. **Mini-spike:** in a synthetic workspace, test the chosen carrier and any override separately,
+   fresh-chat nonce, one command with an argument, and an optional hook that records only event/tool
+   name. Record loaded/menu-rendered/hook-fired separately; no prompt, argument or result capture.
+   Static fixtures and documentation do not establish a live-host support claim.
 
 ### b. Skill install
 
-Copy this skill package directory (where `SKILL.md` lives, with its `references/` and `templates/`) into:
+Prepare the selected immutable package with `references/package-install.md` first. Resolve the
+host and project/user scope before selecting a destination; the locations below are choices, not
+a command to mirror every carrier. Do not overwrite installed files during package acquisition.
 
-- `.claude/skills/synaptic/` — discovered by Claude Code, VS Code Copilot, OpenCode
-- `.agents/skills/synaptic/` — discovered by VS Code Copilot, Gemini CLI, OpenCode, Codex
+- `.claude/skills/synaptic/` — Claude Code project skill location.
+- `.agents/skills/synaptic/` — Codex project skill location; for personal Codex skills the documented
+  location is `~/.agents/skills/synaptic/`. Inspect the intended scope before copying.
+  [Codex skills, checked 2026-11-07](https://learn.chatgpt.com/docs/build-skills).
+- Other hosts: verify the selected harness's supported skill location first; a shared folder name
+  alone is not a support claim. Cursor/Gemini remain unverified, not first-class adapters.
 
-Create directories if absent. If a target already contains a `SKILL.md` with the same `version:`, skip and report "already present". Otherwise overwrite.
+Compare the complete selected bundle, retained manifest/source receipt and installed bytes even
+when `version:` matches. Only an exact inventory/content match is already present; a missing file,
+unknown receipt or modified same-version file needs a reviewed repair. Archive current preimages
+and apply only the selected carrier through the recoverable procedure in
+`references/package-install.md`. Do not prune unrelated or unrecognised user content. An approved
+install still needs independent fresh-session loading and lifecycle/tool verification.
 
 **Command discoverability (layered floor + per-host stubs).** Full procedure:
 `references/command-discovery.md`. Two layers:
@@ -277,7 +349,7 @@ Create directories if absent. If a target already contains a `SKILL.md` with the
 - **Layer 2 (per-host `/`-menu stubs):** for hosts with a slash/prompt menu, generate thin **pointer
   files** from the ONE SOT (Claude Code `.claude/commands/synaptic-*.md` with `description:`, at the same
   scope as the skill install — project skill → project stubs, user-level skill → `~/.claude/commands/`; VS Code
-  Copilot `*.prompt.md`; Cursor's prompt-file mechanism). **NOT symlinks** (fragile on Windows/OneDrive —
+  Local `*.prompt.md` (§a4); other harness menus only when documented and verified). **NOT symlinks** (fragile on Windows/OneDrive —
   they break on sync/copy). Each stub carries a provenance line
   `generated-from: synaptic-skill@<engine-version> <sot-hash>`. Body: load the skill's `SKILL.md` first, then
   follow `references/<cmd>.md` (by content). Regenerate from the SOT on every deploy; the user

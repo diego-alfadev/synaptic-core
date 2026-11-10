@@ -1,6 +1,6 @@
 ---
 name: synaptic
-version: 1.6.0          # engine semver (skill code) — independent of the brain schema/format version stamped in BRAIN.md
+version: 2.0.0-rc.1     # candidate engine semver; brain schema remains 1.0; no tag/publication implied
 supported_schema: ">=1.0 <2.0"   # brain schema/format versions this engine can read. A skill update reinstalls the skill with NO brain migration; only a schema/format change runs /synaptic-upgrade.
 description: >
   Knowledge-graph memory layer for project work — a portable, file-based brain that turns
@@ -13,36 +13,41 @@ description: >
 
 ## Bootstrap / self-install
 
-**DETECT bootstrap mode.** If you were invoked but the bundle next to this SKILL.md is
-**incomplete** — not every path listed in `MANIFEST.txt` is present beside this file (a partial
-fetch leaves gaps even when `references/` and `templates/` exist) — the user likely fetched only
-`SKILL.md` by URL into a clean project. Self-install the rest:
+A raw SKILL.md is an entry point, not a complete installation. If its bundle/manifest is absent
+or incomplete, **do not write either live skill carrier yet**. Resolve the existing brain,
+schema, selected host and project/user scope before choosing destinations. An unreachable bridge
+is not permission to create another brain.
 
-1. Set `RAW_BASE = https://raw.githubusercontent.com/diego-alfadev/synaptic-core/main/standalone/synaptic/`
-2. Fetch `${RAW_BASE}MANIFEST.txt`.
-3. For each path listed (trim surrounding whitespace and any trailing carriage return first),
-   fetch `${RAW_BASE}<path>` and WRITE it to **both** `.claude/skills/synaptic/<path>` **and**
-   `.agents/skills/synaptic/<path>` (create directories as needed). This SKILL.md is in the
-   manifest, so both copies get it too.
-4. **Verify the install before proceeding.** Confirm the count of files written equals the number
-   of manifest entries. Confirm each written file is non-empty (except `.gitkeep` placeholders,
-   which are 0 bytes by design) and does NOT start with `<!DOCTYPE`
-   or `<html` (GitHub raw can return an HTML error page on rate-limit). Re-fetch only the paths that
-   failed either check; if any still fail after a retry, report the failed paths and fall back to
-   the HONEST fallback below.
-5. Then run **Harness Self-Wire** (`references/init.md`) and offer `/synaptic-init`.
+Use the exact release/candidate package the owner selected, or an authorised complete local copy.
+Its generated RELEASE-MANIFEST.json and skill SOURCE.json retain one source commit and file hashes.
+Never silently fetch the rest from main/latest. A tagged entry point must keep the same selected
+source throughout; if its origin or complete package is unknown, ask for it instead of guessing.
+An explicitly selected mutable branch must be resolved once to a commit before preparation.
 
-**CORE-purity note.** This uses the agent's OWN fetch + file-write capability — Synaptic ships no
-runtime, downloader, or daemon. `MANIFEST.txt` makes the install deterministic (you get exactly
-the listed files); pulling from `main` installs the current stable skill. Append a release tag to
-the path (e.g. `.../synaptic-core/<tag>/standalone/synaptic/`) if you need an exact pinned version.
+Follow references/package-install.md from that same source: private staging → inventory/content
+verification → scope-aware diff and fresh backup → recoverable agent-run apply → separate
+installation and host-integration checks. Preserve MANIFEST.txt and SOURCE.json with the skill.
+If only this file was supplied, obtain the package or that reference from its known immutable
+origin first, without changing installed files. A same version header never skips content checks.
 
-**HONEST fallback.** If you cannot fetch URLs (no network or no fetch tool), do not improvise —
-tell the user to use the `degit` one-liner or the manual folder-copy from the README, then stop.
+CORE needs no new runtime. With no Node/network/MCP, use the permitted file tools and an approved
+local package; report verification limits. If a complete source or safe backup/copy cannot be
+obtained, stop before live writes. Do not suggest a network/package-manager command as the fix
+for a denied fetch. Existing readable files remain usable while an upgrade is pending.
 
-If the bundle IS complete beside this file — every path in `MANIFEST.txt` is present — skip this section entirely and proceed to Detect on Load.
+If the complete bundle is already present and no install/repair was requested, boot normally.
+Legacy bundles with unknown source metadata are not prevented from being read; their origin and
+installation integrity remain unverified until checked. Package tooling prepares/verifies files;
+it is not an installer or a mechanism that starts curation.
 
 # Synaptic Brain Skill
+
+**Runtime routing (local candidate).** Prefer an already-configured, available Cortex surface for
+the read-only operations it exposes; files remain authoritative. If that surface is absent, stops,
+or cannot verify a source, use the CORE procedures and direct file access. Do not install or start
+a runtime merely to boot the brain. Cortex CLI/MCP, lexical capability checks and both fallback
+levels are documented in `docs/concepts/cortex-local.md` in the product repository; the standalone
+skill works without that optional documentation or runtime.
 
 > **Two version numbers, one bundle (v1-final §5.4 / §8).** `version:` above is the **skill
 > ENGINE semver** (the code in this bundle). The **templates define the SCHEMA**, whose
@@ -102,6 +107,10 @@ blocks reading the brain. Wording and binding rules: `references/host-setup.md`.
 **Host-setup detection** runs on `/synaptic-init` and every `/synaptic-upgrade` run (never on a
 normal boot): `references/host-setup.md`.
 
+For a VS Code project, follow `references/vscode.md`: choose the actual harness and permitted
+profile, keep no-Node/no-MCP operation assisted, and separate project-file installation from
+fresh loading/native execution proof. Do not silently add a second brain or competing skill carrier.
+
 ---
 
 ## Lifecycle axis (optional actionability label)
@@ -145,7 +154,7 @@ list them separately.
 | Name | What it is | Reference |
 |---|---|---|
 | `/synaptic-upgrade` | **Routine.** Migrate an older brain (v0.3 / v0.4 / v0.5 → v1; schema/format change), or re-deploy wiring after a skill update on the light already-`1.0` path. Always runs host-setup detection + stub-drift check; redeploys operating rules + capture hooks. `/synaptic-init` offers it when it finds an older brain; the upgrade runbooks call it by name. | `references/upgrade-to-v1.md` · `references/host-setup.md` |
-| `/synaptic-weave` | **Deprecated alias (1.6)** for `/synaptic-maintain weave`. Removed in the next minor release. | `references/weave.md` |
-| `/synaptic-synthesize` | **Deprecated alias (1.6)** for `/synaptic-maintain synthesize`. Removed in the next minor release. | `references/synthesize.md` |
+| `/synaptic-weave` | **Compatibility alias (deprecated since 1.6)** for `/synaptic-maintain weave`; retained in this candidate. | `references/weave.md` |
+| `/synaptic-synthesize` | **Compatibility alias (deprecated since 1.6)** for `/synaptic-maintain synthesize`; retained in this candidate. | `references/synthesize.md` |
 
 **Tools awareness:** if a runtime is available, prefer `tools/` scripts (check/migrate/export/vault-open) for the mechanical steps. If no runtime, perform the operation manually as described in the reference files.

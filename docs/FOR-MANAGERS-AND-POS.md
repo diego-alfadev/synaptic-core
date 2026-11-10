@@ -1,6 +1,8 @@
 # For managers and POs — what you actually do with an AI Brain
 
-*What this is: the non-technical path. What a delivery manager or product owner actually does with a Synaptic brain, and a minimal way to use one that does not assume you run a developer's agent harness. No code, no install to approve, no platform.*
+*What this is: the non-technical path. What a delivery manager or product owner actually does with a Synaptic brain, and a minimal way to use one that does not assume you run a developer's agent harness. The file-based profile needs an assistant with permitted access; optional integrations have their own setup.*
+
+For what runs automatically and what needs an explicit action, see [how it works](../HOW-IT-WORKS.md).
 
 Most of the Synaptic docs talk to a developer with an agent-driven coding setup. This page does not. If you are a manager or a PO, this is what the brain does **for you**, and how to use it with nothing more than a chat assistant.
 
@@ -13,14 +15,14 @@ An **AI Brain** is a folder of plain text files that holds your team's working k
 | You want to… | What happens |
 |---|---|
 | **Onboard a new joiner** | Hand them the brain. They (or their assistant) get a **day-1 handover brief** — project summary, who owns what, key decisions, where things live, open threads — without booking hours of your time. |
-| **Cover a key person on leave** | Before they go, the brain already holds what they own. The covering colleague asks the brain *"who signs off releases?"* and gets the answer — no waiting for the person to come back. |
-| **Reduce the knowledge tax** | Less time reconstructing context after a gap, less documentation drift, less risk that knowledge lives only in one person's head. The work being done already becomes durable knowledge as it happens. |
+| **Cover a key person on leave** | Before they go, capture and verify the knowledge needed for coverage. The covering colleague asks the brain *"who signs off releases?"* and gets the answer — no waiting for the person to come back. |
+| **Reduce the knowledge tax** | Less time reconstructing context after a gap, less documentation drift, less risk that knowledge lives only in one person's head. This depends on useful capture and curation in the selected working mode. |
 
 ## What you do NOT need
 
-- **No budget** — it is a folder of files; there is nothing to buy.
-- **No platform rollout** — nothing to procure, provision, or wait for IT to approve.
-- **No security exception** — the brain is plain text on the machine you already use; there is no server, no database, no data leaving that was not already leaving. (A compliance reviewer can open and read every file. See [where the data goes](./concepts/local-vs-remote-boundary.md).)
+- **Open file format** — Synaptic is MIT licensed. Your assistant and any chosen integrations retain their own costs and access requirements.
+- **A file-based starting point** — an existing permitted assistant can use the brain; tool installation and organisational approval depend on your environment.
+- **Visible data and access choices** — files can be inspected directly. What the assistant reads, sends or shares depends on its host and your policies; plain text alone does not establish compliance.
 
 ## The vacation-handover value — the one to remember
 

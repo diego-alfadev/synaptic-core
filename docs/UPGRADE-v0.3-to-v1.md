@@ -1,15 +1,13 @@
 # Upgrade your brain: v0.3 → v1 (the narrative)
 
-> **You won't lose anything.** This upgrade is **non-destructive**: it works on a **copy**, your
-> original brain stays untouched, and you only switch over once you've verified the result. Worst
-> case, you keep your old brain. Tokens are not a concern — let the agent be thorough.
+> **Work on a verified copy.** Preserve the original brain, review the conservation checks and
+> switch over only after validation. The runbook supplies those steps; the agent must actually
+> execute and verify them. A written procedure alone cannot guarantee conservation.
 
-> **This path now lands you on v1.3.0.** You install the *current* skill, so a fresh v0.3 → v1
-> migration today produces a brain on the latest engine (**v1.3.0**) — schema still `1.0`, plus the
-> **PARA lifecycle axis** (an optional `lifecycle:` field, absent → `area`, fully backward-compatible)
-> and the **hardened `check.js`** (retrieval-readiness report + the structural≠retrieval caveat). The
-> interactive `graph.html` and the god-node audit come for free. Nothing here changes because of
-> v1.3.0 — the migration steps are identical; you simply end up current.
+> **Choose one exact release package.** Engine version comes from that selected source, not a
+> promise of "current/latest". Keep skill, source metadata, migration guides and optional helpers
+> on the same immutable commit. See [the short upgrade path](../UPGRADING.md). This migration
+> targets schema `1.0`; engine and file-format versions are separate.
 >
 > **Node:** the migration itself does **not** require Node — the runbook tags every step
 > `[needs Node]` or `[no Node]`, and each Node step has a hand-done fallback. But the `tools/*.js`
@@ -32,10 +30,10 @@ not a one-click job.
 
 - **Node is optional.** It only accelerates the mechanical steps and the health check; without it the
   agent does the equivalent by hand. The runbook tags every step `[needs Node]` or `[no Node]`.
-- **You don't need the repo cloned.** The runbook's first step has the agent self-install the v1
-  `synaptic` skill from GitHub (it fetches public skill code only — your brain never leaves the
-  machine). If your network blocks that, bring the skill bundle in by hand.
-- **Use your normal agent** (Claude Code / VS Code Copilot / Cursor / Codex).
+- **You don't need the repo cloned.** Supply the exact release package or an authorised complete
+  local copy. Stage and verify it before changing live skill files; resolve host/scope before targets.
+  What your assistant sends elsewhere depends on its host and policies, not this file format.
+- **Use your permitted agent** and validate the actual host integration separately from migration.
 - **Know your brain's shape.** Is it a `.synaptic/` *inside one repo*, or a *shared* `.synaptic/`
   sitting **beside several repos** and serving all of them? That doesn't change the migration — but it
   changes how the harness gets wired (see below).
