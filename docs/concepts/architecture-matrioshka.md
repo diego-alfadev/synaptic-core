@@ -98,7 +98,7 @@ These are optional **Cortex** utilities — **zero-dependency** (Node ≥ 18 sta
 |---|---|---|
 | `check` | `node tools/check.js [.synaptic]` | Graph health: broken `[[wikilinks]]`, MOC coverage, frontmatter, soft budgets (warn), registry/reference integrity, orphan nodes |
 | `migrate` | `node tools/migrate.js <.synaptic> [templates-dir] [--dry-run]` | Automates Phase M of a v0.x → v1 upgrade (deterministic, idempotent, non-destructive) |
-| `export` | `node tools/export.js <.synaptic> [out.md]` | Bundles the entire brain into a single portable Markdown file (or `--split` into 4 sections) |
+| `export` | `node tools/export.js <.synaptic> [out.md]` | Selected text export (or `--split` into up to 4 files); not a restorable backup. Playground task bodies are omitted and linked external task homes are not followed; see [export scope](../../tools/README.md#exportjs--single-file-export) |
 | `vault-open` | `node tools/vault-open.js <.synaptic>` | Writes minimal optional config for Obsidian, Foam, and Logseq; produces `OPEN-IN.md` |
 | `graph` | `node tools/graph.js [.synaptic] [--out FILE] [--format html\|svg]` | Render a visual graph image of your brain — executive-friendly, no install; deterministic layout makes before/after states visually comparable |
 | `deploy` | `node tools/deploy.js <project-root> [--dry-run]` | Materializes the `harness/` rules (conventions + guardrails) into the outer harness (`AGENTS.md`) as a marker-bounded block — backed up, diff-previewed, idempotent |

@@ -140,28 +140,39 @@ node tools/export.js <path-to-.synaptic> [out.md]
 node tools/export.js <path-to-.synaptic> [out-prefix] --split
 ```
 
-Bundles the entire brain into portable Markdown for sharing, backup, or
-pasting into a chat context. Equivalent to exporting a brain by hand for a handoff or backup — automated and deterministic.
+Bundles selected brain text into Markdown for a reviewed handoff or chat context. This is **not a
+restorable backup** or a complete export of working sources: it embeds only the sections and text
+formats below, trims trailing whitespace and adds a timestamp. File ordering is deterministic;
+the output is not a byte-for-byte snapshot. Review the included content before sharing it.
 
 **Single-file output:** one `.md` with a table of contents + `## FILE: <relpath>` headers.
 Binary payloads in `references/raw/` are listed as "omitted binary payload (N bytes)"
 rather than embedded.
 
-**Split output (`--split`):** emits 4 named files:
+**Split output (`--split`):** emits up to 4 named files; empty sections are skipped:
 
 | File | Contents |
 |---|---|
 | `{prefix}-core.md` | `BRAIN.md` + `harness/` |
 | `{prefix}-knowledge.md` | `knowledge/` |
 | `{prefix}-registries.md` | `registries/` |
-| `{prefix}-refs-harness.md` | `references/` + `templates/` + `journal/` |
+| `{prefix}-refs-harness.md` | `references/` + `templates/` + `journal/` + `tasks/` + `proposals/` + `playgrounds/README.md` |
 
 **Ordering:** deterministic (section priority, then alphabetical within section).
-`playgrounds/` README is included in single-file mode; actual task dirs are omitted
-(they are burnable working memory, not knowledge).
+Both modes include Markdown/YAML from the listed directories and `playgrounds/README.md` when
+present. Other playground content is omitted, including `playgrounds/<id>/tasks.md`, results and
+curation drafts. Unsupported formats and unlisted root sections are omitted. A task index or
+source link can therefore survive while its referenced work content is absent; this export alone
+does not guarantee task continuity or preserve a provenance chain's source bytes. External ODD
+task homes are not followed or copied.
 
-**No-runtime fallback:** run `/export` — the skill reads files in the same order and
-concatenates them into the chat context or a file.
+For a work handoff, explicitly select and transfer the authorised task homes and referenced evidence
+separately, checking which links remain usable by the recipient. Do not sweep external or confidential
+sources into an export merely because they are linked. Use a separate file-level backup for restore.
+
+**No-runtime fallback:** ask the agent to assemble a bounded context export from explicitly selected
+files and list omissions. That is assisted work; this tool does not install a slash command or
+automatically package missing task sources.
 
 ---
 
