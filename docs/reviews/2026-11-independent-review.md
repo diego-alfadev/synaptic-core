@@ -162,6 +162,52 @@ Run the bounded [artifact and harness spike](2026-11-artifact-harness-spike.md) 
 experiment/report. It checks the delivered bytes and executable instruction contract, rather than
 assuming that source tests prove the released package or a real host integration works.
 
+## Specific request to Fable: the ODD integration
+
+Treat this as an implementation and adaptation review, not a vote for or against using ODD.
+The owner considers continuity of work across sessions central to the product. Start from
+[Gentle AI's pinned ODD guidance](https://github.com/Gentleman-Programming/gentle-ai/blob/95fe9784a693047de02a4f41102367fad9e50bc6/internal/assets/skills/_shared/odd-orchestrator-sections.md)
+and its [pinned usage documentation](https://github.com/Gentleman-Programming/gentle-ai/blob/95fe9784a693047de02a4f41102367fad9e50bc6/docs/usage.md#organic-driven-development-odd).
+That is the comparison baseline inspected for this adaptation; distinguish any newer upstream
+revision you choose to inspect. Upstream guidance is not evidence that an installed agent complied.
+
+Then inspect standalone/synaptic/references/contract.md (work items and the resume test),
+consolidate.md, capture-hooks.md, audit.md, situation.md and the task/proposal templates
+under standalone/synaptic/. Locate the actual readers and exports before claiming an integration.
+
+The declared adaptation adopts task-artifact structure, a resume-based size rule, and read-in-place
+interoperability. It generalises beyond coding rather than adopting the complete Gentle AI workflow
+or requiring Engram. Establish whether the actual artifacts, prompts and code deliver that contract.
+
+Evaluate three layers separately:
+
+1. **Work and raw-source continuity:** original intent, task/spec identifiers, findings, evidence,
+   interrupted work, next action and side discoveries. Can another agent resume from those sources
+   without inventing state, duplicating an external ODD file or needing the prior conversation?
+2. **Knowledge distillation:** which task-derived decisions, actions and lessons become durable
+   knowledge, by what promotion/reconciliation step, with what qualified IDs and source links?
+   Are provenance and relevant uncertainty preserved when the source later changes or is archived?
+3. **Harness execution:** which events or explicit operations update those artifacts; what remains
+   agent discipline; what captures merely activity; and how failure, omission and pending work show up.
+
+Do not dismiss the design with "tasks bloat a knowledge graph": task working sources and curated
+wiki nodes have different roles here. Inspect whether that separation is implemented and whether
+links between them make decisions and lessons traceable. If there is actual duplication, pollution
+or maintenance cost, show the concrete path and consequence rather than assume it from the label.
+
+Challenge fidelity to ODD, intentional departures and their consequences; overlapping task/index/log
+state and ownership; two agents editing the same work; pause/resume after a side discovery; small
+non-code tasks; proposal-to-task promotion; closure/archive and dangling provenance; export/handoff
+that preserves an index while omitting its referenced task content. Evaluate no-runtime and no-MCP
+operation explicitly. Neither a task checkbox nor a Stop breadcrumb proves semantic capture.
+
+Please return an upstream-versus-adaptation matrix (retained, changed, omitted, unknown), concrete
+execution defects or missing evidence, and **how you would implement the same intent**: minimum
+artifacts and invariants, capture/resume triggers, source-to-knowledge lineage, and a small validation
+scenario. Separate a minimal correction from an alternative architecture. Include one coding and
+one non-coding example with a decision or lesson discovered while doing the task. Keep the judgement
+neutral and evidence-based; do not assume automatic full conversation recording or full ODD parity.
+
 ## Coordination with work continuing here
 
 The maintainer's implementation track will collect real-host acceptance evidence: fresh Codex
@@ -174,6 +220,13 @@ While you review, that track prepares synthetic fixtures, expected results, evid
 failure/restore drills. It does not intentionally redesign the graph or broaden features. Treat
 002b7dc as the frozen review target; list any later commit you inspect separately. Return findings
 before implementing fixes. Keep editor/model experiments separate from offline artifact checks.
+
+The next maintainer stop point is **pre-Cortex expansion**: finish bounded acceptance preparation,
+truthful capture/resume/handoff boundaries and reproducible evidence, then stop before substantive
+new Cortex, retrieval or graph architecture work. The minimum Cortex already in this candidate
+remains reviewable. ODD execution and source continuity are part of this pre-Cortex review; wider
+design changes wait for your feedback. Later pre-Cortex corrections must be listed with their exact
+commits and must not be silently treated as part of the pinned RC assets.
 
 ## Additional review deliverables
 
