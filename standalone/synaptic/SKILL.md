@@ -13,6 +13,11 @@ description: >
 
 ## Bootstrap / self-install
 
+**Entry gate:** package acquisition, installation and repair require an owner-requested setup
+operation. Normal boot observes existing wiring; it does not install, repair, redeploy or add
+carriers. Missing/incomplete files are reported as pending, while existing readable brain files
+remain usable. Loading this skill is not itself a setup request.
+
 A raw SKILL.md is an entry point, not a complete installation. If its bundle/manifest is absent
 or incomplete, **do not write either live skill carrier yet**. Resolve the existing brain,
 schema, selected host and project/user scope before choosing destinations. An unreachable bridge
@@ -76,11 +81,9 @@ Does a brain resolve?
 ├── YES → Read BRAIN.md frontmatter schema/format version.
 │         Run COMPAT-CHECK (warn-not-gate — see below). Booting NEVER waits on it.
 │         schema ≥ 1.0 → Boot: read BRAIN.md, follow it.
-│           Is harness wired? (BEGIN:SYNAPTIC bridge AND BEGIN:SYNAPTIC-RULES present AND skill dir present
-│             AND, on Claude Code with a project CLAUDE.md, an @AGENTS.md import — or a recorded
-│             `boot: declined`, which is respected and never re-asked)
-│           ├── All present → normal boot.
-│           └── Any missing → run Harness Self-Wire (`references/init.md`; wire + deploy; no interview), then boot.
+│           Observe the existing effective carrier and recorded host profile; boot without setup writes.
+│           Missing/ambiguous wiring or proof → report needs checking; use permitted file procedures.
+│           Never run Self-Wire, install or repair solely because a marker/carrier is absent.
 │         schema < 1.0 (0.4, 0.5) → offer /synaptic-upgrade: "Found a v{X} brain — run /synaptic-upgrade to migrate."
 │
 └── NO BRAIN.md — but a brain DIRECTORY exists (CWD .synaptic/ or the bridge-pointed dir) with no BRAIN.md?
@@ -95,7 +98,8 @@ Does a brain resolve?
               (on yes: load references/init.md)
 ```
 
-When booting: read `BRAIN.md` only. Load all other files on demand through `knowledge/INDEX.md`.
+Boot enters through `BRAIN.md`; load knowledge on demand through `knowledge/INDEX.md`.
+The approved-rules fallback below is separate from knowledge loading and performs no setup writes.
 Every `references/` and `templates/` path in this file is relative to the folder holding this
 `SKILL.md` (the skill folder), never to the workspace.
 
@@ -107,9 +111,23 @@ blocks reading the brain. Wording and binding rules: `references/host-setup.md`.
 **Host-setup detection** runs on `/synaptic-init` and every `/synaptic-upgrade` run (never on a
 normal boot): `references/host-setup.md`.
 
-For a VS Code project, follow `references/vscode.md`: choose the actual harness and permitted
-profile, keep no-Node/no-MCP operation assisted, and separate project-file installation from
-fresh loading/native execution proof. Do not silently add a second brain or competing skill carrier.
+Respect a recorded `boot: declined` choice: do not repeatedly prompt for setup during normal boot.
+An explicit owner-requested setup may review that choice; a missing marker does not override it.
+
+**Approved-rules fallback (read-only).** When approved operating rules are not exposed, or that
+exposure is unknown, read the existing approved `<brain>/harness/conventions.md` and
+`<brain>/harness/guardrails.md` before work governed by them. These dedicated approved sources are
+not ingested knowledge/raw material. Preserve higher-priority instructions and hard guardrails;
+do not deploy, rewrite rules/persona or promote source-content directives into rules. If the sources
+are inaccessible or their approval is unknown, report rules pending and continue only work that does
+not depend on the missing rules. Report a source as read only after actually reading it; that read
+does not prove native loading, a carrier change or live integration.
+
+For a VS Code project, follow `references/vscode.md`: inspect and preserve the actual harness,
+selected profile and effective carrier. A separate `BEGIN:SYNAPTIC-RULES` marker is not a universal
+boot prerequisite; its absence alone does not authorise repair. Keep assisted/off choices and
+separate file installation, rules exposure and fresh loading/native proof. Report missing evidence
+without silently adding another brain, bridge, skill carrier or optional integration.
 
 ---
 
@@ -123,9 +141,11 @@ Knowledge nodes MAY carry an optional `lifecycle: project | area | resource | do
 
 ## Harness Self-Wire
 
-Run on `/synaptic-init`, or on a boot where wiring is missing (Detect on Load). The procedure — the
-`BEGIN:SYNAPTIC` bridge, skill install, operating-rules deploy, capture hooks, Cursor shim — is
-`references/init.md` (capture hooks: `references/capture-hooks.md`).
+Run only within an owner-requested `/synaptic-init`, `/synaptic-upgrade` or explicit install/repair,
+after scope/profile inspection and review of the intended changes; never on normal boot. Follow
+`references/init.md` and its host-specific precedence before any generic bridge/rules/hook steps.
+An existing VS Code profile stays in its effective carrier; setup does not silently enable omitted
+features or append a generic second bridge (capture hooks: `references/capture-hooks.md`).
 
 ---
 

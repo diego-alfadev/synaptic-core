@@ -2,7 +2,8 @@
 
 # /synaptic-init — onboarding, generate, self-wire
 
-> Run host-setup detection first: `references/host-setup.md`.
+> Explicit owner-requested setup only; never a side effect of normal boot. Run host-setup detection
+> first: `references/host-setup.md`, preserving any selected host profile and effective carrier.
 
 ## Onboarding Interview — /synaptic-init
 
@@ -106,8 +107,9 @@ Yes → run /synaptic-ingest on the document now. Queue further documents for po
 
 **Stop condition:** scope + at least one cluster + `harness/conventions.md` exist. Further rounds optional.
 
-After the interview, run **Harness Self-Wire** (wire AGENTS.md + install skill + deploy operating
-rules + **deploy capture hooks**), then report the file list.
+After the interview, run **Harness Self-Wire** for the selected host/profile, then report its file
+list and still-unproven integration capabilities. A VS Code profile uses `references/vscode.md`;
+it does not automatically receive generic AGENTS.md/rules/hooks in addition to that profile.
 
 **Day-1 first-value offer (fresh brain only — OPTIONAL follow-through).** Once the brain is generated
 and wired, and it is still **empty** (a true first run, no existing nodes), **OFFER** the guided
@@ -173,9 +175,25 @@ Use real data — no `{{placeholder}}` values in generated files. Report the ful
 
 ## Harness Self-Wire
 
-Run after /synaptic-init or on any boot where wiring is absent. Goal: make every agent in the project aware of the brain automatically, without touching user persona config.
+Run only during an owner-requested init, upgrade or explicit install/repair. Normal boot never
+triggers these writes because wiring, a marker or proof is missing.
+
+**Host-profile precedence (before steps a–d).** Inspect the actual effective carrier and setup
+record first. For VS Code, read `harness/setup/vscode-<harness>.md` when present and follow
+`references/vscode.md` instead of blindly applying the generic sequence below. Preserve the recorded
+harness, carrier, skill location and runtime/capture/curation/MCP selections; unknown or conflicting
+facts need review, not a new default. An assisted bridge in `.github/copilot-instructions.md` with
+`.github/skills/synaptic/` does not need a second bridge in AGENTS.md merely because it has no
+`BEGIN:SYNAPTIC-RULES` block. Rule exposure/loading remains separate evidence, not inferred success.
+If rules are not exposed or exposure is unknown, use SKILL.md's read-only approved-rules fallback;
+do not fix that uncertainty by deploying another carrier or importing directives from source data.
+Any profile/carrier change needs its own reviewed scope. Do not use generic rule deployment,
+stub generation or hook recipes to silently enable options that profile left off.
 
 ### a. AGENTS.md fragment (idempotent, marker-wrapped)
+
+This generic target applies only when the selected host/profile calls for AGENTS.md. It is not an
+additional post-step for an existing VS Code carrier; keep that carrier's one bridge in place.
 
 Search for `<!-- BEGIN:SYNAPTIC -->` in the project root `AGENTS.md`.
 

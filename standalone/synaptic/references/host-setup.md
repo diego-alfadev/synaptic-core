@@ -32,10 +32,17 @@ brain's schema/format version against `supported_schema`:
 ## Host-setup detection (ALWAYS run on `/synaptic-init` and every `/synaptic-upgrade`)
 
 Beyond resolving the brain, **actively detect WHERE + HOW the brain + harness are wired** and
-**re-deploy the correct wiring** — never silently assume a repo-local `.synaptic/`. This is prose an
+prepare only the reviewed setup delta in that scope — never silently assume a repo-local `.synaptic/`. This is prose an
 agent executes by read/grep (zero-runtime); it is a **first-class, always-run** step of init and every
 upgrade, not just a pre-v1 migration step. (The convert flow, `references/convert-to-global.md`, and
 the upgrade addendum, `references/upgrade-to-v1.md`, reuse this same detect+classify+re-deploy step.)
+
+**Preserve the selected profile before deployment.** For VS Code, inspect
+`harness/setup/vscode-<harness>.md` and the actual effective carrier. Keep the selected skill path,
+assisted/off options and one bridge. Follow `references/vscode.md` before generic init/deploy steps;
+no separate `BEGIN:SYNAPTIC-RULES` marker is a universal repair trigger. This detection is not
+permission to change profiles, append a second bridge or enable omitted stubs/hooks/runtimes.
+Report drift or missing proof; a requested upgrade permits only its reviewed changes.
 
 1. **Resolve the brain location** (reuse the resolution above): `CWD/.synaptic/BRAIN.md`, else the brain
    at the `BEGIN:SYNAPTIC` bridge pointer. Record **project-local vs global** (is the brain under CWD, or

@@ -4,6 +4,17 @@ Status: test protocol, not a completed integration claim. Use an isolated synthe
 Do not update an editor, enable trust, change global settings or use a real engagement repository
 as a side effect of running this protocol. Installation permission and host trust are separate.
 
+## Validate the synthetic inputs first
+
+The fixture must satisfy the selected release's brain contract before evaluating an agent against
+it. Byte-for-byte preservation alone does not establish valid schema or complete node metadata.
+Where Node is already permitted, use the trusted pinned candidate's `tools/check.js <fixture-brain>`
+and retain its exit status and findings before the host run. If a runtime is unavailable, inspect
+the required fields and source/index links against that candidate's contract and record that the
+automated check was not run. Keep expected answers outside the agent workspace and conversation.
+Resolve fixture defects before treating a failed resume as a host or product failure. Passing lint
+does not establish correct facts, useful curation, loading, native firing or cold retrieval.
+
 ## What a supported profile must record
 
 Record the exact release/source commit, brain/schema, workspace scope, host distribution/version,

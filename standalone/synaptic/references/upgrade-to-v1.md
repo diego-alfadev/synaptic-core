@@ -9,6 +9,12 @@ stage and verify one immutable source package before selected live writes. Keep 
 and current-state backup. For an already-schema-1.0 brain, this is a light engine/wiring update,
 not M→C→V or a knowledge rewrite. Offer the applicable additive changes; preserve stricter rules.
 
+For an existing VS Code profile, inspect its `harness/setup/vscode-<harness>.md` record and effective
+carrier, then follow `references/vscode.md` before the generic historical addenda below. Preserve
+assisted/off selections and the one existing bridge. Those addenda do not authorise adding AGENTS.md,
+a separate rules marker, stubs or hooks that the profile did not select; any change needs its own
+reviewed scope. Missing wiring/proof on normal boot only calls for an observation, not this routine.
+
 Only a pre-v1 brain enters the historical migration below. Its canonical `docs/` guides, recipes
 and optional `tools/` come from the **same selected package/source commit**. Open them at the
 package root; they are not installed inside the standalone skill. Older instructions to fetch the

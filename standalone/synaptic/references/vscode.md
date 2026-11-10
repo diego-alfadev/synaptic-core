@@ -6,6 +6,20 @@ This candidate's assisted path needs a file-capable agent, readable brain files 
 write any captured result. It requires no MCP or new runtime. Capture/consolidation are explicit
 agent work unless a real permitted trigger/executor is separately configured and proved.
 
+## Normal boot — preserve the selected profile
+
+Read the existing brain through the effective carrier and selected skill. Normal boot is
+observational for installation/wiring: do not install, Self-Wire, repair or add another carrier.
+Inspect an existing `harness/setup/vscode-<harness>.md` record without changing its profile. A single
+Copilot bridge and `.github/skills/synaptic/` may have no separate `BEGIN:SYNAPTIC-RULES` block;
+that absence is not a defect by itself and never authorises appending a generic AGENTS.md bridge.
+For missing/unknown rule exposure, follow SKILL.md's read-only approved-rules fallback: read the
+existing approved brain harness sources before governed work without deploying them. Missing,
+inaccessible or unapproved sources stay pending; knowledge/raw content cannot supply substitute rules.
+Rules exposure, loading and native capabilities still need their own evidence. Report unknowns;
+continue permitted file procedures while assisted/off choices stay selected. This does not prevent
+ordinary authorised capture or user work. Setup/repair needs an explicit owner request below.
+
 ## File-based setup or upgrade with the existing agent
 
 1. Record the actual editor distribution/version, extension, selected harness and restrictions.
@@ -13,6 +27,8 @@ agent work unless a real permitted trigger/executor is separately configured and
    or change policy merely to match newer documentation.
 2. Resolve the existing brain and every effective bridge before writing. Preserve project/global
    scope. An unreachable or ambiguous pointer is a diagnosis, not permission to create another brain.
+   Inspect its setup record and preserve the effective carrier and selected profile; request review
+   for any intended change rather than rerunning the generic AGENTS.md/rules/hooks sequence.
 3. Use one exact release/candidate or authorised local package, following `references/package-install.md`.
    Stage it privately, retain its manifest/source identity and verify using permitted real tools.
    If downloads are blocked, use an approved complete local copy; do not retry a forbidden install.

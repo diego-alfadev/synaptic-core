@@ -4,7 +4,7 @@ const {copyFixtureTree}=require('./lib/fixture-copy');
 const assert=require('node:assert/strict');
 const fs=require('node:fs'),os=require('node:os'),path=require('node:path');
 const {spawnSync}=require('node:child_process');
-const {build,verifySkill}=require('../tools/package-release');
+const {build,verifySkill,inventory}=require('../tools/package-release');
 const api=require('../tools/vscode-integration');
 const {sha}=require('../tools/lib/curation-stop');
 const base=fs.mkdtempSync(path.join(os.tmpdir(),'syn-vscode-'));
@@ -56,6 +56,47 @@ try{
     assert.equal(p.selected.runtime,'none');assert.equal(p.selected.mcp,'not-enabled');assert.equal(p.selected.curation,'assisted');
     assert(p.entries.some(e=>e.path==='.github/skills/synaptic/SKILL.md'));assert(!p.entries.some(e=>e.path===api.HOOK || e.path.includes('mcp.json')));
     assert.equal(api.status(f.out).loading,'needs-fresh-session-proof');
+  });
+  test('shipped boot contract preserves an assisted VS Code profile without a rules marker or second bridge',()=>{
+    // Package the real entry/procedures, not the small synthetic skill used by other cases.
+    // This is a static contract + real prepare/apply check, not a live model-compliance claim.
+    const bundle=path.join(product,'standalone/synaptic');
+    const manifest=fs.readFileSync(path.join(bundle,'MANIFEST.txt'),'utf8');
+    for(const ref of ['MANIFEST.txt',...inventory(manifest)])write(repo,'standalone/synaptic/'+ref,fs.readFileSync(path.join(bundle,...ref.split('/'))));
+    git(['add','standalone/synaptic']);git(['commit','--quiet','-m','fixture: package the shipped boot contract']);
+    const shippedPackage=path.join(base,'shipped-contract-package');build(repo,'HEAD',shippedPackage);
+    const f=fixture({package:shippedPackage}),originalAgents=fs.readFileSync(path.join(f.workspace,'AGENTS.md'));
+    write(f.brain,'harness/conventions.md','# Approved conventions\nUse the owner-selected assisted profile.\n');
+    api.prepare(f.input);const first=plan(f);
+    assert.deepEqual(first.selected,{harness:'copilot',runtime:'none',capture:'off',curation:'assisted',mcp:'not-enabled'});
+    assert.equal(first.carrier,'.github/copilot-instructions.md');api.apply(f.out);
+    assert.deepEqual(fs.readFileSync(path.join(f.workspace,'AGENTS.md')),originalAgents);
+    const bridge=fs.readFileSync(path.join(f.workspace,first.carrier),'utf8');
+    assert.equal(bridge.split(api.START).length-1,1);assert(!bridge.includes('BEGIN:SYNAPTIC-RULES'));
+    const installed=path.join(f.workspace,'.github/skills/synaptic');
+    assert.equal(verifySkill(installed).status,'content-verified');
+    const skill=fs.readFileSync(path.join(installed,'SKILL.md'),'utf8');
+    assert.match(skill,/Normal boot observes existing wiring; it does not install, repair, redeploy or add\s+carriers\./);
+    assert(!skill.includes('Any missing → run Harness Self-Wire'));
+    assert(!/Run on .*or on a boot where wiring is missing/.test(skill));
+    assert(skill.includes('recorded `boot: declined`'));
+    assert.match(skill,/Approved-rules fallback \(read-only\)/);
+    const beforeRuleRead=snapshot(f.workspace);
+    assert(fs.readFileSync(path.join(f.brain,'harness/conventions.md'),'utf8').includes('owner-selected assisted profile'));
+    assert(fs.readFileSync(path.join(f.brain,'harness/guardrails.md'),'utf8').includes('Owner approval still applies'));
+    assert.deepEqual(snapshot(f.workspace),beforeRuleRead);
+    assert.equal(api.status(f.out).loading,'needs-fresh-session-proof');
+    const init=fs.readFileSync(path.join(installed,'references/init.md'),'utf8');
+    assert(init.indexOf('Host-profile precedence')>=0 && init.indexOf('Host-profile precedence')<init.indexOf('### a. AGENTS.md'));
+    assert.match(init,/Preserve the recorded\s+harness, carrier, skill location and runtime\/capture\/curation\/MCP selections/);
+    const upgrade=fs.readFileSync(path.join(installed,'references/upgrade-to-v1.md'),'utf8');
+    assert(upgrade.indexOf('For an existing VS Code profile')>=0 && upgrade.indexOf('For an existing VS Code profile')<upgrade.indexOf('## v1.5.0 addendum'));
+    const before=snapshot(f.workspace),next={...f.input,out:path.join(base,'shipped-contract-reprepare')};
+    api.prepare(next);const again=JSON.parse(fs.readFileSync(path.join(next.out,'plan.json'),'utf8'));
+    assert.equal(again.carrier,first.carrier);assert.deepEqual(again.selected,first.selected);assert.deepEqual(snapshot(f.workspace),before);
+    assert(!again.entries.some(e=>e.path==='AGENTS.md' || e.path===api.HOOK || e.path.startsWith('.agents/skills/') || e.path.startsWith('.claude/skills/')));
+    assert.throws(()=>api.prepare({...next,out:path.join(base,'unreviewed-carrier-switch'),carrier:'agents'}),/CARRIER_MIGRATION_REQUIRES_REVIEW/);
+    assert.deepEqual(snapshot(f.workspace),before);
   });
   test('missing or unsupported brain schema requires review before staging or applying',()=>{
     for(const brainText of [null,'# Pre-schema brain\n','---\nschema_version: 0.3\n---\n','---\nschema_version: 2.0\n---\n']){
