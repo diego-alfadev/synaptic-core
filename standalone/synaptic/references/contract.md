@@ -171,6 +171,9 @@ A checkbox grants no approval: ticking `[x]` never authorises an action the auto
 - Opening a playground for an existing task changes that row's `home`: same row, same `T<n>`, never a
   second row.
 - `updated` is `YYYY-MM-DD`, stamped when the row (or its home) actually changes.
+- `tools/check.js`, where code runs, checks both indexes: an open row's brain-side `home` must resolve
+  and `[x]` must carry a note (errors); a closed row whose home is gone is a warning; a home outside the
+  brain is listed as unverified, never judged.
 
 **`proposals/INDEX.md` row:** `| id | status | title | from | to | note | updated |`
 

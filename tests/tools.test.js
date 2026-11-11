@@ -424,6 +424,116 @@ test('export.js: preserves tasks and proposal details in single and split export
   assert(split.includes('## FILE: tasks/INDEX.md') && split.includes('## FILE: proposals/P1-example/details.md'), 'split lost work records');
 });
 
+// --- check.js: work items (tasks/INDEX.md, proposals/INDEX.md) --------------------------------------
+const TASK_HEAD = '| id | status | title | home | from | note | updated |\n|---|---|---|---|---|---|---|\n';
+const PROP_HEAD = '| id | status | title | from | to | note | updated |\n|---|---|---|---|---|---|---|\n';
+const PROMOTION = path.join(ROOT, 'tests', 'capture-floor', 'fixtures', 'promotion');
+const UPSTREAM_DOC = path.join(ROOT, 'tests', 'fixtures', 'external-home', 'odd', 'tasks', 'search-filters.md');
+function summary(out) {
+  const m = out.match(/Summary: (\d+) error\(s\), (\d+) warning\(s\)/);
+  assert(m, `no summary line\n${tail(out)}`);
+  return { errors: Number(m[1]), warnings: Number(m[2]) };
+}
+// validBrain() plus a sound pair of indexes: every row kind the contract allows, 0 errors, 0 warnings.
+function workBrain(taskRows, proposalRows) {
+  const b = validBrain();
+  write(b, 'playgrounds/t2-spike/tasks.md', '# Spike\n\n## Log\n\n- L1 [2026-11-01] "start"\n');
+  write(b, 'tasks/INDEX.md', `# Tasks\n\n${TASK_HEAD}${(taskRows || [
+    '| T1 | [ ] | Small fix | inline | — |  | 2026-11-01 |',
+    '| T2 | [ ] | Spike | playgrounds/t2-spike/tasks.md | — |  | 2026-11-01 |',
+    '| T3 | [x] | Done thing | inline | P1 | README.md, link fixed | 2026-11-02 |',
+    '| T4 | [-] | Dropped thing | inline | — | owner dropped it | 2026-11-02 |',
+  ]).join('\n')}\n`);
+  write(b, 'proposals/INDEX.md', `# Proposals\n\n${PROP_HEAD}${(proposalRows || [
+    '| P1 | [x] | Done thing | session 2026-11-01 | T3 | promoted to T3 | 2026-11-02 |',
+    '| P2 | [ ] | Maybe later | session 2026-11-01 | — |  | 2026-11-01 |',
+  ]).join('\n')}\n`);
+  return b;
+}
+
+test('check.js: a sound task and proposal index adds no error and no warning', () => {
+  const r = check(workBrain(), 0);
+  const s = summary(r.out);
+  assert(s.errors === 0 && s.warnings === 0, `expected 0/0, got ${s.errors}/${s.warnings}\n${tail(r.out)}`);
+});
+
+test('check.js: the read-only promotion fixture passes the work-item check', () => {
+  const b = validBrain();
+  copyDir(PROMOTION, b);
+  const r = check(b, 0);
+  assert(summary(r.out).errors === 0, `promotion fixture reported errors\n${tail(r.out)}`);
+});
+
+test('check.js: broken open home, unproven [x], duplicate id and invalid status are four distinct errors', () => {
+  const b = workBrain([
+    '| T1 | [ ] | Open, home gone | playgrounds/no-such-spike/tasks.md | — |  | 2026-11-01 |',
+    '| T2 | [x] | Done, no proof | inline | — |  | 2026-11-01 |',
+    '| T3 | [ ] | First T3 | inline | — |  | 2026-11-01 |',
+    '| T3 | [ ] | Second T3 | inline | — |  | 2026-11-01 |',
+    '| T4 | [?] | Bad status | inline | — |  | 2026-11-01 |',
+  ], ['| P1 | [ ] | Maybe | session 2026-11-01 | — |  | 2026-11-01 |']);
+  const r = check(b, 1, [
+    'open task home does not resolve: playgrounds/no-such-spike/tasks.md',
+    'done without proof',
+    'duplicate id: T3',
+    'invalid status "[?]"',
+  ]);
+  const s = summary(r.out);
+  assert(s.errors === 4, `expected exactly 4 errors, got ${s.errors}\n${tail(r.out)}`);
+});
+
+test('check.js: a closed row whose home is gone is one warning, exit 0', () => {
+  const b = workBrain([
+    '| T1 | [x] | Burned playground | playgrounds/burned/tasks.md | — | result recorded in [[node-one]] | 2026-10-01 |',
+  ], ['| P1 | [ ] | Maybe | session 2026-11-01 | — |  | 2026-11-01 |']);
+  const r = check(b, 0, ['closed task home does not resolve: playgrounds/burned/tasks.md']);
+  const s = summary(r.out);
+  assert(s.errors === 0 && s.warnings === 1, `expected 0/1, got ${s.errors}/${s.warnings}\n${tail(r.out)}`);
+});
+
+test('check.js: an unmodified upstream-shaped feature document as an external home is "unverified", not an error', () => {
+  const b = workBrain([
+    '| T1 | [ ] | Search filters | odd/tasks/search-filters.md | — |  | 2026-11-01 |',
+  ], ['| P1 | [ ] | Maybe | session 2026-11-01 | — |  | 2026-11-01 |']);
+  const ws = path.dirname(b);
+  write(ws, 'odd/tasks/search-filters.md', fs.readFileSync(UPSTREAM_DOC, 'utf8'));
+  const r = check(b, 0, ['unverified', 'odd/tasks/search-filters.md']);
+  const s = summary(r.out);
+  assert(s.errors === 0 && s.warnings === 0, `expected 0/0, got ${s.errors}/${s.warnings}\n${tail(r.out)}`);
+});
+
+test('check.js: rows appended after the table and missing indexes are tolerated', () => {
+  const b = validBrain();
+  write(b, 'tasks/INDEX.md', `# Tasks\r\n\r\n${TASK_HEAD.replace(/\n/g, '\r\n')}| T1 | [ ] | One | inline | — |  | 2026-11-01 |\r\n\r\nA note someone appended.\r\n`);
+  const r = check(b, 0);
+  assert(summary(r.out).errors === 0, `CRLF index or trailing prose reported errors\n${tail(r.out)}`);
+});
+
+// The provenance cases tests/capture-floor/run.sh checks with awk, now also enforced by check.js.
+for (const [label, tasks, proposals, expect] of [
+  ['an id that is not T<n>', ['| X1 | [ ] | Bad id | inline | — |  | 2026-11-01 |'], null, 'id "X1" is not T<n>'],
+  ['an updated that is not YYYY-MM-DD', ['| T1 | [ ] | Bad date | inline | — |  | yesterday |'], null, 'updated "yesterday" is not YYYY-MM-DD'],
+  ['[-] without a reason', ['| T1 | [-] | Dropped | inline | — |  | 2026-11-01 |'], null, 'dropped without a reason'],
+  ['a promoted proposal that is not [x]', null,
+    ['| P1 | [ ] | Done thing | session 2026-11-01 | T3 |  | 2026-11-02 |'], 'promoted to T3 but not [x]'],
+  ['a promoted proposal whose note does not cite its task', null,
+    ['| P1 | [x] | Done thing | session 2026-11-01 | T3 | promoted | 2026-11-02 |'], 'note does not cite T3'],
+  ['a proposal to a task that does not name it back', null,
+    ['| P1 | [x] | Done thing | session 2026-11-01 | T3 | promoted to T3 | 2026-11-02 |',
+      '| P2 | [x] | Other | session 2026-11-01 | T1 | promoted to T1 | 2026-11-02 |'], 'P2 names T1, but T1 is not from P2'],
+  ['a task from a proposal that does not name it', [
+    '| T1 | [ ] | Small fix | inline | P2 |  | 2026-11-01 |',
+    '| T3 | [x] | Done thing | inline | P1 | README.md, link fixed | 2026-11-02 |'], null, 'T1 is from P2, but P2 does not name T1'],
+  ['a promoted task homed in another proposal\'s folder', [
+    '| T3 | [x] | Done thing | proposals/P2-other/ | P1 | README.md, link fixed | 2026-11-02 |'], null, 'home is another proposal\'s folder'],
+]) {
+  test(`check.js: work items - ${label} is an error`, () => {
+    const b = workBrain(tasks, proposals);
+    write(b, 'proposals/P2-other/details.md', '# Other\n');
+    check(b, 1, [expect]);
+  });
+}
+
 // --- done ----------------------------------------------------------------------------------------------
 for (const d of scratch) { try { fs.rmSync(d, { recursive: true, force: true }); } catch (_) { /* best effort */ } }
 console.log(`1..${n}`);

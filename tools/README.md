@@ -81,6 +81,9 @@ Output is grouped by file.
 | Knowledge nodes > 150 lines and not `type: reference` | WARN |
 | `BRAIN.md` > 110 lines | WARN |
 | `updated:` > 90 days old (skip placeholders) | WARN |
+| Work items (`tasks/INDEX.md`, `proposals/INDEX.md`; columns by header name, absent indexes are fine): an **open** task whose brain-side `home` does not resolve; `[x]` with an empty `note`; a duplicate id; a status outside `[ ]` `[x]` `[-]`; ids not `T<n>`/`P<n>`; `updated` not `YYYY-MM-DD`; `[-]` without a reason; promotion provenance (`to` and `from` name each other, a promoted proposal is `[x]` and cites its `T<n>`, a promoted task is not homed in another proposal's folder) | ERROR |
+| A **closed** task whose brain-side `home` does not resolve (a burned or moved playground) | WARN |
+| A `home` outside the brain (another harness's file, e.g. `odd/tasks/<feature>.md`) | UNVERIFIED (listed, never an error) |
 
 **Retrieval-readiness report (advisory, never gates):** after the checks, `check.js` prints a
 retrieval-readiness block computed over the **shared knowledge-scoped, MOC-excluded edge universe**

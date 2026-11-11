@@ -835,6 +835,108 @@ function checkStaleness() {
 }
 
 // ---------------------------------------------------------------------------
+// Check 10: Work items — tasks/INDEX.md and proposals/INDEX.md (contract §6)
+// ---------------------------------------------------------------------------
+// Columns are found by header name, never by position. Only table rows count: prose appended
+// after the table, CRLF line ends and an absent index are all tolerated (a brain without work
+// items has no indexes at all).
+//
+// Severity:
+//   ERROR — an OPEN row whose brain-side home does not resolve; [x] with no proof; a duplicate
+//           id; a status outside [ ] / [x] / [-]; and the provenance rules of the promotion
+//           procedure (ids, dates, [-] reason, from/to symmetry).
+//   WARN  — a CLOSED row whose brain-side home does not resolve: every brain that burned a
+//           playground under the old default has such rows, and nothing migrates them.
+//   UNVERIFIED — a home outside the brain (another harness's file, resolved from the workspace
+//           root). check.js does not know the workspace root, so it never judges these.
+//
+// "Proof" is checked only where it is deterministic: [x] needs a non-empty note, and a promoted
+// proposal's note must cite its T<n>. Free-text proof ("README.md, link fixed") is accepted as is.
+
+const WORK_STATUS = ['[ ]', '[x]', '[-]'];
+const BRAIN_HOME_RE = /^(playgrounds|proposals|tasks)\//;
+const unverified = [];
+
+function parseWorkIndex(filePath) {
+  const rows = [];
+  let cols = null;
+  for (const raw of readText(filePath).split('\n')) {
+    const line = raw.replace(/\r$/, '').trim();
+    if (!line.startsWith('|')) continue;
+    const cells = line.replace(/^\|/, '').replace(/\|$/, '').split('|').map(c => c.trim());
+    if (cells[0] === 'id') { cols = cells; continue; }
+    if (!cols || /^-+$/.test(cells[0].replace(/:/g, ''))) continue;
+    const row = {};
+    cols.forEach((name, i) => { row[name] = cells[i] === undefined ? '' : cells[i]; });
+    rows.push(row);
+  }
+  return rows;
+}
+
+const isEmptyCell = (v) => !v || v === '—' || v === '-';
+const citesId = (text, id) => new RegExp(`(^|[^A-Za-z0-9_])${id}([^A-Za-z0-9_]|$)`).test(text || '');
+
+function checkWorkItems() {
+  const indexes = [
+    { kind: 'task', prefix: 'T', file: path.join(brainRoot, 'tasks', 'INDEX.md') },
+    { kind: 'proposal', prefix: 'P', file: path.join(brainRoot, 'proposals', 'INDEX.md') },
+  ];
+  const byKind = {};
+  for (const ix of indexes) {
+    byKind[ix.kind] = fs.existsSync(ix.file) ? parseWorkIndex(ix.file) : null;
+    if (!byKind[ix.kind]) continue;
+    const seen = new Set();
+    for (const row of byKind[ix.kind]) {
+      const id = row.id;
+      const where = `${ix.kind} ${id || '(no id)'}`;
+      if (seen.has(id)) err(ix.file, `duplicate id: ${id}`);
+      seen.add(id);
+      if (!new RegExp(`^${ix.prefix}[0-9]+$`).test(id)) err(ix.file, `${where}: id "${id}" is not ${ix.prefix}<n>`);
+      if (!WORK_STATUS.includes(row.status)) {
+        err(ix.file, `${where}: invalid status "${row.status}" — expected one of ${WORK_STATUS.join(' | ')}`);
+      }
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(row.updated || '')) err(ix.file, `${where}: updated "${row.updated}" is not YYYY-MM-DD`);
+      if (row.status === '[x]' && isEmptyCell(row.note)) err(ix.file, `${where}: done without proof — [x] needs a path, a result or a link in note`);
+      if (row.status === '[-]' && isEmptyCell(row.note)) err(ix.file, `${where}: dropped without a reason in note`);
+
+      if (ix.kind !== 'task' || isEmptyCell(row.home) || row.home === 'inline') continue;
+      const home = row.home.replace(/\\/g, '/');
+      if (!BRAIN_HOME_RE.test(home)) {
+        unverified.push({ file: path.relative(brainRoot, ix.file), message: `${where}: external home ${home} (read in place by its owner; not checked here)` });
+        continue;
+      }
+      if (fs.existsSync(path.join(brainRoot, home))) continue;
+      if (row.status === '[ ]') err(ix.file, `${where}: open task home does not resolve: ${home}`);
+      else warn(ix.file, `${where}: closed task home does not resolve: ${home} (a burned or moved playground; the row is the remaining record)`);
+    }
+  }
+
+  // Promotion provenance (contract §6, "Promotion"): P<n>.to and T<n>.from name each other.
+  const tasks = byKind.task || [];
+  const proposals = byKind.proposal || [];
+  const taskById = new Map(tasks.map(t => [t.id, t]));
+  const propById = new Map(proposals.map(p => [p.id, p]));
+  const propFile = path.join(brainRoot, 'proposals', 'INDEX.md');
+  const taskFile = path.join(brainRoot, 'tasks', 'INDEX.md');
+  for (const p of proposals) {
+    if (!/^T[0-9]+$/.test(p.to || '')) continue;
+    if (p.status !== '[x]') err(propFile, `proposal ${p.id}: promoted to ${p.to} but not [x]`);
+    if (!citesId(p.note, p.to)) err(propFile, `proposal ${p.id}: promoted, but note does not cite ${p.to}`);
+    const t = taskById.get(p.to);
+    if (!t || t.from !== p.id) err(propFile, `proposal ${p.id}: ${p.id} names ${p.to}, but ${p.to} is not from ${p.id}`);
+  }
+  for (const t of tasks) {
+    if (!/^P[0-9]+$/.test(t.from || '')) continue;
+    const p = propById.get(t.from);
+    if (!p || p.to !== t.id) err(taskFile, `task ${t.id}: ${t.id} is from ${t.from}, but ${t.from} does not name ${t.id}`);
+    const home = (t.home || '').replace(/\\/g, '/');
+    if (home.startsWith('proposals/') && !home.startsWith(`proposals/${t.from}-`)) {
+      err(taskFile, `task ${t.id}: home is another proposal's folder (${home}); a promoted task lives inline, in a playground or in proposals/${t.from}-<slug>/`);
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Run all checks
 // ---------------------------------------------------------------------------
 
@@ -848,6 +950,7 @@ checkRegistries();
 checkReferences();
 checkBudgets();
 checkStaleness();
+checkWorkItems();
 
 // ---------------------------------------------------------------------------
 // Report — grouped by file, then summary
@@ -868,6 +971,7 @@ function printFindings(label, list) {
 
 printFindings('ERRORS',   errors);
 printFindings('WARNINGS', warnings);
+printFindings('UNVERIFIED (outside the brain; never an error)', unverified);
 
 const totalErrors   = errors.length;
 const totalWarnings = warnings.length;
@@ -977,6 +1081,7 @@ function printRetrievalReadiness() {
 
 printRetrievalReadiness();
 
-console.log(`\nSummary: ${totalErrors} error(s), ${totalWarnings} warning(s)`);
+console.log(`\nSummary: ${totalErrors} error(s), ${totalWarnings} warning(s)` +
+  (unverified.length ? `, ${unverified.length} unverified` : ''));
 
 process.exit(totalErrors > 0 ? 1 : 0);
