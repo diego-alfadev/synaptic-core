@@ -332,6 +332,23 @@ test('graph.js: --neighbours prints the inbound edge and writes no HTML', () => 
   assert(missing.code === 1 && missing.out.includes('no-such-node'), `unknown node not refused\n${tail(missing.out)}`);
 });
 
+test('weave.md: every reader the typed-edge read table names exists and mentions its edge', () => {
+  const refs = path.join(ROOT, 'standalone', 'synaptic', 'references');
+  const doc = fs.readFileSync(path.join(refs, 'weave.md'), 'utf8');
+  const table = (doc.split('**Reading typed edges.**')[1] || '').split('**The status rule')[0];
+  const rows = table.split('\n').filter((l) => /^\| `[a-z_]+` \|/.test(l));
+  assert(rows.length >= 2, `read table not found or empty in weave.md (${rows.length} rows)`);
+  for (const row of rows) {
+    const edge = row.match(/^\| `([a-z_]+)` \|/)[1];
+    const readers = [...row.split('|')[3].matchAll(/references\/([a-z-]+\.md)/g)].map((m) => m[1]);
+    assert(readers.length, `${edge}: no reader named`);
+    for (const r of readers) {
+      assert(fs.existsSync(path.join(refs, r)), `${edge}: reader references/${r} does not exist`);
+      assert(fs.readFileSync(path.join(refs, r), 'utf8').includes(edge), `${edge}: references/${r} never mentions it`);
+    }
+  }
+});
+
 // --- export.js -----------------------------------------------------------------------------------
 test('export.js: single-file export contains every brain file under a FILE header', () => {
   const b = validBrain();
