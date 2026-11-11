@@ -130,6 +130,9 @@ Native curation reuses the bounded shared draft checker: one continuation of the
 host model, explicit saved sources (journal by default), persisted request/draft/receipt and structural
 checks. It never launches another model, adds write MCP tools, promotes knowledge or bypasses approval.
 Unsaved chat facts are not covered. Semantic correctness remains a review question.
+It coexists with the capture floor: its `journal/_activity/` markers and appended breadcrumbs do not
+invalidate a pending draft, provided `journal/_current.md` stays a selected source (the default). See
+[Coexisting with the capture floor](codex-curation.md#coexisting-with-the-capture-floor).
 
 Only Copilot top-level `decision`/`reason` is emitted. A valid first request uses `block` to request
 continuation. Pending work/errors emit `{}`, a sanitized diagnostic and exit 2 without another
