@@ -236,6 +236,36 @@ try{
       api.prepare(again);assert.equal(api.apply(again.out).state,'applied');assert.deepEqual(fs.readFileSync(path.join(s,'references/vscode.md')),restore);
     }
   });
+  test('a second bridge added after apply never blocks status or rollback',()=>{
+    const f=fixture();api.prepare(f.input);api.apply(f.out);
+    fs.appendFileSync(path.join(f.workspace,'AGENTS.md'),'\n'+api.START+'\nSynaptic project brain: `.synaptic/BRAIN.md`.\n'+api.END+'\n');
+    assert.throws(()=>api.prepare({...f.input,out:path.join(base,'second-'+Math.random().toString(16).slice(2))}),/MULTIPLE_ACTIVE_BRIDGES_REQUIRE_REVIEW/);
+    const s=api.status(f.out);assert.equal(s.files,'candidate-files-present');assert.deepEqual(s.bridgeWarning,{code:'MULTIPLE_ACTIVE_BRIDGES_REQUIRE_REVIEW'});
+    assert.equal(api.rollback(f.out).state,'restored');
+    for(const e of plan(f).entries.filter(e=>e.changed)){const file=path.join(f.workspace,e.path);if(e.before===null)assert(!fs.existsSync(file));else assert.equal(sha(fs.readFileSync(file)),e.before.sha256);}
+  });
+  test('a killed apply leaves a diagnosable lock; explicit recovery and rollback restore the original bytes',()=>{
+    const f=fixture(),original=snapshot(f.workspace);api.prepare(f.input);
+    const targets=plan(f).entries.filter(e=>e.changed).map(e=>path.join(f.workspace,e.path));
+    const childScript=`const fs=require('node:fs');const [mod,dir,targets]=process.argv.slice(1);const wanted=new Set(JSON.parse(targets));let n=0;
+      const rename=fs.renameSync;fs.renameSync=function(a,b){if(wanted.has(b) && ++n===3)process.kill(process.pid,'SIGKILL');return rename.apply(this,arguments);};
+      require(mod).apply(dir);`;
+    const child=spawnSync(process.execPath,['-e',childScript,path.join(product,'tools/vscode-integration.js'),f.out,JSON.stringify(targets)],{encoding:'utf8'});
+    assert.equal(child.signal,'SIGKILL',child.stderr);
+    const leftovers=()=>targets.flatMap(t=>fs.existsSync(path.dirname(t))?fs.readdirSync(path.dirname(t)).filter(n=>n.startsWith(path.basename(t)+'.synaptic-')):[]);
+    assert.equal(leftovers().length,1);
+    const s=api.status(f.out);assert.equal(s.lock.state,'retained');assert.equal(s.lock.pid,child.pid);assert.match(s.lock.createdAt,/^\d{4}-/);
+    assert.throws(()=>api.apply(f.out),/TRANSACTION_BUSY/);assert.throws(()=>api.rollback(f.out),/TRANSACTION_BUSY/);
+    const cli=args=>spawnSync(process.execPath,[path.join(product,'tools/vscode-integration.js'),...args],{encoding:'utf8'});
+    assert.equal(cli(['recover-lock','--plan',f.out,'--expected-sha256','0'.repeat(64),'--confirm-owner-stopped','yes']).stderr,'LOCK_CHANGED\n');
+    assert.equal(cli(['recover-lock','--plan',f.out,'--expected-sha256',s.lock.sha256,'--confirm-owner-stopped','no']).status,1);
+    const live=fixture();api.prepare(live.input);const liveLock=JSON.stringify({pid:process.pid,createdAt:new Date().toISOString()});write(live.out,'transaction.lock',liveLock);
+    assert.throws(()=>api.recoverLock(live.out,sha(Buffer.from(liveLock)),'yes'),/LOCK_OWNER_STILL_RUNNING|LOCK_OWNER_UNVERIFIED/);assert(fs.existsSync(path.join(live.out,'transaction.lock')));
+    const recovered=cli(['recover-lock','--plan',f.out,'--expected-sha256',s.lock.sha256,'--confirm-owner-stopped','yes']);assert.equal(recovered.status,0,recovered.stderr);
+    assert.equal(JSON.parse(recovered.stdout).state,'lock-recovered');assert.equal(api.status(f.out).lock.state,'none');
+    assert.equal(api.rollback(f.out).state,'restored');assert.deepEqual(snapshot(f.workspace),original);assert.equal(leftovers().length,0);
+    const fresh={...f.input,out:path.join(base,'fresh-'+Math.random().toString(16).slice(2))};assert.equal(api.prepare(fresh).state,'prepared-not-installed');
+  });
   console.log(`1..${count}`);
 }finally{
   assert(path.basename(base).startsWith('syn-vscode-') && path.dirname(base)===os.tmpdir());

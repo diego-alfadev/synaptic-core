@@ -64,8 +64,9 @@ function bridgeInventory(workspace){
   }
   if(inventory.length>1)fail('MULTIPLE_ACTIVE_BRIDGES_REQUIRE_REVIEW');return inventory;
 }
-function project(input){
-  const workspace=root(input),bridges=bridgeInventory(workspace),brain=root(safe(workspace,'.synaptic'));
+// status, rollback and lock recovery skip the bridge inventory: a bridge added after apply must not lock the owner out.
+function project(input,options={}){
+  const workspace=root(input),bridges=options.inventory===false?null:bridgeInventory(workspace),brain=root(safe(workspace,'.synaptic'));
   if(brain!==path.join(workspace,'.synaptic'))fail('PROJECT_BRAIN_REQUIRED');
   const text=createBrain(brain).read('BRAIN.md').text;
   const schema=parseFrontmatterLite(text.split('\n'));
@@ -107,7 +108,8 @@ function selections(input){
 function targetAllowed(ref){return ['AGENTS.md','.github/copilot-instructions.md',HOOK,'.synaptic/harness/setup/vscode-copilot.md','.synaptic/harness/setup/vscode-local.md'].includes(ref) || ref.startsWith('.github/skills/synaptic/') || ref.startsWith(RUNTIME+'/');}
 function directoryFiles(dir){const result=[];if(!fs.existsSync(dir))return result;function walk(p){for(const e of fs.readdirSync(p,{withFileTypes:true})){if(e.isSymbolicLink())fail('UNSAFE_PATH');const f=path.join(p,e.name);if(e.isDirectory())walk(f);else if(e.isFile())result.push(path.relative(dir,f).replace(/\\/g,'/'));else fail('UNSAFE_PATH');}}walk(dir);return result;}
 function inspectInstalledSkill(installed,selectedFiles){
-  if(!fs.existsSync(installed))return {state:'absent',reviewRequired:false};
+  // Rollback can leave empty parent directories; a tree with no files is not an install.
+  if(!fs.existsSync(installed) || !directoryFiles(installed).length)return {state:'absent',reviewRequired:false};
   if(fs.existsSync(safe(installed,'SOURCE.json'))){verifySkill(installed);if(directoryFiles(installed).some(f=>!selectedFiles.includes(f)))fail('REMOVED_SKILL_FILES_REQUIRE_REVIEW');return {state:'content-verified-receipt',reviewRequired:false};}
   const skill=existing(installed,'SKILL.md'),manifest=existing(installed,'MANIFEST.txt');
   if(skill===null || manifest===null || !/^name:\s*["']?synaptic["']?\s*$/m.test(decode(skill)))fail('UNRECOGNISED_EXISTING_SKILL');
@@ -176,10 +178,10 @@ function prepare(input){
   publishNewDirectory(stage,out);
   return {operation:'prepare',plan:path.join(out,'plan.json'),state:'prepared-not-installed',selected,changed:entries.filter(e=>e.changed).length,source:plan.source};
 }
-function loadPlan(input){
+function loadPlan(input,options={}){
   const dir=root(input),plan=json(safe(dir,'plan.json'));
   if(!plain(plan) || plan.format!=='synaptic-vscode-plan-v1' || !plain(plan.source) || !/^[a-f0-9]{40}$/.test(plan.source.commit) || !plain(plan.installedSkill) || !['absent','content-verified-receipt','legacy-source-unknown'].includes(plan.installedSkill.state) || plan.installedSkill.reviewRequired!==(plan.installedSkill.state==='legacy-source-unknown') || !Array.isArray(plan.entries) || !plan.entries.length || plan.entries.length>MAX_ENTRIES)fail('INVALID_PLAN');
-  selections(plan.selected);const {workspace}=project(plan.workspace);
+  selections(plan.selected);const {workspace}=project(plan.workspace,options);
   if(workspace!==plan.workspace || inside(workspace,dir))fail('INVALID_PLAN_SCOPE');
   const seen=new Set();
   for(const e of plan.entries){
@@ -192,11 +194,40 @@ function loadPlan(input){
   return {dir,plan,workspace};
 }
 function stateOf(data,e){if(data===null)return e.before===null?'before':'missing';const digest=sha(data);if(digest===e.after.sha256 && data.length===e.after.bytes)return 'after';if(e.before!==null && digest===e.before.sha256 && data.length===e.before.bytes)return 'before';return 'changed';}
+function takeLock(lock){
+  let fd;try{fd=fs.openSync(lock,'wx',0o600);}catch(e){if(e.code==='EEXIST')fail('TRANSACTION_BUSY');throw e;}
+  try{fs.writeSync(fd,JSON.stringify({pid:process.pid,createdAt:new Date().toISOString()})+'\n');}catch(e){fs.closeSync(fd);fs.unlinkSync(lock);throw e;}
+  return fd;
+}
+function lockState(dir){
+  const file=safe(dir,'transaction.lock');let data;try{data=bytes(file);}catch(e){if(e.code==='ENOENT')return {state:'none'};throw e;}
+  let owner=null;try{owner=JSON.parse(decode(data));}catch(_){}
+  const known=plain(owner) && Number.isInteger(owner.pid) && owner.pid>0;
+  return {state:'retained',sha256:sha(data),pid:known?owner.pid:null,createdAt:known && typeof owner.createdAt==='string'?owner.createdAt:null};
+}
+// Mirrors curation-stop recoverLock: only a hash-pinned lock whose recorded owner is not running is removed.
+function recoverLock(input,expectedHash,confirmed){
+  const {dir}=loadPlan(input,{inventory:false});
+  if(!/^[a-f0-9]{64}$/.test(expectedHash || '') || confirmed!=='yes')fail('EXPLICIT_LOCK_RECOVERY_REQUIRED');
+  const current=lockState(dir);if(current.state==='none')fail('NO_RETAINED_LOCK');
+  if(current.sha256!==expectedHash)fail('LOCK_CHANGED');
+  if(current.pid!==null){try{process.kill(current.pid,0);fail('LOCK_OWNER_STILL_RUNNING');}catch(e){if(e.code==='EPERM')fail('LOCK_OWNER_UNVERIFIED');if(e.code!=='ESRCH')throw e;}}
+  fs.unlinkSync(safe(dir,'transaction.lock'));
+  return {state:'lock-recovered',transaction:'unchanged',nextAction:'Run status, then rollback or review the pending transaction.'};
+}
+// A killed apply can leave atomic()'s temporary sibling; remove it only when it holds exactly the staged candidate.
+function strayTemporaries(dir,workspace,e){
+  const target=safe(workspace,e.path),parent=path.dirname(target),prefix=path.basename(target)+'.synaptic-';
+  if(!fs.existsSync(parent))return [];
+  const candidate=bytes(safe(dir,'files/'+e.path));
+  return fs.readdirSync(parent).filter(n=>n.startsWith(prefix) && /^[a-f0-9]{16}$/.test(n.slice(prefix.length))).map(n=>path.join(parent,n))
+    .filter(file=>{const st=fs.lstatSync(file);return st.isFile() && st.size===candidate.length && bytes(file).equals(candidate);});
+}
 function receipt(dir,value){atomic(safe(dir,'TRANSACTION.json'),Buffer.from(JSON.stringify(value,null,2)+'\n'));}
 function apply(input,options={}){
   const {dir,plan,workspace}=loadPlan(input),lock=safe(dir,'transaction.lock');let fd;
   if(plan.installedSkill.reviewRequired && options.acceptLegacy!=='yes')fail('LEGACY_SOURCE_REVIEW_REQUIRED');
-  try{fd=fs.openSync(lock,'wx');}catch(e){if(e.code==='EEXIST')fail('TRANSACTION_BUSY');throw e;}
+  fd=takeLock(lock);
   try{
     const observed=plan.entries.map(e=>stateOf(existing(workspace,e.path),e));
     const old=fs.existsSync(safe(dir,'TRANSACTION.json'))?json(safe(dir,'TRANSACTION.json')):null;
@@ -219,8 +250,8 @@ function apply(input,options={}){
   }finally{fs.closeSync(fd);fs.unlinkSync(lock);}
 }
 function rollback(input){
-  const {dir,plan,workspace}=loadPlan(input),lock=safe(dir,'transaction.lock');let fd;
-  try{fd=fs.openSync(lock,'wx');}catch(e){if(e.code==='EEXIST')fail('TRANSACTION_BUSY');throw e;}
+  const {dir,plan,workspace}=loadPlan(input,{inventory:false}),lock=safe(dir,'transaction.lock');let fd;
+  fd=takeLock(lock);
   try{
     if(!fs.existsSync(safe(dir,'TRANSACTION.json')))fail('NO_APPLY_TRANSACTION');
     const states=plan.entries.map(e=>stateOf(existing(workspace,e.path),e));
@@ -238,13 +269,14 @@ function rollback(input){
         if(e.before===null)fs.unlinkSync(destination);else atomic(destination,bytes(safe(dir,'before/'+e.path)),e.after);
         restored.push(e.path);
       }
+      let temporaries=0;for(const e of plan.entries.filter(e=>e.changed))for(const file of strayTemporaries(dir,workspace,e)){fs.unlinkSync(file);temporaries++;}
       receipt(dir,{state:'restored',restored,finishedAt:new Date().toISOString()});
-      return {state:'restored',restored:restored.length,knowledge:'not-targeted',note:'New empty parent directories may remain; no recursive cleanup was performed.'};
+      return {state:'restored',restored:restored.length,removedTemporaries:temporaries,knowledge:'not-targeted',note:'New empty parent directories may remain; no recursive cleanup was performed.'};
     }catch(e){try{receipt(dir,{state:'restore-pending',reason:e.code || e.message,restored});}catch(_){}throw e;}
   }finally{fs.closeSync(fd);fs.unlinkSync(lock);}
 }
 function status(input){
-  const {dir,plan,workspace}=loadPlan(input),observed=plan.entries.map(e=>({path:e.path,state:stateOf(existing(workspace,e.path),e)}));
+  const {dir,plan,workspace}=loadPlan(input,{inventory:false}),observed=plan.entries.map(e=>({path:e.path,state:stateOf(existing(workspace,e.path),e)}));
   const allAfter=observed.every(e=>e.state==='after');
   const last=fs.existsSync(safe(dir,'TRANSACTION.json'))?json(safe(dir,'TRANSACTION.json')):{state:'not-applied'};
   let curationState={selection:plan.selected.curation,state:'not-enabled'};
@@ -261,7 +293,8 @@ function status(input){
       captureState={selection:'counter',state:lock!==null?'pending-lock-review':counters===null?'no-counter-observation':'counter-observed',counts:counters,meaning:'validated adapter invocations, not unique host turns or touched files',nativeTrigger:'not-proven-by-adapter'};
     }catch(e){captureState={selection:'counter',state:'needs-checking',reason:e.code || 'COUNTER_UNREADABLE'};}
   }
-  return {observedAt:new Date().toISOString(),profile:plan.selected,files:allAfter?'candidate-files-present':'needs-checking',lastTransaction:last.state,changes:observed.filter(e=>e.state==='changed' || e.state==='missing'),capture:captureState,curation:curationState,loading:'needs-fresh-session-proof',nativeTrigger:'not-proven-by-status',semanticQuality:'not-checked',mcp:'not-enabled',observer:'explicit-check-only',note:'No global/user/policy hook inventory or continuous connection observation is performed.'};
+  let bridgeWarning=null;try{bridgeInventory(workspace);}catch(e){bridgeWarning={code:e.code || 'BRIDGE_INVENTORY_UNAVAILABLE'};}
+  return {observedAt:new Date().toISOString(),profile:plan.selected,files:allAfter?'candidate-files-present':'needs-checking',lastTransaction:last.state,lock:lockState(dir),bridgeWarning,changes:observed.filter(e=>e.state==='changed' || e.state==='missing'),capture:captureState,curation:curationState,loading:'needs-fresh-session-proof',nativeTrigger:'not-proven-by-status',semanticQuality:'not-checked',mcp:'not-enabled',observer:'explicit-check-only',note:'No global/user/policy hook inventory or continuous connection observation is performed.'};
 }
 function nativeEvent(event){
   // Copilot camelCase dialect, NOT a Codex event. No native turn id is documented.
@@ -296,18 +329,18 @@ function event(input,value){
   return {hook,status:{...result.status,adapter:'vscode-copilot',requestIdentity:'session-and-native-event-timestamp',nativeTrigger:'not-proven-by-adapter'}};
 }
 function options(args){
-  const op=args.shift(),value={};if(!['prepare','status','apply','rollback','event'].includes(op))fail('UNKNOWN_OPERATION');
-  const allowed=op==='prepare'?['workspace','package','out','harness','runtime','capture','curation','carrier','mcp','sha256','source']:op==='event'?['workspace','capture','curation','source']:op==='apply'?['plan','accept-legacy']:['plan'];
+  const op=args.shift(),value={};if(!['prepare','status','apply','rollback','recover-lock','event'].includes(op))fail('UNKNOWN_OPERATION');
+  const allowed=op==='prepare'?['workspace','package','out','harness','runtime','capture','curation','carrier','mcp','sha256','source']:op==='event'?['workspace','capture','curation','source']:op==='apply'?['plan','accept-legacy']:op==='recover-lock'?['plan','expected-sha256','confirm-owner-stopped']:['plan'];
   while(args.length){const key=args.shift(),v=args.shift();if(!key.startsWith('--') || !allowed.includes(key.slice(2)) || !v || v.startsWith('--'))fail('INVALID_ARGUMENTS');const name=key.slice(2);if(name==='source'){(value.sources || (value.sources=[])).push(v);}else{if(value[name]!==undefined)fail('DUPLICATE_OPTION');value[name]=v;}}
-  if(op==='prepare' && (!value.workspace || !value.package || !value.out || !value.harness) || op==='event' && !value.workspace || ['status','apply','rollback'].includes(op) && !value.plan)fail('MISSING_ARGUMENTS');
+  if(op==='prepare' && (!value.workspace || !value.package || !value.out || !value.harness) || op==='event' && !value.workspace || ['status','apply','rollback','recover-lock'].includes(op) && !value.plan)fail('MISSING_ARGUMENTS');
   return {op,value};
 }
 async function main(){const {op,value}=options(process.argv.slice(2));let result;
-  if(op==='prepare')result=prepare(value);else if(op==='status')result=status(value.plan);else if(op==='apply')result=apply(value.plan,{acceptLegacy:value['accept-legacy']});else if(op==='rollback')result=rollback(value.plan);else{const chunks=[];let count=0;for await(const chunk of process.stdin){count+=chunk.length;if(count>131072)fail('EVENT_INPUT_LIMIT');chunks.push(chunk);}let parsed;try{parsed=JSON.parse(decode(Buffer.concat(chunks)));}catch(e){if(e.code==='INVALID_UTF8')throw e;fail('INVALID_EVENT_JSON');}result=event(value,parsed);process.stdout.write(JSON.stringify(result.hook)+'\n');if(['pending','archived_pending'].includes(result.status.state) && result.hook.decision!=='block'){process.stderr.write('Synaptic VS Code curation pending; inspect explicit status and retained work.\n');process.exitCode=2;}return;}
+  if(op==='prepare')result=prepare(value);else if(op==='status')result=status(value.plan);else if(op==='apply')result=apply(value.plan,{acceptLegacy:value['accept-legacy']});else if(op==='rollback')result=rollback(value.plan);else if(op==='recover-lock')result=recoverLock(value.plan,value['expected-sha256'],value['confirm-owner-stopped']);else{const chunks=[];let count=0;for await(const chunk of process.stdin){count+=chunk.length;if(count>131072)fail('EVENT_INPUT_LIMIT');chunks.push(chunk);}let parsed;try{parsed=JSON.parse(decode(Buffer.concat(chunks)));}catch(e){if(e.code==='INVALID_UTF8')throw e;fail('INVALID_EVENT_JSON');}result=event(value,parsed);process.stdout.write(JSON.stringify(result.hook)+'\n');if(['pending','archived_pending'].includes(result.status.state) && result.hook.decision!=='block'){process.stderr.write('Synaptic VS Code curation pending; inspect explicit status and retained work.\n');process.exitCode=2;}return;}
   process.stdout.write(JSON.stringify(result)+'\n');
 }
 // Only a bare code, or a code plus a validated package path, reaches stderr: raw input never leaks.
 function diagnostic(e){const plainCode=/^[A-Z][A-Z0-9_]*$/;if(plainCode.test(e.code || ''))return e.code;const message=String(e.message || '');if(plainCode.test(message))return message;
   const detailed=/^([A-Z][A-Z0-9_]*): (.+)$/.exec(message);return detailed && validPath(detailed[2])?message:'OPERATION_FAILED';}
 if(require.main===module)main().catch(e=>{const code=diagnostic(e);if(process.argv[2]==='event'){process.stdout.write('{}\n');process.stderr.write('Synaptic VS Code event pending: '+code+'\n');process.exitCode=2;}else{process.stderr.write(code+'\n');process.exitCode=1;}});
-module.exports={prepare,apply,rollback,status,event,nativeEvent,options,START,END,HOOK,RUNTIME};
+module.exports={prepare,apply,rollback,status,recoverLock,event,nativeEvent,options,START,END,HOOK,RUNTIME};

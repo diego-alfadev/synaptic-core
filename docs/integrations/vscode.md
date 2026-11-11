@@ -45,8 +45,28 @@ Apply performs full preflight against fresh archived preimages and refuses chang
 preparation. It records progress and verifies results. An interrupted/failed transaction remains
 pending; it is not automatically resumed or treated as success. Rollback restores only touched
 targets, refuses later edits and retains newer knowledge. It can leave new empty parent directories;
-there is no recursive cleanup. A retained transaction lock is a busy/interrupted state for explicit
-diagnosis, never an invitation to delete another writer's lock.
+there is no recursive cleanup, and a later `prepare` treats a skill folder with no files as absent.
+A retained transaction lock is a busy/interrupted state for explicit diagnosis, never an invitation
+to delete another writer's lock.
+
+`status` and `rollback` always work on an existing plan. They skip the bridge inventory that
+`prepare` and `apply` enforce, so a bridge added after apply cannot lock you out: `status` reports it
+as `bridgeWarning` and `rollback` still restores every target.
+
+**After an interrupted apply** (killed process, crash, power loss):
+
+1. `status --plan <dir>` shows `lock: {state: "retained", pid, createdAt, sha256}` and the last
+   transaction state. `apply` and `rollback` refuse with `TRANSACTION_BUSY` while the lock exists.
+2. Make sure the process with that `pid` has stopped, then remove the lock explicitly:
+
+   ```text
+   node tools/vscode-integration.js recover-lock --plan /private/new-plan --expected-sha256 <sha256 from status> --confirm-owner-stopped yes
+   ```
+
+   It refuses a lock whose bytes changed (`LOCK_CHANGED`) or whose recorded owner is still running
+   (`LOCK_OWNER_STILL_RUNNING`). Only the lock is removed; the transaction record and staged files stay.
+3. `rollback --plan <dir>` restores the touched targets and removes any `<target>.synaptic-<16 hex>`
+   temporary file beside them whose bytes equal the staged candidate. Then prepare a new plan.
 
 ### Existing installs and scope conflicts
 
