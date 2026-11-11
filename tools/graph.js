@@ -31,7 +31,7 @@
 const fs   = require('node:fs');
 const path = require('node:path');
 
-const { buildBrainGraph, neighbours, parseFrontmatterLite } = require('./lib/brain-graph');
+const { buildBrainGraph, neighbours, parseFrontmatterLite, TYPED_EDGE_KEYS } = require('./lib/brain-graph');
 
 // ---------------------------------------------------------------------------
 // CLI parsing (preserve the existing surface: path / --out / --title)
@@ -88,6 +88,10 @@ try {
 if (neighboursOf !== null) {
   if (!['in', 'out', 'both'].includes(direction)) {
     console.error(`ERROR: --direction must be in, out or both (got "${direction}")`);
+    process.exit(1);
+  }
+  if (edgeType && !TYPED_EDGE_KEYS.includes(edgeType) && edgeType !== 'wikilink') {
+    console.error(`ERROR: unknown edge type "${edgeType}" — expected one of ${TYPED_EDGE_KEYS.join(', ')}, wikilink`);
     process.exit(1);
   }
   if (!neighboursOf || !g.nodeById[neighboursOf]) {
