@@ -11,6 +11,7 @@ Your Markdown brain remains the record.
 ## What changes for you
 
 - Tasks and proposals retain their context and completion evidence; exports preserve those records.
+  Closing a playground now archives it instead of deleting it, and `check.js` flags broken work items.
 - Setup distinguishes host wiring from actual loading and capture, with clearer recovery steps.
 - VS Code project setup stages a reviewable change and, with Node, supports explicit apply/status/
   rollback. Restricted environments retain an assisted file-based route without MCP or Node.
@@ -32,6 +33,8 @@ updating files alone does not activate them. [Upgrade guide](UPGRADING.md).
 Use the CI result for the exact candidate commit. Filesystem/protocol tests are distinct from host
 loading, native firing and semantic quality. The real owner-run VS Code journey remains pending.
 Automatic capture is claimed only for verified host configurations. Live benchmark outcomes are not measured.
+The work-record procedures (archive on close, external task owners, the status rule) are prose;
+whether agents follow them has not been piloted on a real host.
 
 Detailed changes belong in the changelog. Installation alternatives, protocol details and migration
 history belong in linked guides rather than this release announcement.

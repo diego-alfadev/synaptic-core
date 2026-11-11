@@ -17,6 +17,19 @@ Brain schema remains **1.0**. No tag, stable support claim or publication is imp
   no-MCP assisted operation. The first stable requires a demonstrated automatic-curation profile
   and the owner-run VS Code journey; no publication is implied.
 
+### Work record and readable edges
+
+- `check.js` validates `tasks/INDEX.md` and `proposals/INDEX.md`: an open row's home must resolve,
+  `[x]` needs proof, ids are unique and statuses valid, promotion provenance holds. A closed row with a
+  dead home is a warning; a home outside the brain is listed as unverified.
+- Closing a playground moves it to `playgrounds/archive/<year>/<id>/` with an asset manifest instead
+  of burning it, and only with no curation request pending. Existing brains are not migrated, and their
+  `playgrounds/.gitignore` needs the new `archive/*/*/scratch/` line by hand.
+- `export.js` exports the work documents task rows point at and lists external or dead homes.
+- `brain-graph.js` keeps edge direction and type; `graph.js --neighbours` answers inbound queries.
+- External-owner mode, the pre-work rule and the status rule are prose procedures; agent compliance
+  is not yet piloted on a real host.
+
 ### Local CORE completion and Cortex candidate
 
 - Read-only situation reporting follows task sources in place; skill portability is a data-only
