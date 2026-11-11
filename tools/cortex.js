@@ -19,5 +19,5 @@ function main(args) {
     process.stdout.write(JSON.stringify(result)+'\n');
   } finally {port.close();}
 }
-if(require.main===module) {try{main(process.argv.slice(2));}catch(e){process.stderr.write(String(e.message)+'\n');process.exitCode=1;}}
+if(require.main===module) {try{main(process.argv.slice(2));}catch(e){process.stderr.write(String(e.message)+(e.ref?': '+e.ref:'')+'\n');process.exitCode=1;}}
 module.exports={main};

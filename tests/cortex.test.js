@@ -72,5 +72,33 @@ try{
     const r=run([brain,'search','comet','--no-sqlite']);assert.equal(r.status,0,r.stderr);assert.equal(JSON.parse(r.stdout).hits.length,1);
     for(const args of [[brain,'read','../secret.md'],[brain,'status','extra'],[brain,'status','--wat'],[brain,'status','--cache-dir']]) assert.equal(run(args).status,1);
   });
+  test('bad notes are skipped by name; search and status keep serving the valid notes',()=>{
+    const mixed=path.join(temp,'mixed brain é');const add=(r,t)=>{const p=path.join(mixed,r);fs.mkdirSync(path.dirname(p),{recursive:true});fs.writeFileSync(p,t);};
+    add('BRAIN.md','---\nschema_version: 1.0\n---\n# Mixed\n');add('knowledge/INDEX.md','[[alpha]] [[gamma]]');
+    add('knowledge/a/alpha.md','Alpha telescope\n');add('knowledge/c/gamma.md','Gamma telescope\n');
+    add('knowledge/b/alpha.md','Duplicate telescope\n');
+    add('knowledge/bad/utf16.md',Buffer.concat([Buffer.from([0xff,0xfe]),Buffer.from('UTF-16 telescope\n','utf16le')]));
+    add('knowledge/bad/invalid.md',Buffer.from([0x74,0x65,0x6c,0x65,0x73,0x63,0x6f,0x70,0x65,0x20,0xe9]));
+    add('knowledge/bad/big.md','telescope '+'x'.repeat(1024*1024));
+    add('knowledge/SCRATCH/x.md','Scratch telescope\n');
+    const external=path.join(temp,'external-corpus');add('../external-corpus/secret.md','Outside telescope\n');fs.symlinkSync(external,path.join(mixed,'knowledge','link'),'junction');
+    const expected=[['knowledge/SCRATCH','EXCLUDED_SCRATCH'],['knowledge/b/alpha.md','DUPLICATE_NODE_ID'],['knowledge/bad/big.md','DOCUMENT_TOO_LARGE'],
+      ['knowledge/bad/invalid.md','DOCUMENT_INVALID_ENCODING'],['knowledge/bad/utf16.md','DOCUMENT_INVALID_ENCODING'],['knowledge/link','SYMLINK_REF']].map(([ref,reason])=>({ref,reason}));
+    for(const options of [{},{sqlite:false}]){
+      const p=createRetrieval(mixed,options);ports.push(p);
+      const r=p.search('telescope');assert.deepEqual(r.hits.map(h=>h.ref).sort(),['knowledge/a/alpha.md','knowledge/c/gamma.md']);
+      assert(r.hits.every(h=>h.constructor===Object));assert.deepEqual(r.skipped,expected);assert.match(r.degraded,/documents-skipped/);
+      const s=p.status();assert.equal(s.nodeCount,2);assert.deepEqual(s.skipped,expected);assert.match(s.degraded,/documents-skipped/);
+      if(options.sqlite===false)assert.equal(s.degraded,'sqlite-disabled,documents-skipped');
+      assert(!JSON.stringify([r,s]).includes(temp));
+    }
+    const plain=createRetrieval(brain,{sqlite:false});ports.push(plain);assert.deepEqual(plain.search('comet').skipped,[]);assert.equal(plain.status().degraded,'sqlite-disabled');
+    const p=createRetrieval(mixed,{sqlite:false});ports.push(p);
+    assert.throws(()=>p.read('knowledge/SCRATCH/x.md'),/INVALID_REF/);assert.throws(()=>p.read('knowledge/link/secret.md'),/SYMLINK_REF/);
+    const cli=path.resolve(__dirname,'../tools/cortex.js');
+    const bad=spawnSync(process.execPath,[cli,mixed,'read','knowledge/bad/invalid.md','--no-sqlite'],{encoding:'utf8'});
+    assert.equal(bad.status,1);assert.equal(bad.stderr,'DOCUMENT_INVALID_ENCODING: knowledge/bad/invalid.md\n');
+    const ok=spawnSync(process.execPath,[cli,mixed,'status','--no-sqlite'],{encoding:'utf8'});assert.equal(ok.status,0,ok.stderr);assert.equal(JSON.parse(ok.stdout).skipped.length,6);
+  });
   console.log(`1..${count}`);
 }finally{for(const p of ports){try{p.close();}catch(_){}}fs.rmSync(temp,{recursive:true,force:true});}

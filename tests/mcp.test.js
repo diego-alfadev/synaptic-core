@@ -24,6 +24,20 @@ async function main(){try{
   test('traversal and encoded resource traversal do not expose outside data',()=>{fs.writeFileSync(path.join(root,'outside.md'),'Outside sentinel');const r=exchange([init,ready,req(2,'tools/call',{name:'brain_read',arguments:{ref:'../outside.md'}}),req(3,'resources/read',{uri:'synaptic:///%2e%2e/outside.md'})]);assert.equal(r[1].result.isError,true);assert(r[2].error);assert(!JSON.stringify(r).includes('Outside sentinel'));assert(!JSON.stringify(r).includes(root));});
   test('bad JSON, invalid ids, premature calls and malformed initialize fail without crashing',()=>{const r=exchange(['{',req(2,'tools/list'),req(3,'initialize',{}),{jsonrpc:'2.0',id:{bad:1},method:'ping'},init,ready]);assert.deepEqual(r.slice(0,4).map(x=>x.error.code),[-32700,-32002,-32602,-32600]);assert(r[4].result);});
   test('oversized stdio input is bounded and exits with an error',()=>{const r=spawnSync(process.execPath,[server,brain,'--no-sqlite'],{input:'x'.repeat(MAX_MESSAGE_BYTES+1),encoding:'utf8',maxBuffer:2*1024*1024,timeout:10000});assert.equal(r.status,1,r.stderr);assert.equal(JSON.parse(r.stdout.trim()).error.message,'Message too large');});
+  test('a bad note is named and skipped; search and status still answer from the valid notes',()=>{
+    const mixed=path.join(root,'mixed é');fs.mkdirSync(path.join(mixed,'knowledge'),{recursive:true});
+    fs.writeFileSync(path.join(mixed,'BRAIN.md'),'---\nschema_version: 1.0\n---\n# Mixed\n');
+    fs.writeFileSync(path.join(mixed,'knowledge','one.md'),'One telescope\n');fs.writeFileSync(path.join(mixed,'knowledge','two.md'),'Two telescope\n');
+    fs.writeFileSync(path.join(mixed,'knowledge','bad.md'),Buffer.from([0x74,0xe9]));
+    const input=[init,ready,req(2,'tools/call',{name:'brain_search',arguments:{query:'telescope'}}),req(3,'tools/call',{name:'brain_status'}),req(4,'tools/call',{name:'brain_read',arguments:{ref:'knowledge/bad.md'}})].map(m=>JSON.stringify(m)).join('\n')+'\n';
+    const out=spawnSync(process.execPath,[server,mixed,'--no-sqlite'],{input,encoding:'utf8',timeout:10000});assert.equal(out.status,0,out.stderr);
+    const r=out.stdout.trim().split('\n').map(s=>JSON.parse(s));const skipped=[{ref:'knowledge/bad.md',reason:'DOCUMENT_INVALID_ENCODING'}];
+    const search=JSON.parse(r[1].result.content[0].text),status=JSON.parse(r[2].result.content[0].text);
+    assert.deepEqual(search.hits.map(h=>h.ref).sort(),['knowledge/one.md','knowledge/two.md']);assert.deepEqual(search.skipped,skipped);
+    assert.equal(status.nodeCount,2);assert.deepEqual(status.skipped,skipped);assert.match(status.degraded,/documents-skipped/);
+    assert.equal(r[3].result.isError,true);assert.equal(r[3].result.content[0].text,'DOCUMENT_INVALID_ENCODING: knowledge/bad.md');
+    assert(!out.stdout.includes(root));
+  });
   await new Promise((resolve,reject)=>{
     const child=spawn(process.execPath,[server,brain,'--no-sqlite'],{stdio:['pipe','pipe','pipe']});
     const timeout=setTimeout(()=>{child.kill();reject(Error('MCP kill test timeout'));},10000);

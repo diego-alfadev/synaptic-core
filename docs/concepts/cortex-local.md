@@ -24,8 +24,15 @@ subsequent searches fingerprint current content and confirm every returned hit a
 
 Search returns a capability declaration. The SQLite path is ranked (uncalibrated BM25); the fallback
 is unranked. Scores are never comparable across providers. No status/lifecycle label hides a node.
-Symbolic links and junctions within the corpus are rejected, as are duplicate node basenames; repair
-the corpus rather than relying on first-wins identity or indexing outside its declared root.
+A note Cortex cannot serve never takes the rest of the brain down. `search` and `status` keep answering
+from the readable notes and list each excluded entry in `skipped: [{ref, reason}]`: invalid UTF-8 or
+UTF-16 (`DOCUMENT_INVALID_ENCODING`), over 1 MiB (`DOCUMENT_TOO_LARGE`), a symbolic link or junction
+(`SYMLINK_REF`, never followed), the later of two notes with the same basename (`DUPLICATE_NODE_ID`),
+a `scratch` folder in any letter case (`EXCLUDED_SCRATCH`) and an unreadable folder. Then `degraded`
+includes `documents-skipped`; it is a comma-separated list of reasons, or `null`. `nodeCount` counts
+readable notes. Edge, orphan and MOC-reachable counts are `null` while anything is skipped, because the
+shared graph reader cannot exclude those files. Repair the corpus rather than relying on the skip. An
+explicit `read` of a bad or outside ref is still an error; the CLI and `brain_read` print `CODE: ref`.
 
 The MCP surface supports newline-delimited stdio JSON-RPC for protocol 2025-11-25, initialize/initialized,
 ping, tools/list/call and resources/list/read. `brain_status`, `brain_search` and `brain_read` delegate

@@ -7,7 +7,10 @@ const {TextDecoder} = require('node:util');
 const graph = require('./brain-graph');
 const MAX_DOCUMENT_BYTES = 1024 * 1024;
 
-function fault(code) { const e = new Error(code); e.code = code; return e; }
+// The message stays the bare code; `ref` carries the brain-relative path for callers to print.
+function fault(code, ref) { const e = new Error(code); e.code = code; if (ref !== undefined) e.ref = ref; return e; }
+const isFault = e => Boolean(e && e.code && !e.code.startsWith('E'));
+const isScratch = name => name.toLowerCase() === 'scratch';
 function inside(root, target) {
   const rel = path.relative(root, target);
   return rel === '' || (!path.isAbsolute(rel) && rel !== '..' && !rel.startsWith('..' + path.sep));
@@ -20,7 +23,7 @@ function createBrain(input) {
   function resolve(ref) {
     if (typeof ref !== 'string' || !ref || ref.includes('\\') || ref.includes('\0') || ref.includes(':') ||
         path.isAbsolute(ref) || /^[A-Za-z]:/.test(ref) || ref.split('/').some(p => !p || p === '.' || p === '..' || p.startsWith('.')) ||
-        !ref.endsWith('.md') || ref.split('/').includes('scratch')) throw fault('INVALID_REF');
+        !ref.endsWith('.md') || ref.split('/').some(isScratch)) throw fault('INVALID_REF');
     const candidate = path.resolve(root, ref);
     if (!inside(root, candidate)) throw fault('INVALID_REF');
     try {
@@ -36,6 +39,10 @@ function createBrain(input) {
     } catch (e) { if (e.code && !e.code.startsWith('E')) throw e; throw fault('DOCUMENT_UNAVAILABLE'); }
   }
   function read(ref) {
+    try { return readChecked(ref); }
+    catch (e) { if (isFault(e) && e.ref === undefined && typeof ref === 'string') e.ref = ref; throw e; }
+  }
+  function readChecked(ref) {
     const canonical = resolve(ref);
     let fd;
     try {
@@ -51,52 +58,72 @@ function createBrain(input) {
     } catch (e) { if (e.code && !e.code.startsWith('E')) throw e; throw fault('DOCUMENT_UNAVAILABLE'); }
     finally { if (fd !== undefined) fs.closeSync(fd); }
   }
-  // Reject symbolic links, including junctions; do not silently traverse another corpus.
-  function files(prefix = 'knowledge') {
+  // Symbolic links (including junctions), unreadable folders and scratch folders are never traversed;
+  // they are reported in `skipped` so one bad entry cannot hide the rest of the corpus.
+  function walk(prefix) {
     if (typeof prefix !== 'string' || !/^[A-Za-z][A-Za-z0-9_-]*$/.test(prefix)) throw fault('INVALID_REF');
-    const result = [];
+    const refs = [], skipped = [];
     const dir = path.join(root, prefix);
-    if (!fs.existsSync(dir)) return result;
-    function walk(current) {
+    if (!fs.existsSync(dir)) return { refs, skipped };
+    const relative = full => path.relative(root, full).replace(/\\/g, '/');
+    function visit(current) {
       let entries;
       try { entries = fs.readdirSync(current, { withFileTypes: true }); }
-      catch (_) { throw fault('CORPUS_UNREADABLE'); }
+      catch (_) { skipped.push({ ref: relative(current), reason: 'CORPUS_UNREADABLE' }); return; }
       entries.sort((a,b) => a.name < b.name ? -1 : a.name > b.name ? 1 : 0);
       for (const entry of entries) {
-        if (entry.name.startsWith('.') || entry.name === 'scratch') continue;
+        if (entry.name.startsWith('.')) continue;
         const full = path.join(current, entry.name);
-        if (entry.isSymbolicLink()) throw fault('SYMLINK_REF');
-        if (!inside(root, fs.realpathSync(full))) throw fault('INVALID_REF');
-        if (entry.isDirectory()) walk(full);
-        else if (entry.isFile() && entry.name.endsWith('.md')) result.push(path.relative(root, full).replace(/\\/g, '/'));
+        if (isScratch(entry.name)) { if (entry.isDirectory()) skipped.push({ ref: relative(full), reason: 'EXCLUDED_SCRATCH' }); continue; }
+        if (entry.isSymbolicLink()) { skipped.push({ ref: relative(full), reason: 'SYMLINK_REF' }); continue; }
+        let real;
+        try { real = fs.realpathSync(full); } catch (_) { skipped.push({ ref: relative(full), reason: 'DOCUMENT_UNAVAILABLE' }); continue; }
+        if (!inside(root, real)) { skipped.push({ ref: relative(full), reason: 'INVALID_REF' }); continue; }
+        if (entry.isDirectory()) visit(full);
+        else if (entry.isFile() && entry.name.endsWith('.md')) refs.push(relative(full));
       }
     }
-    if (fs.lstatSync(dir).isSymbolicLink()) throw fault('SYMLINK_REF');
-    walk(dir);
-    return result;
+    if (fs.lstatSync(dir).isSymbolicLink()) throw fault('SYMLINK_REF', prefix);
+    visit(dir);
+    return { refs, skipped };
   }
-  function documents() {
-    const ids = new Set();
-    return files().filter(ref => !graph.isMocFile(ref)).map(ref => {
+  function files(prefix = 'knowledge') { return walk(prefix).refs; }
+  function readOrSkip(ref, skipped) {
+    try { return read(ref); }
+    catch (e) { if (!isFault(e)) throw e; skipped.push({ ref, reason: e.code }); return null; }
+  }
+  const byRef = (a,b) => a.ref < b.ref ? -1 : a.ref > b.ref ? 1 : 0;
+  // Readable knowledge nodes plus `skipped: [{ref, reason}]`. On a duplicate basename the
+  // first file in walk order keeps the id and the later one is skipped.
+  function scan() {
+    const { refs, skipped } = walk('knowledge');
+    const ids = new Set(), docs = [];
+    for (const ref of refs) {
+      if (graph.isMocFile(ref)) continue;
       const id = path.posix.basename(ref, '.md').toLowerCase();
-      if (ids.has(id)) throw fault('DUPLICATE_NODE_ID');
+      if (ids.has(id)) { skipped.push({ ref, reason: 'DUPLICATE_NODE_ID' }); continue; }
       ids.add(id);
-      const doc = read(ref);
-      const metadata = graph.parseFrontmatterLite(doc.text.split('\n')) || {};
-      return { ...doc, id, metadata };
-    });
+      const doc = readOrSkip(ref, skipped);
+      if (doc) docs.push({ ...doc, id, metadata: graph.parseFrontmatterLite(doc.text.split('\n')) || {} });
+    }
+    return { refs, documents: docs, skipped };
   }
+  function corpus() { const { documents: docs, skipped } = scan(); return { documents: docs, skipped: skipped.sort(byRef) }; }
+  function documents() { return scan().documents; }
   function status() {
-    // Validate every file before using the existing shared graph's filesystem reader.
-    const docs = documents();
-    for (const ref of files()) read(ref);
+    const { refs, documents: docs, skipped } = scan();
+    for (const ref of refs) if (graph.isMocFile(ref)) readOrSkip(ref, skipped);
+    skipped.sort(byRef);
+    const result = { schema: (graph.parseFrontmatterLite(read('BRAIN.md').text.split('\n')) || {}).schema_version || null,
+      nodeCount: docs.length, edgeCount: null, orphanCount: null, mocReachableCount: null,
+      source: 'current-files', coreProcedure: 'references/audit.md', skipped, degraded: skipped.length ? 'documents-skipped' : null };
+    // The shared graph reader cannot exclude skipped files, so topology is reported only for a clean corpus.
+    if (skipped.length) return result;
     const g = graph.buildBrainGraph(root);
     if (g.nodeCount !== docs.length) throw fault('CORPUS_CHANGED');
-    return { schema: (graph.parseFrontmatterLite(read('BRAIN.md').text.split('\n')) || {}).schema_version || null,
-      nodeCount: docs.length, edgeCount: g.edgeCount, orphanCount: g.orphanCount,
-      mocReachableCount: g.mocReachableCount, source: 'current-files', coreProcedure: 'references/audit.md' };
+    return { ...result, edgeCount: g.edgeCount, orphanCount: g.orphanCount, mocReachableCount: g.mocReachableCount };
   }
   read('BRAIN.md'); // An existing directory is not proof of a valid brain install.
-  return Object.freeze({ read, files, documents, status });
+  return Object.freeze({ read, files, documents, corpus, status });
 }
 module.exports = { createBrain, inside, fault, MAX_DOCUMENT_BYTES };
