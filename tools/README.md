@@ -157,11 +157,15 @@ rather than embedded.
 | `{prefix}-core.md` | `BRAIN.md` + `harness/` |
 | `{prefix}-knowledge.md` | `knowledge/` |
 | `{prefix}-registries.md` | `registries/` |
-| `{prefix}-refs-harness.md` | `references/` + `templates/` + `journal/` |
+| `{prefix}-refs-harness.md` | `references/` + `templates/` + `journal/` + `tasks/` + `proposals/` + work documents |
 
 **Ordering:** deterministic (section priority, then alphabetical within section).
-`playgrounds/` README is included in single-file mode; actual task dirs are omitted
-(they are burnable working memory, not knowledge).
+
+**Work documents:** `tasks/` and `proposals/` are exported whole. For each `tasks/INDEX.md` row, the
+document its `home` points at is exported too, open or closed (`playgrounds/<id>/tasks.md`, or
+`playgrounds/archive/<year>/<id>/tasks.md` after close). A home outside the brain (another harness's
+file) or one that does not resolve is listed under "Work documents referenced, not included", never
+embedded. Other playground files and every `scratch/` stay out; the `playgrounds/` README is included.
 
 **No-runtime fallback:** run `/export` — the skill reads files in the same order and
 concatenates them into the chat context or a file.

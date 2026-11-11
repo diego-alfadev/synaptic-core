@@ -106,6 +106,8 @@ function check(brain, expectCode, includes) {
   for (const s of includes || []) assert(r.out.includes(s), `check.js output lacks: ${s}\n${tail(r.out)}`);
   return r;
 }
+const TASK_HEAD = '| id | status | title | home | from | note | updated |\n|---|---|---|---|---|---|---|\n';
+const PROP_HEAD = '| id | status | title | from | to | note | updated |\n|---|---|---|---|---|---|---|\n';
 
 // --- check.js: the contract -----------------------------------------------------------------------
 test('check.js: a minimal valid brain exits 0', () => { check(validBrain(), 0); });
@@ -453,25 +455,77 @@ test('check.js: ignores playground scratch but still diagnoses ordinary task art
   write(b, 'playgrounds/spike/result.md', '[[missing-real-target]]');
   check(b, 1, ['missing-real-target']);
 });
-test('export.js: preserves tasks and proposal details in single and split exports', () => {
+test('export.js: preserves tasks, proposal details and the work documents rows point at, in single and split exports', () => {
   const b = validBrain();
-  write(b, 'tasks/INDEX.md', '# Task index');
+  write(b, 'tasks/INDEX.md', `# Task index\n\n${'| id | status | title | home | from | note | updated |\n|---|---|---|---|---|---|---|\n'}` +
+    '| T1 | [ ] | Spike | playgrounds/spike/tasks.md | — |  | 2026-11-01 |\n');
   write(b, 'proposals/P1-example/details.md', '# Proposal detail');
+  write(b, 'playgrounds/spike/tasks.md', '# Spike\n\nSPIKE-WORK-DOCUMENT\n');
   write(b, 'playgrounds/spike/scratch/raw.md', 'SCRATCH-MUST-NOT-EXPORT');
   const out = path.join(tmp('work-export'), 'brain.md');
   assert(tool('export.js', [b, out]).code === 0, 'single export failed');
   const text = fs.readFileSync(out, 'utf8');
   assert(text.includes('## FILE: tasks/INDEX.md') && text.includes('## FILE: proposals/P1-example/details.md'), 'work records lost');
+  assert(text.includes('## FILE: playgrounds/spike/tasks.md') && text.includes('SPIKE-WORK-DOCUMENT'), 'work document not exported');
   assert(!text.includes('SCRATCH-MUST-NOT-EXPORT'), 'scratch leaked');
   const prefix = path.join(tmp('work-split'), 'brain');
   assert(tool('export.js', [b, prefix, '--split']).code === 0, 'split export failed');
   const split = fs.readFileSync(prefix + '-refs-harness.md', 'utf8');
   assert(split.includes('## FILE: tasks/INDEX.md') && split.includes('## FILE: proposals/P1-example/details.md'), 'split lost work records');
+  assert(split.includes('## FILE: playgrounds/spike/tasks.md'), 'split lost the work document');
+});
+
+// The record survives close: a closed playground lives under playgrounds/archive/<year>/<id>/.
+function closedWorkBrain() {
+  const b = validBrain();
+  write(b, 'tasks/INDEX.md', `# Tasks\n\n${TASK_HEAD}` + [
+    '| T1 | [ ] | Live work | playgrounds/live/tasks.md | — |  | 2026-11-01 |',
+    '| T2 | [x] | Closed work | playgrounds/archive/2026/t2-done/tasks.md | — | [[node-one]] updated | 2026-11-03 |',
+    '| T3 | [ ] | Upstream work | odd/tasks/search-filters.md | — |  | 2026-11-01 |',
+    '| T4 | [x] | Burned long ago | playgrounds/burned/tasks.md | — | [[node-two]] written | 2026-09-01 |',
+  ].join('\n') + '\n');
+  write(b, 'playgrounds/live/tasks.md', '# Live\n\nLIVE-DOCUMENT\n');
+  write(b, 'playgrounds/archive/2026/t2-done/tasks.md', '# Closed\n\nCLOSED-DOCUMENT\n');
+  write(b, 'playgrounds/archive/2026/t2-done/scratch/plot.png', 'ASSET-MUST-NOT-EXPORT');
+  return b;
+}
+
+test('export.js: one open and one closed work item export both documents; external and dead homes are referenced, not included', () => {
+  const b = closedWorkBrain();
+  const out = path.join(tmp('closed-export'), 'brain.md');
+  const r = tool('export.js', [b, out]);
+  assert(r.code === 0, `export.js exited ${r.code}\n${tail(r.out)}`);
+  const text = fs.readFileSync(out, 'utf8');
+  for (const s of ['## FILE: playgrounds/live/tasks.md', 'LIVE-DOCUMENT',
+    '## FILE: playgrounds/archive/2026/t2-done/tasks.md', 'CLOSED-DOCUMENT']) assert(text.includes(s), `export lacks: ${s}`);
+  assert(!text.includes('ASSET-MUST-NOT-EXPORT'), 'an archived asset was exported');
+  assert(/referenced, not included[\s\S]*T3[^\n]*odd\/tasks\/search-filters\.md[^\n]*external/.test(text), 'external home not listed');
+  assert(/referenced, not included[\s\S]*T4[^\n]*playgrounds\/burned\/tasks\.md[^\n]*does not resolve/.test(text), 'dead home not listed');
+});
+
+test('check.js: a closed row homed under playgrounds/archive/ resolves; one still in a live playground warns', () => {
+  const b = closedWorkBrain();
+  let r = check(b, 0);
+  assert(!r.out.includes('t2-done'), `archived home reported\n${tail(r.out)}`);
+  write(b, 'tasks/INDEX.md', `# Tasks\n\n${TASK_HEAD}| T1 | [x] | Closed, not moved | playgrounds/live/tasks.md | — | [[node-one]] updated | 2026-11-03 |\n`);
+  r = check(b, 0, ['closed task still homed in a live playground: playgrounds/live/tasks.md']);
+});
+
+test('templates/playgrounds/.gitignore: an asset in an archived playground\'s scratch/ is ignored, its document is not', () => {
+  if (spawnSync('git', ['--version']).status !== 0) { info('git not available: archive ignore rule not tested'); return; }
+  const ws = tmp('archive-ignore');
+  copyDir(path.join(TEMPLATES, 'playgrounds'), path.join(ws, 'playgrounds'));
+  for (const f of ['playgrounds/archive/2026/t2-done/scratch/plot.png', 'playgrounds/archive/2026/t2-done/tasks.md',
+    'playgrounds/archive/2026/t2-done/result.md', 'playgrounds/live/scratch/raw.csv']) write(ws, f, 'x');
+  assert(spawnSync('git', ['init', '-q'], { cwd: ws }).status === 0, 'git init failed');
+  const ignored = (f) => spawnSync('git', ['check-ignore', '-q', f], { cwd: ws }).status === 0;
+  assert(ignored('playgrounds/archive/2026/t2-done/scratch/plot.png'), 'archived scratch asset is not ignored');
+  assert(ignored('playgrounds/live/scratch/raw.csv'), 'live scratch is no longer ignored');
+  assert(!ignored('playgrounds/archive/2026/t2-done/tasks.md'), 'archived work document is ignored');
+  assert(!ignored('playgrounds/archive/2026/t2-done/result.md'), 'archived artifact is ignored');
 });
 
 // --- check.js: work items (tasks/INDEX.md, proposals/INDEX.md) --------------------------------------
-const TASK_HEAD = '| id | status | title | home | from | note | updated |\n|---|---|---|---|---|---|---|\n';
-const PROP_HEAD = '| id | status | title | from | to | note | updated |\n|---|---|---|---|---|---|---|\n';
 const PROMOTION = path.join(ROOT, 'tests', 'capture-floor', 'fixtures', 'promotion');
 const UPSTREAM_DOC = path.join(ROOT, 'tests', 'fixtures', 'external-home', 'odd', 'tasks', 'search-filters.md');
 function summary(out) {

@@ -846,7 +846,8 @@ function checkStaleness() {
 //           id; a status outside [ ] / [x] / [-]; and the provenance rules of the promotion
 //           procedure (ids, dates, [-] reason, from/to symmetry).
 //   WARN  — a CLOSED row whose brain-side home does not resolve: every brain that burned a
-//           playground under the old default has such rows, and nothing migrates them.
+//           playground under the old default has such rows, and nothing migrates them. Also a
+//           closed row still homed in a live playground (closing moves it under archive/).
 //   UNVERIFIED — a home outside the brain (another harness's file, resolved from the workspace
 //           root). check.js does not know the workspace root, so it never judges these.
 //
@@ -905,7 +906,12 @@ function checkWorkItems() {
         unverified.push({ file: path.relative(brainRoot, ix.file), message: `${where}: external home ${home} (read in place by its owner; not checked here)` });
         continue;
       }
-      if (fs.existsSync(path.join(brainRoot, home))) continue;
+      if (fs.existsSync(path.join(brainRoot, home))) {
+        if (row.status !== '[ ]' && home.startsWith('playgrounds/') && !home.startsWith('playgrounds/archive/')) {
+          warn(ix.file, `${where}: closed task still homed in a live playground: ${home} (closing moves it to playgrounds/archive/<year>/<id>/)`);
+        }
+        continue;
+      }
       if (row.status === '[ ]') err(ix.file, `${where}: open task home does not resolve: ${home}`);
       else warn(ix.file, `${where}: closed task home does not resolve: ${home} (a burned or moved playground; the row is the remaining record)`);
     }
