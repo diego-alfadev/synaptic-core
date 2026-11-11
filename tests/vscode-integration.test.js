@@ -252,7 +252,8 @@ try{
       const rename=fs.renameSync;fs.renameSync=function(a,b){if(wanted.has(b) && ++n===3)process.kill(process.pid,'SIGKILL');return rename.apply(this,arguments);};
       require(mod).apply(dir);`;
     const child=spawnSync(process.execPath,['-e',childScript,path.join(product,'tools/vscode-integration.js'),f.out,JSON.stringify(targets)],{encoding:'utf8'});
-    assert.equal(child.signal,'SIGKILL',child.stderr);
+    // Windows ends a self-killed process with TerminateProcess: status 1 and no signal.
+    assert(child.signal==='SIGKILL' || process.platform==='win32' && child.status!==0,child.stderr);
     const leftovers=()=>targets.flatMap(t=>fs.existsSync(path.dirname(t))?fs.readdirSync(path.dirname(t)).filter(n=>n.startsWith(path.basename(t)+'.synaptic-')):[]);
     assert.equal(leftovers().length,1);
     const s=api.status(f.out);assert.equal(s.lock.state,'retained');assert.equal(s.lock.pid,child.pid);assert.match(s.lock.createdAt,/^\d{4}-/);

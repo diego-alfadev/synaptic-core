@@ -92,7 +92,7 @@ try{
   });
   test('documented gh release commands attach every file SHA256SUMS lists',()=>{
     const releasing=fs.readFileSync(path.join(__dirname,'../docs/RELEASING.md'),'utf8');
-    const commands=releasing.split('\n').filter(l=>l.startsWith('gh release create ')).map(l=>l.replace(/ --notes-file \S+/,''));assert(commands.length>=2);
+    const commands=releasing.split(/\r?\n/).filter(l=>l.startsWith('gh release create ')).map(l=>l.replace(/ --notes-file \S+/,''));assert(commands.length>=2);
     for(const line of commands)for(const ref of ['synaptic-2.0.0-rc.1.tar.gz','SHA256SUMS','PREPARED-RELEASE.json','RELEASE-NOTES.md'])assert(new RegExp(' \\S*/'+ref.replace(/\./g,'\\.')+'(?: |$)').test(line),ref+' not attached: '+line);
   });
   test('unrepresentable USTAR paths fail clearly, never silently truncate or produce final output',()=>{
