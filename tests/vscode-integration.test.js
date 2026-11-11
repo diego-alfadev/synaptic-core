@@ -216,6 +216,26 @@ try{
     fs.appendFileSync(path.join(f.workspace,'.github/skills/synaptic/SKILL.md'),'Changed after installation');
     const s=api.status(f.out);assert.equal(s.files,'needs-checking');assert(s.changes.some(e=>e.path.endsWith('/SKILL.md')));assert.equal(s.observer,'explicit-check-only');
   });
+  test('CLI keeps the path of a content mismatch; the documented manual repair restores a verified skill',()=>{
+    const f=fixture();api.prepare(f.input);api.apply(f.out);const skill=path.join(f.workspace,'.github/skills/synaptic');
+    fs.appendFileSync(path.join(skill,'references/vscode.md'),'x');
+    const cli=args=>spawnSync(process.execPath,[path.join(product,'tools/vscode-integration.js'),...args],{encoding:'utf8'});
+    const r=cli(['prepare','--workspace',f.workspace,'--package',packageRoot,'--out',path.join(base,'mismatch-plan'),'--harness','copilot']);
+    assert.equal(r.status,1);assert.equal(r.stderr,'PACKAGE_CONTENT_MISMATCH: references/vscode.md\n');
+    const raw=cli(['prepare','--workspace','RAW_ARGUMENT_MUST_NOT_LEAK: x','--package',packageRoot,'--out',path.join(base,'raw-plan'),'--harness','copilot']);
+    assert.equal(raw.status,1);assert(!raw.stderr.includes('RAW_ARGUMENT'));
+    const kept=path.join(base,'kept-modified-skill-'+Math.random().toString(16).slice(2));fs.renameSync(skill,kept);
+    const repair={...f.input,out:path.join(base,'repair-'+Math.random().toString(16).slice(2))};api.prepare(repair);assert.equal(api.apply(repair.out).state,'applied');
+    assert.equal(verifySkill(skill).status,'content-verified');assert(fs.readFileSync(path.join(kept,'references/vscode.md'),'utf8').endsWith('x'));
+    for(const kind of ['missing','extra']){
+      const g=fixture();api.prepare(g.input);api.apply(g.out);const s=path.join(g.workspace,'.github/skills/synaptic');const restore=fs.readFileSync(path.join(s,'references/vscode.md'));
+      if(kind==='missing')fs.unlinkSync(path.join(s,'references/vscode.md'));else write(s,'references/extra.md','Extra\n');
+      const bad=cli(['prepare','--workspace',g.workspace,'--package',packageRoot,'--out',path.join(base,'inventory-'+Math.random().toString(16).slice(2)),'--harness','copilot']);
+      assert.equal(bad.stderr,'PACKAGE_INVENTORY_MISMATCH\n');
+      fs.renameSync(s,path.join(base,'kept-'+Math.random().toString(16).slice(2)));const again={...g.input,out:path.join(base,'repair-'+Math.random().toString(16).slice(2))};
+      api.prepare(again);assert.equal(api.apply(again.out).state,'applied');assert.deepEqual(fs.readFileSync(path.join(s,'references/vscode.md')),restore);
+    }
+  });
   console.log(`1..${count}`);
 }finally{
   assert(path.basename(base).startsWith('syn-vscode-') && path.dirname(base)===os.tmpdir());

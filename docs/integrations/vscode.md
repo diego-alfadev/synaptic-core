@@ -66,6 +66,18 @@ archive/retire or reconcile the old carrier explicitly; preserve knowledge and u
 Do not simply add another Synaptic skill and leave the old engine auto-discoverable. A global or
 unreachable bridge is not permission to create a replacement project brain.
 
+### Repairing a modified same-version skill
+
+Same-version repair is **manual**; the helper has no repair or overwrite mode. When an installed file
+was edited, `prepare` stops with `PACKAGE_CONTENT_MISMATCH: <path inside the skill>` (a missing or extra
+file stops with `PACKAGE_INVENTORY_MISMATCH`). To repair:
+
+1. Review the change. Keep anything worth keeping somewhere you control.
+2. Move the whole `.github/skills/synaptic/` directory out of the project (do not leave a second copy
+   anywhere the harness discovers skills).
+3. Run `prepare` into a new plan directory, inspect it, then `apply`. The plan stages a fresh install
+   of the pinned skill; an existing owned bridge is replaced in place.
+
 The helper checks the known project carriers `AGENTS.md`, `.github/copilot-instructions.md`,
 `CLAUDE.md` and `.claude/CLAUDE.md`. A rejected global pointer means one found in those project
 blocks; this is not an exhaustive inventory of user/global/remote instructions or their effective
