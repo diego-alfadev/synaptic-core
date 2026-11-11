@@ -20,7 +20,7 @@
 | `updated` | yes | `YYYY-MM-DD` | stamped only when the node is actually rewritten (never from mtime, never mass-stamped) |
 | `tags` | yes | list | the faceted-search / future index surface |
 | `lifecycle` | no | `project` \| `area` \| `resource` \| `dormant` | absent → `area`; a label, never a filter (§3) |
-| `source` | no | path / URL / "session YYYY-MM-DD" | provenance: every claim traceable to its origin |
+| `source` | no | path / URL / "session YYYY-MM-DD" / work locator | provenance: every claim traceable to its origin. A node written from work cites a qualified locator: `T<n>/L<k>` (brain task, log line in its `tasks.md`), or `path:line@commit` for another tool's document (commit when in git) |
 | `content_hash` | no | `sha256-lf:<12 hex>` \| `TBD` | brains **outside git** only; legacy `git:` / `sha256:` = unverifiable. Commands: `references/fingerprint.md` |
 | `confidence` | no | `high` \| `medium` \| `low` | how settled the knowledge is |
 | `true_since` / `learned_on` | no | `YYYY-MM-DD` | bi-temporal recency: when the fact became true vs when the brain captured it |
@@ -163,7 +163,8 @@ A checkbox grants no approval: ticking `[x]` never authorises an action the auto
 **`tasks/INDEX.md` row:** `| id | status | title | home | from | note | updated |`
 
 - `home` is one of (brain-relative paths; another tool's file is resolved from the workspace root): `inline` (a small task: the row **is** the task); `playgrounds/<id>/tasks.md` (or
-  `playgrounds/<id>/` for a playground without a `tasks.md`, such as one moved from an older journal); an
+  `playgrounds/<id>/` for a playground without a `tasks.md`, such as one moved from an older journal);
+  `playgrounds/archive/<year>/<id>/tasks.md` once the playground is closed; an
   `odd/tasks/<feature>.md` file (or another tool's task file), **read in place, never copied**; or
   `proposals/P<n>-<slug>/` when the details still live with the proposal.
 - `from` is `P<n>` when the task was promoted from a proposal, else `—`.
@@ -207,10 +208,18 @@ verbatim, then dated, append-only lines); `## Key Learnings` (1–5 items, the f
 reads). Task ids inside a `tasks.md` are local to that file; its brain-level row has its own `T<n>`, and a
 reference from outside the file uses the qualified form `T7/T1` (brain task `T7`, its local `T1`). The shape is compatible with ODD task files; Synaptic adopts the artifact, not a workflow.
 
-**`playgrounds/<id>/scratch/`** holds intermediates (images, generated files, data pulls). It is never
-consolidated unless `tasks.md` or an artifact references a file in it, never audited, and deleted when
-the playground is burned or archived (archiving keeps the artifacts, never the scratch). In a git brain,
-`playgrounds/.gitignore` (`*/scratch/`) keeps it out of history; a `scratch/` that git already tracks
+**The work record is append-only and archived, never deleted.** Closing a playground moves the whole
+folder to `playgrounds/archive/<year>/<id>/` and rewrites the row's `home` to it; nothing is deleted
+(procedure and preconditions: `references/consolidate.md`, *Playground Artifact Scan & Closing Flow*).
+Work whose home is outside `playgrounds/` is not moved: its record stays with its owner.
+
+**`playgrounds/<id>/scratch/`** holds intermediates (images, generated files, data pulls): the
+playground's **local-only assets**. It is never consolidated unless `tasks.md` or an artifact references
+a file in it, never audited, and moves with the playground at close; the close writes an asset manifest
+(name, size) into `tasks.md` so a reader elsewhere knows the assets existed. In a git brain,
+`playgrounds/.gitignore` (`*/scratch/` and `archive/*/*/scratch/`) keeps it out of history at both
+depths; anything outside `scratch/` is tracked. Archived assets may be deleted at any time without loss
+of record (`git clean -X`, scoped to one archive year). A `scratch/` that git already tracks
 needs `git rm -r --cached` once, with the owner's OK. A synced folder still syncs it (accepted: the point is no history bloat).
 
 **Read sources in place (SRC-1).** A task file another tool owns (`odd/tasks/*.md`, a host's task list)

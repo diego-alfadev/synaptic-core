@@ -665,7 +665,7 @@ delegation into capture without the main agent copying anything. It is **off by 
 - Both A.2 messages report **standing state**: `rescue` fires while breadcrumbs are
   pending or any playground is open, unless this session or another live one owns that work (A.2
   liveness). Without a session id on the hook stdin it fires whether or not this session touched the brain. An open
-  playground stays "unconsolidated" until it is burned or archived — that is by design.
+  playground stays "unconsolidated" until it is closed (moved to `playgrounds/archive/`) — that is by design.
 - If the project does not use git, A.1 writes nothing; replace its `git diff` check with a
   `find .synaptic/journal .synaptic/playgrounds -newer .synaptic/BRAIN.md` heuristic.
 - Claude Code runs the hooks of one event in parallel, which is why A.4 chains `beat` after the

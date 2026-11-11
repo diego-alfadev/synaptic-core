@@ -88,7 +88,7 @@ Run on consolidation (manual `/synaptic-consolidate` at a wrap-up, or when the n
 | `references/` | Wiki — existence index + verbatim artifacts (`raw/`) | On demand |
 | `harness/` | Harness — conventions, guardrails | On demand; top subset above |
 | `tasks/`, `proposals/` | Working memory — task index and candidate index (one row each); created on first use | Resume: `tasks/INDEX.md` |
-| `playgrounds/` | Working memory — per-task burnable workspaces (`tasks.md`, `scratch/`) | Registered in `tasks/INDEX.md` |
+| `playgrounds/` | Working memory — per-task workspaces (`tasks.md`, `scratch/`), moved to `archive/` at close | Registered in `tasks/INDEX.md` |
 | `journal/` | Working memory — thin anchor/watch/log | Resume: read `_current.md` |
 | `templates/` | Scaffolding — node, registry, playbook, lesson, task/proposal index, `tasks.md` | When creating a node or a work item |
 

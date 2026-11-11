@@ -21,6 +21,9 @@ tags:
 # source: where this knowledge came from (footnote / URL / doc / "session 2026-06-21" / ticket).
 #         Provenance is the governance argument: every claim is traceable to its origin.
 # source: "{{e.g. internal runbook §3 · https://… · session YYYY-MM-DD · ticket KEY}}"
+#         Written from work: a qualified locator — brain task + log line "T7/L4", or another tool's
+#         document "path:line@commit" (commit when in git). The task row still resolves after close.
+# source: "{{T<n>/L<k> · odd/tasks/<feature>.md:<line>@<commit>}}"
 # confidence: how settled this knowledge is. Three-value enum ONLY: high | medium | low.
 # confidence: medium
 # Bi-temporal recency (OPTIONAL): distinguish when the fact became TRUE from when you LEARNED it.
