@@ -72,6 +72,29 @@ try{
     const cli=path.resolve(__dirname,'../tools/prepare-release.js');const checked=spawnSync(process.execPath,[cli,'--verify',out],{encoding:'utf8',env:{...process.env,PATH:''}});
     assert.equal(checked.status,0,checked.stderr);assert.equal(JSON.parse(checked.stdout).sourceCommit,commit);assert.equal(JSON.parse(checked.stdout).published,false);
   });
+  test('release notes print the trusted manifest digest',()=>{
+    const notes=fs.readFileSync(path.join(out,'RELEASE-NOTES.md'),'utf8');
+    assert(notes.includes('`manifestSha256`: `'+result.manifestSha256+'`'),notes);
+  });
+  test('the four downloaded release assets verify without the expanded package',()=>{
+    const assets=path.join(root,'downloaded assets');fs.mkdirSync(assets);
+    for(const ref of [result.archive,'PREPARED-RELEASE.json','RELEASE-NOTES.md','SHA256SUMS'])fs.copyFileSync(path.join(out,ref),path.join(assets,ref));
+    assert.throws(()=>verifyPrepared(assets),/HANDOFF_INVENTORY_MISMATCH/);
+    const listed=fs.readFileSync(path.join(assets,'SHA256SUMS'),'utf8').trim().split('\n').map(l=>l.split('  ')[1]);
+    for(const ref of listed)assert(fs.existsSync(path.join(assets,ref)),ref);
+    const cli=path.resolve(__dirname,'../tools/prepare-release.js');
+    const checked=spawnSync(process.execPath,[cli,'--verify-assets',assets],{encoding:'utf8',env:{...process.env,PATH:''}});assert.equal(checked.status,0,checked.stderr);
+    const report=JSON.parse(checked.stdout);assert.equal(report.manifestSha256,result.manifestSha256);assert.equal(report.archiveSha256,result.archiveSha256);assert.equal(report.status,'assets-verified');
+    for(const ref of [result.archive,'PREPARED-RELEASE.json','RELEASE-NOTES.md','SHA256SUMS']){
+      const copy=path.join(root,'tampered asset '+ref.replace(/[^A-Za-z0-9]/g,'_'));copyFixtureTree(assets,copy);fs.appendFileSync(path.join(copy,ref),'tampered');
+      assert.equal(spawnSync(process.execPath,[cli,'--verify-assets',copy],{encoding:'utf8'}).status,1,ref);
+    }
+  });
+  test('documented gh release commands attach every file SHA256SUMS lists',()=>{
+    const releasing=fs.readFileSync(path.join(__dirname,'../docs/RELEASING.md'),'utf8');
+    const commands=releasing.split('\n').filter(l=>l.startsWith('gh release create ')).map(l=>l.replace(/ --notes-file \S+/,''));assert(commands.length>=2);
+    for(const line of commands)for(const ref of ['synaptic-2.0.0-rc.1.tar.gz','SHA256SUMS','PREPARED-RELEASE.json','RELEASE-NOTES.md'])assert(new RegExp(' \\S*/'+ref.replace(/\./g,'\\.')+'(?: |$)').test(line),ref+' not attached: '+line);
+  });
   test('unrepresentable USTAR paths fail clearly, never silently truncate or produce final output',()=>{
     assert.throws(()=>tarPath('synaptic-2.0.0-rc.1/research/'+('x'.repeat(101))),/ARCHIVE_PATH_TOO_LONG/);
     put('research/'+('x'.repeat(101)),'Long leaf');git(['add','research']);git(['commit','--quiet','-m','fixture: long path']);const long=git(['rev-parse','HEAD']);

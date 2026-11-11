@@ -13,7 +13,8 @@ assisted no-Node/no-MCP route. Package integrity and project-file transactions d
 
 Give its GitHub page or authorised local package to your existing agent. The package records its
 source commit in `RELEASE-MANIFEST.json`; the skill retains `MANIFEST.txt` and generated `SOURCE.json`.
-Use the release page's manifest digest when supplied. Matching a package to its own manifest checks
+Use the release page's manifest digest: the line `manifestSha256` in its notes, also found in the
+attached `PREPARED-RELEASE.json`. Matching a package to its own manifest checks
 consistency; a trusted release identity/digest establishes which source you intended to install.
 
 First use trusted host hash capabilities to compare `RELEASE-MANIFEST.json` with the digest from
