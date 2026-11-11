@@ -64,6 +64,8 @@ Run on consolidation (manual `/synaptic-consolidate` at a wrap-up, or when the n
 5. **Dedupe / SSOT** — search first; update, don't duplicate; one source of truth per fact.
 6. **Quality gate** — professional & verifiable only; soft budget ~150 lines or tag `type: reference`; stamp `updated:`; confirm reachable from a MOC.
 
+**Work record:** the work document (a `tasks/INDEX.md` row, its `tasks.md`, or the external file it points at) exists before the first change. **Task files:** brain <!-- or "owned by <harness> at <path>": decided once at init or first detection (references/contract.md §6) -->
+
 > **Wrap-up OFFER:** when the work wraps up (or on the next boot's rescue if a session was abandoned), the agent OFFERS to run this consolidation — it does not silently rewrite the brain. Breadcrumbs already captured the trail; consolidation is the supervised promotion step.
 
 ---

@@ -152,7 +152,7 @@ the user.
 │   └── guardrails.md           ← from Round 3
 ├── playgrounds/
 │   ├── README.md
-│   └── .gitignore              ← `*/scratch/` (intermediates never enter git history)
+│   └── .gitignore              ← `*/scratch/`, `archive/*/*/scratch/` (intermediates never enter git history)
 ├── journal/
 │   └── _current.md
 └── templates/
@@ -166,6 +166,12 @@ the user.
 ```
 
 No `tasks/` or `proposals/` folder at init: work items are created on first use (`references/contract.md` §6).
+
+**Task-file owner (decide once).** If the workspace already has another harness's task files (for
+example `odd/tasks/*.md`), ask the owner whether that harness owns task files for this work. Record the
+answer in the `BRAIN.md` capture contract's `Task files:` line (`brain`, or `owned by <harness> at <path>`);
+when there is no such harness, keep `brain`. Never infer it per session; a later first detection asks the
+same question once (external-owner mode, `references/contract.md` §6).
 
 Use real data — no `{{placeholder}}` values in generated files. Report the full file list when done.
 

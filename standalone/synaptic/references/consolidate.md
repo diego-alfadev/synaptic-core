@@ -37,7 +37,8 @@ Read **two sources**, not one:
 1. `journal/_current.md` — session breadcrumbs (and, in an older brain without `tasks/INDEX.md`,
    the **Active playgrounds** section), plus the work-item indexes when they exist: `tasks/INDEX.md`
    and `proposals/INDEX.md` (`references/contract.md` §6). A row whose `home` is another tool's file
-   (for example `odd/tasks/<feature>.md`) is read in place, never copied.
+   (for example `odd/tasks/<feature>.md`) is read in place, never copied, and read tolerantly: find its
+   learnings, tasks and log by heading, assume neither checkboxes nor any section after the log.
 2. **The artifacts inside each open `playgrounds/{task}/` directory** — its `tasks.md` first (Key
    Learnings, then Specs and Log), then drafts, analyses, notes and intermediate outputs.
    `scratch/` is skipped except for files that `tasks.md` or an artifact references. Consolidation
@@ -244,6 +245,26 @@ entry of the journal's **Active playgrounds** list):
    artifacts stay. It changes the archive listing, so it too runs with no curation request pending.
    The manifest keeps the fact that the assets existed. Archived records are protected by convention
    and git history, not by a check: the curation snapshot does not see an edit inside the archive.
+
+### External-owner mode (`references/contract.md` §6)
+
+When `BRAIN.md` records `Task files: owned by <harness> at <path>`, that harness's file is the work
+document: no brain-side `tasks.md` is created, and a playground for that work holds analysis only. If
+such files appear and `BRAIN.md` records no owner, ask the owner once and write the line; do not decide
+per session. Worked example, end to end:
+
+1. `BRAIN.md` has `**Task files:** owned by ODD at odd/tasks/*.md`. The owner starts "search filters";
+   ODD writes `odd/tasks/search-filters.md` before the first change (the pre-work rule).
+2. The brain gets one row, nothing else: `| T12 | [ ] | Search filters | odd/tasks/search-filters.md | — |  | 2026-11-01 |`.
+   `tools/check.js` lists that home as *unverified* (outside the brain), never as an error.
+3. A comparison of query builders needs room: `playgrounds/t12-search-analysis/` holds the analysis
+   only; the row's `home` stays the ODD file.
+4. Situation reads the ODD file in place. It has `## Tasks` without checkboxes and ends at
+   `## Progress`, so progress is "not stated".
+5. Consolidate reads the file by heading, distils the decision into a node with
+   `source: "odd/tasks/search-filters.md:40@<commit of that file>"`, closes the analysis playground to
+   `playgrounds/archive/2026/t12-search-analysis/`, and closes the row with the proof. The ODD file is
+   not moved, copied or edited: its record stays with its owner.
 
 ### Proposals and tasks
 

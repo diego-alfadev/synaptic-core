@@ -225,6 +225,14 @@ needs `git rm -r --cached` once, with the owner's OK. A synced folder still sync
 **Read sources in place (SRC-1).** A task file another tool owns (`odd/tasks/*.md`, a host's task list)
 is linked from a row and read where it is. Synaptic never copies it into the brain.
 
+**External-owner mode.** When another harness owns task files, the brain's row points at that file, no
+brain-side `tasks.md` is created for that work, and a playground for it (if any) holds analysis only. The
+external file is never copied or reformatted, and is read tolerantly: sections are located by heading,
+checkboxes and any section after the log are not assumed, and progress without checkboxes is "not
+stated", never 0 of 0. The mode is decided once, at init or on first detection of such files (ask the
+owner when it is ambiguous), and recorded as one `Task files:` line in `BRAIN.md`; it is not inferred
+per session. Worked example: `references/consolidate.md`, *External-owner mode*.
+
 **Registry of playgrounds.** A playground is registered by a row in `tasks/INDEX.md` whose `home` is its
 `tasks.md`; opening the first playground creates the index if it is absent. An older brain without the
 index keeps the journal's *Active playgrounds* list until it adopts one (`/synaptic-upgrade` offers the

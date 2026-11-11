@@ -601,6 +601,16 @@ test('check.js: an unmodified upstream-shaped feature document as an external ho
   assert(s.errors === 0 && s.warnings === 0, `expected 0/0, got ${s.errors}/${s.warnings}\n${tail(r.out)}`);
 });
 
+test('check.js: the external-owner worked example row in consolidate.md is unverified, not an error', () => {
+  const doc = fs.readFileSync(path.join(ROOT, 'standalone', 'synaptic', 'references', 'consolidate.md'), 'utf8');
+  const row = (doc.match(/`(\| T12 \|[^`]*)`/) || [])[1];
+  assert(row, 'worked example row not found in consolidate.md');
+  const b = workBrain([row], ['| P1 | [ ] | Maybe | session 2026-11-01 | — |  | 2026-11-01 |']);
+  write(path.dirname(b), 'odd/tasks/search-filters.md', fs.readFileSync(UPSTREAM_DOC, 'utf8'));
+  const r = check(b, 0, ['unverified', 'external home odd/tasks/search-filters.md']);
+  assert(summary(r.out).errors === 0, `worked example row reported errors\n${tail(r.out)}`);
+});
+
 test('check.js: rows appended after the table and missing indexes are tolerated', () => {
   const b = validBrain();
   write(b, 'tasks/INDEX.md', `# Tasks\r\n\r\n${TASK_HEAD.replace(/\n/g, '\r\n')}| T1 | [ ] | One | inline | — |  | 2026-11-01 |\r\n\r\nA note someone appended.\r\n`);
