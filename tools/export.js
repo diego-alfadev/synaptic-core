@@ -147,6 +147,7 @@ function collectWorkDocuments(brainRoot) {
     let doc = null;
     if (fs.existsSync(abs) && fs.statSync(abs).isDirectory()) {
       if (fs.existsSync(path.join(abs, 'tasks.md'))) doc = path.join(abs, 'tasks.md');
+      else { notes.push(`${row.id}: \`${home}\` — a folder with no tasks.md; its other files are not exported`); continue; }
     } else if (fs.existsSync(abs) && isMarkdown(abs)) {
       doc = abs;
     }

@@ -330,6 +330,8 @@ test('graph.js: --neighbours prints the inbound edge and writes no HTML', () => 
   assert(!fs.existsSync(out), 'HTML written in neighbours mode');
   const missing = tool('graph.js', [b, '--neighbours', 'no-such-node', '--out', out]);
   assert(missing.code === 1 && missing.out.includes('no-such-node'), `unknown node not refused\n${tail(missing.out)}`);
+  const typo = tool('graph.js', [b, '--neighbours', 'a-old', '--type', 'supercedes', '--out', out]);
+  assert(typo.code === 1 && typo.out.includes('supercedes'), `unknown edge type not refused (would read as "nothing")\n${tail(typo.out)}`);
 });
 
 test('weave.md: every reader the typed-edge read table names exists and mentions its edge', () => {
@@ -500,7 +502,9 @@ function closedWorkBrain() {
     '| T2 | [x] | Closed work | playgrounds/archive/2026/t2-done/tasks.md | — | [[node-one]] updated | 2026-11-03 |',
     '| T3 | [ ] | Upstream work | odd/tasks/search-filters.md | — |  | 2026-11-01 |',
     '| T4 | [x] | Burned long ago | playgrounds/burned/tasks.md | — | [[node-two]] written | 2026-09-01 |',
+    '| T5 | [ ] | Moved from an old journal | playgrounds/legacy/ | — |  | 2026-11-01 |',
   ].join('\n') + '\n');
+  write(b, 'playgrounds/legacy/notes.md', '# Legacy notes\n');
   write(b, 'playgrounds/live/tasks.md', '# Live\n\nLIVE-DOCUMENT\n');
   write(b, 'playgrounds/archive/2026/t2-done/tasks.md', '# Closed\n\nCLOSED-DOCUMENT\n');
   write(b, 'playgrounds/archive/2026/t2-done/scratch/plot.png', 'ASSET-MUST-NOT-EXPORT');
@@ -518,6 +522,7 @@ test('export.js: one open and one closed work item export both documents; extern
   assert(!text.includes('ASSET-MUST-NOT-EXPORT'), 'an archived asset was exported');
   assert(/referenced, not included[\s\S]*T3[^\n]*odd\/tasks\/search-filters\.md[^\n]*external/.test(text), 'external home not listed');
   assert(/referenced, not included[\s\S]*T4[^\n]*playgrounds\/burned\/tasks\.md[^\n]*does not resolve/.test(text), 'dead home not listed');
+  assert(/referenced, not included[\s\S]*T5[^\n]*playgrounds\/legacy\/[^\n]*no tasks\.md/.test(text), 'folder home without tasks.md misreported');
 });
 
 test('check.js: a closed row homed under playgrounds/archive/ resolves; one still in a live playground warns', () => {
@@ -526,6 +531,14 @@ test('check.js: a closed row homed under playgrounds/archive/ resolves; one stil
   assert(!r.out.includes('t2-done'), `archived home reported\n${tail(r.out)}`);
   write(b, 'tasks/INDEX.md', `# Tasks\n\n${TASK_HEAD}| T1 | [x] | Closed, not moved | playgrounds/live/tasks.md | — | [[node-one]] updated | 2026-11-03 |\n`);
   r = check(b, 0, ['closed task still homed in a live playground: playgrounds/live/tasks.md']);
+});
+
+test('check.js: a dead wikilink inside an archived work record is history, not an error; a live one still is', () => {
+  const b = closedWorkBrain();
+  write(b, 'playgrounds/archive/2026/t2-done/tasks.md', '# Closed\n\nDistilled into [[node-renamed-later]].\n');
+  check(b, 0);
+  write(b, 'playgrounds/live/tasks.md', '# Live\n\nSee [[node-renamed-later]].\n');
+  check(b, 1, ['broken wikilink: [[node-renamed-later]]']);
 });
 
 test('templates/playgrounds/.gitignore: an asset in an archived playground\'s scratch/ is ignored, its document is not', () => {

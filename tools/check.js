@@ -66,6 +66,11 @@ function isUnderAudits(filePath) {
   return rel === 'audits' || rel.startsWith('audits/');
 }
 
+/** Closed work records are frozen history: a later rename must not turn them into errors. */
+function isUnderPlaygroundArchive(filePath) {
+  return path.relative(brainRoot, filePath).replace(/\\/g, '/').startsWith('playgrounds/archive/');
+}
+
 /**
  * True for MOC/sentinel files excluded from content checks.
  * INDEX.md, _index.md, README.md are excluded from frontmatter/naming/orphan checks.
@@ -619,12 +624,13 @@ function checkBrokenLinks() {
   //   - references/raw/  (verbatim captured payloads; any [[...]] inside is source text)
   //   - audits/         (closed audit reports; [[...]] inside is a historical pointer
   //                      to nodes that may have been renamed/removed since the audit)
+  //   - playgrounds/archive/ (closed work records, never edited after close; same reason)
   //   - MOC files (_index.md, INDEX.md, README.md): they list nodes that
   //     should exist; the orphan check (check 4) covers the inverse.
   //     In a fresh/seed brain MOC files will always have placeholder links.
   for (const filePath of walkMd(brainRoot)) {
     if (isUnderTemplates(filePath) || isUnderReferencesRaw(filePath) ||
-        isUnderAudits(filePath) || isMocFile(filePath)) continue;
+        isUnderAudits(filePath) || isUnderPlaygroundArchive(filePath) || isMocFile(filePath)) continue;
 
     const lines = readLines(filePath);
     const rawLinks = extractWikilinks(lines);
