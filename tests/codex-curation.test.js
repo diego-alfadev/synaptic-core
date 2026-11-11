@@ -5,7 +5,8 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs');const os=require('node:os');const path=require('node:path');
 const {spawnSync,spawn}=require('node:child_process');
 const {stop,status,archive,recoverLock,sha,OBSERVER_LOCK_ID}=require('../tools/lib/curation-stop');
-const base=fs.mkdtempSync(path.join(os.tmpdir(),'syn-curation-'));
+// Real path: macOS temp roots are symlinks and the adapter compares canonical paths.
+const base=fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(),'syn-curation-')));
 let count=0;
 function fixture(){
   const workspace=fs.mkdtempSync(path.join(base,'workspace é ')),brain=path.join(workspace,'.synaptic');

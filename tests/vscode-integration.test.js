@@ -7,7 +7,8 @@ const {spawnSync}=require('node:child_process');
 const {build,verifySkill}=require('../tools/package-release');
 const api=require('../tools/vscode-integration');
 const {sha}=require('../tools/lib/curation-stop');
-const base=fs.mkdtempSync(path.join(os.tmpdir(),'syn-vscode-'));
+// Real path: macOS temp roots are symlinks and the helper compares canonical paths.
+const base=fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(),'syn-vscode-')));
 const repo=path.join(base,'source'),hooks=path.join(base,'empty-hooks');fs.mkdirSync(repo);fs.mkdirSync(hooks);
 const product=path.resolve(__dirname,'..');
 function git(args){const r=spawnSync('git',['-C',repo,'-c','core.hooksPath='+hooks,'-c','commit.gpgSign=false','-c','tag.gpgSign=false',...args],{encoding:'utf8'});assert.equal(r.status,0,r.stderr);return r.stdout.trim();}
@@ -268,6 +269,6 @@ try{
   });
   console.log(`1..${count}`);
 }finally{
-  assert(path.basename(base).startsWith('syn-vscode-') && path.dirname(base)===os.tmpdir());
+  assert(path.basename(base).startsWith('syn-vscode-') && path.dirname(base)===fs.realpathSync(os.tmpdir()));
   fs.rmSync(base,{recursive:true,force:true});
 }

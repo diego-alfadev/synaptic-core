@@ -140,11 +140,14 @@ function metadata(bytes,format) {
   if(!value.files.length) fail('INVALID_PACKAGE_METADATA');
   return value;
 }
+// Names compare in NFC: macOS bsdtar extracts decomposed names, so raw strings differ from the manifest.
 function verifyFiles(root,manifest,metadataName) {
-  const wanted=manifest.files.map(f=>f.path).concat(metadataName).sort();
-  if(new Set(wanted).size!==wanted.length || JSON.stringify(actualFiles(root))!==JSON.stringify(wanted)) fail('PACKAGE_INVENTORY_MISMATCH');
+  const wanted=manifest.files.map(f=>f.path).concat(metadataName).map(ref=>ref.normalize('NFC')).sort();
+  const onDisk=new Map();
+  for(const ref of actualFiles(root)) {const key=ref.normalize('NFC');if(onDisk.has(key)) fail('PACKAGE_INVENTORY_MISMATCH');onDisk.set(key,ref);}
+  if(new Set(wanted).size!==wanted.length || JSON.stringify([...onDisk.keys()].sort())!==JSON.stringify(wanted)) fail('PACKAGE_INVENTORY_MISMATCH');
   for(const item of manifest.files) {
-    const bytes=readConfined(root,item.path);
+    const bytes=readConfined(root,onDisk.get(item.path.normalize('NFC')));
     if(bytes.length!==item.bytes || hash(bytes)!==item.sha256) fail('PACKAGE_CONTENT_MISMATCH: '+item.path);
   }
 }
