@@ -285,6 +285,51 @@ test('graph.js: the archived filter keys on status, which the page data carries'
   assert(!html.includes('n.lifecycle === "archived"'), 'archived filter still tests lifecycle');
 });
 
+// --- brain-graph.js / graph.js: direction and type --------------------------------------------------
+// z-new supersedes a-old; a-old's body links back to z-new. a-old is read first, so an undirected,
+// first-type-wins graph records the pair as a plain wikilink.
+function supersedeBrain() {
+  const b = validBrain();
+  write(b, 'knowledge/alpha/_index.md', '# Alpha\n\n- [[node-one]]\n- [[node-two]]\n- [[a-old]]\n- [[z-new]]\n');
+  write(b, 'knowledge/alpha/a-old.md', node('Old', 'Replaced by [[z-new]].'));
+  write(b, 'knowledge/alpha/z-new.md', node('New', 'The current answer.', [
+    'description: New', 'type: concept', 'status: active', `updated: ${TODAY}`, 'tags: [ci]',
+    'supersedes:', '  - "[[a-old]]"',
+  ]));
+  return b;
+}
+
+test('brain-graph.js: directed edges keep source, target and type; a typed edge is never replaced by a wikilink', () => {
+  const { buildBrainGraph } = require(path.join(TOOLS, 'lib', 'brain-graph.js'));
+  const g = buildBrainGraph(supersedeBrain());
+  const pair = g.edges.filter((e) => [e.from, e.to].sort().join('|') === 'a-old|z-new');
+  assert(JSON.stringify(pair.map((e) => `${e.from}>${e.to}:${e.type}`).sort()) ===
+    JSON.stringify(['a-old>z-new:wikilink', 'z-new>a-old:supersedes']), `directed edges: ${JSON.stringify(pair)}`);
+  const und = g.edgeList.filter((e) => e.a === 'a-old' && e.b === 'z-new');
+  assert(und.length === 1 && und[0].type === 'supersedes', `undirected pair: ${JSON.stringify(und)}`);
+});
+
+test('brain-graph.js: neighbours answers "inbound supersedes of B" with A', () => {
+  const { buildBrainGraph, neighbours } = require(path.join(TOOLS, 'lib', 'brain-graph.js'));
+  const g = buildBrainGraph(supersedeBrain());
+  const inbound = neighbours(g, 'a-old', { type: 'supersedes', direction: 'in' });
+  assert(JSON.stringify(inbound) === JSON.stringify([{ id: 'z-new', type: 'supersedes', direction: 'in' }]),
+    `inbound supersedes of a-old: ${JSON.stringify(inbound)}`);
+  assert(neighbours(g, 'a-old', { type: 'supersedes', direction: 'out' }).length === 0, 'a-old supersedes nothing');
+  assert(neighbours(g, 'z-new', { direction: 'both' }).length === 2, 'z-new has one edge each way');
+});
+
+test('graph.js: --neighbours prints the inbound edge and writes no HTML', () => {
+  const b = supersedeBrain();
+  const out = path.join(tmp('nb'), 'g.html');
+  const r = tool('graph.js', [b, '--neighbours', 'a-old', '--type', 'supersedes', '--direction', 'in', '--out', out]);
+  assert(r.code === 0, `graph.js --neighbours exited ${r.code}\n${tail(r.out)}`);
+  assert(/z-new\s+--\[supersedes\]-->\s+a-old/.test(r.out), `no inbound supersedes line\n${tail(r.out)}`);
+  assert(!fs.existsSync(out), 'HTML written in neighbours mode');
+  const missing = tool('graph.js', [b, '--neighbours', 'no-such-node', '--out', out]);
+  assert(missing.code === 1 && missing.out.includes('no-such-node'), `unknown node not refused\n${tail(missing.out)}`);
+});
+
 // --- export.js -----------------------------------------------------------------------------------
 test('export.js: single-file export contains every brain file under a FILE header', () => {
   const b = validBrain();

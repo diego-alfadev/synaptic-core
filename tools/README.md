@@ -208,7 +208,16 @@ node tools/graph.js                                         # reads ./.synaptic,
 node tools/graph.js /path/to/.synaptic                      # explicit path
 node tools/graph.js /path/to/.synaptic --out brain.html     # custom output filename
 node tools/graph.js /path/to/.synaptic --title "Q2 Brain"   # override title in the output
+
+# Neighbours query (prints, writes no HTML)
+node tools/graph.js /path/to/.synaptic --neighbours old-node --type supersedes --direction in
 ```
+
+**Neighbours query.** `--neighbours NODE [--type KIND] [--direction in|out|both]` lists the depth-1
+neighbours of a node over the **directed** edges (`edges` in `brain-graph.js`: one per source,
+target and type, as authored). `--direction in` is the inverse lookup the prose promises ("what
+supersedes this?", "what depends on this?"): files author one direction only, and this computes the
+other. `KIND` is one of the seven typed keys or `wikilink`. An unknown node exits 1.
 
 Renders a **force-directed, interactive graph of your Synaptic brain** as a single
 self-contained HTML file — no Obsidian, no npm install, **no network access**. Open the file in
@@ -229,7 +238,7 @@ disagree on the graph.
 | Element | Detail |
 |---|---|
 | **Nodes** | Every `knowledge/` node (non-MOC), coloured by top-level cluster; radius scales with edge degree |
-| **Edges** | **Typed frontmatter edges** (`relates_to`/`depends_on`/`supersedes`/`contradicts`/`applies_to`/`causes`/`part_of`, block-list `- "[[t]]"`) **plus** body `[[wikilinks]]` — undirected, deduplicated. Edge colour/style encodes the edge type |
+| **Edges** | **Typed frontmatter edges** (`relates_to`/`depends_on`/`supersedes`/`contradicts`/`applies_to`/`causes`/`part_of`, block-list `- "[[t]]"`) **plus** body `[[wikilinks]]` — undirected, deduplicated; when a pair has both, the typed kind is shown. Edge colour/style encodes the edge type |
 | **Typed-edge aware** | Frontmatter block-list edges the old renderer missed are now first-class (a pair joined only by a `depends_on` edge shows a link) |
 | **MOC-edge exclusion** | `_index.md` / `INDEX.md` / `README.md` are excluded as edge **sources and targets** — their wikilinks are navigation scaffolding, not knowledge edges, so INDEX is never a false super-hub |
 | **Tooltips** | Hover any node: full id, cluster, `type`, degree, `lifecycle` (if set), and `tags` |
