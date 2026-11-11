@@ -134,6 +134,19 @@ It coexists with the capture floor: its `journal/_activity/` markers and appende
 invalidate a pending draft, provided `journal/_current.md` stays a selected source (the default). See
 [Coexisting with the capture floor](codex-curation.md#coexisting-with-the-capture-floor).
 
+The workspace runtime does not include the curation command. To archive unresolved work or recover a
+curation lock, run it from the same verified package, against the project brain:
+
+```text
+node /verified/package/tools/codex-curation.js status --brain /synthetic/project/.synaptic --profile native
+node /verified/package/tools/codex-curation.js archive --brain /synthetic/project/.synaptic --profile native --request <id> --reason "<why>"
+node /verified/package/tools/codex-curation.js recover-lock --brain /synthetic/project/.synaptic --profile native --lock <id> --expected-sha256 <hash> --confirm-owner-stopped yes
+```
+
+In curation `status`, each retained request's `recordedState` is what the last check wrote
+(`retainedWorkState: recorded-at-last-check-not-reverified`); a draft deleted afterwards still shows
+`complete` until the next check.
+
 Only Copilot top-level `decision`/`reason` is emitted. A valid first request uses `block` to request
 continuation. Pending work/errors emit `{}`, a sanitized diagnostic and exit 2 without another
 continuation, according to the documented Copilot hook error contract. Real visibility and firing

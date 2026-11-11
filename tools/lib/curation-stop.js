@@ -175,6 +175,8 @@ function status(input){
     const requests=safe(config.root,`${STATE}/requests`);
     const requestNames=fs.readdirSync(requests).filter(name=>/^[a-f0-9]{64}\.json$/.test(name)).sort();
     observed.inventoryDirectory=`${STATE}/requests`;
+    // recordedState is what the last check wrote; a later deleted or edited draft is not re-verified here.
+    observed.retainedWorkState='recorded-at-last-check-not-reverified';
     observed.inventoryTruncated=requestNames.length>MAX_STATUS_REQUESTS;
     observed.retainedWork=requestNames.slice(0,MAX_STATUS_REQUESTS).map(name=>{
       try{const r=jsonRead(config.root,`${STATE}/requests/${name}`);if(!validRecord(r))return {requestId:name.slice(0,-5),recordedState:'unreadable'};return {requestId:r.id,recordedState:r.state,artifactRef:r.artifactRef};}

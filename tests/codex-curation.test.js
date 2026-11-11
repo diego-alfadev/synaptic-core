@@ -69,7 +69,7 @@ try{
     const f=fixture(),older=stop(f.config,f.event());
     const newer=stop(f.config,f.event('original-b',false,'session-b'));complete(f,newer);stop(f.config,f.event('continued-b',true,'session-b'));
     const observed=status(f.config);assert.equal(observed.state,'structurally_checked');assert.equal(observed.unresolvedCount,1);
-    assert(observed.retainedWork.some(r=>r.requestId===older.status.requestId && r.recordedState==='pending'));
+    assert(observed.retainedWork.some(r=>r.requestId===older.status.requestId && r.recordedState==='pending'));assert.equal(observed.retainedWorkState,'recorded-at-last-check-not-reverified');
   });
   test('protected knowledge/harness edits invalidate the draft without reverting or deleting evidence',()=>{
     const f=fixture(),r=stop(f.config,f.event());complete(f,r);f.put('harness/guardrails.md','# Changed unexpectedly\n');
