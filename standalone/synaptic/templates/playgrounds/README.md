@@ -23,10 +23,10 @@ live or archived. A synced folder still syncs it.
 1. **Open** — create `playgrounds/{{task-id}}/` with its `tasks.md`, and register it (below).
 2. **Work** — artifacts accumulate freely; keep `tasks.md` current (statuses, Log, Key Learnings).
 3. **Consolidate** — run the capture contract: Key Learnings first, then the artifacts. Durable findings → atomic knowledge nodes in the right cluster; repeatable procedures → `type: playbook` node in its cluster; lessons → `knowledge/lessons/`; deliverables shipped.
-4. **Close** — after consolidation, with no curation request pending: write the asset manifest into
+4. **Close** — after consolidation, on the owner's OK and with no curation request pending: write the asset manifest into
    `tasks.md`, move the whole folder to `playgrounds/archive/<year>/<task-id>/` and point the row's `home`
-   there. Nothing is deleted; `scratch/` assets stay local and ignored, and may be cleaned later with
-   `git clean -X` scoped to an archive year. Procedure: the synaptic skill's `references/consolidate.md`.
+   there. Nothing is deleted; `scratch/` assets stay local and ignored, and the owner may clean them later
+   with `git clean -X` scoped to an archive year. Procedure: the synaptic skill's `references/consolidate.md`.
 
 ## Registry
 

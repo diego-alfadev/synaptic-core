@@ -220,7 +220,8 @@ entry of the journal's **Active playgrounds** list):
    discard the rest.
 3. Move durable findings → knowledge cluster nodes; procedures → `type: playbook` nodes in their cluster; lessons → `knowledge/lessons/`; verbatim artifacts worth preserving → `references/raw/` (with `source`, and `content_hash` outside git, per Step 4).
 4. **Close = move, never delete.** The work record is append-only and archived, never deleted
-   (`references/contract.md` §6). Closing a playground:
+   (`references/contract.md` §6). Confirm with the user first: "Playground `{task-id}` consolidated —
+   close it to `playgrounds/archive/<year>/{task-id}/`?" On a yes:
    - **Precondition: no curation request pending.** Moving a folder while a model-curation request is
      pending marks that request `PROTECTED_SCOPE_CHANGED`. Check first (where the adapter is installed:
      `node tools/codex-curation.js status`, `docs/integrations/codex-curation.md`); if one is pending, let
@@ -239,12 +240,12 @@ entry of the journal's **Active playgrounds** list):
    with a reason, today's `updated`, and `home` rewritten to the archived path
    (`playgrounds/archive/<year>/<id>/tasks.md`), so the closed row still resolves. Same row, same `T<n>`.
    In an older brain, remove the entry from `journal/_current.md`.
-6. **Asset cleanup (optional, any time later)** frees disk, never record: `git clean -X` scoped to one
+6. **Asset cleanup (optional, only when the owner asks)** frees disk, never record: `git clean -X` scoped to one
    archive year (`git clean -X -n -- playgrounds/archive/<year>/` to preview, then
    `git clean -X -f -- playgrounds/archive/<year>/`) removes ignored files only; tracked documents and
    artifacts stay. It changes the archive listing, so it too runs with no curation request pending.
    The manifest keeps the fact that the assets existed. Archived records are protected by convention
-   and git history, not by a check: the curation snapshot does not see an edit inside the archive.
+   and git history, not by a check: the curation snapshot may not see an edit inside the archive.
 
 ### External-owner mode (`references/contract.md` §6)
 
