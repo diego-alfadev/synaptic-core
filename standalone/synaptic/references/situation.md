@@ -27,8 +27,9 @@ Read the formats and stale rule in references/contract.md §6. No shell or runti
    Diagnostics. Keep input ordering within sections. Apply handover confidentiality rules to titles
    and all detail cells before any shareable output. Link back to the original source.
 
-Before relying on a node (a proof that cites it, a decision a row depends on): before relying on a node, read its `status`. If `archived`, follow to its successor (the node whose `supersedes` names it; repeat while that one is archived) and say so. If archived with no successor, treat it as what was believed before and say that no replacement is recorded.
-Successor lookup: `references/weave.md`, *Reading typed edges*.
+Before relying on a node (a proof that cites it, a decision a row depends on), apply the status rule
+in `references/weave.md`, *Reading typed edges*: if it is archived, report its successor; if no node
+supersedes it, say that no replacement is recorded.
 
 No report edits, stamps, promotes or repairs a row. Route defects to audit, durable knowledge to
 consolidate and task promotion to the owner's approval. The report is not a boot proof: a report

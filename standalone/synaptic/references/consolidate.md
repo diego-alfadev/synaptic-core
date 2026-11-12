@@ -229,10 +229,14 @@ entry of the journal's **Active playgrounds** list):
    - Append to its `tasks.md` Log a dated close line and an **asset manifest**: one line per file under
      `scratch/` (name, size), marked *local-only*. Assets exist only on the machine that produced them;
      the manifest tells a reader elsewhere that they existed.
+   - **In a git brain, check the ignore rule before the move.** `playgrounds/.gitignore` must contain
+     `archive/*/*/scratch/` as well as `*/scratch/`. A brain created before this rule has only the first
+     line, which does not match the archive depth: add the second line before moving, or the next commit
+     records every scratch asset. Confirm with `git check-ignore -v playgrounds/archive/<year>/<id>/scratch/<file>`
+     after the move.
    - Move the **whole folder** to `playgrounds/archive/<year>/<id>/` (`<year>` = the close year). Nothing
-     is deleted: artifacts stay tracked, `scratch/` stays git-ignored at that depth (the
-     `playgrounds/.gitignore` template covers `archive/*/*/scratch/`), so assets remain on the local disk
-     next to their document and are never committed. Keep local-only assets under `scratch/`: an asset
+     is deleted: artifacts stay tracked, `scratch/` stays git-ignored at that depth, so assets remain on
+     the local disk next to their document and are never committed. Keep local-only assets under `scratch/`: an asset
      elsewhere in the folder is tracked like any artifact.
    - Work whose home is outside `playgrounds/` (in a repository, or a file another harness owns) is
      **not** moved: its record stays with its owner.
