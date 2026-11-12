@@ -203,7 +203,8 @@ workflow assumption.
 
 **`playgrounds/<id>/tasks.md`** (template `templates/tasks.md`) has five parts: a header (goal, owner,
 links); `## Specs` (`S1`, `S2`, … quoted verbatim from the requester, assumptions marked);
-`## Tasks` (`- [ ] T1 (S1) what · proof`, optional `Risk:` line); `## Log` (`L1` = the original request
+`## Tasks` (`- [ ] T1 (S1) what · proof`, optional `Risk:` line naming an action the task needs that
+§5 gates as propose-then-approve or human-only); `## Log` (`L1` = the original request
 verbatim, then dated, append-only lines); `## Key Learnings` (1–5 items, the first thing consolidate
 reads). Task ids inside a `tasks.md` are local to that file; its brain-level row has its own `T<n>`, and a
 reference from outside the file uses the qualified form `T7/T1` (brain task `T7`, its local `T1`). The shape is compatible with ODD task files; Synaptic adopts the artifact, not a workflow.
