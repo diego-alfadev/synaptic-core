@@ -34,8 +34,8 @@ reserved for Cortex as the core.
   checked persisted output and retained pending failures. Real event/model/fresh-session acceptance
   is still required; no hooks are installed by this change and wiki promotion is separate.
 - Simplified README, upgrade and release-note drafts around explicit triggers, evidence and
-  no-MCP assisted operation. The first stable requires a demonstrated automatic-curation profile
-  and the owner-run VS Code journey; no publication is implied.
+  no-MCP assisted operation. Claiming automatic curation or the VS Code route as supported still
+  needs a demonstrated automatic-curation profile and the owner-run VS Code journey.
 
 ### Work record and readable edges
 
@@ -62,7 +62,6 @@ reserved for Cortex as the core.
   semantics, capability declarations and CORE fallbacks. Synthetic conformance/protocol checks and an
   offline resume benchmark verify local behaviour; no live-host efficacy claim is made.
 - CONF-1 remains a specification. MemoryLog, embeddings and multi-brain implementation are deferred.
-  This is an unreleased local candidate: no version bump, tag or publication is implied.
 
 ### Added
 - **Fewer false rescue offers (hook liveness, K1).** `synaptic-pending` gains two silent modes: `beat` on
