@@ -1,6 +1,6 @@
 ---
 name: synaptic
-version: 2.0.0-rc.2     # candidate engine semver; brain schema remains 1.0; no tag/publication implied
+version: 1.7.0     # engine semver; brain schema remains 1.0
 supported_schema: ">=1.0 <2.0"   # brain schema/format versions this engine can read. A skill update reinstalls the skill with NO brain migration; only a schema/format change runs /synaptic-upgrade.
 description: >
   Knowledge-graph memory layer for project work — a portable, file-based brain that turns
@@ -42,7 +42,7 @@ it is not an installer or a mechanism that starts curation.
 
 # Synaptic Brain Skill
 
-**Runtime routing (local candidate).** Prefer an already-configured, available Cortex surface for
+**Runtime routing (optional preview).** Prefer an already-configured, available Cortex surface for
 the read-only operations it exposes; files remain authoritative. If that surface is absent, stops,
 or cannot verify a source, use the CORE procedures and direct file access. Do not install or start
 a runtime merely to boot the brain. Cortex CLI/MCP, lexical capability checks and both fallback
@@ -157,7 +157,7 @@ list them separately.
 | Name | What it is | Reference |
 |---|---|---|
 | `/synaptic-upgrade` | **Routine.** Migrate an older brain (v0.3 / v0.4 / v0.5 → v1; schema/format change), or re-deploy wiring after a skill update on the light already-`1.0` path. Always runs host-setup detection + stub-drift check; redeploys operating rules + capture hooks. `/synaptic-init` offers it when it finds an older brain; the upgrade runbooks call it by name. | `references/upgrade-to-v1.md` · `references/host-setup.md` |
-| `/synaptic-weave` | **Compatibility alias (deprecated since 1.6)** for `/synaptic-maintain weave`; retained in this candidate. | `references/weave.md` |
-| `/synaptic-synthesize` | **Compatibility alias (deprecated since 1.6)** for `/synaptic-maintain synthesize`; retained in this candidate. | `references/synthesize.md` |
+| `/synaptic-weave` | **Compatibility alias (deprecated since 1.6)** for `/synaptic-maintain weave`; retained in 1.7. | `references/weave.md` |
+| `/synaptic-synthesize` | **Compatibility alias (deprecated since 1.6)** for `/synaptic-maintain synthesize`; retained in 1.7. | `references/synthesize.md` |
 
 **Tools awareness:** if a runtime is available, prefer `tools/` scripts (check/migrate/export/vault-open) for the mechanical steps. If no runtime, perform the operation manually as described in the reference files.

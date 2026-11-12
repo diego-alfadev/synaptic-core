@@ -1,10 +1,9 @@
 # Upgrade an existing brain
 
-Guide for the prepared candidate source. The owner-run RC pilot and real host acceptance remain
-pending; preparing source does not create its tag or release.
+Guide for a prepared release package. Real host acceptance for the optional previews (VS Code,
+automatic curation) remains pending.
 
-The integrated candidate engine is **2.0.0-rc.2**; its brain format remains **1.0**. This is not a
-knowledge-format migration. The owner creates the tag/release separately after reviewing the evidence.
+The engine is **1.7.0**; its brain format remains **1.0**. This is not a knowledge-format migration.
 
 VS Code users have a [project setup and recovery guide](docs/integrations/vscode.md), including the
 assisted no-Node/no-MCP route. Package integrity and project-file transactions do not prove host loading.
@@ -57,7 +56,7 @@ Two brain-side steps the bundle update does not do for you:
   before the first close, or the next commit records every archived scratch asset, which cannot be
   undone without rewriting history.
 
-For the current schema1.0 candidate, knowledge files do not need a format migration. A future
+For the current schema 1.0, knowledge files do not need a format migration. A future
 release must state explicitly if that changes.
 
 Installation is an agent-led operation, not an unattended installer. The package tool only builds

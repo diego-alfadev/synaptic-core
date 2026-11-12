@@ -1,6 +1,6 @@
 # Synaptic operating model — review baseline
 
-Status: agreed product contract for the unreleased candidate; implementation claims remain scoped to observed evidence.
+Status: agreed product contract as of 1.7.0; implementation claims remain scoped to observed evidence.
 Validation sequence: model → implement the agreed subset → Codex here → GitHub RC → owner-run VS Code migration → stable.
 Conceptual source of truth; host-specific acceptance evidence remains separate.
 
@@ -148,6 +148,6 @@ from selected saved sources. Native firing, model quality, cold-session retrieva
 retention/recovery journey still need live evidence. It does not curate unsaved chat facts or maintain
 the canonical wiki automatically.
 
-The integrated engine identity is 2.0.0-rc.2; brain schema stays 1.0. CI results belong to their exact
+The engine version is 1.7.0; brain schema stays 1.0. CI results belong to their exact
 source commit. Real host acceptance remains independent. Preparing source, workflow assets or a
-project transaction does not create a release or satisfy the stable integration gates.
+project transaction does not create a release or satisfy the automatic-curation and VS Code gates.

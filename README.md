@@ -6,9 +6,9 @@ Synaptic keeps decisions, lessons and playbooks in linked Markdown files you own
 those files to resume work and curates useful knowledge from it. Optional local tools provide
 current-file search and structural checks. The files remain usable without those tools.
 
-> **v2.0.0-rc.2 is a candidate; brain schema stays 1.0.** Source CI, installation checks and real host
-> acceptance are separate evidence. Stable requires the VS Code pilot and a demonstrated bounded
-> automatic-curation profile. See [candidate notes](RELEASE-NOTES.md).
+> **v1.7.0; brain schema stays 1.0.** Source CI, installation checks and real host acceptance are
+> separate evidence. Cortex, VS Code integration and Codex curation are optional previews until the
+> VS Code pilot and a demonstrated bounded automatic-curation profile. See [release notes](RELEASE-NOTES.md).
 
 ## Start or upgrade
 

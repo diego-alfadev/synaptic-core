@@ -93,7 +93,7 @@ try{
   test('documented gh release commands attach every file SHA256SUMS lists',()=>{
     const releasing=fs.readFileSync(path.join(__dirname,'../docs/RELEASING.md'),'utf8');
     const commands=releasing.split(/\r?\n/).filter(l=>l.startsWith('gh release create ')).map(l=>l.replace(/ --notes-file \S+/,''));assert(commands.length>=2);
-    for(const line of commands)for(const ref of ['synaptic-2.0.0-rc.2.tar.gz','SHA256SUMS','PREPARED-RELEASE.json','RELEASE-NOTES.md'])assert(new RegExp(' \\S*/'+ref.replace(/\./g,'\\.')+'(?: |$)').test(line),ref+' not attached: '+line);
+    for(const line of commands)for(const ref of ['synaptic-1.7.0.tar.gz','SHA256SUMS','PREPARED-RELEASE.json','RELEASE-NOTES.md'])assert(new RegExp(' \\S*/'+ref.replace(/\./g,'\\.')+'(?: |$)').test(line),ref+' not attached: '+line);
   });
   test('a stable tag prepares a verified release without prerelease wording',()=>{
     put('standalone/synaptic/SKILL.md','---\nname: synaptic\nversion: 2.0.0\n---\n');git(['add','standalone/synaptic/SKILL.md']);git(['commit','--quiet','-m','fixture: stable version']);const stable=git(['rev-parse','HEAD']);
