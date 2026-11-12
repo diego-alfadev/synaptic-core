@@ -1,6 +1,6 @@
 ---
 name: synaptic
-version: 2.0.0-rc.1     # candidate engine semver; brain schema remains 1.0; no tag/publication implied
+version: 2.0.0-rc.2     # candidate engine semver; brain schema remains 1.0; no tag/publication implied
 supported_schema: ">=1.0 <2.0"   # brain schema/format versions this engine can read. A skill update reinstalls the skill with NO brain migration; only a schema/format change runs /synaptic-upgrade.
 description: >
   Knowledge-graph memory layer for project work — a portable, file-based brain that turns

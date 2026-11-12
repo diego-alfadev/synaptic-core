@@ -1,7 +1,7 @@
-# v2.0.0-rc.1 — release candidate draft
+# v2.0.0-rc.2 — release candidate draft
 
 Status: prepared candidate notes; no tag or publication yet. Supported host evidence remains scoped
-to recorded tests and the owner-run pilot. Engine version is 2.0.0-rc.1; brain schema stays 1.0.
+to recorded tests and the owner-run pilot. Engine version is 2.0.0-rc.2; brain schema stays 1.0.
 Stable release requires the real VS Code journey and a demonstrated bounded automatic-curation workflow in at least one supported profile.
 A clearly labelled RC will let the owner test that migration from its GitHub page.
 

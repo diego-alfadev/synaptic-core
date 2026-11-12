@@ -93,7 +93,7 @@ try{
   test('documented gh release commands attach every file SHA256SUMS lists',()=>{
     const releasing=fs.readFileSync(path.join(__dirname,'../docs/RELEASING.md'),'utf8');
     const commands=releasing.split(/\r?\n/).filter(l=>l.startsWith('gh release create ')).map(l=>l.replace(/ --notes-file \S+/,''));assert(commands.length>=2);
-    for(const line of commands)for(const ref of ['synaptic-2.0.0-rc.1.tar.gz','SHA256SUMS','PREPARED-RELEASE.json','RELEASE-NOTES.md'])assert(new RegExp(' \\S*/'+ref.replace(/\./g,'\\.')+'(?: |$)').test(line),ref+' not attached: '+line);
+    for(const line of commands)for(const ref of ['synaptic-2.0.0-rc.2.tar.gz','SHA256SUMS','PREPARED-RELEASE.json','RELEASE-NOTES.md'])assert(new RegExp(' \\S*/'+ref.replace(/\./g,'\\.')+'(?: |$)').test(line),ref+' not attached: '+line);
   });
   test('unrepresentable USTAR paths fail clearly, never silently truncate or produce final output',()=>{
     assert.throws(()=>tarPath('synaptic-2.0.0-rc.1/research/'+('x'.repeat(101))),/ARCHIVE_PATH_TOO_LONG/);

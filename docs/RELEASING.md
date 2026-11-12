@@ -3,7 +3,7 @@
 This guide prepares a candidate from an exact committed source and leaves GitHub actions to the
 owner on a computer with GitHub CLI access. Preparation itself never fetches, tags, pushes, publishes,
 merges main, changes host configuration or updates a brain. Integrated Cortex candidates use the
-v2.0 line; the example below is **v2.0.0-rc.1**, not a stable release or a schema migration.
+v2.0 line; the example below is **v2.0.0-rc.2**, not a stable release or a schema migration.
 
 ## Route A — GitHub CLI only on the owner computer
 
@@ -17,7 +17,7 @@ CI run, rather than selecting the latest run by name alone:
 gh run list --repo diego-alfadev/synaptic-core --workflow prepare-rc.yml --branch feat/operating-contract-2026-11-07 --commit <FULL_REVIEWED_COMMIT>
 gh run view <PREPARE_RUN_ID> --repo diego-alfadev/synaptic-core --json headSha,conclusion,workflowName
 gh run list --repo diego-alfadev/synaptic-core --workflow ci.yml --commit <FULL_REVIEWED_COMMIT>
-gh run download <PREPARE_RUN_ID> --repo diego-alfadev/synaptic-core --name synaptic-v2.0.0-rc.1-prepared --dir ../synaptic-v2.0.0-rc.1-prepared
+gh run download <PREPARE_RUN_ID> --repo diego-alfadev/synaptic-core --name synaptic-v2.0.0-rc.2-prepared --dir ../synaptic-v2.0.0-rc.2-prepared
 ```
 
 Choose a new download directory. Inspect `PREPARED-RELEASE.json`: its source commit, tag and engine
@@ -35,7 +35,7 @@ that exists only on a feature branch may not yet be registered through the defau
 merge main merely to make a dispatch button appear. When available, the explicit inputs are:
 
 ```sh
-gh workflow run prepare-rc.yml --repo diego-alfadev/synaptic-core --ref feat/operating-contract-2026-11-07 -f source_commit=<FULL_REVIEWED_COMMIT> -f version=v2.0.0-rc.1
+gh workflow run prepare-rc.yml --repo diego-alfadev/synaptic-core --ref release/rc2-integration -f source_commit=<FULL_REVIEWED_COMMIT> -f version=v2.0.0-rc.2
 ```
 
 The push preparation route avoids that initial dispatch dependency. Neither route is a publication.
@@ -47,7 +47,7 @@ workflow uses the push SHA for the artifact source, so both identities should ma
 Before creating a draft with gh, inspect any existing tag:
 
 ```sh
-gh api repos/diego-alfadev/synaptic-core/git/ref/tags/v2.0.0-rc.1
+gh api repos/diego-alfadev/synaptic-core/git/ref/tags/v2.0.0-rc.2
 ```
 
 If it exists, follow an annotated tag object with `gh api .../git/tags/<TAG_OBJECT_SHA>` until its
@@ -57,7 +57,7 @@ Only when the tag is confirmed absent (and repository access is valid), or confi
 same exact commit, may the owner explicitly create the draft prerelease:
 
 ```sh
-gh release create v2.0.0-rc.1 --repo diego-alfadev/synaptic-core --target <FULL_REVIEWED_COMMIT> --draft --prerelease --title "Synaptic v2.0.0-rc.1" --notes-file ../synaptic-v2.0.0-rc.1-prepared/RELEASE-NOTES.md ../synaptic-v2.0.0-rc.1-prepared/synaptic-2.0.0-rc.1.tar.gz ../synaptic-v2.0.0-rc.1-prepared/SHA256SUMS ../synaptic-v2.0.0-rc.1-prepared/PREPARED-RELEASE.json ../synaptic-v2.0.0-rc.1-prepared/RELEASE-NOTES.md
+gh release create v2.0.0-rc.2 --repo diego-alfadev/synaptic-core --target <FULL_REVIEWED_COMMIT> --draft --prerelease --title "Synaptic v2.0.0-rc.2" --notes-file ../synaptic-v2.0.0-rc.2-prepared/RELEASE-NOTES.md ../synaptic-v2.0.0-rc.2-prepared/synaptic-2.0.0-rc.2.tar.gz ../synaptic-v2.0.0-rc.2-prepared/SHA256SUMS ../synaptic-v2.0.0-rc.2-prepared/PREPARED-RELEASE.json ../synaptic-v2.0.0-rc.2-prepared/RELEASE-NOTES.md
 ```
 
 That command intentionally creates the tag at the supplied commit if it does not exist; it is an
@@ -83,7 +83,7 @@ Confirm that the expected branch contains that exact commit and that its own CI/
 Detached checkout is deliberate; do not merge the feature into main as part of packaging. If Git
 reports local edits, preserve them and use a separate clone/worktree rather than discarding anything.
 
-The committed `standalone/synaptic/SKILL.md` must say `version: 2.0.0-rc.1` for the example tag.
+The committed `standalone/synaptic/SKILL.md` must say `version: 2.0.0-rc.2` for the example tag.
 If it still says 1.6.0 or another version, **stop**: prepare the explicit source version/changelog in
 the candidate branch, commit it, run the required checks and use that new full commit. An uncommitted
 version edit does not change immutable source. The helper refuses tag/header/package mismatches; it
@@ -97,14 +97,14 @@ needed for this command. Use a **new** destination whose parent already exists, 
 the checkout:
 
 ```sh
-node tools/prepare-release.js --repo . --ref <FULL_REVIEWED_COMMIT> --version v2.0.0-rc.1 --out ../synaptic-v2.0.0-rc.1-prepared
-node tools/prepare-release.js --verify ../synaptic-v2.0.0-rc.1-prepared
+node tools/prepare-release.js --repo . --ref <FULL_REVIEWED_COMMIT> --version v2.0.0-rc.2 --out ../synaptic-v2.0.0-rc.2-prepared
+node tools/prepare-release.js --verify ../synaptic-v2.0.0-rc.2-prepared
 ```
 
 The new directory contains:
 
 - `package/`: the exact tracked source plus generated `RELEASE-MANIFEST.json` and skill `SOURCE.json`.
-- `synaptic-2.0.0-rc.1.tar.gz`: that complete package, including the generated source/integrity files.
+- `synaptic-2.0.0-rc.2.tar.gz`: that complete package, including the generated source/integrity files.
 - `SHA256SUMS`: archive, handoff metadata and notes digests.
 - `PREPARED-RELEASE.json`: source commit, exact engine/tag, package-manifest and archive digests.
 - `RELEASE-NOTES.md`: short prerelease notes for owner review.
@@ -124,8 +124,8 @@ Optional extraction check with a standard tar consumer:
 
 ```sh
 mkdir ../synaptic-rc-extract-check
-tar -xzf ../synaptic-v2.0.0-rc.1-prepared/synaptic-2.0.0-rc.1.tar.gz -C ../synaptic-rc-extract-check
-node tools/package-release.js --verify ../synaptic-rc-extract-check/synaptic-2.0.0-rc.1
+tar -xzf ../synaptic-v2.0.0-rc.2-prepared/synaptic-2.0.0-rc.2.tar.gz -C ../synaptic-rc-extract-check
+node tools/package-release.js --verify ../synaptic-rc-extract-check/synaptic-2.0.0-rc.2
 ```
 
 Use a new extraction directory. Digest checks detect content changes; they do not authenticate a
@@ -142,16 +142,16 @@ A correction gets a new RC number and a new committed version.
 After approving this exact source, create and push only the intended candidate tag:
 
 ```sh
-git tag -a v2.0.0-rc.1 <FULL_REVIEWED_COMMIT> -m "Synaptic v2.0.0-rc.1"
-git push origin refs/tags/v2.0.0-rc.1
-git ls-remote --tags origin refs/tags/v2.0.0-rc.1 "refs/tags/v2.0.0-rc.1^{}"
+git tag -a v2.0.0-rc.2 <FULL_REVIEWED_COMMIT> -m "Synaptic v2.0.0-rc.2"
+git push origin refs/tags/v2.0.0-rc.2
+git ls-remote --tags origin refs/tags/v2.0.0-rc.2 "refs/tags/v2.0.0-rc.2^{}"
 ```
 
 Verify that the remote tag's peeled commit is the same full reviewed commit. Do not infer that from
 the tag name alone. Then, on the gh-equipped owner computer, create a **draft prerelease**:
 
 ```sh
-gh release create v2.0.0-rc.1 --repo diego-alfadev/synaptic-core --verify-tag --draft --prerelease --title "Synaptic v2.0.0-rc.1" --notes-file ../synaptic-v2.0.0-rc.1-prepared/RELEASE-NOTES.md ../synaptic-v2.0.0-rc.1-prepared/synaptic-2.0.0-rc.1.tar.gz ../synaptic-v2.0.0-rc.1-prepared/SHA256SUMS ../synaptic-v2.0.0-rc.1-prepared/PREPARED-RELEASE.json ../synaptic-v2.0.0-rc.1-prepared/RELEASE-NOTES.md
+gh release create v2.0.0-rc.2 --repo diego-alfadev/synaptic-core --verify-tag --draft --prerelease --title "Synaptic v2.0.0-rc.2" --notes-file ../synaptic-v2.0.0-rc.2-prepared/RELEASE-NOTES.md ../synaptic-v2.0.0-rc.2-prepared/synaptic-2.0.0-rc.2.tar.gz ../synaptic-v2.0.0-rc.2-prepared/SHA256SUMS ../synaptic-v2.0.0-rc.2-prepared/PREPARED-RELEASE.json ../synaptic-v2.0.0-rc.2-prepared/RELEASE-NOTES.md
 ```
 
 `--verify-tag` prevents gh from silently creating a missing tag at a default branch tip. It does not
@@ -167,7 +167,7 @@ journey and bounded native-curation acceptance. No main merge is required by the
 
 ## 4. What the migration agent must download
 
-Use the attached **prepared `synaptic-2.0.0-rc.1.tar.gz` asset**, then its `UPGRADING.md` and source
+Use the attached **prepared `synaptic-2.0.0-rc.2.tar.gz` asset**, then its `UPGRADING.md` and source
 receipt. GitHub's automatically generated “Source code” zip/tar archives represent tracked Git source
 and **do not contain the generated package SOURCE.json or RELEASE-MANIFEST.json**. They are not the
 prepared installation package and must not be substituted for it. Keep installation, loading, native
