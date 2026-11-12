@@ -10,7 +10,8 @@ const {build,verifyPackage,MANIFEST,validPath}=require('./package-release');
 const {publishNewDirectory}=require('./lib/publish-new-directory');
 const hash=bytes=>crypto.createHash('sha256').update(bytes).digest('hex');
 const json=value=>Buffer.from(JSON.stringify(value,null,2)+'\n');
-const RC=/^v(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)-rc\.[1-9]\d*$/;
+const RELEASE_TAG=/^v(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)(?:-rc\.[1-9]\d*)?$/;
+const isCandidate=tag=>tag.includes('-rc.');
 const MAX_TAR_BYTES=128*1024*1024;
 function fail(message){throw Error(message);}
 function exists(file){try{fs.lstatSync(file);return true;}catch(e){if(e.code==='ENOENT')return false;throw e;}}
@@ -61,12 +62,12 @@ function tarPackage(packageRoot,rootName){
   }
   parts.push(Buffer.alloc(1024));return Buffer.concat(parts);
 }
-function notes(tag,commit,manifestSha256){return `# Synaptic ${tag} — release candidate\n\nThis is a prerelease candidate, not a stable integration claim.\n\n- Work-item routing keeps tasks, proposals, context and completion evidence together.\n- Optional Cortex tools read current files and provide lexical search; your Markdown brain remains the record.\n- VS Code setup uses explicit working profiles and reviewable, recoverable project wiring. Installing files alone does not prove loading, capture or tool connection.\n\nUpgrade from the attached **synaptic-${tag.slice(1)}.tar.gz** asset, which includes generated source receipts and the complete migration package. GitHub's automatic Source code archives are not that prepared package. Follow UPGRADING.md inside it, preserve your existing brain, and review the bounded diff before applying.\n\nNative capture, automatic model-curation and the real VS Code migration still require their own scoped acceptance evidence; a flag or synthetic test is not live proof.\n\nExact source: ${commit}.\n\nTrusted package digest, also recorded in PREPARED-RELEASE.json: \`manifestSha256\`: \`${manifestSha256}\`. Check the extracted package against it before running anything from it: \`node <package>/tools/package-release.js --verify <package> --sha256 ${manifestSha256}\`.\n`;}
+function notes(tag,commit,manifestSha256){const candidate=isCandidate(tag);return `# Synaptic ${tag}${candidate?' — release candidate\n\nThis is a prerelease candidate, not a stable integration claim.':''}\n\n- Work-item routing keeps tasks, proposals, context and completion evidence together.\n- Optional Cortex tools read current files and provide lexical search; your Markdown brain remains the record.\n- VS Code setup uses explicit working profiles and reviewable, recoverable project wiring. Installing files alone does not prove loading, capture or tool connection.\n\nUpgrade from the attached **synaptic-${tag.slice(1)}.tar.gz** asset, which includes generated source receipts and the complete migration package. GitHub's automatic Source code archives are not that prepared package. Follow UPGRADING.md inside it, preserve your existing brain, and review the bounded diff before applying.\n\n${candidate?'Native capture, automatic model-curation and the real VS Code migration still require their own scoped acceptance evidence':'Native capture, automatic model-curation and VS Code integration are optional previews: each needs its own host evidence'}; a flag or synthetic test is not live proof.\n\nExact source: ${commit}.\n\nTrusted package digest, also recorded in PREPARED-RELEASE.json: \`manifestSha256\`: \`${manifestSha256}\`. Check the extracted package against it before running anything from it: \`node <package>/tools/package-release.js --verify <package> --sha256 ${manifestSha256}\`.\n`;}
 function sums(root,archive){return [archive,'PREPARED-RELEASE.json','RELEASE-NOTES.md'].map(ref=>`${hash(read(root,ref))}  ${ref}\n`).join('');}
 function preparedMetadata(input){
   const root=fs.realpathSync(path.resolve(input));if(!fs.statSync(root).isDirectory())fail('HANDOFF_DIRECTORY_REQUIRED');
   let metadata;try{metadata=JSON.parse(read(root,'PREPARED-RELEASE.json').toString('utf8'));}catch(_){fail('INVALID_HANDOFF_METADATA');}
-  if(!metadata || metadata.format!=='synaptic-owner-rc-handoff-v1' || !RC.test(metadata.tag) || metadata.engineVersion!==metadata.tag.slice(1) || !/^[a-f0-9]{40}$/.test(metadata.sourceCommit) || metadata.archive!==`synaptic-${metadata.engineVersion}.tar.gz` || metadata.archiveRoot!==`synaptic-${metadata.engineVersion}` || !/^[a-f0-9]{64}$/.test(metadata.archiveSha256) || !/^[a-f0-9]{64}$/.test(metadata.manifestSha256))fail('INVALID_HANDOFF_METADATA');
+  if(!metadata || metadata.format!=='synaptic-owner-rc-handoff-v1' || !RELEASE_TAG.test(metadata.tag) || metadata.engineVersion!==metadata.tag.slice(1) || !/^[a-f0-9]{40}$/.test(metadata.sourceCommit) || metadata.archive!==`synaptic-${metadata.engineVersion}.tar.gz` || metadata.archiveRoot!==`synaptic-${metadata.engineVersion}` || !/^[a-f0-9]{64}$/.test(metadata.archiveSha256) || !/^[a-f0-9]{64}$/.test(metadata.manifestSha256))fail('INVALID_HANDOFF_METADATA');
   return {root,metadata};
 }
 // Finds one regular entry in an archive written by tarPackage (USTAR, ASCII name).
@@ -110,7 +111,7 @@ function verifyPrepared(input){
 }
 function prepare(repoArg,commit,tag,outArg){
   if(typeof commit!=='string' || !/^[a-f0-9]{40}$/.test(commit))fail('EXACT_40_CHARACTER_COMMIT_REQUIRED');
-  if(!RC.test(tag || ''))fail('EXPLICIT_RC_TAG_REQUIRED');
+  if(!RELEASE_TAG.test(tag || ''))fail('EXPLICIT_RELEASE_TAG_REQUIRED');
   const repo=path.resolve(repoArg),resolved=git(repo,['rev-parse','--verify','--end-of-options',commit+'^{commit}']).trim();
   if(resolved!==commit)fail('SOURCE_COMMIT_MISMATCH');
   const skill=git(repo,['show',commit+':standalone/synaptic/SKILL.md']);
@@ -126,7 +127,7 @@ function prepare(repoArg,commit,tag,outArg){
     // USTAR/PAX timestamps/owners are fixed. No live paths or timestamps enter the archive.
     const archive=zlib.gzipSync(tarPackage(packageRoot,archiveRoot),{level:9,mtime:0});
     fs.writeFileSync(path.join(stage,archiveName),archive,{flag:'wx'});
-    fs.writeFileSync(path.join(stage,'PREPARED-RELEASE.json'),json({format:'synaptic-owner-rc-handoff-v1',tag,engineVersion:report.engineVersion,sourceCommit:commit,archive:archiveName,archiveRoot,archiveSha256:hash(archive),manifestSha256:report.manifestSha256,publication:'not-published',releaseMode:'owner-reviewed-draft-prerelease'}),{flag:'wx'});
+    fs.writeFileSync(path.join(stage,'PREPARED-RELEASE.json'),json({format:'synaptic-owner-rc-handoff-v1',tag,engineVersion:report.engineVersion,sourceCommit:commit,archive:archiveName,archiveRoot,archiveSha256:hash(archive),manifestSha256:report.manifestSha256,publication:'not-published',releaseMode:isCandidate(tag)?'owner-reviewed-draft-prerelease':'owner-reviewed-draft-release'}),{flag:'wx'});
     fs.writeFileSync(path.join(stage,'RELEASE-NOTES.md'),notes(tag,commit,report.manifestSha256),{flag:'wx'});
     fs.writeFileSync(path.join(stage,'SHA256SUMS'),sums(stage,archiveName),{flag:'wx'});
     verifyPrepared(stage);const publication=publishNewDirectory(stage,out);
@@ -139,7 +140,7 @@ function main(args){
   const options={};for(let i=0;i<args.length;i++){
     if(!['--repo','--ref','--version','--out'].includes(args[i]) || options[args[i]]!==undefined || !args[i+1] || args[i+1].startsWith('--'))fail('INVALID_ARGUMENTS');options[args[i]]=args[++i];
   }
-  if(!options['--ref'] || !options['--version'] || !options['--out'])fail('Usage: node tools/prepare-release.js --ref <exact-40-character-commit> --version <vX.Y.Z-rc.N> --out <NEW-directory> [--repo <checkout>] | --verify <prepared-directory> | --verify-assets <downloaded-assets-directory>');
+  if(!options['--ref'] || !options['--version'] || !options['--out'])fail('Usage: node tools/prepare-release.js --ref <exact-40-character-commit> --version <vX.Y.Z | vX.Y.Z-rc.N> --out <NEW-directory> [--repo <checkout>] | --verify <prepared-directory> | --verify-assets <downloaded-assets-directory>');
   return prepare(options['--repo'] || path.resolve(__dirname,'..'),options['--ref'],options['--version'],options['--out']);
 }
 if(require.main===module){try{process.stdout.write(JSON.stringify(main(process.argv.slice(2)))+'\n');}catch(e){process.stderr.write(JSON.stringify({error:e.message,...(e.stagingPath?{stagingPath:e.stagingPath}:{})})+'\n');process.exitCode=1;}}
