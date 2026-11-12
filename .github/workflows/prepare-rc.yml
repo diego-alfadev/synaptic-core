@@ -5,7 +5,7 @@ run-name: Prepare RC assets for ${{ inputs.source_commit || github.sha }}
 # The push trigger makes this useful before this new workflow is on the default branch.
 on:
   push:
-    branches: [feat/operating-contract-2026-11-07]
+    branches: [feat/operating-contract-2026-11-07, 'release/**']
   workflow_dispatch:
     inputs:
       source_commit:

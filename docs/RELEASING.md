@@ -14,7 +14,7 @@ a release. Locate the run for the full reviewed commit and verify both preparati
 CI run, rather than selecting the latest run by name alone:
 
 ```sh
-gh run list --repo diego-alfadev/synaptic-core --workflow prepare-rc.yml --branch feat/operating-contract-2026-11-07 --commit <FULL_REVIEWED_COMMIT>
+gh run list --repo diego-alfadev/synaptic-core --workflow prepare-rc.yml --branch release/rc2-integration --commit <FULL_REVIEWED_COMMIT>
 gh run view <PREPARE_RUN_ID> --repo diego-alfadev/synaptic-core --json headSha,conclusion,workflowName
 gh run list --repo diego-alfadev/synaptic-core --workflow ci.yml --commit <FULL_REVIEWED_COMMIT>
 gh run download <PREPARE_RUN_ID> --repo diego-alfadev/synaptic-core --name synaptic-v2.0.0-rc.2-prepared --dir ../synaptic-v2.0.0-rc.2-prepared
@@ -74,7 +74,7 @@ Use the final full commit supplied in the handoff, not a remembered older candid
 name. In an existing clone on the owner computer:
 
 ```sh
-git fetch origin feat/operating-contract-2026-11-07
+git fetch origin release/rc2-integration
 git show --no-patch --format=fuller <FULL_REVIEWED_COMMIT>
 git switch --detach <FULL_REVIEWED_COMMIT>
 ```
