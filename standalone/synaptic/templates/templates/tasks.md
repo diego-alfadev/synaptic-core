@@ -17,7 +17,8 @@
 
 ## Tasks
 
-<!-- - [ ] T1 (S1) what · proof      Optional per task: Risk: {{the high-risk item it touches}} -->
+<!-- - [ ] T1 (S1) what · proof      Optional per task: Risk: {{an action it needs that the autonomy tiers
+     gate as PROPOSE-THEN-APPROVE or HUMAN-ONLY, references/contract.md §5}} -->
 - [ ] T1 (S1) {{what}} · {{proof when done}}
 
 ## Log

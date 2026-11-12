@@ -5,7 +5,8 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs');const os=require('node:os');const path=require('node:path');
 const {spawnSync,spawn}=require('node:child_process');
 const {stop,status,archive,recoverLock,sha,OBSERVER_LOCK_ID}=require('../tools/lib/curation-stop');
-const base=fs.mkdtempSync(path.join(os.tmpdir(),'syn-curation-'));
+// Real path: macOS temp roots are symlinks and the adapter compares canonical paths.
+const base=fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(),'syn-curation-')));
 let count=0;
 function fixture(){
   const workspace=fs.mkdtempSync(path.join(base,'workspace é ')),brain=path.join(workspace,'.synaptic');
@@ -68,7 +69,7 @@ try{
     const f=fixture(),older=stop(f.config,f.event());
     const newer=stop(f.config,f.event('original-b',false,'session-b'));complete(f,newer);stop(f.config,f.event('continued-b',true,'session-b'));
     const observed=status(f.config);assert.equal(observed.state,'structurally_checked');assert.equal(observed.unresolvedCount,1);
-    assert(observed.retainedWork.some(r=>r.requestId===older.status.requestId && r.recordedState==='pending'));
+    assert(observed.retainedWork.some(r=>r.requestId===older.status.requestId && r.recordedState==='pending'));assert.equal(observed.retainedWorkState,'recorded-at-last-check-not-reverified');
   });
   test('protected knowledge/harness edits invalidate the draft without reverting or deleting evidence',()=>{
     const f=fixture(),r=stop(f.config,f.event());complete(f,r);f.put('harness/guardrails.md','# Changed unexpectedly\n');
@@ -227,6 +228,31 @@ try{
     const args=['--brain',f.brain,'--workspace',f.workspace,'--profile','native'];
     const r=spawnSync(process.execPath,[cli,'stop',...args],{input:'not-json',encoding:'utf8'});assert.equal(r.status,0);assert.match(JSON.parse(r.stdout).systemMessage,/pending/);assert(!JSON.parse(r.stdout).decision);
     const s=spawnSync(process.execPath,[cli,'status',...args],{encoding:'utf8'});assert.equal(s.status,0);const value=JSON.parse(s.stdout);assert.equal(value.state,'missing');assert.equal(value.nativeTrigger,'unproven_by_adapter');
+  });
+  test('capture-floor marker and appended source lines do not invalidate a pending draft',()=>{
+    const marker=fixture(),r1=stop(marker.config,marker.event());complete(marker,r1);
+    marker.put('journal/_activity/2026-11-11.log','stop 12:00 session-a\n');fs.appendFileSync(path.join(marker.brain,'journal/_activity/2026-11-11.log'),'stop 12:01 session-a\n');
+    assert.equal(stop(marker.config,marker.event('continued',true)).status.state,'structurally_checked');
+    const grown=fixture(),r2=stop(grown.config,grown.event());complete(grown,r2);
+    fs.appendFileSync(path.join(grown.brain,'journal/_current.md'),'- 12:02 breadcrumb: edited app.txt\n');
+    assert.equal(stop(grown.config,grown.event('continued',true)).status.state,'structurally_checked');
+    const edited=fixture(),r3=stop(edited.config,edited.event());complete(edited,r3);
+    const file=path.join(edited.brain,'journal/_current.md'),bytes=fs.readFileSync(file);bytes[2]=bytes[2]===0x52?0x72:0x52;fs.writeFileSync(file,Buffer.concat([bytes,Buffer.from('appended\n')]));
+    assert.equal(stop(edited.config,edited.event('continued',true)).status.reason,'SOURCE_CHANGED');
+    const knowledge=fixture(),r4=stop(knowledge.config,knowledge.event());complete(knowledge,r4);
+    knowledge.put('journal/_activity/x.log','marker\n');knowledge.put('knowledge/archive-policy.md','# Changed policy\n');
+    assert.equal(stop(knowledge.config,knowledge.event('continued',true)).status.reason,'PROTECTED_SCOPE_CHANGED');
+  });
+  test('a large playgrounds/archive is one protected entry; additions there still invalidate',()=>{
+    const f=fixture();
+    for(let i=0;i<600;i++)f.put(`playgrounds/archive/closed-${String(i).padStart(3,'0')}/tasks.md`,`# Closed ${i}\n`);
+    f.put('playgrounds/archive/big/data.md','x'.repeat(2*1024*1024));
+    const r=stop(f.config,f.event());assert.equal(r.hook.decision,'block');
+    const q=JSON.parse(fs.readFileSync(path.join(f.brain,'.curation-state/requests',r.status.requestId+'.json'),'utf8'));
+    assert(/^[a-f0-9]{64}$/.test(q.protected['brain:playgrounds/archive']));assert(!Object.keys(q.protected).some(k=>k.startsWith('brain:playgrounds/archive/')));
+    complete(f,r);f.put('playgrounds/archive/closed-600/tasks.md','# Closed later\n');
+    assert.equal(stop(f.config,f.event('continued',true)).status.reason,'PROTECTED_SCOPE_CHANGED');
+    if(process.platform!=='win32'){const g=fixture();g.put('playgrounds/archive/a.md','A\n');fs.symlinkSync(path.join(g.brain,'knowledge'),path.join(g.brain,'playgrounds/archive/link'));assert.throws(()=>stop(g.config,g.event()),/UNSAFE_PATH/);}
   });
   console.log(`1..${count}`);
 }finally{fs.rmSync(base,{recursive:true,force:true});}

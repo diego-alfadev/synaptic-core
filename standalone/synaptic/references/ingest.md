@@ -13,7 +13,7 @@ to a single source rather than full session output.
 > unfinished or superseded scratch out (the "email" lesson: distil the conclusion, discard the
 > drafts). This is the single-target sibling of consolidation's playground-artifact scan; for closing
 > playgrounds and trimming the journal as a session-wide pass, use `/synaptic-consolidate`. Ingest
-> reads and distils — it does **not** burn a playground (consolidate owns the close/burn step).
+> reads and distils — it does **not** close a playground (consolidate owns the close step).
 
 ---
 

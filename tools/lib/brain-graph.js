@@ -14,7 +14,11 @@
 //     PLUS body [[wikilinks]] (fence/comment/inline-code stripped).
 //   - Resolution: by kebab-case BASENAME of the link target.
 //   - MOC/_index.md/INDEX.md/README.md are EXCLUDED as edge sources AND edge targets.
-//   - Undirected, deduplicated (sorted-pair key). Self-links dropped.
+//   - Undirected, deduplicated (sorted-pair key). Self-links dropped. When a pair has both a
+//     typed edge and a body wikilink, the undirected entry carries the typed kind.
+//   - `edges` is the directed view of the same universe: one entry per (from, to, type), the
+//     direction authored in the file. neighbours() computes the inverse from it; files still
+//     author one direction only (references/weave.md).
 //   - edges-per-node = undirected edgeList.length / nodeCount (NOT degree-sum).
 //   - orphanCount = degree-0 knowledge nodes.
 //   - mocReachableCount = NET-NEW: reachability from knowledge/INDEX.md + cluster _index.md
@@ -199,7 +203,8 @@ function resolveId(target) {
  * @returns {{
  *   nodes: Array<{id,label,cluster,type,tags,lifecycle,status,filePath}>,
  *   nodeById: Object,
- *   edgeList: Array<{a,b,type}>,      // undirected, deduped; a<b; type=edge kind or 'wikilink'
+ *   edgeList: Array<{a,b,type}>,      // undirected, deduped; a<b; typed kind wins over 'wikilink'
+ *   edges: Array<{from,to,type}>,     // directed, one per (from, to, type)
  *   degreeOf: Object,                 // id -> degree
  *   orphanCount: number,              // degree-0 knowledge nodes
  *   nodeCount: number,
@@ -245,8 +250,10 @@ function buildBrainGraph(brainRoot) {
   }
 
   // --- edges: over knowledge non-MOC nodes only ----------------------------
-  const edgeSet = new Set();       // "a|b" canonical key
+  const edgeByPair = new Map();    // "a|b" canonical key -> undirected entry
   const edgeList = [];             // { a, b, type }
+  const directedSet = new Set();   // "from|to|type"
+  const edges = [];                // { from, to, type }
   let unresolvedCount = 0;
 
   for (const node of nodes) {
@@ -270,11 +277,21 @@ function buildBrainGraph(brainRoot) {
     // Target must be a knowledge non-MOC node (MOC targets excluded by construction —
     // nodeById never contains _index/INDEX/README).
     if (!nodeById[targetId]) { unresolvedCount++; return; }
+    const directedKey = `${fromId}|${targetId}|${kind}`;
+    if (!directedSet.has(directedKey)) {
+      directedSet.add(directedKey);
+      edges.push({ from: fromId, to: targetId, type: kind });
+    }
     const [a, b] = [fromId, targetId].sort();
     const key = `${a}|${b}`;
-    if (edgeSet.has(key)) return;
-    edgeSet.add(key);
-    edgeList.push({ a, b, type: kind });
+    const existing = edgeByPair.get(key);
+    if (existing) {
+      if (existing.type === 'wikilink' && kind !== 'wikilink') existing.type = kind;
+      return;
+    }
+    const entry = { a, b, type: kind };
+    edgeByPair.set(key, entry);
+    edgeList.push(entry);
   }
 
   // --- degree + orphans -----------------------------------------------------
@@ -296,10 +313,29 @@ function buildBrainGraph(brainRoot) {
   const clusters = [...clusterSet].sort();
 
   return {
-    nodes, nodeById, edgeList, degreeOf,
+    nodes, nodeById, edgeList, edges, degreeOf,
     orphanCount, nodeCount, edgeCount, edgesPerNode,
     mocReachableCount, clusters, unresolvedCount,
   };
+}
+
+/**
+ * Depth-1 neighbours of a node over the directed edges of a built graph.
+ * @param {object} g          result of buildBrainGraph
+ * @param {string} id         node id (kebab-case basename)
+ * @param {{type?: string, direction?: 'in'|'out'|'both'}} [opts] type filters one edge kind
+ *        (a typed key or 'wikilink'); direction defaults to 'both'.
+ * @returns {Array<{id,type,direction}>} sorted by direction, type, id; 'in' means id is the target.
+ */
+function neighbours(g, id, opts) {
+  const { type = null, direction = 'both' } = opts || {};
+  const out = [];
+  for (const e of g.edges) {
+    if (type && e.type !== type) continue;
+    if (e.from === id && (direction === 'out' || direction === 'both')) out.push({ id: e.to, type: e.type, direction: 'out' });
+    if (e.to === id && (direction === 'in' || direction === 'both')) out.push({ id: e.from, type: e.type, direction: 'in' });
+  }
+  return out.sort((x, y) => x.direction.localeCompare(y.direction) || x.type.localeCompare(y.type) || x.id.localeCompare(y.id));
 }
 
 /**
@@ -408,6 +444,7 @@ function parseFrontmatterLite(lines) {
 module.exports = {
   TYPED_EDGE_KEYS,
   buildBrainGraph,
+  neighbours,
   // exported for reuse / testing
   walkMd,
   isMocFile,

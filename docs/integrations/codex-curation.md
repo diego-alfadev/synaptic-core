@@ -97,6 +97,24 @@ except adapter state, its own draft output area and git metadata; workspace AGEN
 also checked when present. A changed/missing source, edited protected file, wrong hash or missing artifact is pending.
 The adapter does not undo another process's edits.
 
+### Coexisting with the capture floor
+
+The capture-floor hooks keep writing while a draft is pending: a Stop marker under
+`journal/_activity/` and a breadcrumb appended to `journal/_current.md`. Neither invalidates the draft:
+
+- `journal/_activity/` is not in the protected scope.
+- A selected source is recorded with its byte length. A source that only grew by appends still
+  checks: its first recorded bytes must hash to the recorded value. Any other edit is
+  `SOURCE_CHANGED`. Selected sources are judged only this way, not again as protected files. The
+  receipt still lists `{ref, sha256}` per source, unchanged.
+- Keep `journal/_current.md` among the selected sources (the default) while the capture floor runs.
+  Otherwise its breadcrumb is an edit to a protected file and the draft goes pending.
+
+`playgrounds/archive/` counts as one protected entry, `brain:playgrounds/archive`: the SHA-256 of its
+sorted `path<TAB>size` listing, read with `lstat` only, so closed playgrounds never hit the 512-file
+or 1 MiB limits. A symbolic link there is refused. Known gap: an edit inside the archive that keeps the
+file size the same is not detected while a request is pending. Added, removed and resized files are.
+
 This is structural evidence, not proof the model's interpretation is correct. Same-user files and
 hashes are not a security sandbox against an agent deliberately forging state. Existing project
 permissions, autonomy tiers, confidentiality and review remain necessary. No knowledge, persona or

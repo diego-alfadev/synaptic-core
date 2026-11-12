@@ -19,6 +19,7 @@ Read it newcomer-first, top to bottom — each doc is self-contained, opens with
 9. [Reach — how far a brain sees](./reach.md) — reach = harness placement, not folder location; the three reference points on one axis (folder / workspace-broad / user-global); "one reach at a time" in v1.4.0; and the leak rule as the whole confidentiality control.
 10. [`status` vs `lifecycle`](./status-vs-lifecycle.md) — the two orthogonal, optional frontmatter axes: content trust/freshness vs role/actionability; which axis labels and which flags (neither hides); the combined-value corners; and why neither bumps the schema.
 11. [Simplicity guardrail](./simplicity-guardrail.md) — the standing rule that keeps "just files, zero runtime, any agent" true as the product grows: the three-point (optional · files-only intact · no schema bump) design-time check.
+12. [Work items — proposals, tasks and playgrounds](./work-items.md) — how work is recorded and closed from 1.7, external task files read in place, and adopting it gradually from 1.6.
 
 ---
 

@@ -70,6 +70,9 @@ node <package>/tools/package-release.js --verify <package> --sha256 <trusted-rel
 node <package>/tools/package-release.js --verify-skill <selected-installed-skill-directory>
 ```
 
+For a GitHub release, the trusted digest is the `manifestSha256` line in the release notes, also
+found in the attached `PREPARED-RELEASE.json`.
+
 The digest must come from the intended release through a trusted channel; do not substitute a
 digest computed from the received package and call that authenticity proof. Without `--sha256`,
 verification proves internal content consistency only. The program does not prove that a commit

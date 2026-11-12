@@ -5,7 +5,7 @@ run-name: Prepare RC assets for ${{ inputs.source_commit || github.sha }}
 # The push trigger makes this useful before this new workflow is on the default branch.
 on:
   push:
-    branches: [feat/operating-contract-2026-11-07]
+    branches: [feat/operating-contract-2026-11-07, 'release/**']
   workflow_dispatch:
     inputs:
       source_commit:
@@ -15,7 +15,7 @@ on:
       version:
         description: Candidate tag matching the committed engine version
         required: true
-        default: v2.0.0-rc.1
+        default: v1.7.0
         type: string
 
 permissions:
@@ -27,14 +27,14 @@ jobs:
     timeout-minutes: 10
     env:
       SOURCE_COMMIT: ${{ inputs.source_commit || github.sha }}
-      RC_VERSION: ${{ inputs.version || 'v2.0.0-rc.1' }}
+      RC_VERSION: ${{ inputs.version || 'v1.7.0' }}
     steps:
-      - name: Validate source identity and candidate syntax
+      - name: Validate source identity and release tag syntax
         shell: bash
         run: |
           set -euo pipefail
           [[ "$SOURCE_COMMIT" =~ ^[a-f0-9]{40}$ ]]
-          [[ "$RC_VERSION" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)-rc\.[1-9][0-9]*$ ]]
+          [[ "$RC_VERSION" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-rc\.[1-9][0-9]*)?$ ]]
       - uses: actions/checkout@v5
         with:
           ref: ${{ env.SOURCE_COMMIT }}

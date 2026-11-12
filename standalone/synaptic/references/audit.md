@@ -314,6 +314,8 @@ playground artifacts) but never reached the knowledge store. **Diagnose only —
 - Cross-check against the registry: `tasks/INDEX.md` rows whose `home` is a playground (an older brain
   without the index: the journal's **Active playgrounds** list). Flag playgrounds **present on disk but
   missing from the registry** (untracked) and entries **registered but with no directory** (stale entry).
+  An untracked playground the journal still lists after the index exists was missed when the index was
+  created: report it as unregistered legacy work (treatment: a legacy row, `references/contract.md` §6).
   `archive/` is never registered and is never flagged.
 
 **(b) Pending journal breadcrumbs (unconsolidated `Stop` lines):**
@@ -566,7 +568,7 @@ Brain audit — N findings (showing top N):  [audit DIAGNOSES; weave/consolidate
 
 ## Half-done / unconsolidated
 12. playgrounds/feat-99-spike/ — open, not in journal Active list; journal at 71 pending breadcrumbs
-   → [/synaptic-consolidate] Process & close; promote durable conclusions, burn scratch.
+   → [/synaptic-consolidate] Process & close; promote durable conclusions, close to playgrounds/archive/.
 ```
 
 > The example above lists **every** category heading for reference; a **live** report still obeys the

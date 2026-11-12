@@ -1,10 +1,9 @@
 # Upgrade an existing brain
 
-Guide for the prepared candidate source. The owner-run RC pilot and real host acceptance remain
-pending; preparing source does not create its tag or release.
+Guide for a prepared release package. Real host acceptance for the optional previews (VS Code,
+automatic curation) remains pending.
 
-The integrated candidate engine is **2.0.0-rc.1**; its brain format remains **1.0**. This is not a
-knowledge-format migration. The owner creates the tag/release separately after reviewing the evidence.
+The engine is **1.7.0**; its brain format remains **1.0**. This is not a knowledge-format migration.
 
 VS Code users have a [project setup and recovery guide](docs/integrations/vscode.md), including the
 assisted no-Node/no-MCP route. Package integrity and project-file transactions do not prove host loading.
@@ -13,7 +12,8 @@ assisted no-Node/no-MCP route. Package integrity and project-file transactions d
 
 Give its GitHub page or authorised local package to your existing agent. The package records its
 source commit in `RELEASE-MANIFEST.json`; the skill retains `MANIFEST.txt` and generated `SOURCE.json`.
-Use the release page's manifest digest when supplied. Matching a package to its own manifest checks
+Use the release page's manifest digest: the line `manifestSha256` in its notes, also found in the
+attached `PREPARED-RELEASE.json`. Matching a package to its own manifest checks
 consistency; a trusted release identity/digest establishes which source you intended to install.
 
 First use trusted host hash capabilities to compare `RELEASE-MANIFEST.json` with the digest from
@@ -44,7 +44,19 @@ Do not use a floating `main` URL or mix files from different releases.
    confirm capture in the way your environment supports. Setup must distinguish file presence,
    configured hooks/tools and actual execution.
 
-For the current schema1.0 candidate, knowledge files do not need a format migration. A future
+Two brain-side steps the bundle update does not do for you:
+
+- **Pending curation requests from the v2.0.0-rc.1 draft** read `PROTECTED_SCOPE_CHANGED` after the
+  update, because the protected snapshot changed shape. Their artifacts are kept. On the owner's
+  decision, archive each one (`node tools/codex-curation.js archive --brain <brain> --request <id> --reason "<why>"`)
+  and let a later turn create a fresh request. Do not edit receipts to make them pass.
+- **The playground ignore rule.** Closing a playground now moves it to
+  `playgrounds/archive/<year>/<id>/`. In a git brain, `playgrounds/.gitignore` must contain both
+  `*/scratch/` and `archive/*/*/scratch/`. A 1.6 brain usually has no such file; `/synaptic-upgrade`
+  creates it or adds the missing line. Check it before the first close, or the next commit records every
+  archived scratch asset, which cannot be undone without rewriting history.
+
+For the current schema 1.0, knowledge files do not need a format migration. A future
 release must state explicitly if that changes.
 
 Installation is an agent-led operation, not an unattended installer. The package tool only builds
@@ -61,6 +73,24 @@ node /path/to/package/tools/package-release.js --verify-skill /path/to/installed
 This checks the retained inventory and byte hashes, including missing or modified files. Modified
 files need review; do not overwrite them merely to obtain a passing check. Without Node, perform
 the same comparison with permitted host capabilities or state that verification is incomplete.
+
+## Adopt the work-item model at your own pace
+
+1.7 records work in `tasks/INDEX.md` (one row per task) and `proposals/INDEX.md` (candidates); a
+playground gets a `tasks.md` only when the work cannot be resumed from the request and its current state.
+A 1.6 brain lists its playgrounds in the journal instead. The new model is optional and per brain:
+
+- When the journal lists active playgrounds, `/synaptic-upgrade` offers to create `tasks/INDEX.md`.
+  Declining changes nothing until the first task creates it anyway; you can also ask to adopt later.
+- When the index is created, each playground in the journal list becomes an open legacy row
+  (`home: playgrounds/<id>/`). Its folder is not touched, and the journal keeps one pointer line.
+- New work gets the new shape. Converting an old playground to a `tasks.md` is optional, one item at a
+  time, only when you ask.
+- Task files another tool owns (for example ODD's `odd/tasks/<feature>.md`) are read in place, never
+  copied. You decide the owner once; it is recorded as one `Task files:` line in `BRAIN.md`.
+- Nothing is deleted on close any more: a closed playground moves to `playgrounds/archive/<year>/<id>/`.
+
+Explained for people, with an example: [Work items](docs/concepts/work-items.md).
 
 ## Choose the supported path for your environment
 

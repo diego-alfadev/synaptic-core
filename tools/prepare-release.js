@@ -10,7 +10,8 @@ const {build,verifyPackage,MANIFEST,validPath}=require('./package-release');
 const {publishNewDirectory}=require('./lib/publish-new-directory');
 const hash=bytes=>crypto.createHash('sha256').update(bytes).digest('hex');
 const json=value=>Buffer.from(JSON.stringify(value,null,2)+'\n');
-const RC=/^v(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)-rc\.[1-9]\d*$/;
+const RELEASE_TAG=/^v(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)(?:-rc\.[1-9]\d*)?$/;
+const isCandidate=tag=>tag.includes('-rc.');
 const MAX_TAR_BYTES=128*1024*1024;
 function fail(message){throw Error(message);}
 function exists(file){try{fs.lstatSync(file);return true;}catch(e){if(e.code==='ENOENT')return false;throw e;}}
@@ -61,12 +62,41 @@ function tarPackage(packageRoot,rootName){
   }
   parts.push(Buffer.alloc(1024));return Buffer.concat(parts);
 }
-function notes(tag,commit){return `# Synaptic ${tag} — release candidate\n\nThis is a prerelease candidate, not a stable integration claim.\n\n- Work-item routing keeps tasks, proposals, context and completion evidence together.\n- Optional Cortex tools read current files and provide lexical search; your Markdown brain remains the record.\n- VS Code setup uses explicit working profiles and reviewable, recoverable project wiring. Installing files alone does not prove loading, capture or tool connection.\n\nUpgrade from the attached **synaptic-${tag.slice(1)}.tar.gz** asset, which includes generated source receipts and the complete migration package. GitHub's automatic Source code archives are not that prepared package. Follow UPGRADING.md inside it, preserve your existing brain, and review the bounded diff before applying.\n\nNative capture, automatic model-curation and the real VS Code migration still require their own scoped acceptance evidence; a flag or synthetic test is not live proof.\n\nExact source: ${commit}.\n`;}
+function notes(tag,commit,manifestSha256){const candidate=isCandidate(tag);return `# Synaptic ${tag}${candidate?' — release candidate\n\nThis is a prerelease candidate, not a stable integration claim.':''}\n\n- Work-item routing keeps tasks, proposals, context and completion evidence together.\n- Optional Cortex tools read current files and provide lexical search; your Markdown brain remains the record.\n- VS Code setup uses explicit working profiles and reviewable, recoverable project wiring. Installing files alone does not prove loading, capture or tool connection.\n\nUpgrade from the attached **synaptic-${tag.slice(1)}.tar.gz** asset, which includes generated source receipts and the complete migration package. GitHub's automatic Source code archives are not that prepared package. Follow UPGRADING.md inside it, preserve your existing brain, and review the bounded diff before applying.\n\n${candidate?'Native capture, automatic model-curation and the real VS Code migration still require their own scoped acceptance evidence':'Native capture, automatic model-curation and VS Code integration are optional previews: each needs its own host evidence'}; a flag or synthetic test is not live proof.\n\nExact source: ${commit}.\n\nTrusted package digest, also recorded in PREPARED-RELEASE.json: \`manifestSha256\`: \`${manifestSha256}\`. Check the extracted package against it before running anything from it: \`node <package>/tools/package-release.js --verify <package> --sha256 ${manifestSha256}\`.\n`;}
 function sums(root,archive){return [archive,'PREPARED-RELEASE.json','RELEASE-NOTES.md'].map(ref=>`${hash(read(root,ref))}  ${ref}\n`).join('');}
-function verifyPrepared(input){
+function preparedMetadata(input){
   const root=fs.realpathSync(path.resolve(input));if(!fs.statSync(root).isDirectory())fail('HANDOFF_DIRECTORY_REQUIRED');
   let metadata;try{metadata=JSON.parse(read(root,'PREPARED-RELEASE.json').toString('utf8'));}catch(_){fail('INVALID_HANDOFF_METADATA');}
-  if(!metadata || metadata.format!=='synaptic-owner-rc-handoff-v1' || !RC.test(metadata.tag) || metadata.engineVersion!==metadata.tag.slice(1) || !/^[a-f0-9]{40}$/.test(metadata.sourceCommit) || metadata.archive!==`synaptic-${metadata.engineVersion}.tar.gz` || metadata.archiveRoot!==`synaptic-${metadata.engineVersion}` || !/^[a-f0-9]{64}$/.test(metadata.archiveSha256) || !/^[a-f0-9]{64}$/.test(metadata.manifestSha256))fail('INVALID_HANDOFF_METADATA');
+  if(!metadata || metadata.format!=='synaptic-owner-rc-handoff-v1' || !RELEASE_TAG.test(metadata.tag) || metadata.engineVersion!==metadata.tag.slice(1) || !/^[a-f0-9]{40}$/.test(metadata.sourceCommit) || metadata.archive!==`synaptic-${metadata.engineVersion}.tar.gz` || metadata.archiveRoot!==`synaptic-${metadata.engineVersion}` || !/^[a-f0-9]{64}$/.test(metadata.archiveSha256) || !/^[a-f0-9]{64}$/.test(metadata.manifestSha256))fail('INVALID_HANDOFF_METADATA');
+  return {root,metadata};
+}
+// Finds one regular entry in an archive written by tarPackage (USTAR, ASCII name).
+function tarEntry(tar,wanted){
+  for(let offset=0;offset+512<=tar.length;){
+    const header=tar.subarray(offset,offset+512);if(header.every(b=>b===0))break;
+    const field=(start,length)=>{const raw=header.subarray(start,start+length),end=raw.indexOf(0);return raw.subarray(0,end<0?length:end).toString('utf8');};
+    const size=parseInt(field(124,12).trim() || '0',8),start=offset+512;
+    if(!Number.isSafeInteger(size) || size<0 || start+size>tar.length)fail('INVALID_ARCHIVE');
+    const prefix=field(345,155),name=(prefix?prefix+'/':'')+field(0,100);
+    if(['0',''].includes(field(156,1)) && name===wanted)return tar.subarray(start,start+size);
+    offset=start+Math.ceil(size/512)*512;
+  }
+  fail('ARCHIVE_MANIFEST_MISSING');
+}
+// The four files a release page carries, without the expanded package/ directory.
+function verifyAssets(input){
+  const {root,metadata}=preparedMetadata(input);
+  const expected=[metadata.archive,'PREPARED-RELEASE.json','RELEASE-NOTES.md','SHA256SUMS'].sort();
+  if(JSON.stringify(fs.readdirSync(root).sort())!==JSON.stringify(expected))fail('ASSET_INVENTORY_MISMATCH');
+  const archive=read(root,metadata.archive);
+  if(hash(archive)!==metadata.archiveSha256)fail('ARCHIVE_DIGEST_MISMATCH');
+  if(read(root,'SHA256SUMS').toString('utf8')!==sums(root,metadata.archive))fail('HANDOFF_DIGEST_MISMATCH');
+  let unpacked;try{unpacked=zlib.gunzipSync(archive,{maxOutputLength:MAX_TAR_BYTES});}catch(_){fail('INVALID_ARCHIVE');}
+  if(hash(tarEntry(unpacked,metadata.archiveRoot+'/'+MANIFEST))!==metadata.manifestSha256)fail('RELEASE_MANIFEST_HASH_MISMATCH');
+  return {operation:'release-assets-verify',sourceCommit:metadata.sourceCommit,tag:metadata.tag,archive:metadata.archive,archiveSha256:metadata.archiveSha256,manifestSha256:metadata.manifestSha256,status:'assets-verified',packageContent:'not-checked; extract and run package-release.js --verify <package> --sha256 <manifestSha256>'};
+}
+function verifyPrepared(input){
+  const {root,metadata}=preparedMetadata(input);
   const expected=['package',metadata.archive,'PREPARED-RELEASE.json','RELEASE-NOTES.md','SHA256SUMS'].sort();
   if(JSON.stringify(fs.readdirSync(root).sort())!==JSON.stringify(expected))fail('HANDOFF_INVENTORY_MISMATCH');
   if(fs.lstatSync(path.join(root,'package')).isSymbolicLink())fail('SYMLINK_HANDOFF_ENTRY');
@@ -81,7 +111,7 @@ function verifyPrepared(input){
 }
 function prepare(repoArg,commit,tag,outArg){
   if(typeof commit!=='string' || !/^[a-f0-9]{40}$/.test(commit))fail('EXACT_40_CHARACTER_COMMIT_REQUIRED');
-  if(!RC.test(tag || ''))fail('EXPLICIT_RC_TAG_REQUIRED');
+  if(!RELEASE_TAG.test(tag || ''))fail('EXPLICIT_RELEASE_TAG_REQUIRED');
   const repo=path.resolve(repoArg),resolved=git(repo,['rev-parse','--verify','--end-of-options',commit+'^{commit}']).trim();
   if(resolved!==commit)fail('SOURCE_COMMIT_MISMATCH');
   const skill=git(repo,['show',commit+':standalone/synaptic/SKILL.md']);
@@ -97,8 +127,8 @@ function prepare(repoArg,commit,tag,outArg){
     // USTAR/PAX timestamps/owners are fixed. No live paths or timestamps enter the archive.
     const archive=zlib.gzipSync(tarPackage(packageRoot,archiveRoot),{level:9,mtime:0});
     fs.writeFileSync(path.join(stage,archiveName),archive,{flag:'wx'});
-    fs.writeFileSync(path.join(stage,'PREPARED-RELEASE.json'),json({format:'synaptic-owner-rc-handoff-v1',tag,engineVersion:report.engineVersion,sourceCommit:commit,archive:archiveName,archiveRoot,archiveSha256:hash(archive),manifestSha256:report.manifestSha256,publication:'not-published',releaseMode:'owner-reviewed-draft-prerelease'}),{flag:'wx'});
-    fs.writeFileSync(path.join(stage,'RELEASE-NOTES.md'),notes(tag,commit),{flag:'wx'});
+    fs.writeFileSync(path.join(stage,'PREPARED-RELEASE.json'),json({format:'synaptic-owner-rc-handoff-v1',tag,engineVersion:report.engineVersion,sourceCommit:commit,archive:archiveName,archiveRoot,archiveSha256:hash(archive),manifestSha256:report.manifestSha256,publication:'not-published',releaseMode:isCandidate(tag)?'owner-reviewed-draft-prerelease':'owner-reviewed-draft-release'}),{flag:'wx'});
+    fs.writeFileSync(path.join(stage,'RELEASE-NOTES.md'),notes(tag,commit,report.manifestSha256),{flag:'wx'});
     fs.writeFileSync(path.join(stage,'SHA256SUMS'),sums(stage,archiveName),{flag:'wx'});
     verifyPrepared(stage);const publication=publishNewDirectory(stage,out);
     return {...verifyPrepared(out),operation:'owner-release-prepare',path:out,publicationAttempts:publication.attempts};
@@ -106,11 +136,12 @@ function prepare(repoArg,commit,tag,outArg){
 }
 function main(args){
   if(args.length===2 && args[0]==='--verify')return verifyPrepared(args[1]);
+  if(args.length===2 && args[0]==='--verify-assets')return verifyAssets(args[1]);
   const options={};for(let i=0;i<args.length;i++){
     if(!['--repo','--ref','--version','--out'].includes(args[i]) || options[args[i]]!==undefined || !args[i+1] || args[i+1].startsWith('--'))fail('INVALID_ARGUMENTS');options[args[i]]=args[++i];
   }
-  if(!options['--ref'] || !options['--version'] || !options['--out'])fail('Usage: node tools/prepare-release.js --ref <exact-40-character-commit> --version <vX.Y.Z-rc.N> --out <NEW-directory> [--repo <checkout>] | --verify <prepared-directory>');
+  if(!options['--ref'] || !options['--version'] || !options['--out'])fail('Usage: node tools/prepare-release.js --ref <exact-40-character-commit> --version <vX.Y.Z | vX.Y.Z-rc.N> --out <NEW-directory> [--repo <checkout>] | --verify <prepared-directory> | --verify-assets <downloaded-assets-directory>');
   return prepare(options['--repo'] || path.resolve(__dirname,'..'),options['--ref'],options['--version'],options['--out']);
 }
 if(require.main===module){try{process.stdout.write(JSON.stringify(main(process.argv.slice(2)))+'\n');}catch(e){process.stderr.write(JSON.stringify({error:e.message,...(e.stagingPath?{stagingPath:e.stagingPath}:{})})+'\n');process.exitCode=1;}}
-module.exports={prepare,verifyPrepared,tarPath,tarHeader};
+module.exports={prepare,verifyPrepared,verifyAssets,tarPath,tarHeader};

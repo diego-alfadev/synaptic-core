@@ -27,7 +27,7 @@
 <!-- Tasks and playgrounds live in tasks/INDEX.md (one row each; the first task creates it).
      Keep one pointer line here: `tasks/INDEX.md` (open tasks and playgrounds).
      An older brain without tasks/INDEX.md lists open playgrounds here instead:
-     `playgrounds/{{task-id}}/` — {{what it is and current status}}; remove the entry at burn or archive. -->
+     `playgrounds/{{task-id}}/` — {{what it is and current status}}; remove the entry at close. -->
 
 ---
 

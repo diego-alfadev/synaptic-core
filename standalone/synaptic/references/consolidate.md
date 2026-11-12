@@ -10,7 +10,7 @@ consolidation/wrap-up algorithm lives; other procedures call it, they do not re-
 
 > **The brain must be DIFFERENT after each ingest, not just bigger.** Consolidation is a
 > *rewrite* pass, not an append pass. A successful run updates the pages a source touches,
-> reconciles contradictions, and burns scratch — it does not merely add nodes at the end. If
+> reconciles contradictions, and leaves scratch unpromoted — it does not merely add nodes at the end. If
 > the only effect of a consolidation run is "the wiki got longer," the run did it wrong.
 
 **Autonomy.** Every edit to an existing node (a rewrite, a supersession, a `contradicts` link) follows
@@ -37,11 +37,12 @@ Read **two sources**, not one:
 1. `journal/_current.md` — session breadcrumbs (and, in an older brain without `tasks/INDEX.md`,
    the **Active playgrounds** section), plus the work-item indexes when they exist: `tasks/INDEX.md`
    and `proposals/INDEX.md` (`references/contract.md` §6). A row whose `home` is another tool's file
-   (for example `odd/tasks/<feature>.md`) is read in place, never copied.
+   (for example `odd/tasks/<feature>.md`) is read in place, never copied, and read tolerantly: find its
+   learnings, tasks and log by heading, assume neither checkboxes nor any section after the log.
 2. **The artifacts inside each open `playgrounds/{task}/` directory** — its `tasks.md` first (Key
    Learnings, then Specs and Log), then drafts, analyses, notes and intermediate outputs.
    `scratch/` is skipped except for files that `tasks.md` or an artifact references. Consolidation
-   distils **durable conclusions** from these and **burns the scratch**; it does not promote raw working material wholesale. (See *Playground
+   distils **durable conclusions** from these and **leaves the scratch unpromoted**; it does not promote raw working material wholesale. (See *Playground
    Artifact Scan* below for the discipline that keeps unfinished/outdated artifacts out — the
    "email" lesson: distil the conclusion, discard the draft.)
 
@@ -57,7 +58,7 @@ For every item, assign one of the following destinations:
 | Candidate | A "we should…" nobody has committed to | a `proposals/INDEX.md` row, `from:` the journal date (AUTO in the default tiers; a brain whose tier table does not name it: propose. Promotion: `references/contract.md` §6) |
 | Large verbatim artifact | DDL, spec, exported sheet | `references/raw/` + existence entry + distilled node |
 | Temporal/journal noise | Debug output, session status, one-off lookups | Discard |
-| Playground scratch | Drafts, dead-ends, intermediate outputs, superseded analysis | Distil any durable conclusion, then **burn** |
+| Playground scratch | Drafts, dead-ends, intermediate outputs, superseded analysis | Distil any durable conclusion; the rest stays with the playground and is archived at close, never promoted |
 
 **Uncertainty test:** "Would a cold agent reading this six months from now benefit from it?" If no, discard.
 
@@ -101,6 +102,11 @@ Before writing:
 4. **Register** the node in `knowledge/{cluster}/_index.md` with one MOC line: `- [[node-name]] — <routing text>`. **Routing text** is written for the next agent deciding whether to open the node: what it answers or when to reach for it. It is **non-empty, ≤120 characters**, and independent of `description:` (it may say the same thing, but it is not a copy and is not kept in sync with it). `/synaptic-audit` Step 4 checks both limits. If the cluster does not exist, create the `_index.md` from `templates/node.md` pattern and add the cluster to `knowledge/INDEX.md`.
 5. **Tabular data** → update or create the relevant `registries/{table}.md`; register in `registries/_index.md`.
 6. **Large verbatim artifact** → copy to `references/raw/`; add one-line entry to `references/_index.md`; create a distilled knowledge node with `type: reference` that links to the artifact entry. **Record its `source`** on the distilled node, plus a `content_hash` when the brain is outside git (see below), so future runs can detect that the raw artifact changed.
+7. **Written from work** → a node or lesson distilled from a work document records where it came from in
+   `source:`, with a qualified locator a cold reader can follow: the brain task and its log line
+   (`source: "T7/L4"`, `T7` in `tasks/INDEX.md`, `L4` in its `tasks.md`); for a document another tool owns,
+   its path and line, plus the commit when it is in git (`source: "odd/tasks/search-filters.md:42@3f2a9c1"`).
+   The task row still resolves after close, because closing moves the document, never deletes it.
 
 **Frontmatter rules** (required fields, the `status` / `lifecycle` enums and how they interact, typed
 edges, `untriaged` read semantics): `references/contract.md` — the one home. On a node you write here:
@@ -167,7 +173,7 @@ For each item being consolidated, ask: **does this contradict an existing node?*
 > plain files — never an unguarded auto-rewriter.
 
 > **Deletion ledger (standing rule — not migration-only).** Any operation that **deletes, moves, or
-> archives** a node (a dedupe merge, a split, a burned playground, a re-file) records a one-line ledger
+> archives** a node (a dedupe merge, a split, a closed playground, a re-file) records a one-line ledger
 > entry: *what, why, loser→winner or destination, recoverable-via-git*. This is the same discipline the
 > upgrade runbook (`references/upgrade-to-v1.md`) uses — it applies to every `/synaptic-consolidate`
 > run, not just migrations. Justify every delete/move/archive; **git is the archive.**
@@ -193,7 +199,7 @@ If any check fails, fix before proceeding. Do not skip this gate.
 ## Playground Artifact Scan & Closing Flow
 
 Consolidation **scans the artifacts inside playgrounds**, not just the journal's index of them.
-The discipline: **distil the durable conclusion, burn the scratch.** A playground accumulates
+The discipline: **distil the durable conclusion; archive the record, never promote the scratch.** A playground accumulates
 drafts, dead-ends, intermediate analysis, and superseded versions — most of it is working
 material that should never reach the wiki. The **promotion test (Step 2) and quality gate (Step 6)
 are the filter** that keeps unfinished or outdated artifacts out.
@@ -213,15 +219,59 @@ entry of the journal's **Active playgrounds** list):
    unfinished, outdated, or superseded artifacts do **not** pass — distil any durable conclusion and
    discard the rest.
 3. Move durable findings → knowledge cluster nodes; procedures → `type: playbook` nodes in their cluster; lessons → `knowledge/lessons/`; verbatim artifacts worth preserving → `references/raw/` (with `source`, and `content_hash` outside git, per Step 4).
-4. Confirm with user: "Playground `{task-id}` consolidated — burn (delete) or archive?"
-   - **Default: burn** — delete the directory (the scratch is gone; the distilled conclusions live in the wiki).
-   - Archive (exception): move to `playgrounds/archive/` only on explicit user request.
-   - **CORE-safety:** burn is preceded by the consolidation having captured everything durable, the
-     log recording what was distilled, and git retaining the deleted content — archive-before-delete
-     in spirit (git is the archive).
+4. **Close = move, never delete.** The work record is append-only and archived, never deleted
+   (`references/contract.md` §6). Confirm with the user first: "Playground `{task-id}` consolidated —
+   close it to `playgrounds/archive/<year>/{task-id}/`?" On a yes:
+   - **Precondition: no curation request pending.** Moving a folder while a model-curation request is
+     pending marks that request `PROTECTED_SCOPE_CHANGED`. Check first (where the adapter is installed:
+     `node tools/codex-curation.js status`, `docs/integrations/codex-curation.md`); if one is pending, let
+     it finish or, on the owner's explicit decision, archive the request first, then close.
+   - Append to its `tasks.md` Log a dated close line and an **asset manifest**: one line per file under
+     `scratch/` (name, size), marked *local-only*. Assets exist only on the machine that produced them;
+     the manifest tells a reader elsewhere that they existed. A legacy playground with no `tasks.md`
+     gets the close line and manifest in a new `CLOSED.md` in its folder; it is not converted.
+   - **In a git brain, check the ignore rule before the move.** `playgrounds/.gitignore` must contain
+     `archive/*/*/scratch/` as well as `*/scratch/`. A brain created before this rule may have only the
+     first line, or no file at all: create or complete it before moving, or the next commit records
+     every scratch asset. Confirm with `git check-ignore -v playgrounds/archive/<year>/<id>/scratch/<file>`
+     after the move.
+   - Move the **whole folder** to `playgrounds/archive/<year>/<id>/` (`<year>` = the close year). Nothing
+     is deleted: artifacts stay tracked, `scratch/` stays git-ignored at that depth, so assets remain on
+     the local disk next to their document and are never committed. Keep local-only assets under `scratch/`: an asset
+     elsewhere in the folder is tracked like any artifact.
+   - Work whose home is outside `playgrounds/` (in a repository, or a file another harness owns) is
+     **not** moved: its record stays with its owner.
 5. Close its row in `tasks/INDEX.md`: `[x]` with the proof (the nodes written, the deliverable) or `[-]`
-   with a reason, and today's `updated`. In an older brain, remove the entry from `journal/_current.md`.
-   Burning deletes `scratch/` with the rest of the playground.
+   with a reason, today's `updated`, and `home` rewritten to the archived path
+   (`playgrounds/archive/<year>/<id>/tasks.md`; for a legacy folder home, `playgrounds/archive/<year>/<id>/`),
+   so the closed row still resolves. Same row, same `T<n>`.
+   In an older brain, remove the entry from `journal/_current.md`.
+6. **Asset cleanup (optional, only when the owner asks)** frees disk, never record: `git clean -X` scoped to one
+   archive year (`git clean -X -n -- playgrounds/archive/<year>/` to preview, then
+   `git clean -X -f -- playgrounds/archive/<year>/`) removes ignored files only; tracked documents and
+   artifacts stay. It changes the archive listing, so it too runs with no curation request pending.
+   The manifest keeps the fact that the assets existed. Archived records are protected by convention
+   and git history, not by a check: the curation snapshot may not see an edit inside the archive.
+
+### External-owner mode (`references/contract.md` §6)
+
+When `BRAIN.md` records `Task files: owned by <harness> at <path>`, that harness's file is the work
+document: no brain-side `tasks.md` is created, and a playground for that work holds analysis only. If
+such files appear and `BRAIN.md` records no owner, ask the owner once and write the line; do not decide
+per session. Worked example, end to end:
+
+1. `BRAIN.md` has `**Task files:** owned by ODD at odd/tasks/*.md`. The owner starts "search filters";
+   ODD writes `odd/tasks/search-filters.md` before the first change (the pre-work rule).
+2. The brain gets one row, nothing else: `| T12 | [ ] | Search filters | odd/tasks/search-filters.md | — |  | 2026-11-01 |`.
+   `tools/check.js` lists that home as *unverified* (outside the brain), never as an error.
+3. A comparison of query builders needs room: `playgrounds/t12-search-analysis/` holds the analysis
+   only; the row's `home` stays the ODD file.
+4. Situation reads the ODD file in place. It has `## Tasks` without checkboxes and ends at
+   `## Progress`, so progress is "not stated".
+5. Consolidate reads the file by heading, distils the decision into a node with
+   `source: "odd/tasks/search-filters.md:40@<commit of that file>"`, closes the analysis playground to
+   `playgrounds/archive/2026/t12-search-analysis/`, and closes the row with the proof. The ODD file is
+   not moved, copied or edited: its record stays with its owner.
 
 ### Proposals and tasks
 
@@ -299,7 +349,7 @@ Consolidated:
   - N lessons added: knowledge/lessons/{names}
   - N registry entries updated: registries/{tables}
   - N artifacts stored: references/raw/{filenames} (_index.md entries + `source`; `content_hash` outside git)
-  - N playground(s) closed: {task-ids} (scratch burned / archived; durable conclusions distilled)
+  - N playground(s) closed: {task-ids} → playgrounds/archive/{year}/ (asset manifest written; durable conclusions distilled)
   - N items discarded (temporal noise / superseded scratch)
 
 Journal trimmed to N lines (budget: 80).
@@ -321,7 +371,7 @@ BRAIN.md updated: field bumped to {date}.
 **Step 1 — Classify (scan journal + playground artifacts):**
 - Retry note → lesson (specific failure → reusable principle).
 - Token caching note → durable knowledge / pattern (performance decision that recurs).
-- Implementation draft (playground scratch) → conclusion already distilled into the two notes; burn.
+- Implementation draft (playground scratch) → conclusion already distilled into the two notes; not promoted, archived with the playground.
 - OpenAPI spec → large verbatim artifact → `references/raw/` (record `source`, plus `content_hash` outside git, on the distilled node).
 
 **Step 2 — Atomicity test:** both notes are distinct concepts; two separate nodes.
@@ -345,7 +395,7 @@ caching, because per-request re-auth was the latency cause`, and record the `sup
 
 **Step 6 — Gate:** frontmatter filled; both nodes < 150 lines; MOC-reachable; no broken links. Pass.
 
-**Outcome:** playground scratch burned; one node rewritten + one reconciliation logged; journal
+**Outcome:** playground closed to `playgrounds/archive/{year}/feat-88-api-client/` (draft not promoted); one node rewritten + one reconciliation logged; journal
 trimmed to 22 lines; `BRAIN.md` `updated:` stamped.
 
 ---
@@ -367,8 +417,8 @@ contract". Cadence: `templates/BRAIN.md`.
 - **Do not leave contradictions side-by-side silently:** reconcile (Step 5a) — supersede-and-rewrite,
   `contradicts`-link with a `## bias-check` note, or flag for a human. Never two unlinked conflicting nodes.
 - **Do not persist temporal noise:** debug output is not a knowledge node.
-- **Do not promote playground scratch wholesale:** distil the durable conclusion; burn the drafts,
-  dead-ends, and superseded artifacts (the "email" lesson).
+- **Do not promote playground scratch wholesale:** distil the durable conclusion; leave the drafts,
+  dead-ends, and superseded artifacts in the playground, archived at close (the "email" lesson).
 - **Do not create orphan nodes:** every node must appear in its cluster `_index.md`.
 - **Do not duplicate:** search first; update existing nodes rather than creating parallel ones.
 - **Do not route persona content:** the brain has no identity directory. Hard project constraints → a knowledge node; agent behavior rules → offer the exact text for the user's own `AGENTS.md` (outside the SYNAPTIC block) or user-level instructions, and write it only on their explicit instruction; never into the brain.

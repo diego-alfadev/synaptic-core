@@ -50,7 +50,7 @@ also distinct from promotion into the wiki.
 
 The **capture contract** (embedded in every `BRAIN.md`) is a six-step agent-agnostic algorithm. Any agent that runs this formula produces a navigable graph — not a pile of notes.
 
-1. **Classify** — durable knowledge · tabular record → registry · lesson · decision · big task → playground · temporal → journal · noise → drop
+1. **Classify** — durable knowledge · tabular record → registry · lesson · decision · task → `tasks/INDEX.md` row (playground only if not resumable from the request + current state) · candidate → `proposals/INDEX.md` row · temporal → journal · noise → drop
 2. **Atomicity test** — promote only when it recurs (2+ instances → pattern) or is a reusable decision/lesson; incident-specifics stay in playground/journal
 3. **Generalize** — strip the anecdote, keep the reusable pattern; name = the concept, not the ticket
 4. **Place & link** — atomic node in the right cluster; D1 frontmatter; `[[wikilinks]]`; register in cluster `_index.md`

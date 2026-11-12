@@ -67,7 +67,7 @@ function serve(root,options={}) {
         keys(a,['query','limit']) && typeof a.query==='string' && a.query.length>0 && a.query.length<=1024 && (a.limit===undefined || Number.isInteger(a.limit) && a.limit>=1 && a.limit<=100);
       if(!valid) {error(id,-32602,'Invalid tool arguments');return;}
       try{const result=p.name==='brain_status'?port.status():p.name==='brain_read'?port.read(a.ref):port.search(a.query,{limit:a.limit});reply({content:[{type:'text',text:JSON.stringify(result)}],isError:false});}
-      catch(e){reply({content:[{type:'text',text:e.code || 'Operation unavailable'}],isError:true});}return;
+      catch(e){reply({content:[{type:'text',text:e.code?e.code+(e.ref?': '+e.ref:''):'Operation unavailable'}],isError:true});}return;
     }
     error(id,-32601,'Method not found');
   }

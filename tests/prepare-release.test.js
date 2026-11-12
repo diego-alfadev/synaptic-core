@@ -60,7 +60,7 @@ try{
   });
   test('exact commit and explicit prerelease identity are required',()=>{
     for(const ref of ['HEAD','main',commit.slice(0,12),'--bad'])assert.throws(()=>prepare(repo,ref,tag,path.join(root,'invalid-ref')),/EXACT_40_CHARACTER_COMMIT_REQUIRED/);
-    for(const version of ['v2.0.0','2.0.0-rc.1','v2.0.0-rc.0','v02.0.0-rc.1'])assert.throws(()=>prepare(repo,commit,version,path.join(root,'invalid-tag')),/EXPLICIT_RC_TAG_REQUIRED/);
+    for(const version of ['v2.0','2.0.0-rc.1','v2.0.0-rc.0','v02.0.0-rc.1','v2.0.0-beta.1','v2.0.0-rc.1+build'])assert.throws(()=>prepare(repo,commit,version,path.join(root,'invalid-tag')),/EXPLICIT_RELEASE_TAG_REQUIRED/);
   });
   test('changed asset, metadata or notes fail local verification',()=>{
     for(const ref of [result.archive,'PREPARED-RELEASE.json','RELEASE-NOTES.md']){
@@ -71,6 +71,40 @@ try{
   test('verification CLI works without git/gh on PATH and does not fetch anything',()=>{
     const cli=path.resolve(__dirname,'../tools/prepare-release.js');const checked=spawnSync(process.execPath,[cli,'--verify',out],{encoding:'utf8',env:{...process.env,PATH:''}});
     assert.equal(checked.status,0,checked.stderr);assert.equal(JSON.parse(checked.stdout).sourceCommit,commit);assert.equal(JSON.parse(checked.stdout).published,false);
+  });
+  test('release notes print the trusted manifest digest',()=>{
+    const notes=fs.readFileSync(path.join(out,'RELEASE-NOTES.md'),'utf8');
+    assert(notes.includes('`manifestSha256`: `'+result.manifestSha256+'`'),notes);
+  });
+  test('the four downloaded release assets verify without the expanded package',()=>{
+    const assets=path.join(root,'downloaded assets');fs.mkdirSync(assets);
+    for(const ref of [result.archive,'PREPARED-RELEASE.json','RELEASE-NOTES.md','SHA256SUMS'])fs.copyFileSync(path.join(out,ref),path.join(assets,ref));
+    assert.throws(()=>verifyPrepared(assets),/HANDOFF_INVENTORY_MISMATCH/);
+    const listed=fs.readFileSync(path.join(assets,'SHA256SUMS'),'utf8').trim().split('\n').map(l=>l.split('  ')[1]);
+    for(const ref of listed)assert(fs.existsSync(path.join(assets,ref)),ref);
+    const cli=path.resolve(__dirname,'../tools/prepare-release.js');
+    const checked=spawnSync(process.execPath,[cli,'--verify-assets',assets],{encoding:'utf8',env:{...process.env,PATH:''}});assert.equal(checked.status,0,checked.stderr);
+    const report=JSON.parse(checked.stdout);assert.equal(report.manifestSha256,result.manifestSha256);assert.equal(report.archiveSha256,result.archiveSha256);assert.equal(report.status,'assets-verified');
+    for(const ref of [result.archive,'PREPARED-RELEASE.json','RELEASE-NOTES.md','SHA256SUMS']){
+      const copy=path.join(root,'tampered asset '+ref.replace(/[^A-Za-z0-9]/g,'_'));copyFixtureTree(assets,copy);fs.appendFileSync(path.join(copy,ref),'tampered');
+      assert.equal(spawnSync(process.execPath,[cli,'--verify-assets',copy],{encoding:'utf8'}).status,1,ref);
+    }
+  });
+  test('documented gh release commands attach every file SHA256SUMS lists',()=>{
+    const releasing=fs.readFileSync(path.join(__dirname,'../docs/RELEASING.md'),'utf8');
+    const commands=releasing.split(/\r?\n/).filter(l=>l.startsWith('gh release create ')).map(l=>l.replace(/ --notes-file \S+/,''));assert(commands.length>=2);
+    for(const line of commands)for(const ref of ['synaptic-1.7.0.tar.gz','SHA256SUMS','PREPARED-RELEASE.json','RELEASE-NOTES.md'])assert(new RegExp(' \\S*/'+ref.replace(/\./g,'\\.')+'(?: |$)').test(line),ref+' not attached: '+line);
+  });
+  test('a stable tag prepares a verified release without prerelease wording',()=>{
+    put('standalone/synaptic/SKILL.md','---\nname: synaptic\nversion: 2.0.0\n---\n');git(['add','standalone/synaptic/SKILL.md']);git(['commit','--quiet','-m','fixture: stable version']);const stable=git(['rev-parse','HEAD']);
+    assert.throws(()=>prepare(repo,stable,tag,path.join(root,'stable-mismatch')),/ENGINE_VERSION_MISMATCH/);
+    const target=path.join(root,'prepared stable'),report=prepare(repo,stable,'v2.0.0',target);
+    assert.equal(report.engineVersion,'2.0.0');assert.equal(report.archive,'synaptic-2.0.0.tar.gz');assert.equal(verifyPrepared(target).tag,'v2.0.0');
+    const notes=fs.readFileSync(path.join(target,'RELEASE-NOTES.md'),'utf8');
+    assert(notes.startsWith('# Synaptic v2.0.0\n'));assert(!/candidate|prerelease/i.test(notes));assert(notes.includes(report.manifestSha256));
+    assert.equal(JSON.parse(fs.readFileSync(path.join(target,'PREPARED-RELEASE.json'),'utf8')).releaseMode,'owner-reviewed-draft-release');
+    assert.equal(JSON.parse(fs.readFileSync(path.join(out,'PREPARED-RELEASE.json'),'utf8')).releaseMode,'owner-reviewed-draft-prerelease');
+    put('standalone/synaptic/SKILL.md','---\nname: synaptic\nversion: 2.0.0-rc.1\n---\n');git(['add','standalone/synaptic/SKILL.md']);git(['commit','--quiet','-m','fixture: back to the RC version']);
   });
   test('unrepresentable USTAR paths fail clearly, never silently truncate or produce final output',()=>{
     assert.throws(()=>tarPath('synaptic-2.0.0-rc.1/research/'+('x'.repeat(101))),/ARCHIVE_PATH_TOO_LONG/);

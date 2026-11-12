@@ -75,12 +75,15 @@ Output is grouped by file.
 | `tags` must be a YAML list (not scalar, not empty) | WARN |
 | Knowledge node filenames kebab-case; no duplicate basenames across `knowledge/` | ERROR |
 | MOC coverage: every node referenced from its cluster `_index.md` or `INDEX.md`; every cluster `_index.md` linked from `INDEX.md` | ERROR |
-| Broken `[[wikilinks]]`; excludes scaffolding (`templates/`, `references/raw/`) and MOC files; skips HTML comments, inline code, placeholder targets (`{{...}}`) | ERROR |
+| Broken `[[wikilinks]]`; excludes scaffolding (`templates/`, `references/raw/`), frozen history (`audits/`, `playgrounds/archive/`) and MOC files; skips HTML comments, inline code, placeholder targets (`{{...}}`) | ERROR |
 | Registry files: `type: registry` frontmatter + listed in `registries/_index.md` | ERROR |
 | References files (non-`raw/`): listed in `references/_index.md` | WARN |
 | Knowledge nodes > 150 lines and not `type: reference` | WARN |
 | `BRAIN.md` > 110 lines | WARN |
 | `updated:` > 90 days old (skip placeholders) | WARN |
+| Work items (`tasks/INDEX.md`, `proposals/INDEX.md`; columns by header name, absent indexes are fine): an **open** task whose brain-side `home` does not resolve; `[x]` with an empty `note`; a duplicate id; a status outside `[ ]` `[x]` `[-]`; ids not `T<n>`/`P<n>`; `updated` not `YYYY-MM-DD`; `[-]` without a reason; promotion provenance (`to` and `from` name each other, a promoted proposal is `[x]` and cites its `T<n>`, a promoted task is not homed in another proposal's folder) | ERROR |
+| A **closed** task whose brain-side `home` does not resolve (a burned or moved playground) | WARN |
+| A `home` outside the brain (another harness's file, e.g. `odd/tasks/<feature>.md`) | UNVERIFIED (listed, never an error) |
 
 **Retrieval-readiness report (advisory, never gates):** after the checks, `check.js` prints a
 retrieval-readiness block computed over the **shared knowledge-scoped, MOC-excluded edge universe**
@@ -154,11 +157,15 @@ rather than embedded.
 | `{prefix}-core.md` | `BRAIN.md` + `harness/` |
 | `{prefix}-knowledge.md` | `knowledge/` |
 | `{prefix}-registries.md` | `registries/` |
-| `{prefix}-refs-harness.md` | `references/` + `templates/` + `journal/` |
+| `{prefix}-refs-harness.md` | `references/` + `templates/` + `journal/` + `tasks/` + `proposals/` + work documents |
 
 **Ordering:** deterministic (section priority, then alphabetical within section).
-`playgrounds/` README is included in single-file mode; actual task dirs are omitted
-(they are burnable working memory, not knowledge).
+
+**Work documents:** `tasks/` and `proposals/` are exported whole. For each `tasks/INDEX.md` row, the
+document its `home` points at is exported too, open or closed (`playgrounds/<id>/tasks.md`, or
+`playgrounds/archive/<year>/<id>/tasks.md` after close). A home outside the brain (another harness's
+file) or one that does not resolve is listed under "Work documents referenced, not included", never
+embedded. Other playground files and every `scratch/` stay out; the `playgrounds/` README is included.
 
 **No-runtime fallback:** run `/export` — the skill reads files in the same order and
 concatenates them into the chat context or a file.
@@ -205,7 +212,16 @@ node tools/graph.js                                         # reads ./.synaptic,
 node tools/graph.js /path/to/.synaptic                      # explicit path
 node tools/graph.js /path/to/.synaptic --out brain.html     # custom output filename
 node tools/graph.js /path/to/.synaptic --title "Q2 Brain"   # override title in the output
+
+# Neighbours query (prints, writes no HTML)
+node tools/graph.js /path/to/.synaptic --neighbours old-node --type supersedes --direction in
 ```
+
+**Neighbours query.** `--neighbours NODE [--type KIND] [--direction in|out|both]` lists the depth-1
+neighbours of a node over the **directed** edges (`edges` in `brain-graph.js`: one per source,
+target and type, as authored). `--direction in` is the inverse lookup the prose promises ("what
+supersedes this?", "what depends on this?"): files author one direction only, and this computes the
+other. `KIND` is one of the seven typed keys or `wikilink`. An unknown node exits 1.
 
 Renders a **force-directed, interactive graph of your Synaptic brain** as a single
 self-contained HTML file — no Obsidian, no npm install, **no network access**. Open the file in
@@ -226,7 +242,7 @@ disagree on the graph.
 | Element | Detail |
 |---|---|
 | **Nodes** | Every `knowledge/` node (non-MOC), coloured by top-level cluster; radius scales with edge degree |
-| **Edges** | **Typed frontmatter edges** (`relates_to`/`depends_on`/`supersedes`/`contradicts`/`applies_to`/`causes`/`part_of`, block-list `- "[[t]]"`) **plus** body `[[wikilinks]]` — undirected, deduplicated. Edge colour/style encodes the edge type |
+| **Edges** | **Typed frontmatter edges** (`relates_to`/`depends_on`/`supersedes`/`contradicts`/`applies_to`/`causes`/`part_of`, block-list `- "[[t]]"`) **plus** body `[[wikilinks]]` — undirected, deduplicated; when a pair has both, the typed kind is shown. Edge colour/style encodes the edge type |
 | **Typed-edge aware** | Frontmatter block-list edges the old renderer missed are now first-class (a pair joined only by a `depends_on` edge shows a link) |
 | **MOC-edge exclusion** | `_index.md` / `INDEX.md` / `README.md` are excluded as edge **sources and targets** — their wikilinks are navigation scaffolding, not knowledge edges, so INDEX is never a false super-hub |
 | **Tooltips** | Hover any node: full id, cluster, `type`, degree, `lifecycle` (if set), and `tags` |

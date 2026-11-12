@@ -7,7 +7,8 @@ const {spawnSync}=require('node:child_process');
 const {build,verifySkill}=require('../tools/package-release');
 const api=require('../tools/vscode-integration');
 const {sha}=require('../tools/lib/curation-stop');
-const base=fs.mkdtempSync(path.join(os.tmpdir(),'syn-vscode-'));
+// Real path: macOS temp roots are symlinks and the helper compares canonical paths.
+const base=fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(),'syn-vscode-')));
 const repo=path.join(base,'source'),hooks=path.join(base,'empty-hooks');fs.mkdirSync(repo);fs.mkdirSync(hooks);
 const product=path.resolve(__dirname,'..');
 function git(args){const r=spawnSync('git',['-C',repo,'-c','core.hooksPath='+hooks,'-c','commit.gpgSign=false','-c','tag.gpgSign=false',...args],{encoding:'utf8'});assert.equal(r.status,0,r.stderr);return r.stdout.trim();}
@@ -216,8 +217,59 @@ try{
     fs.appendFileSync(path.join(f.workspace,'.github/skills/synaptic/SKILL.md'),'Changed after installation');
     const s=api.status(f.out);assert.equal(s.files,'needs-checking');assert(s.changes.some(e=>e.path.endsWith('/SKILL.md')));assert.equal(s.observer,'explicit-check-only');
   });
+  test('CLI keeps the path of a content mismatch; the documented manual repair restores a verified skill',()=>{
+    const f=fixture();api.prepare(f.input);api.apply(f.out);const skill=path.join(f.workspace,'.github/skills/synaptic');
+    fs.appendFileSync(path.join(skill,'references/vscode.md'),'x');
+    const cli=args=>spawnSync(process.execPath,[path.join(product,'tools/vscode-integration.js'),...args],{encoding:'utf8'});
+    const r=cli(['prepare','--workspace',f.workspace,'--package',packageRoot,'--out',path.join(base,'mismatch-plan'),'--harness','copilot']);
+    assert.equal(r.status,1);assert.equal(r.stderr,'PACKAGE_CONTENT_MISMATCH: references/vscode.md\n');
+    const raw=cli(['prepare','--workspace','RAW_ARGUMENT_MUST_NOT_LEAK: x','--package',packageRoot,'--out',path.join(base,'raw-plan'),'--harness','copilot']);
+    assert.equal(raw.status,1);assert(!raw.stderr.includes('RAW_ARGUMENT'));
+    const kept=path.join(base,'kept-modified-skill-'+Math.random().toString(16).slice(2));fs.renameSync(skill,kept);
+    const repair={...f.input,out:path.join(base,'repair-'+Math.random().toString(16).slice(2))};api.prepare(repair);assert.equal(api.apply(repair.out).state,'applied');
+    assert.equal(verifySkill(skill).status,'content-verified');assert(fs.readFileSync(path.join(kept,'references/vscode.md'),'utf8').endsWith('x'));
+    for(const kind of ['missing','extra']){
+      const g=fixture();api.prepare(g.input);api.apply(g.out);const s=path.join(g.workspace,'.github/skills/synaptic');const restore=fs.readFileSync(path.join(s,'references/vscode.md'));
+      if(kind==='missing')fs.unlinkSync(path.join(s,'references/vscode.md'));else write(s,'references/extra.md','Extra\n');
+      const bad=cli(['prepare','--workspace',g.workspace,'--package',packageRoot,'--out',path.join(base,'inventory-'+Math.random().toString(16).slice(2)),'--harness','copilot']);
+      assert.equal(bad.stderr,'PACKAGE_INVENTORY_MISMATCH\n');
+      fs.renameSync(s,path.join(base,'kept-'+Math.random().toString(16).slice(2)));const again={...g.input,out:path.join(base,'repair-'+Math.random().toString(16).slice(2))};
+      api.prepare(again);assert.equal(api.apply(again.out).state,'applied');assert.deepEqual(fs.readFileSync(path.join(s,'references/vscode.md')),restore);
+    }
+  });
+  test('a second bridge added after apply never blocks status or rollback',()=>{
+    const f=fixture();api.prepare(f.input);api.apply(f.out);
+    fs.appendFileSync(path.join(f.workspace,'AGENTS.md'),'\n'+api.START+'\nSynaptic project brain: `.synaptic/BRAIN.md`.\n'+api.END+'\n');
+    assert.throws(()=>api.prepare({...f.input,out:path.join(base,'second-'+Math.random().toString(16).slice(2))}),/MULTIPLE_ACTIVE_BRIDGES_REQUIRE_REVIEW/);
+    const s=api.status(f.out);assert.equal(s.files,'candidate-files-present');assert.deepEqual(s.bridgeWarning,{code:'MULTIPLE_ACTIVE_BRIDGES_REQUIRE_REVIEW'});
+    assert.equal(api.rollback(f.out).state,'restored');
+    for(const e of plan(f).entries.filter(e=>e.changed)){const file=path.join(f.workspace,e.path);if(e.before===null)assert(!fs.existsSync(file));else assert.equal(sha(fs.readFileSync(file)),e.before.sha256);}
+  });
+  test('a killed apply leaves a diagnosable lock; explicit recovery and rollback restore the original bytes',()=>{
+    const f=fixture(),original=snapshot(f.workspace);api.prepare(f.input);
+    const targets=plan(f).entries.filter(e=>e.changed).map(e=>path.join(f.workspace,e.path));
+    const childScript=`const fs=require('node:fs');const [mod,dir,targets]=process.argv.slice(1);const wanted=new Set(JSON.parse(targets));let n=0;
+      const rename=fs.renameSync;fs.renameSync=function(a,b){if(wanted.has(b) && ++n===3)process.kill(process.pid,'SIGKILL');return rename.apply(this,arguments);};
+      require(mod).apply(dir);`;
+    const child=spawnSync(process.execPath,['-e',childScript,path.join(product,'tools/vscode-integration.js'),f.out,JSON.stringify(targets)],{encoding:'utf8'});
+    // Windows ends a self-killed process with TerminateProcess: status 1 and no signal.
+    assert(child.signal==='SIGKILL' || process.platform==='win32' && child.status!==0,child.stderr);
+    const leftovers=()=>targets.flatMap(t=>fs.existsSync(path.dirname(t))?fs.readdirSync(path.dirname(t)).filter(n=>n.startsWith(path.basename(t)+'.synaptic-')):[]);
+    assert.equal(leftovers().length,1);
+    const s=api.status(f.out);assert.equal(s.lock.state,'retained');assert.equal(s.lock.pid,child.pid);assert.match(s.lock.createdAt,/^\d{4}-/);
+    assert.throws(()=>api.apply(f.out),/TRANSACTION_BUSY/);assert.throws(()=>api.rollback(f.out),/TRANSACTION_BUSY/);
+    const cli=args=>spawnSync(process.execPath,[path.join(product,'tools/vscode-integration.js'),...args],{encoding:'utf8'});
+    assert.equal(cli(['recover-lock','--plan',f.out,'--expected-sha256','0'.repeat(64),'--confirm-owner-stopped','yes']).stderr,'LOCK_CHANGED\n');
+    assert.equal(cli(['recover-lock','--plan',f.out,'--expected-sha256',s.lock.sha256,'--confirm-owner-stopped','no']).status,1);
+    const live=fixture();api.prepare(live.input);const liveLock=JSON.stringify({pid:process.pid,createdAt:new Date().toISOString()});write(live.out,'transaction.lock',liveLock);
+    assert.throws(()=>api.recoverLock(live.out,sha(Buffer.from(liveLock)),'yes'),/LOCK_OWNER_STILL_RUNNING|LOCK_OWNER_UNVERIFIED/);assert(fs.existsSync(path.join(live.out,'transaction.lock')));
+    const recovered=cli(['recover-lock','--plan',f.out,'--expected-sha256',s.lock.sha256,'--confirm-owner-stopped','yes']);assert.equal(recovered.status,0,recovered.stderr);
+    assert.equal(JSON.parse(recovered.stdout).state,'lock-recovered');assert.equal(api.status(f.out).lock.state,'none');
+    assert.equal(api.rollback(f.out).state,'restored');assert.deepEqual(snapshot(f.workspace),original);assert.equal(leftovers().length,0);
+    const fresh={...f.input,out:path.join(base,'fresh-'+Math.random().toString(16).slice(2))};assert.equal(api.prepare(fresh).state,'prepared-not-installed');
+  });
   console.log(`1..${count}`);
 }finally{
-  assert(path.basename(base).startsWith('syn-vscode-') && path.dirname(base)===os.tmpdir());
+  assert(path.basename(base).startsWith('syn-vscode-') && path.dirname(base)===fs.realpathSync(os.tmpdir()));
   fs.rmSync(base,{recursive:true,force:true});
 }
