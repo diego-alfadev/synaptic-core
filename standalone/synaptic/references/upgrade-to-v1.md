@@ -84,11 +84,17 @@ capture events, MCP discovery or model curation. Report those integration result
   source (startup, resume, clear, fork) instead of one alternation matcher. Replace
   `synaptic-pending.{sh,ps1}` with the v1.7 script. Both new entries are silent. A host that sends no session id keeps the v1.6 rescue; nothing
   to migrate. Never turn on the opt-in SubagentStop harvest (recipe A.5) during an upgrade.
-- **v1.7 work items (offer, never forced).** Add `playgrounds/.gitignore` (`*/scratch/`) when absent, and
-  the three new files in the brain's `templates/` (`task-index.md`, `proposal-index.md`, `tasks.md`).
-  Offer to move the journal's *Active playgrounds* list into `tasks/INDEX.md` (one row per playground,
-  `home: playgrounds/<id>/`, with the next free `T<n>`), leaving one pointer line in the journal. If the
-  owner declines, nothing changes: the journal list keeps working (`references/contract.md` §6). Offer
+- **v1.7 work items (offer, never forced).** Always, whatever the owner decides below: create
+  `playgrounds/.gitignore` with both lines of the shipped template, `*/scratch/` and
+  `archive/*/*/scratch/`, or add whichever line an existing file lacks. Closing a playground now moves it
+  to `playgrounds/archive/<year>/<id>/`; without the second line, the next commit in a git brain records
+  its local-only `scratch/` assets, which cannot be undone without rewriting history. Add the three new
+  files to the brain's `templates/` (`task-index.md`, `proposal-index.md`, `tasks.md`).
+  When the journal lists active playgrounds, offer to create `tasks/INDEX.md` now: each playground in the journal's *Active playgrounds* list becomes
+  an open legacy row (`home: playgrounds/<id>/`, the next free `T<n>`), its folder untouched, and the
+  journal keeps one pointer line (`references/contract.md` §6, *Adopting the index in an older brain*).
+  If the owner declines, nothing changes until the index is first created: the first task creates it and
+  registers the listed playgrounds the same way; the owner can also adopt later by asking. Offer
   the two v1.7 tier additions to the brain's own tier table (AUTO: add a proposal row; PROPOSE-THEN-APPROVE:
   promote or drop a proposal); until the owner accepts, adding a row is proposed, not automatic (§5).
 

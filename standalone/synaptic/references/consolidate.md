@@ -228,11 +228,12 @@ entry of the journal's **Active playgrounds** list):
      it finish or, on the owner's explicit decision, archive the request first, then close.
    - Append to its `tasks.md` Log a dated close line and an **asset manifest**: one line per file under
      `scratch/` (name, size), marked *local-only*. Assets exist only on the machine that produced them;
-     the manifest tells a reader elsewhere that they existed.
+     the manifest tells a reader elsewhere that they existed. A legacy playground with no `tasks.md`
+     gets the close line and manifest in a new `CLOSED.md` in its folder; it is not converted.
    - **In a git brain, check the ignore rule before the move.** `playgrounds/.gitignore` must contain
-     `archive/*/*/scratch/` as well as `*/scratch/`. A brain created before this rule has only the first
-     line, which does not match the archive depth: add the second line before moving, or the next commit
-     records every scratch asset. Confirm with `git check-ignore -v playgrounds/archive/<year>/<id>/scratch/<file>`
+     `archive/*/*/scratch/` as well as `*/scratch/`. A brain created before this rule may have only the
+     first line, or no file at all: create or complete it before moving, or the next commit records
+     every scratch asset. Confirm with `git check-ignore -v playgrounds/archive/<year>/<id>/scratch/<file>`
      after the move.
    - Move the **whole folder** to `playgrounds/archive/<year>/<id>/` (`<year>` = the close year). Nothing
      is deleted: artifacts stay tracked, `scratch/` stays git-ignored at that depth, so assets remain on
@@ -242,7 +243,8 @@ entry of the journal's **Active playgrounds** list):
      **not** moved: its record stays with its owner.
 5. Close its row in `tasks/INDEX.md`: `[x]` with the proof (the nodes written, the deliverable) or `[-]`
    with a reason, today's `updated`, and `home` rewritten to the archived path
-   (`playgrounds/archive/<year>/<id>/tasks.md`), so the closed row still resolves. Same row, same `T<n>`.
+   (`playgrounds/archive/<year>/<id>/tasks.md`; for a legacy folder home, `playgrounds/archive/<year>/<id>/`),
+   so the closed row still resolves. Same row, same `T<n>`.
    In an older brain, remove the entry from `journal/_current.md`.
 6. **Asset cleanup (optional, only when the owner asks)** frees disk, never record: `git clean -X` scoped to one
    archive year (`git clean -X -n -- playgrounds/archive/<year>/` to preview, then
