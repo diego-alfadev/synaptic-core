@@ -33,7 +33,8 @@ live or archived. A synced folder still syncs it.
 Playgrounds are **not** indexed in `knowledge/INDEX.md`. Their registry is `tasks/INDEX.md` (the first task, inline
 or not, creates it from `templates/task-index.md`): one row whose `home` is the playground's `tasks.md`.
 An older brain with no `tasks/INDEX.md` keeps the journal's `### Active playgrounds` list until it
-adopts the index. If it is in neither, it is invisible.
+adopts the index; when the index is first created, each listed playground becomes a legacy row, untouched
+(`references/contract.md` §6). If it is in neither, it is invisible.
 
 Formats and status marks: the synaptic skill's `references/contract.md` §6 (Work items).
 

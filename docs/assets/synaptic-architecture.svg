@@ -51,7 +51,7 @@
 
     <rect x="440" y="364" width="500" height="54" rx="10" fill="#f1f5f9" stroke="#64748b" stroke-width="1.5"/>
     <text x="464" y="388" fill="#334155">journal/ + playgrounds/</text>
-    <text x="464" y="407" font-size="13" font-weight="400" fill="#475569">thin working memory / burnable per-task workspaces</text>
+    <text x="464" y="407" font-size="13" font-weight="400" fill="#475569">thin working memory / per-task workspaces, archived on close</text>
   </g>
 
   <rect x="60" y="470" width="880" height="58" rx="10" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>

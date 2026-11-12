@@ -27,9 +27,12 @@ Keep your existing brain, update the full skill bundle from the attached package
 fresh-session resume and capture. Hooks and MCP need their own supported setup; updating files alone
 does not activate them. [Upgrade guide](UPGRADING.md).
 
-- **Git brains: add one ignore line before you close a playground.** `playgrounds/.gitignore` needs
-  `archive/*/*/scratch/` next to `*/scratch/`. Without it, the next commit records every archived
-  scratch asset, which cannot be undone without rewriting history.
+- **Git brains: check the ignore rule before you close a playground.** `playgrounds/.gitignore` must
+  contain both `*/scratch/` and `archive/*/*/scratch/` (the upgrade creates or completes it; check before
+  your first close). Without the second line, the next commit records every archived scratch asset, which cannot be
+  undone without rewriting history.
+- The work-item model is adopted gradually, per brain; old playgrounds keep working untouched
+  ([Work items](docs/concepts/work-items.md)).
 - **If you tested the 2.0.0-rc.1 draft with the Codex curation adapter:** requests still pending from
   it read `PROTECTED_SCOPE_CHANGED` after the update, because the protected snapshot changed shape.
   Their artifacts are kept; archive them explicitly (`codex-curation.js archive`) and let a later turn

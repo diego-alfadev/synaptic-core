@@ -129,7 +129,7 @@ These are optional **Cortex** utilities — **zero-dependency** (Node ≥ 18 sta
 ├── harness/                   # HARNESS — how you work here (depth-on-demand)
 │   ├── conventions.md         # Working agreements: languages per channel, commit style, etiquette
 │   └── guardrails.md          # Hard rules: security, never-push-without-confirm, runner discipline
-├── playgrounds/               # Per-task workspaces {task-id}/ — fat, burnable; registered in journal
+├── playgrounds/               # Per-task workspaces {task-id}/ — archived on close; registered in tasks/INDEX.md
 ├── journal/_current.md        # Thin working memory: resume anchor / watch list / consolidation log (≤80 lines)
 └── templates/                 # Node, registry, playbook, lesson templates
 ```

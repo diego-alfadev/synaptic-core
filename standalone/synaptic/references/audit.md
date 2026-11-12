@@ -314,6 +314,8 @@ playground artifacts) but never reached the knowledge store. **Diagnose only —
 - Cross-check against the registry: `tasks/INDEX.md` rows whose `home` is a playground (an older brain
   without the index: the journal's **Active playgrounds** list). Flag playgrounds **present on disk but
   missing from the registry** (untracked) and entries **registered but with no directory** (stale entry).
+  An untracked playground the journal still lists after the index exists was missed when the index was
+  created: report it as unregistered legacy work (treatment: a legacy row, `references/contract.md` §6).
   `archive/` is never registered and is never flagged.
 
 **(b) Pending journal breadcrumbs (unconsolidated `Stop` lines):**

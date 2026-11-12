@@ -50,11 +50,11 @@ Two brain-side steps the bundle update does not do for you:
   update, because the protected snapshot changed shape. Their artifacts are kept. On the owner's
   decision, archive each one (`node tools/codex-curation.js archive --brain <brain> --request <id> --reason "<why>"`)
   and let a later turn create a fresh request. Do not edit receipts to make them pass.
-- **The playground archive ignore rule.** Closing a playground now moves it to
-  `playgrounds/archive/<year>/<id>/`. In a git brain, `playgrounds/.gitignore` must contain
-  `archive/*/*/scratch/` as well as `*/scratch/`; a brain created earlier has only `*/scratch/`. Add the line
-  before the first close, or the next commit records every archived scratch asset, which cannot be
-  undone without rewriting history.
+- **The playground ignore rule.** Closing a playground now moves it to
+  `playgrounds/archive/<year>/<id>/`. In a git brain, `playgrounds/.gitignore` must contain both
+  `*/scratch/` and `archive/*/*/scratch/`. A 1.6 brain usually has no such file; `/synaptic-upgrade`
+  creates it or adds the missing line. Check it before the first close, or the next commit records every
+  archived scratch asset, which cannot be undone without rewriting history.
 
 For the current schema 1.0, knowledge files do not need a format migration. A future
 release must state explicitly if that changes.
@@ -73,6 +73,24 @@ node /path/to/package/tools/package-release.js --verify-skill /path/to/installed
 This checks the retained inventory and byte hashes, including missing or modified files. Modified
 files need review; do not overwrite them merely to obtain a passing check. Without Node, perform
 the same comparison with permitted host capabilities or state that verification is incomplete.
+
+## Adopt the work-item model at your own pace
+
+1.7 records work in `tasks/INDEX.md` (one row per task) and `proposals/INDEX.md` (candidates); a
+playground gets a `tasks.md` only when the work cannot be resumed from the request and its current state.
+A 1.6 brain lists its playgrounds in the journal instead. The new model is optional and per brain:
+
+- When the journal lists active playgrounds, `/synaptic-upgrade` offers to create `tasks/INDEX.md`.
+  Declining changes nothing until the first task creates it anyway; you can also ask to adopt later.
+- When the index is created, each playground in the journal list becomes an open legacy row
+  (`home: playgrounds/<id>/`). Its folder is not touched, and the journal keeps one pointer line.
+- New work gets the new shape. Converting an old playground to a `tasks.md` is optional, one item at a
+  time, only when you ask.
+- Task files another tool owns (for example ODD's `odd/tasks/<feature>.md`) are read in place, never
+  copied. You decide the owner once; it is recorded as one `Task files:` line in `BRAIN.md`.
+- Nothing is deleted on close any more: a closed playground moves to `playgrounds/archive/<year>/<id>/`.
+
+Explained for people, with an example: [Work items](docs/concepts/work-items.md).
 
 ## Choose the supported path for your environment
 

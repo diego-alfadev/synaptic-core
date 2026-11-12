@@ -140,6 +140,17 @@ proposals/INDEX.md   ── promote ──▶   tasks/INDEX.md   ── grows la
 proposal or task creates its index from `templates/proposal-index.md` / `templates/task-index.md`.
 No empty ceremony.
 
+**Adopting the index in an older brain (gradual; old work is never stranded).** Whenever
+`tasks/INDEX.md` is first created in a brain whose journal lists active playgrounds (by the
+`/synaptic-upgrade` offer, the first task, the first playground or a promotion), the same step registers
+each listed playground whose folder exists as an open legacy row: the next free `T<n>`, `[ ]`, a title
+from its journal entry, `home: playgrounds/<id>/`, `from: —`, an empty `note`, that day's `updated`. The
+folder is not touched. A listed entry with no folder is reported to the owner, not registered (an open
+row must resolve). The journal list then becomes the pointer line (*Registry of playgrounds*, below).
+New work uses the new shape; converting a legacy playground to a `tasks.md` is optional, per item, and
+only on the owner's request. Until the index exists nothing changes: declining the upgrade offer leaves
+the journal list in charge, and the owner may adopt at any time by asking.
+
 **Ids.** `P<n>` and `T<n>`, one sequence each per brain (`P1`, `P2`, …), never reused, never
 renumbered. A row that is done or dropped keeps its id.
 
@@ -235,9 +246,11 @@ owner when it is ambiguous), and recorded as one `Task files:` line in `BRAIN.md
 per session. Worked example: `references/consolidate.md`, *External-owner mode*.
 
 **Registry of playgrounds.** A playground is registered by a row in `tasks/INDEX.md` whose `home` is its
-`tasks.md`; opening the first playground creates the index if it is absent. An older brain without the
-index keeps the journal's *Active playgrounds* list until it adopts one (`/synaptic-upgrade` offers the
-move, never forces it); once the index exists, that journal list holds only a pointer to it.
+`tasks.md` (its folder, for a legacy playground); opening the first playground creates the index if it is
+absent. An older brain without the index keeps the journal's *Active playgrounds* list until the index is
+first created (`/synaptic-upgrade` offers it, never forces it; the first task creates it anyway); the
+listed playgrounds then become legacy rows (*Adopting the index in an older brain*, above), and that
+journal list holds only a pointer to the index.
 
 ## 7. Skills portability — data-only registry
 
