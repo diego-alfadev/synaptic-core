@@ -111,6 +111,68 @@ function renderBinary(filePath, brainRoot) {
   return `## FILE: ${rel}  [OMITTED BINARY PAYLOAD — ${size} bytes]\n`;
 }
 
+/**
+ * Rows of tasks/INDEX.md as { id, status, home }; columns found by header name.
+ * check.js has the same reader (parseWorkIndex) with the same rules for empty cells and brain-side
+ * homes; keep them in step. They move to tools/lib/core-lib.js once that file's pending rework lands.
+ */
+function readTaskRows(brainRoot) {
+  const file = path.join(brainRoot, 'tasks', 'INDEX.md');
+  if (!fs.existsSync(file)) return [];
+  const rows = [];
+  let cols = null;
+  for (const raw of readText(file).split('\n')) {
+    const line = raw.replace(/\r$/, '').trim();
+    if (!line.startsWith('|')) continue;
+    const cells = line.replace(/^\|/, '').replace(/\|$/, '').split('|').map(c => c.trim());
+    if (cells[0] === 'id') { cols = cells; continue; }
+    if (!cols || /^-+$/.test(cells[0].replace(/:/g, ''))) continue;
+    const row = {};
+    cols.forEach((name, i) => { row[name] = cells[i] || ''; });
+    rows.push(row);
+  }
+  return rows;
+}
+
+/** True when p, after resolving `..` and symlinks, is inside brainRoot. */
+function insideBrain(brainRoot, p) {
+  const within = (rel) => rel !== '' && !rel.startsWith('..') && !path.isAbsolute(rel);
+  if (!within(path.relative(path.resolve(brainRoot), path.resolve(p)))) return false;
+  if (!fs.existsSync(p)) return true;
+  return within(path.relative(fs.realpathSync(brainRoot), fs.realpathSync(p)));
+}
+
+function collectWorkDocuments(brainRoot) {
+  const files = [];
+  const notes = [];
+  for (const row of readTaskRows(brainRoot)) {
+    const home = (row.home || '').replace(/\\/g, '/');
+    if (!home || home === 'inline' || home === '—' || home === '-' || home.startsWith('proposals/')) continue; // proposals/ is exported whole
+    if (!/^(playgrounds|proposals|tasks)\//.test(home)) {
+      notes.push(`${row.id}: \`${home}\` — external: read in place by its owner, not part of the brain`);
+      continue;
+    }
+    const abs = path.join(brainRoot, home);
+    if (!insideBrain(brainRoot, abs)) { notes.push(`${row.id}: \`${home}\` — resolves outside the brain; not exported`); continue; }
+    let doc = null;
+    if (fs.existsSync(abs) && fs.statSync(abs).isDirectory()) {
+      if (fs.existsSync(path.join(abs, 'tasks.md'))) doc = path.join(abs, 'tasks.md');
+      else { notes.push(`${row.id}: \`${home}\` — a folder with no tasks.md; its other files are not exported`); continue; }
+    } else if (fs.existsSync(abs) && isMarkdown(abs)) {
+      doc = abs;
+    }
+    if (!doc) { notes.push(`${row.id}: \`${home}\` — does not resolve in this brain`); continue; }
+    if (!insideBrain(brainRoot, doc)) { notes.push(`${row.id}: \`${home}\` — resolves outside the brain; not exported`); continue; }
+    if (!files.includes(doc)) files.push(doc);
+  }
+  return { files, notes };
+}
+
+function renderNotes(section) {
+  if (!section.notes || !section.notes.length) return '';
+  return `## Work documents referenced, not included\n\n${section.notes.map(n => `- ${n}`).join('\n')}\n`;
+}
+
 // ---------------------------------------------------------------------------
 // Section ordering for single-file export
 //
@@ -123,7 +185,8 @@ function renderBinary(filePath, brainRoot) {
 //   6. references/raw/ (binary payloads listed, not embedded)
 //   7. templates/
 //   8. journal/
-//   9. playgrounds/  (README only — actual playgrounds are burnable)
+//   9. tasks/, proposals/, then the work documents task rows point at (open or archived)
+//  10. playgrounds/  (README only; scratch and other playground files are not exported)
 // ---------------------------------------------------------------------------
 
 function collectSections(brainRoot) {
@@ -197,7 +260,15 @@ function collectSections(brainRoot) {
     if (work.mdFiles.length) sections.push({label: name === 'tasks' ? 'Tasks' : 'Proposals', files: work.mdFiles, binaries: []});
   }
 
-  // 9. playgrounds/ — only README if present; actual task dirs omitted (burnable)
+  // Work documents: what each tasks/INDEX.md row's `home` points at, open or closed (a closed
+  // playground lives under playgrounds/archive/<year>/<id>/). Other playground files and scratch
+  // stay out. A home outside the brain, or one that does not resolve, is listed, never embedded.
+  const workDocs = collectWorkDocuments(brainRoot);
+  if (workDocs.files.length || workDocs.notes.length) {
+    sections.push({ label: 'Work documents', files: workDocs.files, binaries: [], notes: workDocs.notes });
+  }
+
+  // 9. playgrounds/ — only README if present; other playground files are not exported
   const playgroundsReadme = path.join(brainRoot, 'playgrounds', 'README.md');
   if (fs.existsSync(playgroundsReadme)) {
     sections.push({ label: 'Playgrounds (README only)', files: [playgroundsReadme], binaries: [] });
@@ -252,6 +323,7 @@ function exportSingle(brainRoot, outFile) {
       parts.push(renderBinary(b, brainRoot));
       parts.push('\n---\n');
     }
+    if (section.notes && section.notes.length) parts.push(renderNotes(section));
   }
 
   const content = parts.join('\n');
@@ -287,7 +359,7 @@ function exportSplit(brainRoot, prefix) {
     },
     {
       outFile: `${prefix}-refs-harness.md`,
-      labels:  new Set(['References', 'Templates', 'Journal', 'Tasks', 'Proposals', 'Playgrounds (README only)']),
+      labels:  new Set(['References', 'Templates', 'Journal', 'Tasks', 'Proposals', 'Work documents', 'Playgrounds (README only)']),
     },
   ];
 
@@ -311,6 +383,7 @@ function exportSplit(brainRoot, prefix) {
         parts.push('\n---\n');
         fileCount++;
       }
+      if (section.notes && section.notes.length) { parts.push(renderNotes(section)); fileCount++; }
     }
 
     if (fileCount === 0) {

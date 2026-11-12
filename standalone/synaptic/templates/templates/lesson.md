@@ -7,6 +7,9 @@ tags:
   - lesson
   - "{{cluster-tag}}"
   - "{{topic-tag}}"
+# source: where the lesson came from. From work, a qualified locator: brain task + log line
+#         "T7/L4", or another tool's document "path:line@commit" (commit when in git).
+# source: "{{T<n>/L<k> · odd/tasks/<feature>.md:<line>@<commit> · session YYYY-MM-DD}}"
 ---
 
 # {{Lesson Title}} — Lesson [{{YYYY-MM-DD}}]

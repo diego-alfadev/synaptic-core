@@ -106,6 +106,8 @@ function check(brain, expectCode, includes) {
   for (const s of includes || []) assert(r.out.includes(s), `check.js output lacks: ${s}\n${tail(r.out)}`);
   return r;
 }
+const TASK_HEAD = '| id | status | title | home | from | note | updated |\n|---|---|---|---|---|---|---|\n';
+const PROP_HEAD = '| id | status | title | from | to | note | updated |\n|---|---|---|---|---|---|---|\n';
 
 // --- check.js: the contract -----------------------------------------------------------------------
 test('check.js: a minimal valid brain exits 0', () => { check(validBrain(), 0); });
@@ -285,6 +287,70 @@ test('graph.js: the archived filter keys on status, which the page data carries'
   assert(!html.includes('n.lifecycle === "archived"'), 'archived filter still tests lifecycle');
 });
 
+// --- brain-graph.js / graph.js: direction and type --------------------------------------------------
+// z-new supersedes a-old; a-old's body links back to z-new. a-old is read first, so an undirected,
+// first-type-wins graph records the pair as a plain wikilink.
+function supersedeBrain() {
+  const b = validBrain();
+  write(b, 'knowledge/alpha/_index.md', '# Alpha\n\n- [[node-one]]\n- [[node-two]]\n- [[a-old]]\n- [[z-new]]\n');
+  write(b, 'knowledge/alpha/a-old.md', node('Old', 'Replaced by [[z-new]].'));
+  write(b, 'knowledge/alpha/z-new.md', node('New', 'The current answer.', [
+    'description: New', 'type: concept', 'status: active', `updated: ${TODAY}`, 'tags: [ci]',
+    'supersedes:', '  - "[[a-old]]"',
+  ]));
+  return b;
+}
+
+test('brain-graph.js: directed edges keep source, target and type; a typed edge is never replaced by a wikilink', () => {
+  const { buildBrainGraph } = require(path.join(TOOLS, 'lib', 'brain-graph.js'));
+  const g = buildBrainGraph(supersedeBrain());
+  const pair = g.edges.filter((e) => [e.from, e.to].sort().join('|') === 'a-old|z-new');
+  assert(JSON.stringify(pair.map((e) => `${e.from}>${e.to}:${e.type}`).sort()) ===
+    JSON.stringify(['a-old>z-new:wikilink', 'z-new>a-old:supersedes']), `directed edges: ${JSON.stringify(pair)}`);
+  const und = g.edgeList.filter((e) => e.a === 'a-old' && e.b === 'z-new');
+  assert(und.length === 1 && und[0].type === 'supersedes', `undirected pair: ${JSON.stringify(und)}`);
+});
+
+test('brain-graph.js: neighbours answers "inbound supersedes of B" with A', () => {
+  const { buildBrainGraph, neighbours } = require(path.join(TOOLS, 'lib', 'brain-graph.js'));
+  const g = buildBrainGraph(supersedeBrain());
+  const inbound = neighbours(g, 'a-old', { type: 'supersedes', direction: 'in' });
+  assert(JSON.stringify(inbound) === JSON.stringify([{ id: 'z-new', type: 'supersedes', direction: 'in' }]),
+    `inbound supersedes of a-old: ${JSON.stringify(inbound)}`);
+  assert(neighbours(g, 'a-old', { type: 'supersedes', direction: 'out' }).length === 0, 'a-old supersedes nothing');
+  assert(neighbours(g, 'z-new', { direction: 'both' }).length === 2, 'z-new has one edge each way');
+});
+
+test('graph.js: --neighbours prints the inbound edge and writes no HTML', () => {
+  const b = supersedeBrain();
+  const out = path.join(tmp('nb'), 'g.html');
+  const r = tool('graph.js', [b, '--neighbours', 'a-old', '--type', 'supersedes', '--direction', 'in', '--out', out]);
+  assert(r.code === 0, `graph.js --neighbours exited ${r.code}\n${tail(r.out)}`);
+  assert(/z-new\s+--\[supersedes\]-->\s+a-old/.test(r.out), `no inbound supersedes line\n${tail(r.out)}`);
+  assert(!fs.existsSync(out), 'HTML written in neighbours mode');
+  const missing = tool('graph.js', [b, '--neighbours', 'no-such-node', '--out', out]);
+  assert(missing.code === 1 && missing.out.includes('no-such-node'), `unknown node not refused\n${tail(missing.out)}`);
+  const typo = tool('graph.js', [b, '--neighbours', 'a-old', '--type', 'supercedes', '--out', out]);
+  assert(typo.code === 1 && typo.out.includes('supercedes'), `unknown edge type not refused (would read as "nothing")\n${tail(typo.out)}`);
+});
+
+test('weave.md: every reader the typed-edge read table names exists and mentions its edge', () => {
+  const refs = path.join(ROOT, 'standalone', 'synaptic', 'references');
+  const doc = fs.readFileSync(path.join(refs, 'weave.md'), 'utf8');
+  const table = (doc.split('**Reading typed edges.**')[1] || '').split('**The status rule')[0];
+  const rows = table.split('\n').filter((l) => /^\| `[a-z_]+` \|/.test(l));
+  assert(rows.length >= 2, `read table not found or empty in weave.md (${rows.length} rows)`);
+  for (const row of rows) {
+    const edge = row.match(/^\| `([a-z_]+)` \|/)[1];
+    const readers = [...row.split('|')[3].matchAll(/references\/([a-z-]+\.md)/g)].map((m) => m[1]);
+    assert(readers.length, `${edge}: no reader named`);
+    for (const r of readers) {
+      assert(fs.existsSync(path.join(refs, r)), `${edge}: reader references/${r} does not exist`);
+      assert(fs.readFileSync(path.join(refs, r), 'utf8').includes(edge), `${edge}: references/${r} never mentions it`);
+    }
+  }
+});
+
 // --- export.js -----------------------------------------------------------------------------------
 test('export.js: single-file export contains every brain file under a FILE header', () => {
   const b = validBrain();
@@ -408,21 +474,235 @@ test('check.js: ignores playground scratch but still diagnoses ordinary task art
   write(b, 'playgrounds/spike/result.md', '[[missing-real-target]]');
   check(b, 1, ['missing-real-target']);
 });
-test('export.js: preserves tasks and proposal details in single and split exports', () => {
+test('export.js: preserves tasks, proposal details and the work documents rows point at, in single and split exports', () => {
   const b = validBrain();
-  write(b, 'tasks/INDEX.md', '# Task index');
+  write(b, 'tasks/INDEX.md', `# Task index\n\n${'| id | status | title | home | from | note | updated |\n|---|---|---|---|---|---|---|\n'}` +
+    '| T1 | [ ] | Spike | playgrounds/spike/tasks.md | — |  | 2026-11-01 |\n');
   write(b, 'proposals/P1-example/details.md', '# Proposal detail');
+  write(b, 'playgrounds/spike/tasks.md', '# Spike\n\nSPIKE-WORK-DOCUMENT\n');
   write(b, 'playgrounds/spike/scratch/raw.md', 'SCRATCH-MUST-NOT-EXPORT');
   const out = path.join(tmp('work-export'), 'brain.md');
   assert(tool('export.js', [b, out]).code === 0, 'single export failed');
   const text = fs.readFileSync(out, 'utf8');
   assert(text.includes('## FILE: tasks/INDEX.md') && text.includes('## FILE: proposals/P1-example/details.md'), 'work records lost');
+  assert(text.includes('## FILE: playgrounds/spike/tasks.md') && text.includes('SPIKE-WORK-DOCUMENT'), 'work document not exported');
   assert(!text.includes('SCRATCH-MUST-NOT-EXPORT'), 'scratch leaked');
   const prefix = path.join(tmp('work-split'), 'brain');
   assert(tool('export.js', [b, prefix, '--split']).code === 0, 'split export failed');
   const split = fs.readFileSync(prefix + '-refs-harness.md', 'utf8');
   assert(split.includes('## FILE: tasks/INDEX.md') && split.includes('## FILE: proposals/P1-example/details.md'), 'split lost work records');
+  assert(split.includes('## FILE: playgrounds/spike/tasks.md'), 'split lost the work document');
 });
+
+// The record survives close: a closed playground lives under playgrounds/archive/<year>/<id>/.
+function closedWorkBrain() {
+  const b = validBrain();
+  write(b, 'tasks/INDEX.md', `# Tasks\n\n${TASK_HEAD}` + [
+    '| T1 | [ ] | Live work | playgrounds/live/tasks.md | — |  | 2026-11-01 |',
+    '| T2 | [x] | Closed work | playgrounds/archive/2026/t2-done/tasks.md | — | [[node-one]] updated | 2026-11-03 |',
+    '| T3 | [ ] | Upstream work | odd/tasks/search-filters.md | — |  | 2026-11-01 |',
+    '| T4 | [x] | Burned long ago | playgrounds/burned/tasks.md | — | [[node-two]] written | 2026-09-01 |',
+    '| T5 | [ ] | Moved from an old journal | playgrounds/legacy/ | — |  | 2026-11-01 |',
+  ].join('\n') + '\n');
+  write(b, 'playgrounds/legacy/notes.md', '# Legacy notes\n');
+  write(b, 'playgrounds/live/tasks.md', '# Live\n\nLIVE-DOCUMENT\n');
+  write(b, 'playgrounds/archive/2026/t2-done/tasks.md', '# Closed\n\nCLOSED-DOCUMENT\n');
+  write(b, 'playgrounds/archive/2026/t2-done/scratch/plot.png', 'ASSET-MUST-NOT-EXPORT');
+  return b;
+}
+
+test('export.js: one open and one closed work item export both documents; external and dead homes are referenced, not included', () => {
+  const b = closedWorkBrain();
+  const out = path.join(tmp('closed-export'), 'brain.md');
+  const r = tool('export.js', [b, out]);
+  assert(r.code === 0, `export.js exited ${r.code}\n${tail(r.out)}`);
+  const text = fs.readFileSync(out, 'utf8');
+  for (const s of ['## FILE: playgrounds/live/tasks.md', 'LIVE-DOCUMENT',
+    '## FILE: playgrounds/archive/2026/t2-done/tasks.md', 'CLOSED-DOCUMENT']) assert(text.includes(s), `export lacks: ${s}`);
+  assert(!text.includes('ASSET-MUST-NOT-EXPORT'), 'an archived asset was exported');
+  assert(/referenced, not included[\s\S]*T3[^\n]*odd\/tasks\/search-filters\.md[^\n]*external/.test(text), 'external home not listed');
+  assert(/referenced, not included[\s\S]*T4[^\n]*playgrounds\/burned\/tasks\.md[^\n]*does not resolve/.test(text), 'dead home not listed');
+  assert(/referenced, not included[\s\S]*T5[^\n]*playgrounds\/legacy\/[^\n]*no tasks\.md/.test(text), 'folder home without tasks.md misreported');
+});
+
+test('export.js and check.js: a home that climbs out of the brain is never embedded and is an error', () => {
+  const b = validBrain();
+  const ws = path.dirname(b);
+  write(ws, 'outside-secret.md', 'OUTSIDE-MUST-NOT-EXPORT\n');
+  write(b, 'tasks/INDEX.md', `# Tasks\n\n${TASK_HEAD}` + [
+    '| T1 | [ ] | Escaping home | playgrounds/../../outside-secret.md | — |  | 2026-11-01 |',
+    '| T2 | [ ] | Dash home | - | — |  | 2026-11-01 |',
+  ].join('\n') + '\n');
+  const out = path.join(tmp('escape-export'), 'brain.md');
+  assert(tool('export.js', [b, out]).code === 0, 'export failed');
+  const text = fs.readFileSync(out, 'utf8');
+  assert(!text.includes('OUTSIDE-MUST-NOT-EXPORT'), 'a file outside the brain was embedded');
+  assert(/T1[^\n]*outside the brain/.test(text), 'escaping home not listed as outside the brain');
+  assert(!/T2[^\n]*`-`/.test(text), 'a "-" home was listed as a document');
+  check(b, 1, ['home leaves the brain: playgrounds/../../outside-secret.md']);
+});
+
+test('export.js: a work document that is a symlink to a file outside the brain is not embedded', () => {
+  const b = validBrain();
+  const secret = write(path.dirname(b), 'outside-secret.md', 'OUTSIDE-MUST-NOT-EXPORT\n');
+  fs.mkdirSync(path.join(b, 'playgrounds', 'linked'), { recursive: true });
+  try { fs.symlinkSync(secret, path.join(b, 'playgrounds', 'linked', 'tasks.md')); }
+  catch (e) { info(`symlinks unavailable (${e.code}): symlinked home not tested`); return; }
+  write(b, 'tasks/INDEX.md', `# Tasks\n\n${TASK_HEAD}| T1 | [ ] | Linked | playgrounds/linked/tasks.md | — |  | 2026-11-01 |\n`);
+  const out = path.join(tmp('symlink-export'), 'brain.md');
+  assert(tool('export.js', [b, out]).code === 0, 'export failed');
+  const text = fs.readFileSync(out, 'utf8');
+  assert(!text.includes('OUTSIDE-MUST-NOT-EXPORT'), 'a symlinked file outside the brain was embedded');
+  assert(/T1[^\n]*outside the brain/.test(text), 'symlinked home not listed as outside the brain');
+});
+
+test('check.js: a closed row homed under playgrounds/archive/ resolves; one still in a live playground warns', () => {
+  const b = closedWorkBrain();
+  let r = check(b, 0);
+  assert(!r.out.includes('t2-done'), `archived home reported\n${tail(r.out)}`);
+  write(b, 'tasks/INDEX.md', `# Tasks\n\n${TASK_HEAD}| T1 | [x] | Closed, not moved | playgrounds/live/tasks.md | — | [[node-one]] updated | 2026-11-03 |\n`);
+  r = check(b, 0, ['closed task still homed in a live playground: playgrounds/live/tasks.md']);
+});
+
+test('check.js: a dead wikilink inside an archived work record is history, not an error; a live one still is', () => {
+  const b = closedWorkBrain();
+  write(b, 'playgrounds/archive/2026/t2-done/tasks.md', '# Closed\n\nDistilled into [[node-renamed-later]].\n');
+  check(b, 0);
+  write(b, 'playgrounds/live/tasks.md', '# Live\n\nSee [[node-renamed-later]].\n');
+  check(b, 1, ['broken wikilink: [[node-renamed-later]]']);
+});
+
+test('templates/playgrounds/.gitignore: an asset in an archived playground\'s scratch/ is ignored, its document is not', () => {
+  if (spawnSync('git', ['--version']).status !== 0) { info('git not available: archive ignore rule not tested'); return; }
+  const ws = tmp('archive-ignore');
+  copyDir(path.join(TEMPLATES, 'playgrounds'), path.join(ws, 'playgrounds'));
+  for (const f of ['playgrounds/archive/2026/t2-done/scratch/plot.png', 'playgrounds/archive/2026/t2-done/tasks.md',
+    'playgrounds/archive/2026/t2-done/result.md', 'playgrounds/live/scratch/raw.csv']) write(ws, f, 'x');
+  assert(spawnSync('git', ['init', '-q'], { cwd: ws }).status === 0, 'git init failed');
+  const ignored = (f) => spawnSync('git', ['check-ignore', '-q', f], { cwd: ws }).status === 0;
+  assert(ignored('playgrounds/archive/2026/t2-done/scratch/plot.png'), 'archived scratch asset is not ignored');
+  assert(ignored('playgrounds/live/scratch/raw.csv'), 'live scratch is no longer ignored');
+  assert(!ignored('playgrounds/archive/2026/t2-done/tasks.md'), 'archived work document is ignored');
+  assert(!ignored('playgrounds/archive/2026/t2-done/result.md'), 'archived artifact is ignored');
+});
+
+// --- check.js: work items (tasks/INDEX.md, proposals/INDEX.md) --------------------------------------
+const PROMOTION = path.join(ROOT, 'tests', 'capture-floor', 'fixtures', 'promotion');
+const UPSTREAM_DOC = path.join(ROOT, 'tests', 'fixtures', 'external-home', 'odd', 'tasks', 'search-filters.md');
+function summary(out) {
+  const m = out.match(/Summary: (\d+) error\(s\), (\d+) warning\(s\)/);
+  assert(m, `no summary line\n${tail(out)}`);
+  return { errors: Number(m[1]), warnings: Number(m[2]) };
+}
+// validBrain() plus a sound pair of indexes: every row kind the contract allows, 0 errors, 0 warnings.
+function workBrain(taskRows, proposalRows) {
+  const b = validBrain();
+  write(b, 'playgrounds/t2-spike/tasks.md', '# Spike\n\n## Log\n\n- L1 [2026-11-01] "start"\n');
+  write(b, 'tasks/INDEX.md', `# Tasks\n\n${TASK_HEAD}${(taskRows || [
+    '| T1 | [ ] | Small fix | inline | — |  | 2026-11-01 |',
+    '| T2 | [ ] | Spike | playgrounds/t2-spike/tasks.md | — |  | 2026-11-01 |',
+    '| T3 | [x] | Done thing | inline | P1 | README.md, link fixed | 2026-11-02 |',
+    '| T4 | [-] | Dropped thing | inline | — | owner dropped it | 2026-11-02 |',
+  ]).join('\n')}\n`);
+  write(b, 'proposals/INDEX.md', `# Proposals\n\n${PROP_HEAD}${(proposalRows || [
+    '| P1 | [x] | Done thing | session 2026-11-01 | T3 | promoted to T3 | 2026-11-02 |',
+    '| P2 | [ ] | Maybe later | session 2026-11-01 | — |  | 2026-11-01 |',
+  ]).join('\n')}\n`);
+  return b;
+}
+
+test('check.js: a sound task and proposal index adds no error and no warning', () => {
+  const r = check(workBrain(), 0);
+  const s = summary(r.out);
+  assert(s.errors === 0 && s.warnings === 0, `expected 0/0, got ${s.errors}/${s.warnings}\n${tail(r.out)}`);
+});
+
+test('check.js: the read-only promotion fixture passes the work-item check', () => {
+  const b = validBrain();
+  copyDir(PROMOTION, b);
+  const r = check(b, 0);
+  assert(summary(r.out).errors === 0, `promotion fixture reported errors\n${tail(r.out)}`);
+});
+
+test('check.js: broken open home, unproven [x], duplicate id and invalid status are four distinct errors', () => {
+  const b = workBrain([
+    '| T1 | [ ] | Open, home gone | playgrounds/no-such-spike/tasks.md | — |  | 2026-11-01 |',
+    '| T2 | [x] | Done, no proof | inline | — |  | 2026-11-01 |',
+    '| T3 | [ ] | First T3 | inline | — |  | 2026-11-01 |',
+    '| T3 | [ ] | Second T3 | inline | — |  | 2026-11-01 |',
+    '| T4 | [?] | Bad status | inline | — |  | 2026-11-01 |',
+  ], ['| P1 | [ ] | Maybe | session 2026-11-01 | — |  | 2026-11-01 |']);
+  const r = check(b, 1, [
+    'open task home does not resolve: playgrounds/no-such-spike/tasks.md',
+    'done without proof',
+    'duplicate id: T3',
+    'invalid status "[?]"',
+  ]);
+  const s = summary(r.out);
+  assert(s.errors === 4, `expected exactly 4 errors, got ${s.errors}\n${tail(r.out)}`);
+});
+
+test('check.js: a closed row whose home is gone is one warning, exit 0', () => {
+  const b = workBrain([
+    '| T1 | [x] | Burned playground | playgrounds/burned/tasks.md | — | result recorded in [[node-one]] | 2026-10-01 |',
+  ], ['| P1 | [ ] | Maybe | session 2026-11-01 | — |  | 2026-11-01 |']);
+  const r = check(b, 0, ['closed task home does not resolve: playgrounds/burned/tasks.md']);
+  const s = summary(r.out);
+  assert(s.errors === 0 && s.warnings === 1, `expected 0/1, got ${s.errors}/${s.warnings}\n${tail(r.out)}`);
+});
+
+test('check.js: an unmodified upstream-shaped feature document as an external home is "unverified", not an error', () => {
+  const b = workBrain([
+    '| T1 | [ ] | Search filters | odd/tasks/search-filters.md | — |  | 2026-11-01 |',
+  ], ['| P1 | [ ] | Maybe | session 2026-11-01 | — |  | 2026-11-01 |']);
+  const ws = path.dirname(b);
+  write(ws, 'odd/tasks/search-filters.md', fs.readFileSync(UPSTREAM_DOC, 'utf8'));
+  const r = check(b, 0, ['unverified', 'odd/tasks/search-filters.md']);
+  const s = summary(r.out);
+  assert(s.errors === 0 && s.warnings === 0, `expected 0/0, got ${s.errors}/${s.warnings}\n${tail(r.out)}`);
+});
+
+test('check.js: the external-owner worked example row in consolidate.md is unverified, not an error', () => {
+  const doc = fs.readFileSync(path.join(ROOT, 'standalone', 'synaptic', 'references', 'consolidate.md'), 'utf8');
+  const row = (doc.match(/`(\| T12 \|[^`]*)`/) || [])[1];
+  assert(row, 'worked example row not found in consolidate.md');
+  const b = workBrain([row], ['| P1 | [ ] | Maybe | session 2026-11-01 | — |  | 2026-11-01 |']);
+  write(path.dirname(b), 'odd/tasks/search-filters.md', fs.readFileSync(UPSTREAM_DOC, 'utf8'));
+  const r = check(b, 0, ['unverified', 'external home odd/tasks/search-filters.md']);
+  assert(summary(r.out).errors === 0, `worked example row reported errors\n${tail(r.out)}`);
+});
+
+test('check.js: rows appended after the table and missing indexes are tolerated', () => {
+  const b = validBrain();
+  write(b, 'tasks/INDEX.md', `# Tasks\r\n\r\n${TASK_HEAD.replace(/\n/g, '\r\n')}| T1 | [ ] | One | inline | — |  | 2026-11-01 |\r\n\r\nA note someone appended.\r\n`);
+  const r = check(b, 0);
+  assert(summary(r.out).errors === 0, `CRLF index or trailing prose reported errors\n${tail(r.out)}`);
+});
+
+// The provenance cases tests/capture-floor/run.sh checks with awk, now also enforced by check.js.
+for (const [label, tasks, proposals, expect] of [
+  ['an id that is not T<n>', ['| X1 | [ ] | Bad id | inline | — |  | 2026-11-01 |'], null, 'id "X1" is not T<n>'],
+  ['an updated that is not YYYY-MM-DD', ['| T1 | [ ] | Bad date | inline | — |  | yesterday |'], null, 'updated "yesterday" is not YYYY-MM-DD'],
+  ['[-] without a reason', ['| T1 | [-] | Dropped | inline | — |  | 2026-11-01 |'], null, 'dropped without a reason'],
+  ['a promoted proposal that is not [x]', null,
+    ['| P1 | [ ] | Done thing | session 2026-11-01 | T3 |  | 2026-11-02 |'], 'promoted to T3 but not [x]'],
+  ['a promoted proposal whose note does not cite its task', null,
+    ['| P1 | [x] | Done thing | session 2026-11-01 | T3 | promoted | 2026-11-02 |'], 'note does not cite T3'],
+  ['a proposal to a task that does not name it back', null,
+    ['| P1 | [x] | Done thing | session 2026-11-01 | T3 | promoted to T3 | 2026-11-02 |',
+      '| P2 | [x] | Other | session 2026-11-01 | T1 | promoted to T1 | 2026-11-02 |'], 'P2 names T1, but T1 is not from P2'],
+  ['a task from a proposal that does not name it', [
+    '| T1 | [ ] | Small fix | inline | P2 |  | 2026-11-01 |',
+    '| T3 | [x] | Done thing | inline | P1 | README.md, link fixed | 2026-11-02 |'], null, 'T1 is from P2, but P2 does not name T1'],
+  ['a promoted task homed in another proposal\'s folder', [
+    '| T3 | [x] | Done thing | proposals/P2-other/ | P1 | README.md, link fixed | 2026-11-02 |'], null, 'home is another proposal\'s folder'],
+]) {
+  test(`check.js: work items - ${label} is an error`, () => {
+    const b = workBrain(tasks, proposals);
+    write(b, 'proposals/P2-other/details.md', '# Other\n');
+    check(b, 1, [expect]);
+  });
+}
 
 // --- done ----------------------------------------------------------------------------------------------
 for (const d of scratch) { try { fs.rmSync(d, { recursive: true, force: true }); } catch (_) { /* best effort */ } }

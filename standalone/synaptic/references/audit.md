@@ -566,7 +566,7 @@ Brain audit — N findings (showing top N):  [audit DIAGNOSES; weave/consolidate
 
 ## Half-done / unconsolidated
 12. playgrounds/feat-99-spike/ — open, not in journal Active list; journal at 71 pending breadcrumbs
-   → [/synaptic-consolidate] Process & close; promote durable conclusions, burn scratch.
+   → [/synaptic-consolidate] Process & close; promote durable conclusions, close to playgrounds/archive/.
 ```
 
 > The example above lists **every** category heading for reference; a **live** report still obeys the

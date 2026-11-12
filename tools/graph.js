@@ -7,6 +7,10 @@
 //
 // Usage:
 //   node tools/graph.js [path-to-.synaptic] [--out FILE] [--title "..."]
+//   node tools/graph.js [path-to-.synaptic] --neighbours NODE [--type KIND] [--direction in|out|both]
+//     prints the depth-1 neighbours of NODE over the directed edges and writes no HTML. Inbound
+//     edges are the inverse the prose promises ("what supersedes / depends on this?"), computed
+//     here because files author one direction only.
 //
 // Defaults:
 //   path     ./.synaptic
@@ -27,7 +31,7 @@
 const fs   = require('node:fs');
 const path = require('node:path');
 
-const { buildBrainGraph, parseFrontmatterLite } = require('./lib/brain-graph');
+const { buildBrainGraph, neighbours, parseFrontmatterLite, TYPED_EDGE_KEYS } = require('./lib/brain-graph');
 
 // ---------------------------------------------------------------------------
 // CLI parsing (preserve the existing surface: path / --out / --title)
@@ -38,11 +42,17 @@ const args = process.argv.slice(2);
 let brainRoot = null;
 let outFile   = null;
 let titleArg  = null;
+let neighboursOf = null;
+let edgeType  = null;
+let direction = 'both';
 
 for (let i = 0; i < args.length; i++) {
   const a = args[i];
   if (a === '--out')    { outFile  = args[++i]; continue; }
   if (a === '--title')  { titleArg = args[++i]; continue; }
+  if (a === '--neighbours') { neighboursOf = args[++i]; continue; }
+  if (a === '--type')       { edgeType = args[++i]; continue; }
+  if (a === '--direction')  { direction = args[++i]; continue; }
   if (a === '--format') { i++; continue; } // accepted for back-compat; html is the only mode now
   if (!a.startsWith('--')) { brainRoot = a; continue; }
 }
@@ -69,10 +79,33 @@ try {
   g = buildBrainGraph(brainRoot);
 } catch (e) {
   // Graceful degradation -- still emit a valid HTML file and a clear summary.
-  g = { nodes: [], nodeById: {}, edgeList: [], degreeOf: {}, orphanCount: 0,
+  g = { nodes: [], nodeById: {}, edgeList: [], edges: [], degreeOf: {}, orphanCount: 0,
         nodeCount: 0, edgeCount: 0, edgesPerNode: 0, mocReachableCount: 0,
         clusters: [], unresolvedCount: 0 };
   console.error(`WARNING: graph build failed (${e.message}); emitting empty graph.`);
+}
+
+if (neighboursOf !== null) {
+  if (!['in', 'out', 'both'].includes(direction)) {
+    console.error(`ERROR: --direction must be in, out or both (got "${direction}")`);
+    process.exit(1);
+  }
+  if (edgeType && !TYPED_EDGE_KEYS.includes(edgeType) && edgeType !== 'wikilink') {
+    console.error(`ERROR: unknown edge type "${edgeType}" — expected one of ${TYPED_EDGE_KEYS.join(', ')}, wikilink`);
+    process.exit(1);
+  }
+  if (!neighboursOf || !g.nodeById[neighboursOf]) {
+    console.error(`ERROR: no knowledge node "${neighboursOf}" in ${brainRoot}`);
+    process.exit(1);
+  }
+  const found = neighbours(g, neighboursOf, { type: edgeType, direction });
+  console.log(`Neighbours of ${neighboursOf} (type: ${edgeType || 'any'}, direction: ${direction}): ${found.length}`);
+  for (const n of found) {
+    console.log(n.direction === 'out'
+      ? `  ${neighboursOf} --[${n.type}]--> ${n.id}`
+      : `  ${n.id} --[${n.type}]--> ${neighboursOf}`);
+  }
+  process.exit(0);
 }
 
 // Brain name -- from BRAIN.md frontmatter `name:`, else parent dir of .synaptic.

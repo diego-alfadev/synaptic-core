@@ -12,18 +12,21 @@ playgrounds/<task-id>/
   tasks.md     # Specs / Tasks / Log / Key Learnings (copy of templates/tasks.md)
   <artifacts>  # free layout; consolidate scans these
   scratch/     # intermediates (images, generated files, data pulls): never consolidated unless
-               # tasks.md or an artifact references a file in it; deleted at burn
+               # tasks.md or an artifact references a file in it; local-only, moves with the folder
 ```
 
-`playgrounds/.gitignore` (`*/scratch/`) keeps every `scratch/` out of git history. A synced folder
-still syncs it.
+`playgrounds/.gitignore` (`*/scratch/`, `archive/*/*/scratch/`) keeps every `scratch/` out of git history,
+live or archived. A synced folder still syncs it.
 
 ## Lifecycle
 
 1. **Open** — create `playgrounds/{{task-id}}/` with its `tasks.md`, and register it (below).
 2. **Work** — artifacts accumulate freely; keep `tasks.md` current (statuses, Log, Key Learnings).
 3. **Consolidate** — run the capture contract: Key Learnings first, then the artifacts. Durable findings → atomic knowledge nodes in the right cluster; repeatable procedures → `type: playbook` node in its cluster; lessons → `knowledge/lessons/`; deliverables shipped.
-4. **Burn (default)** — delete the playground, `scratch/` included, after consolidation. Archiving is the exception, not the rule.
+4. **Close** — after consolidation, on the owner's OK and with no curation request pending: write the asset manifest into
+   `tasks.md`, move the whole folder to `playgrounds/archive/<year>/<task-id>/` and point the row's `home`
+   there. Nothing is deleted; `scratch/` assets stay local and ignored, and the owner may clean them later
+   with `git clean -X` scoped to an archive year. Procedure: the synaptic skill's `references/consolidate.md`.
 
 ## Registry
 

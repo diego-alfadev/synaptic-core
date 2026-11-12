@@ -63,6 +63,24 @@ or are co-cited from a third node but do not link to each other:
 > **Additive-no-bump:** typed edges are backward-compatible optional frontmatter. Adding them must
 > **NOT** bump `schema_version` (the BRAIN.md schema/format key) or trigger `/synaptic-upgrade`.
 
+**Reading typed edges.** Reading a node's *outbound* edges is part of reasoning over it; no tool is
+needed. The *inverse* (what supersedes, depends on, or points at this node?) is never stored, so it
+is computed on demand, for any key `K` and node `X`:
+
+- **Where code runs:** `node tools/graph.js <brain> --neighbours X --type K --direction in`.
+- **Where it does not:** grep `knowledge/` for `"[[X]]"` and keep the hits inside a file's
+  frontmatter whose nearest key line above them is `K:` (the parser-safe block-list form puts each
+  target on its own line under its key). A body `[[X]]` is a plain link, not a `K` edge.
+
+Edges with a named reader today:
+
+| Edge | Question it answers | Read by |
+|---|---|---|
+| `supersedes` | Is this still current, and what replaced it? (inbound) | the status rule below: `references/situation.md`, `references/handover.md` (Reading rule), `references/synthesize.md` |
+| `contradicts` | What disagrees with this claim? (both directions) | `references/consolidate.md` Step 5a and the reconcile leg of `references/maintain.md` |
+
+**The status rule (every procedure that relies on a node):** before relying on a node, read its `status`. If `archived`, follow to its successor (the node whose `supersedes` names it; repeat while that one is archived) and say so. If archived with no successor, treat it as what was believed before and say that no replacement is recorded.
+
 *When the semantic layer is available (roadmap):* use embedding similarity to catch
 non-obvious relations that shared tags miss. It still only **proposes** — GraphRAG is cited as
 *the direction* (multi-hop relational retrieval), not an auto-discovery claim.

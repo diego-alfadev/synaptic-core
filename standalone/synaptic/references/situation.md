@@ -18,12 +18,18 @@ Read the formats and stale rule in references/contract.md §6. No shell or runti
    rows are omitted from active counts and available on request. List open proposals separately. A malformed date,
    status or missing home goes into a diagnostic/unknown section, not silently omitted. Dropped work
    is excluded from active counts but can be listed on request with its recorded reason.
-5. For a task home, count checkboxes inside its Tasks section; if no such section exists, explain
-   the counting scope used. Keep the brain task row and its local subtasks distinct to avoid double
+5. For a task home, locate sections by heading, whatever the document names them, and assume no
+   section after the log. Count checkboxes inside its Tasks section; if no such section exists, explain
+   the counting scope used. A document with no checkboxes (common in another harness's feature
+   documents) reports progress as "not stated", never as 0 of 0. Keep the brain task row and its local subtasks distinct to avoid double
    counting. Include id, title, source path, last semantic update and proof/blocker where applicable.
 6. Output a counts-only summary followed by Open, Blocked, Stale, Recently done, Proposals and
    Diagnostics. Keep input ordering within sections. Apply handover confidentiality rules to titles
    and all detail cells before any shareable output. Link back to the original source.
+
+Before relying on a node (a proof that cites it, a decision a row depends on), apply the status rule
+in `references/weave.md`, *Reading typed edges*: if it is archived, report its successor; if no node
+supersedes it, say that no replacement is recorded.
 
 No report edits, stamps, promotes or repairs a row. Route defects to audit, durable knowledge to
 consolidate and task promotion to the owner's approval. The report is not a boot proof: a report
