@@ -28,6 +28,32 @@ Keep your existing brain, update the full skill bundle, and verify a fresh-sessi
 capture. Schema1.0 is retained in this candidate. Hooks and MCP need their own supported setup;
 updating files alone does not activate them. [Upgrade guide](UPGRADING.md).
 
+If you used the Codex curation adapter from the v2.0.0-rc.1 draft:
+
+- Curation requests still pending from that build will read `PROTECTED_SCOPE_CHANGED` after you
+  update, because the protected snapshot changed shape. Their artifacts are kept; archive them
+  explicitly (`codex-curation.js archive`) and let a later turn create a fresh request.
+- `playgrounds/archive/` is protected as one listing of paths and sizes. Adding, removing, renaming or
+  resizing a file there invalidates a pending request; an edit that keeps the same size does not.
+
+## Changes since the v2.0.0-rc.1 draft
+
+- New: `prepare-release.js --verify-assets <dir>` checks the four downloaded release files, including
+  the archive's manifest digest. The documented release commands now attach `RELEASE-NOTES.md`, so
+  `shasum -c SHA256SUMS` passes on the downloaded assets.
+- VS Code helper verification errors name the package file that differs instead of a bare code.
+- Cortex search and status skip unreadable or duplicate notes and list them as `skipped`, instead of
+  failing the whole brain; `knowledge/SCRATCH/` is excluded regardless of case.
+- VS Code helper status and rollback keep working after an extra bridge or a killed apply;
+  `recover-lock` clears a stale transaction lock once its owner is gone.
+- Package verification compares Unicode-normalised file names, so packages extracted on macOS verify.
+- A recorded VS Code helper setup counts as wired on boot and no longer gets a second bridge.
+- Native curation no longer fails every draft because of the capture floor's own activity files;
+  selected sources may grow by appending.
+- Curation status labels its inventory as recorded at the last check, and the VS Code route to
+  `archive` and `recover-lock` is documented.
+- Cortex and MCP errors no longer echo rejected refs back verbatim.
+
 ## Evidence and limits
 
 Use the CI result for the exact candidate commit. Filesystem/protocol tests are distinct from host
