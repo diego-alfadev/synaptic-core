@@ -20,7 +20,7 @@ try {
   put('knowledge/one/second.md',node('archived','Second\n'));
   const b=createBrain(brain);
   test('golden graph: two non-MOC nodes, one edge, zero orphan, two MOC-reachable',()=>{
-    assert.deepEqual(b.status(),{schema:'1.0',nodeCount:2,edgeCount:1,orphanCount:0,mocReachableCount:2,source:'current-files',coreProcedure:'references/audit.md'});
+    assert.deepEqual(b.status(),{schema:'1.0',nodeCount:2,edgeCount:1,orphanCount:0,mocReachableCount:2,source:'current-files',coreProcedure:'references/audit.md',skipped:[],degraded:null});
   });
   test('expanded golden: typed/body edges, aliases/anchors, excluded code/comments, orphan and unresolved',()=>{
     const golden=path.join(root,'golden typed and body');
@@ -42,7 +42,7 @@ try {
     write('knowledge/facts/orphan.md',node('stale','No links.'));
     // Literal oracle from the contract: four non-MOC nodes, two deduplicated undirected
     // edges, one orphan, two MOC-reachable nodes, one authored unresolved target.
-    assert.deepEqual(createBrain(golden).status(),{schema:'1.0',nodeCount:4,edgeCount:2,orphanCount:1,mocReachableCount:2,source:'current-files',coreProcedure:'references/audit.md'});
+    assert.deepEqual(createBrain(golden).status(),{schema:'1.0',nodeCount:4,edgeCount:2,orphanCount:1,mocReachableCount:2,source:'current-files',coreProcedure:'references/audit.md',skipped:[],degraded:null});
     const g=buildBrainGraph(golden);
     assert.equal(g.unresolvedCount,1);
     assert.deepEqual(g.edgeList.sort((a,b)=>a.b.localeCompare(b.b)),[
@@ -74,16 +74,17 @@ try {
   test('traversal, absolute, hidden, backslash and scratch refs rejected',()=>{
     for(const ref of ['../outside.md','/outside.md','C:/outside.md','knowledge\\first.md','.git/config.md','playgrounds/x/scratch/a.md','knowledge/one/first.md:stream.md']) assert.throws(()=>b.read(ref));
   });
-  test('duplicate basename is an explicit error, not first-wins identity',()=>{
+  test('duplicate basename is a reported skip of the later file, not a silent first-wins identity',()=>{
     put('knowledge/two/first.md',node('active','Collision'));
-    assert.throws(()=>b.documents(),/DUPLICATE_NODE_ID/);fs.unlinkSync(path.join(brain,'knowledge/two/first.md'));
+    assert.deepEqual(b.corpus().skipped,[{ref:'knowledge/two/first.md',reason:'DUPLICATE_NODE_ID'}]);
+    assert.deepEqual(b.documents().map(d=>d.ref),['knowledge/one/first.md','knowledge/one/second.md']);fs.unlinkSync(path.join(brain,'knowledge/two/first.md'));
   });
   test('invalid brain fails explicitly',()=>assert.throws(()=>createBrain(root),/DOCUMENT_UNAVAILABLE/));
   test('external junction cannot be read or included in the graph',()=>{
     const external=path.join(root,'external');fs.mkdirSync(external);fs.writeFileSync(path.join(external,'secret.md'),'Do not read');
     const link=path.join(brain,'knowledge','escape');fs.symlinkSync(external,link,'junction');
     assert.throws(()=>b.read('knowledge/escape/secret.md'),/SYMLINK_REF/);
-    assert.throws(()=>b.status(),/SYMLINK_REF/);fs.unlinkSync(link);
+    const s=b.status();assert.deepEqual(s.skipped,[{ref:'knowledge/escape',reason:'SYMLINK_REF'}]);assert.equal(s.edgeCount,null);assert(!JSON.stringify(b.corpus()).includes('Do not read'));fs.unlinkSync(link);
   });
   console.log(`1..${count}`);
 } finally {fs.rmSync(root,{recursive:true,force:true});}

@@ -78,7 +78,10 @@ Does a brain resolve?
 │         schema ≥ 1.0 → Boot: read BRAIN.md, follow it.
 │           Is harness wired? (BEGIN:SYNAPTIC bridge AND BEGIN:SYNAPTIC-RULES present AND skill dir present
 │             AND, on Claude Code with a project CLAUDE.md, an @AGENTS.md import — or a recorded
-│             `boot: declined`, which is respected and never re-asked)
+│             `boot: declined`, which is respected and never re-asked — or a setup record written by
+│             a setup helper: `harness/setup/vscode-<harness>.md` with a BEGIN:SYNAPTIC-VSCODE-SETUP
+│             block. A recorded setup counts as wired, needs no RULES block, and is never re-wired on
+│             boot: do not add another bridge or carrier. Repair it only through that helper.)
 │           ├── All present → normal boot.
 │           └── Any missing → run Harness Self-Wire (`references/init.md`; wire + deploy; no interview), then boot.
 │         schema < 1.0 (0.4, 0.5) → offer /synaptic-upgrade: "Found a v{X} brain — run /synaptic-upgrade to migrate."

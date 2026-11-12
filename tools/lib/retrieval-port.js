@@ -17,6 +17,7 @@ function tokens(query) {
   return result;
 }
 function words(text) {return new Set(lexicalTokens(text));}
+const reasons = (...values) => values.filter(Boolean).join(',') || null;
 function createRetrieval(root, options = {}) {
   const brain = createBrain(root);
   let db = null;
@@ -64,7 +65,7 @@ function createRetrieval(root, options = {}) {
     const terms=tokens(query);
     const limit=searchOptions.limit === undefined ? 10 : searchOptions.limit;
     if(!Number.isInteger(limit) || limit<1 || limit>100) throw fault('INVALID_LIMIT');
-    const docs=brain.documents();
+    const {documents:docs,skipped}=brain.corpus();
     const byRef=new Map(docs.map(d=>[d.ref,d]));
     const engine=database();
     let candidates;
@@ -96,13 +97,15 @@ function createRetrieval(root, options = {}) {
     const hits=[];
     for(const item of candidates) {
       if(!item.doc) continue;
-      const verified=hit(item.doc,terms,item.score);
+      let verified;
+      try {verified=hit(item.doc,terms,item.score);}
+      catch(e) {if(!e.code || e.code.startsWith('E')) throw e;skipped.push({ref:item.doc.ref,reason:e.code});continue;}
       if(verified) hits.push(verified);
     }
-    return {hits,capabilities:caps(),backend,degraded,coreProcedure:'references/audit.md'};
+    return {hits,skipped,capabilities:caps(),backend,degraded:reasons(degraded,skipped.length?'documents-skipped':null),coreProcedure:'references/audit.md'};
   }
   return Object.freeze({search,read:brain.read,resources:()=>['BRAIN.md',...brain.files()],
-    status:()=>{database();return {...brain.status(),backend,capabilities:caps(),degraded};},
+    status:()=>{database();const current=brain.status();return {...current,backend,capabilities:caps(),degraded:reasons(degraded,current.degraded)};},
     capabilities:()=>{database();return caps();},
     close:()=>{if(db){db.close();db=null;}},brain});
 }

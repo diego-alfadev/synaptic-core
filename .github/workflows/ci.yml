@@ -1,7 +1,7 @@
 # CI: the first executable verification of what synaptic-core ships.
 #
 # CORE (the skill) is prose and needs no runtime; these jobs verify the two things that ARE code:
-#   - tools/*.js, on every Node the tools claim to support (">= 18"), on Linux and Windows
+#   - tools/*.js, on every Node the tools claim to support (">= 18"), on Linux, Windows and macOS
 #   - the capture-floor hook scripts, exactly as published in the recipe and references/capture-hooks.md, under every
 #     shell they are documented for, including Windows PowerShell 5.1 (the engine of the issue #2a
 #     PowerShell bug, and the only PowerShell a stock Windows install has)
@@ -29,7 +29,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        os: [ubuntu-latest, windows-latest, macos-latest]
         node: ['18', '22', '24']
     steps:
       - uses: actions/checkout@v5

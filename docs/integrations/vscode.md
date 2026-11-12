@@ -45,8 +45,28 @@ Apply performs full preflight against fresh archived preimages and refuses chang
 preparation. It records progress and verifies results. An interrupted/failed transaction remains
 pending; it is not automatically resumed or treated as success. Rollback restores only touched
 targets, refuses later edits and retains newer knowledge. It can leave new empty parent directories;
-there is no recursive cleanup. A retained transaction lock is a busy/interrupted state for explicit
-diagnosis, never an invitation to delete another writer's lock.
+there is no recursive cleanup, and a later `prepare` treats a skill folder with no files as absent.
+A retained transaction lock is a busy/interrupted state for explicit diagnosis, never an invitation
+to delete another writer's lock.
+
+`status` and `rollback` always work on an existing plan. They skip the bridge inventory that
+`prepare` and `apply` enforce, so a bridge added after apply cannot lock you out: `status` reports it
+as `bridgeWarning` and `rollback` still restores every target.
+
+**After an interrupted apply** (killed process, crash, power loss):
+
+1. `status --plan <dir>` shows `lock: {state: "retained", pid, createdAt, sha256}` and the last
+   transaction state. `apply` and `rollback` refuse with `TRANSACTION_BUSY` while the lock exists.
+2. Make sure the process with that `pid` has stopped, then remove the lock explicitly:
+
+   ```text
+   node tools/vscode-integration.js recover-lock --plan /private/new-plan --expected-sha256 <sha256 from status> --confirm-owner-stopped yes
+   ```
+
+   It refuses a lock whose bytes changed (`LOCK_CHANGED`) or whose recorded owner is still running
+   (`LOCK_OWNER_STILL_RUNNING`). Only the lock is removed; the transaction record and staged files stay.
+3. `rollback --plan <dir>` restores the touched targets and removes any `<target>.synaptic-<16 hex>`
+   temporary file beside them whose bytes equal the staged candidate. Then prepare a new plan.
 
 ### Existing installs and scope conflicts
 
@@ -65,6 +85,18 @@ a universal multi-carrier upgrader. Use the selected package's source-pinned upg
 archive/retire or reconcile the old carrier explicitly; preserve knowledge and unowned content.
 Do not simply add another Synaptic skill and leave the old engine auto-discoverable. A global or
 unreachable bridge is not permission to create a replacement project brain.
+
+### Repairing a modified same-version skill
+
+Same-version repair is **manual**; the helper has no repair or overwrite mode. When an installed file
+was edited, `prepare` stops with `PACKAGE_CONTENT_MISMATCH: <path inside the skill>` (a missing or extra
+file stops with `PACKAGE_INVENTORY_MISMATCH`). To repair:
+
+1. Review the change. Keep anything worth keeping somewhere you control.
+2. Move the whole `.github/skills/synaptic/` directory out of the project (do not leave a second copy
+   anywhere the harness discovers skills).
+3. Run `prepare` into a new plan directory, inspect it, then `apply`. The plan stages a fresh install
+   of the pinned skill; an existing owned bridge is replaced in place.
 
 The helper checks the known project carriers `AGENTS.md`, `.github/copilot-instructions.md`,
 `CLAUDE.md` and `.claude/CLAUDE.md`. A rejected global pointer means one found in those project
@@ -98,6 +130,22 @@ Native curation reuses the bounded shared draft checker: one continuation of the
 host model, explicit saved sources (journal by default), persisted request/draft/receipt and structural
 checks. It never launches another model, adds write MCP tools, promotes knowledge or bypasses approval.
 Unsaved chat facts are not covered. Semantic correctness remains a review question.
+It coexists with the capture floor: its `journal/_activity/` markers and appended breadcrumbs do not
+invalidate a pending draft, provided `journal/_current.md` stays a selected source (the default). See
+[Coexisting with the capture floor](codex-curation.md#coexisting-with-the-capture-floor).
+
+The workspace runtime does not include the curation command. To archive unresolved work or recover a
+curation lock, run it from the same verified package, against the project brain:
+
+```text
+node /verified/package/tools/codex-curation.js status --brain /synthetic/project/.synaptic --profile native
+node /verified/package/tools/codex-curation.js archive --brain /synthetic/project/.synaptic --profile native --request <id> --reason "<why>"
+node /verified/package/tools/codex-curation.js recover-lock --brain /synthetic/project/.synaptic --profile native --lock <id> --expected-sha256 <hash> --confirm-owner-stopped yes
+```
+
+In curation `status`, each retained request's `recordedState` is what the last check wrote
+(`retainedWorkState: recorded-at-last-check-not-reverified`); a draft deleted afterwards still shows
+`complete` until the next check.
 
 Only Copilot top-level `decision`/`reason` is emitted. A valid first request uses `block` to request
 continuation. Pending work/errors emit `{}`, a sanitized diagnostic and exit 2 without another

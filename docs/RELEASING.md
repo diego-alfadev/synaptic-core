@@ -57,7 +57,7 @@ Only when the tag is confirmed absent (and repository access is valid), or confi
 same exact commit, may the owner explicitly create the draft prerelease:
 
 ```sh
-gh release create v2.0.0-rc.1 --repo diego-alfadev/synaptic-core --target <FULL_REVIEWED_COMMIT> --draft --prerelease --title "Synaptic v2.0.0-rc.1" --notes-file ../synaptic-v2.0.0-rc.1-prepared/RELEASE-NOTES.md ../synaptic-v2.0.0-rc.1-prepared/synaptic-2.0.0-rc.1.tar.gz ../synaptic-v2.0.0-rc.1-prepared/SHA256SUMS ../synaptic-v2.0.0-rc.1-prepared/PREPARED-RELEASE.json
+gh release create v2.0.0-rc.1 --repo diego-alfadev/synaptic-core --target <FULL_REVIEWED_COMMIT> --draft --prerelease --title "Synaptic v2.0.0-rc.1" --notes-file ../synaptic-v2.0.0-rc.1-prepared/RELEASE-NOTES.md ../synaptic-v2.0.0-rc.1-prepared/synaptic-2.0.0-rc.1.tar.gz ../synaptic-v2.0.0-rc.1-prepared/SHA256SUMS ../synaptic-v2.0.0-rc.1-prepared/PREPARED-RELEASE.json ../synaptic-v2.0.0-rc.1-prepared/RELEASE-NOTES.md
 ```
 
 That command intentionally creates the tag at the supplied commit if it does not exist; it is an
@@ -151,11 +151,17 @@ Verify that the remote tag's peeled commit is the same full reviewed commit. Do 
 the tag name alone. Then, on the gh-equipped owner computer, create a **draft prerelease**:
 
 ```sh
-gh release create v2.0.0-rc.1 --repo diego-alfadev/synaptic-core --verify-tag --draft --prerelease --title "Synaptic v2.0.0-rc.1" --notes-file ../synaptic-v2.0.0-rc.1-prepared/RELEASE-NOTES.md ../synaptic-v2.0.0-rc.1-prepared/synaptic-2.0.0-rc.1.tar.gz ../synaptic-v2.0.0-rc.1-prepared/SHA256SUMS ../synaptic-v2.0.0-rc.1-prepared/PREPARED-RELEASE.json
+gh release create v2.0.0-rc.1 --repo diego-alfadev/synaptic-core --verify-tag --draft --prerelease --title "Synaptic v2.0.0-rc.1" --notes-file ../synaptic-v2.0.0-rc.1-prepared/RELEASE-NOTES.md ../synaptic-v2.0.0-rc.1-prepared/synaptic-2.0.0-rc.1.tar.gz ../synaptic-v2.0.0-rc.1-prepared/SHA256SUMS ../synaptic-v2.0.0-rc.1-prepared/PREPARED-RELEASE.json ../synaptic-v2.0.0-rc.1-prepared/RELEASE-NOTES.md
 ```
 
 `--verify-tag` prevents gh from silently creating a missing tag at a default branch tip. It does not
 replace the source/version/remote-commit check above. Inspect the draft and attached asset digests.
+`RELEASE-NOTES.md` is attached as a file as well as used for the page text, because `SHA256SUMS` lists
+it: with all four assets downloaded into one directory, `shasum -a 256 -c SHA256SUMS` exits 0, and
+`node tools/prepare-release.js --verify-assets <that directory>` also checks the metadata and that the
+archive's `RELEASE-MANIFEST.json` matches `manifestSha256`. The page and `PREPARED-RELEASE.json` both
+carry `manifestSha256`; that line is the trusted package digest.
+
 Publishing the draft is a separate owner action; stable release stays gated by the agreed real host
 journey and bounded native-curation acceptance. No main merge is required by these instructions.
 
