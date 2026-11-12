@@ -113,7 +113,8 @@ function renderBinary(filePath, brainRoot) {
 
 /**
  * Rows of tasks/INDEX.md as { id, status, home }; columns found by header name.
- * Kept local: check.js has its own reader, and the shared library is not the place for it yet.
+ * check.js has the same reader (parseWorkIndex) with the same rules for empty cells and brain-side
+ * homes; keep them in step. They move to tools/lib/core-lib.js once that file's pending rework lands.
  */
 function readTaskRows(brainRoot) {
   const file = path.join(brainRoot, 'tasks', 'INDEX.md');
@@ -133,17 +134,26 @@ function readTaskRows(brainRoot) {
   return rows;
 }
 
+/** True when p, after resolving `..` and symlinks, is inside brainRoot. */
+function insideBrain(brainRoot, p) {
+  const within = (rel) => rel !== '' && !rel.startsWith('..') && !path.isAbsolute(rel);
+  if (!within(path.relative(path.resolve(brainRoot), path.resolve(p)))) return false;
+  if (!fs.existsSync(p)) return true;
+  return within(path.relative(fs.realpathSync(brainRoot), fs.realpathSync(p)));
+}
+
 function collectWorkDocuments(brainRoot) {
   const files = [];
   const notes = [];
   for (const row of readTaskRows(brainRoot)) {
     const home = (row.home || '').replace(/\\/g, '/');
-    if (!home || home === 'inline' || home === '—' || home.startsWith('proposals/')) continue; // proposals/ is exported whole
-    if (!/^(playgrounds|tasks)\//.test(home)) {
+    if (!home || home === 'inline' || home === '—' || home === '-' || home.startsWith('proposals/')) continue; // proposals/ is exported whole
+    if (!/^(playgrounds|proposals|tasks)\//.test(home)) {
       notes.push(`${row.id}: \`${home}\` — external: read in place by its owner, not part of the brain`);
       continue;
     }
     const abs = path.join(brainRoot, home);
+    if (!insideBrain(brainRoot, abs)) { notes.push(`${row.id}: \`${home}\` — resolves outside the brain; not exported`); continue; }
     let doc = null;
     if (fs.existsSync(abs) && fs.statSync(abs).isDirectory()) {
       if (fs.existsSync(path.join(abs, 'tasks.md'))) doc = path.join(abs, 'tasks.md');
@@ -152,6 +162,7 @@ function collectWorkDocuments(brainRoot) {
       doc = abs;
     }
     if (!doc) { notes.push(`${row.id}: \`${home}\` — does not resolve in this brain`); continue; }
+    if (!insideBrain(brainRoot, doc)) { notes.push(`${row.id}: \`${home}\` — resolves outside the brain; not exported`); continue; }
     if (!files.includes(doc)) files.push(doc);
   }
   return { files, notes };

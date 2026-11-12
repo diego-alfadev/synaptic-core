@@ -912,6 +912,11 @@ function checkWorkItems() {
         unverified.push({ file: path.relative(brainRoot, ix.file), message: `${where}: external home ${home} (read in place by its owner; not checked here)` });
         continue;
       }
+      const homeRel = path.relative(brainRoot, path.resolve(brainRoot, home));
+      if (homeRel.startsWith('..') || path.isAbsolute(homeRel)) {
+        err(ix.file, `${where}: home leaves the brain: ${home} (a brain-side home stays under the brain root)`);
+        continue;
+      }
       if (fs.existsSync(path.join(brainRoot, home))) {
         if (row.status !== '[ ]' && home.startsWith('playgrounds/') && !home.startsWith('playgrounds/archive/')) {
           warn(ix.file, `${where}: closed task still homed in a live playground: ${home} (closing moves it to playgrounds/archive/<year>/<id>/)`);

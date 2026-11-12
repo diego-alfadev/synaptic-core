@@ -525,6 +525,37 @@ test('export.js: one open and one closed work item export both documents; extern
   assert(/referenced, not included[\s\S]*T5[^\n]*playgrounds\/legacy\/[^\n]*no tasks\.md/.test(text), 'folder home without tasks.md misreported');
 });
 
+test('export.js and check.js: a home that climbs out of the brain is never embedded and is an error', () => {
+  const b = validBrain();
+  const ws = path.dirname(b);
+  write(ws, 'outside-secret.md', 'OUTSIDE-MUST-NOT-EXPORT\n');
+  write(b, 'tasks/INDEX.md', `# Tasks\n\n${TASK_HEAD}` + [
+    '| T1 | [ ] | Escaping home | playgrounds/../../outside-secret.md | — |  | 2026-11-01 |',
+    '| T2 | [ ] | Dash home | - | — |  | 2026-11-01 |',
+  ].join('\n') + '\n');
+  const out = path.join(tmp('escape-export'), 'brain.md');
+  assert(tool('export.js', [b, out]).code === 0, 'export failed');
+  const text = fs.readFileSync(out, 'utf8');
+  assert(!text.includes('OUTSIDE-MUST-NOT-EXPORT'), 'a file outside the brain was embedded');
+  assert(/T1[^\n]*outside the brain/.test(text), 'escaping home not listed as outside the brain');
+  assert(!/T2[^\n]*`-`/.test(text), 'a "-" home was listed as a document');
+  check(b, 1, ['home leaves the brain: playgrounds/../../outside-secret.md']);
+});
+
+test('export.js: a work document that is a symlink to a file outside the brain is not embedded', () => {
+  const b = validBrain();
+  const secret = write(path.dirname(b), 'outside-secret.md', 'OUTSIDE-MUST-NOT-EXPORT\n');
+  fs.mkdirSync(path.join(b, 'playgrounds', 'linked'), { recursive: true });
+  try { fs.symlinkSync(secret, path.join(b, 'playgrounds', 'linked', 'tasks.md')); }
+  catch (e) { info(`symlinks unavailable (${e.code}): symlinked home not tested`); return; }
+  write(b, 'tasks/INDEX.md', `# Tasks\n\n${TASK_HEAD}| T1 | [ ] | Linked | playgrounds/linked/tasks.md | — |  | 2026-11-01 |\n`);
+  const out = path.join(tmp('symlink-export'), 'brain.md');
+  assert(tool('export.js', [b, out]).code === 0, 'export failed');
+  const text = fs.readFileSync(out, 'utf8');
+  assert(!text.includes('OUTSIDE-MUST-NOT-EXPORT'), 'a symlinked file outside the brain was embedded');
+  assert(/T1[^\n]*outside the brain/.test(text), 'symlinked home not listed as outside the brain');
+});
+
 test('check.js: a closed row homed under playgrounds/archive/ resolves; one still in a live playground warns', () => {
   const b = closedWorkBrain();
   let r = check(b, 0);
