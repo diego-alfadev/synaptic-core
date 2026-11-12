@@ -240,7 +240,9 @@ exit 0
 Create `.claude/hooks/synaptic-pending.sh` (and `.ps1` on Windows). One git-free predicate:
 unconsolidated work = breadcrumb lines the A.1 hook wrote (`breadcrumb:`) in `journal/_current.md`, or
 open playground directories (`playgrounds/archive/` is not open; the A.0 ledger is not work). It reads
-no git, so it sees new untracked playgrounds and works for a brain outside git.
+no git, so it sees new untracked playgrounds and works for a brain outside git. It does not read
+`tasks/INDEX.md`: an open task row whose work has no playground folder is not counted, so the rescue
+stays quiet about it; the situation report, `/synaptic-audit` and `check.js` still read the row.
 
 - **`rescue`** (SessionStart on startup / resume / clear / fork): if work is pending **and no live session
   owns it**, offer to consolidate it. This recovers sessions where **no** end event ever fired: at once when the work has no live claimant, and up to 2 h later (the heartbeat TTL) when the session died without `SessionEnd`, for example a killed terminal or a crash.
