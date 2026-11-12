@@ -1,9 +1,29 @@
 # Changelog
 
-## [Unreleased]
+## [1.7.0] - 2026-11-12
 
-Prepared engine identity: **2.0.0-rc.2**, integrating the CORE work and minimum Cortex cut.
-Brain schema remains **1.0**. No tag, stable support claim or publication is implied.
+> **Better organised work.** Tasks and proposals keep their record and evidence, closing a playground
+> archives it instead of burning it, and `check.js` validates the work-item indexes. Upgrades now come
+> as a verified package. Cortex, VS Code integration and Codex curation ship as optional previews.
+
+Brain schema remains **1.0**: no knowledge-format migration. This line was prepared as 2.0.0-rc.1 and
+2.0.0-rc.2; no commit since 1.6.0 is a breaking change, so it ships as a minor release and 2.0 stays
+reserved for Cortex as the core.
+
+### Operational fixes after the 2.0.0-rc.1 draft
+
+- Pending curation requests from the rc.1 draft read `PROTECTED_SCOPE_CHANGED` after the update; archive
+  them explicitly. `playgrounds/archive/` is protected as one path-and-size listing, so a same-size edit
+  there is not detected while a request is pending.
+- `prepare-release.js --verify-assets <dir>` checks the four downloaded release files; the documented
+  release commands attach `RELEASE-NOTES.md` so `shasum -c SHA256SUMS` passes. Stable tags are accepted.
+- VS Code helper: verification errors name the differing package file; status and rollback survive an
+  extra bridge or a killed apply; `recover-lock` clears a stale lock; a recorded setup counts as wired on boot.
+- Cortex search and status skip and list unreadable or duplicate notes instead of failing the brain;
+  `knowledge/SCRATCH/` is excluded regardless of case; errors no longer echo rejected refs.
+- Native curation tolerates the capture floor's own activity files and append-only source growth;
+  curation status labels its inventory as recorded at the last check.
+- Package verification compares Unicode-normalised names, so packages extracted on macOS verify.
 
 ### Operating-contract and release preparation
 
@@ -30,7 +50,7 @@ Brain schema remains **1.0**. No tag, stable support claim or publication is imp
 - External-owner mode, the pre-work rule and the status rule are prose procedures; agent compliance
   is not yet piloted on a real host.
 
-### Local CORE completion and Cortex candidate
+### Local CORE completion and Cortex preview
 
 - Read-only situation reporting follows task sources in place; skill portability is a data-only
   registry and file-read audit. Registry text is never executed or interpolated into commands.
