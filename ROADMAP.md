@@ -112,7 +112,7 @@ The v1 file contract (frontmatter + tags + INDEX + `[[wikilinks]]` + registries)
 
 **Why:** a single shared brain for a team eliminates the n-copies-drift problem. Any contributor's agent consolidates into a PR; a maintainer reviews and merges. The knowledge graph becomes auditable by default.
 
-**Dependency:** a Git hosting platform; CODEOWNERS support; a team convention for the `validated:` flag (already in the v1 frontmatter schema). No format change required.
+**Dependency:** a Git hosting platform; CODEOWNERS support; a `validated:` flag, which the frontmatter schema (`references/contract.md` §1) does not define yet, so adding it is a schema change.
 
 **Constraint:** the governance layer is a social contract, not a technical one. The technical prerequisite (a committed repo + frontmatter contract) is satisfied by v1.
 
