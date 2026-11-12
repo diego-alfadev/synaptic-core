@@ -98,6 +98,7 @@ try{
     const cli=path.resolve(__dirname,'../tools/cortex.js');
     const bad=spawnSync(process.execPath,[cli,mixed,'read','knowledge/bad/invalid.md','--no-sqlite'],{encoding:'utf8'});
     assert.equal(bad.status,1);assert.equal(bad.stderr,'DOCUMENT_INVALID_ENCODING: knowledge/bad/invalid.md\n');
+    for(const raw of ['../secret.md','/etc/passwd.md','knowledge/a\nFORGED_LINE.md']){const r=spawnSync(process.execPath,[cli,mixed,'read',raw,'--no-sqlite'],{encoding:'utf8'});assert.equal(r.status,1);assert.match(r.stderr,/^[A-Z_]+\n$/,JSON.stringify(r.stderr));}
     const ok=spawnSync(process.execPath,[cli,mixed,'status','--no-sqlite'],{encoding:'utf8'});assert.equal(ok.status,0,ok.stderr);assert.equal(JSON.parse(ok.stdout).skipped.length,6);
   });
   console.log(`1..${count}`);

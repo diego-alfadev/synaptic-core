@@ -32,7 +32,8 @@ a `scratch` folder in any letter case (`EXCLUDED_SCRATCH`) and an unreadable fol
 includes `documents-skipped`; it is a comma-separated list of reasons, or `null`. `nodeCount` counts
 readable notes. Edge, orphan and MOC-reachable counts are `null` while anything is skipped, because the
 shared graph reader cannot exclude those files. Repair the corpus rather than relying on the skip. An
-explicit `read` of a bad or outside ref is still an error; the CLI and `brain_read` print `CODE: ref`.
+explicit `read` of a bad or outside ref is still an error; the CLI and `brain_read` print `CODE: ref`
+only for a ref that passed validation, and the bare code for rejected input.
 
 The MCP surface supports newline-delimited stdio JSON-RPC for protocol 2025-11-25, initialize/initialized,
 ping, tools/list/call and resources/list/read. `brain_status`, `brain_search` and `brain_read` delegate

@@ -11,6 +11,8 @@ const MAX_DOCUMENT_BYTES = 1024 * 1024;
 function fault(code, ref) { const e = new Error(code); e.code = code; if (ref !== undefined) e.ref = ref; return e; }
 const isFault = e => Boolean(e && e.code && !e.code.startsWith('E'));
 const isScratch = name => name.toLowerCase() === 'scratch';
+// Only a ref that passed validation, with no control characters, may be echoed in a diagnostic.
+const printableRef = (e, ref) => e.code !== 'INVALID_REF' && typeof ref === 'string' && /^[^\x00-\x1f\x7f]{1,4096}$/.test(ref);
 function inside(root, target) {
   const rel = path.relative(root, target);
   return rel === '' || (!path.isAbsolute(rel) && rel !== '..' && !rel.startsWith('..' + path.sep));
@@ -40,7 +42,7 @@ function createBrain(input) {
   }
   function read(ref) {
     try { return readChecked(ref); }
-    catch (e) { if (isFault(e) && e.ref === undefined && typeof ref === 'string') e.ref = ref; throw e; }
+    catch (e) { if (isFault(e) && e.ref === undefined && printableRef(e, ref)) e.ref = ref; throw e; }
   }
   function readChecked(ref) {
     const canonical = resolve(ref);
