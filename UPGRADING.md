@@ -45,6 +45,18 @@ Do not use a floating `main` URL or mix files from different releases.
    confirm capture in the way your environment supports. Setup must distinguish file presence,
    configured hooks/tools and actual execution.
 
+Two brain-side steps the bundle update does not do for you:
+
+- **Pending curation requests from the v2.0.0-rc.1 draft** read `PROTECTED_SCOPE_CHANGED` after the
+  update, because the protected snapshot changed shape. Their artifacts are kept. On the owner's
+  decision, archive each one (`node tools/codex-curation.js archive --brain <brain> --request <id> --reason "<why>"`)
+  and let a later turn create a fresh request. Do not edit receipts to make them pass.
+- **The playground archive ignore rule.** Closing a playground now moves it to
+  `playgrounds/archive/<year>/<id>/`. In a git brain, `playgrounds/.gitignore` must contain
+  `archive/*/*/scratch/` as well as `*/scratch/`; a brain created earlier has only `*/scratch/`. Add the line
+  before the first close, or the next commit records every archived scratch asset, which cannot be
+  undone without rewriting history.
+
 For the current schema1.0 candidate, knowledge files do not need a format migration. A future
 release must state explicitly if that changes.
 
