@@ -12,6 +12,7 @@ We studied many peers in the LLM-wiki and PKM space. Synaptic-core converges wit
 - **[shannhk/llm-wikid](https://github.com/shannhk/llm-wikid)** — its explicit curation discipline (mandatory counter-arguments / data-gaps sections, tiered confidence, source tracing) validated our bias-check + confidence + provenance direction.
 - **[nvk/llm-wiki](https://github.com/nvk/llm-wiki)** — the closest zero-runtime substrate peer; its multi-agent, anti-confirmation-bias research approach informed our thinking.
 - **[Basic Memory](https://github.com/basicmachines-co/basic-memory)** — a typed Entity-Observation-Relation graph with files authoritative over a rebuildable index; the "robust persistence" horizon our optional Cortex points toward.
+- **[obsidianmd/obsidian-skills](https://github.com/obsidianmd/obsidian-skills)** — the official Obsidian agent skills; a reference we studied for how agents work with open Markdown formats.
 - **[AgriciDaniel/claude-obsidian](https://github.com/AgriciDaniel/claude-obsidian)** — its lint-observes-never-auto-fixes stance informed our audit's diagnose-only discipline.
 
 **Project-level credits**
