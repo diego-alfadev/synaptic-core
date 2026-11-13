@@ -21,17 +21,17 @@
   <circle cx="58" cy="176" r="7" fill="#60a5fa"/>
 
   <text x="248" y="150" font-size="66" font-weight="700" fill="#f8fafc">synaptic<tspan fill="#5eead4">-core</tspan></text>
-  <text x="252" y="196" font-size="27" font-weight="700" fill="#5eead4">One brain. Any agent. Zero install.</text>
-  <text x="252" y="232" font-size="19" fill="#aeb8da">A portable knowledge-graph brain for project work:</text>
-  <text x="252" y="258" font-size="19" fill="#aeb8da">it turns daily work into structured, navigable, agent-usable knowledge.</text>
+  <text x="252" y="196" font-size="27" font-weight="700" fill="#5eead4">One brain. Any agent. Files you own.</text>
+  <text x="252" y="232" font-size="19" fill="#aeb8da">A portable brain for your AI agent: linked Markdown it reads first</text>
+  <text x="252" y="258" font-size="19" fill="#aeb8da">and updates when you ask. Useful knowledge that survives the chat.</text>
 
   <g font-size="13" font-weight="700">
     <rect x="252" y="290" width="178" height="30" rx="15" fill="#141b38" stroke="#2b3766"/>
     <text x="341" y="310" text-anchor="middle" fill="#cbd5e1">Markdown + [[wikilinks]]</text>
     <rect x="442" y="290" width="120" height="30" rx="15" fill="#141b38" stroke="#2b3766"/>
-    <text x="502" y="310" text-anchor="middle" fill="#cbd5e1">MOC navigation</text>
+    <text x="502" y="310" text-anchor="middle" fill="#cbd5e1">indexed notes</text>
     <rect x="574" y="290" width="168" height="30" rx="15" fill="#141b38" stroke="#2b3766"/>
-    <text x="658" y="310" text-anchor="middle" fill="#cbd5e1">consolidation formula</text>
+    <text x="658" y="310" text-anchor="middle" fill="#cbd5e1">curated on request</text>
     <rect x="754" y="290" width="116" height="30" rx="15" fill="#141b38" stroke="#2b3766"/>
     <text x="812" y="310" text-anchor="middle" fill="#cbd5e1">harness-clean</text>
   </g>

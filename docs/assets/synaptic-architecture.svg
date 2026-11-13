@@ -33,7 +33,7 @@
     <rect x="208.5" y="224" width="3" height="32"/><polygon points="205,256 215,256 210,262"/>
     <rect x="208.5" y="320" width="3" height="32"/><polygon points="205,352 215,352 210,358"/>
   </g>
-  <text x="210" y="444" text-anchor="middle" font-size="14" font-weight="700" fill="#0f766e">bounded navigation - a median 4 reads to any insight (internal benchmark)</text>
+  <text x="210" y="444" text-anchor="middle" font-size="14" font-weight="700" fill="#0f766e">bounded navigation - index first, then only the notes needed</text>
 
   <text x="440" y="60" font-size="14" font-weight="700" fill="#64748b">loaded on demand</text>
   <g font-size="16" font-weight="700">

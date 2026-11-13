@@ -17,6 +17,8 @@ We studied many peers in the LLM-wiki and PKM space. Synaptic-core converges wit
 **Project-level credits**
 
 - **[Arscontexta](https://github.com/agenticnotetaking/arscontexta)** — the write-validation gate and discovery-first quality gate are directly inspired by Arscontexta's domain-derived patterns.
+- **[Engram](https://github.com/Gentleman-Programming/engram)** — the files-authoritative, local-first governance (files are the source of truth; agent-native memory is a cache) is Engram-inspired. Engram keeps session memory; Synaptic keeps curated knowledge. They complement each other.
+- **[gentle-ai](https://github.com/Gentleman-Programming/gentle-ai)** — its approach to configuring existing agents informed how the Synaptic bridge wires into a harness without owning it.
 - **[GSD (Get Shit Done)](https://github.com/gsd-build/get-shit-done)** — GSD excels at planning and execution; Synaptic excels at memory and knowledge. They complement each other.
 - **[ClawVault](https://github.com/ClawVault/ClawVault)** — the wake/sleep lifecycle pattern influenced the session rhythm and journal design.
 - **[Roam-Code](https://github.com/roam-code/roam-code)** — multi-platform config detection shaped the `/synaptic-init` harness self-wire step.
