@@ -138,6 +138,12 @@ The v1 file contract (frontmatter + tags + INDEX + `[[wikilinks]]` + registries)
 
 **Constraint:** this layer is **Cortex**, never a CORE requirement. A brain without it is fully functional.
 
+### Benchmarks against a plain Obsidian vault — **pending**
+
+**What:** a reproducible comparison of an agent working from a Synaptic brain versus the same notes as an unstructured Obsidian vault: tokens read before the first useful action, answer accuracy on questions that need two or more notes, and stale or contradictory notes surfaced.
+
+**Why:** the claim that an index-first, typed, curated brain beats a pile of linked notes is currently an argument, not a measurement. Until this exists, public copy states it as a design intent and quotes no numbers.
+
 ---
 
 ## Principles that will not change
