@@ -62,6 +62,11 @@ the agent opens only when it needs them.
 ```
 
 - **Plain Markdown.** Read it, edit it, diff it and version it with the tools you already use.
+- **A knowledge graph you write.** Notes are the nodes and `[[wikilinks]]` are the edges, with an
+  optional type from a fixed set of seven (`depends_on`, `supersedes`, `contradicts`...). Your agent
+  writes edges when it captures a note, or proposes them for you to confirm; no pipeline extracts
+  them behind your back. See
+  [typed edges](docs/concepts/typed-edges.md).
 - **Bounded reading.** The agent follows the index to the one or two notes it needs.
 - **Any agent.** The brain connects through a short block in `AGENTS.md` or `CLAUDE.md`. Your
   agent's persona and tone stay outside it.
@@ -166,7 +171,8 @@ remember is not proof of automation. Setup shows each capability as **verified a
 Good to know:
 
 - Model judgment is fallible. Keep provenance, bounded changes and a recoverable history.
-- Links between notes are for navigation; Synaptic does not run graph queries over them.
+- The graph is authored, not extracted. The agent navigates it by following links; Synaptic does
+  not run graph queries over it.
 - No model-quality or cost advantage has been measured by the offline benchmark pilot.
 - Stable is gated on the VS Code pilot and a demonstrated bounded automatic-curation profile.
   See the [release notes](RELEASE-NOTES.md).
