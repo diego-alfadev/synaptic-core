@@ -114,6 +114,16 @@ and show their actual diff. They may still be used as files while an upgrade rem
    owned entry only when the transaction proves it was absent. A post-install user edit requires
    review. Never restore a whole stale brain snapshot over newer work.
 
+**Bootstrap stub, placed with the skill.** On Claude Code and the VS Code Local harness the install
+adds one command stub, `synaptic-init`, at the same scope as the selected skill carrier:
+`<scope>/.claude/commands/synaptic-init.md` or `.github/prompts/synaptic-init.prompt.md`. Its
+frontmatter, body and provenance line are the stub contract in `references/command-discovery.md`
+("Bootstrap stub"); do not restate or vary them. It is an explicit destination entry: list it in the
+plan shown in step 3 and in the transaction record like any other write. Absent → create it. Present
+with the `generated-from: synaptic-skill@` line → regenerate it only when that line is stale.
+Present without that line → it is the user's file: show the clash and leave it. Codex and hosts
+without a documented command location get no stub; init is started by name there.
+
 If the agent cannot execute a safe recoverable apply, it must leave a prepared plan/package and
 report that installation is pending. This procedure supplies the safety contract; it does not
 claim that merely reading it has executed or mechanically enforced the transaction.

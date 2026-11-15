@@ -3,7 +3,7 @@
 This guide prepares a release from an exact committed source and leaves GitHub actions to the
 owner on a computer with GitHub CLI access. Preparation itself never fetches, tags, pushes, publishes,
 merges main, changes host configuration or updates a brain. The example below is the normal release
-**v1.7.0**, not a schema migration. A release candidate uses a `vX.Y.Z-rc.N` tag and adds
+**v1.7.1**, not a schema migration. A release candidate uses a `vX.Y.Z-rc.N` tag and adds
 `--prerelease` to each `gh release create` command.
 
 ## Route A — GitHub CLI only on the owner computer
@@ -18,7 +18,7 @@ CI run, rather than selecting the latest run by name alone:
 gh run list --repo diego-alfadev/synaptic-core --workflow prepare-rc.yml --branch release/rc2-integration --commit <FULL_REVIEWED_COMMIT>
 gh run view <PREPARE_RUN_ID> --repo diego-alfadev/synaptic-core --json headSha,conclusion,workflowName
 gh run list --repo diego-alfadev/synaptic-core --workflow ci.yml --commit <FULL_REVIEWED_COMMIT>
-gh run download <PREPARE_RUN_ID> --repo diego-alfadev/synaptic-core --name synaptic-v1.7.0-prepared --dir ../synaptic-v1.7.0-prepared
+gh run download <PREPARE_RUN_ID> --repo diego-alfadev/synaptic-core --name synaptic-v1.7.1-prepared --dir ../synaptic-v1.7.1-prepared
 ```
 
 Choose a new download directory. Inspect `PREPARED-RELEASE.json`: its source commit, tag and engine
@@ -36,7 +36,7 @@ that exists only on a feature branch may not yet be registered through the defau
 merge main merely to make a dispatch button appear. When available, the explicit inputs are:
 
 ```sh
-gh workflow run prepare-rc.yml --repo diego-alfadev/synaptic-core --ref release/rc2-integration -f source_commit=<FULL_REVIEWED_COMMIT> -f version=v1.7.0
+gh workflow run prepare-rc.yml --repo diego-alfadev/synaptic-core --ref release/rc2-integration -f source_commit=<FULL_REVIEWED_COMMIT> -f version=v1.7.1
 ```
 
 The push preparation route avoids that initial dispatch dependency. Neither route is a publication.
@@ -48,7 +48,7 @@ workflow uses the push SHA for the artifact source, so both identities should ma
 Before creating a draft with gh, inspect any existing tag:
 
 ```sh
-gh api repos/diego-alfadev/synaptic-core/git/ref/tags/v1.7.0
+gh api repos/diego-alfadev/synaptic-core/git/ref/tags/v1.7.1
 ```
 
 If it exists, follow an annotated tag object with `gh api .../git/tags/<TAG_OBJECT_SHA>` until its
@@ -58,7 +58,7 @@ Only when the tag is confirmed absent (and repository access is valid), or confi
 same exact commit, may the owner explicitly create the draft release:
 
 ```sh
-gh release create v1.7.0 --repo diego-alfadev/synaptic-core --target <FULL_REVIEWED_COMMIT> --draft --title "Synaptic v1.7.0" --notes-file ../synaptic-v1.7.0-prepared/RELEASE-NOTES.md ../synaptic-v1.7.0-prepared/synaptic-1.7.0.tar.gz ../synaptic-v1.7.0-prepared/SHA256SUMS ../synaptic-v1.7.0-prepared/PREPARED-RELEASE.json ../synaptic-v1.7.0-prepared/RELEASE-NOTES.md
+gh release create v1.7.1 --repo diego-alfadev/synaptic-core --target <FULL_REVIEWED_COMMIT> --draft --title "Synaptic v1.7.1" --notes-file ../synaptic-v1.7.1-prepared/RELEASE-NOTES.md ../synaptic-v1.7.1-prepared/synaptic-1.7.1.tar.gz ../synaptic-v1.7.1-prepared/SHA256SUMS ../synaptic-v1.7.1-prepared/PREPARED-RELEASE.json ../synaptic-v1.7.1-prepared/RELEASE-NOTES.md
 ```
 
 That command intentionally creates the tag at the supplied commit if it does not exist; it is an
@@ -84,7 +84,7 @@ Confirm that the expected branch contains that exact commit and that its own CI/
 Detached checkout is deliberate; do not merge the feature into main as part of packaging. If Git
 reports local edits, preserve them and use a separate clone/worktree rather than discarding anything.
 
-The committed `standalone/synaptic/SKILL.md` must say `version: 1.7.0` for the example tag.
+The committed `standalone/synaptic/SKILL.md` must say `version: 1.7.1` for the example tag.
 If it still says 1.6.0 or another version, **stop**: prepare the explicit source version/changelog in
 the candidate branch, commit it, run the required checks and use that new full commit. An uncommitted
 version edit does not change immutable source. The helper refuses tag/header/package mismatches; it
@@ -98,14 +98,14 @@ needed for this command. Use a **new** destination whose parent already exists, 
 the checkout:
 
 ```sh
-node tools/prepare-release.js --repo . --ref <FULL_REVIEWED_COMMIT> --version v1.7.0 --out ../synaptic-v1.7.0-prepared
-node tools/prepare-release.js --verify ../synaptic-v1.7.0-prepared
+node tools/prepare-release.js --repo . --ref <FULL_REVIEWED_COMMIT> --version v1.7.1 --out ../synaptic-v1.7.1-prepared
+node tools/prepare-release.js --verify ../synaptic-v1.7.1-prepared
 ```
 
 The new directory contains:
 
 - `package/`: the exact tracked source plus generated `RELEASE-MANIFEST.json` and skill `SOURCE.json`.
-- `synaptic-1.7.0.tar.gz`: that complete package, including the generated source/integrity files.
+- `synaptic-1.7.1.tar.gz`: that complete package, including the generated source/integrity files.
 - `SHA256SUMS`: archive, handoff metadata and notes digests.
 - `PREPARED-RELEASE.json`: source commit, exact engine/tag, package-manifest and archive digests.
 - `RELEASE-NOTES.md`: short release notes for owner review (prerelease-scoped for a candidate tag).
@@ -125,8 +125,8 @@ Optional extraction check with a standard tar consumer:
 
 ```sh
 mkdir ../synaptic-rc-extract-check
-tar -xzf ../synaptic-v1.7.0-prepared/synaptic-1.7.0.tar.gz -C ../synaptic-rc-extract-check
-node tools/package-release.js --verify ../synaptic-rc-extract-check/synaptic-1.7.0
+tar -xzf ../synaptic-v1.7.1-prepared/synaptic-1.7.1.tar.gz -C ../synaptic-rc-extract-check
+node tools/package-release.js --verify ../synaptic-rc-extract-check/synaptic-1.7.1
 ```
 
 Use a new extraction directory. Digest checks detect content changes; they do not authenticate a
@@ -143,16 +143,16 @@ correction gets a new version number and a new committed version.
 After approving this exact source, create and push only the intended tag:
 
 ```sh
-git tag -a v1.7.0 <FULL_REVIEWED_COMMIT> -m "Synaptic v1.7.0"
-git push origin refs/tags/v1.7.0
-git ls-remote --tags origin refs/tags/v1.7.0 "refs/tags/v1.7.0^{}"
+git tag -a v1.7.1 <FULL_REVIEWED_COMMIT> -m "Synaptic v1.7.1"
+git push origin refs/tags/v1.7.1
+git ls-remote --tags origin refs/tags/v1.7.1 "refs/tags/v1.7.1^{}"
 ```
 
 Verify that the remote tag's peeled commit is the same full reviewed commit. Do not infer that from
 the tag name alone. Then, on the gh-equipped owner computer, create a **draft release**:
 
 ```sh
-gh release create v1.7.0 --repo diego-alfadev/synaptic-core --verify-tag --draft --title "Synaptic v1.7.0" --notes-file ../synaptic-v1.7.0-prepared/RELEASE-NOTES.md ../synaptic-v1.7.0-prepared/synaptic-1.7.0.tar.gz ../synaptic-v1.7.0-prepared/SHA256SUMS ../synaptic-v1.7.0-prepared/PREPARED-RELEASE.json ../synaptic-v1.7.0-prepared/RELEASE-NOTES.md
+gh release create v1.7.1 --repo diego-alfadev/synaptic-core --verify-tag --draft --title "Synaptic v1.7.1" --notes-file ../synaptic-v1.7.1-prepared/RELEASE-NOTES.md ../synaptic-v1.7.1-prepared/synaptic-1.7.1.tar.gz ../synaptic-v1.7.1-prepared/SHA256SUMS ../synaptic-v1.7.1-prepared/PREPARED-RELEASE.json ../synaptic-v1.7.1-prepared/RELEASE-NOTES.md
 ```
 
 `--verify-tag` prevents gh from silently creating a missing tag at a default branch tip. It does not
@@ -168,7 +168,7 @@ route stay gated by the agreed real host journey and bounded native-curation acc
 
 ## 4. What the migration agent must download
 
-Use the attached **prepared `synaptic-1.7.0.tar.gz` asset**, then its `UPGRADING.md` and source
+Use the attached **prepared `synaptic-1.7.1.tar.gz` asset**, then its `UPGRADING.md` and source
 receipt. GitHub's automatically generated “Source code” zip/tar archives represent tracked Git source
 and **do not contain the generated package SOURCE.json or RELEASE-MANIFEST.json**. They are not the
 prepared installation package and must not be substituted for it. Keep installation, loading, native

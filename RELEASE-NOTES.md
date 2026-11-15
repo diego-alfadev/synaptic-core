@@ -1,6 +1,13 @@
-# v1.7.0 — Better organised work
+# v1.7.1 — Better organised work
 
-Engine version 1.7.0; brain schema stays 1.0, so no knowledge-format migration. This line was tested
+Engine version 1.7.1; brain schema stays 1.0, so no knowledge-format migration.
+
+**New in 1.7.1:** the install places a `synaptic-init` command next to the skill on Claude Code and
+the VS Code Local harness, and the README install prompt no longer names a slash command, so a first
+install has a working way to start on every host. Open a fresh session to see the command in the
+menu. Everything below is unchanged from 1.7.0.
+
+The 1.7 line was tested
 as 2.0.0-rc.1 and 2.0.0-rc.2 drafts; nothing in it breaks an existing brain, so it ships as a minor
 release. 2.0 stays reserved for Cortex as the core.
 

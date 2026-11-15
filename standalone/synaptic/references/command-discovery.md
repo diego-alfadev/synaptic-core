@@ -91,13 +91,26 @@ stale and gets regenerated or pruned.
 - **MCP-capable hosts** → MCP "prompts" can **also** surface the commands (complementary, not
   required) — a host exposing Cortex over MCP may list the commands as MCP prompts.
 
+**Bootstrap stub (placed at install, v1.7.1).** Init generates the stubs, so on a first install no
+`/synaptic-init` command exists to start it. The install procedure (`references/package-install.md`
+§4) therefore places **one** stub, `synaptic-init`, together with the skill and at the skill's scope:
+
+- **Claude Code** → `<scope>/.claude/commands/synaptic-init.md`.
+- **VS Code Local harness** → `.github/prompts/synaptic-init.prompt.md`.
+- **Codex and every other host** → no stub; start init by name (Layer 1).
+
+It is an ordinary stub: the same frontmatter, body and provenance line as above, derived from
+`references/init.md`. No other command gets a stub at install. The host may list a command file only
+in a fresh session; placing the file is not proof that the menu shows it.
+
 **Justification-by-necessity:** *why* a prompt in VS Code, a command in Claude Code? Host limitation,
 not our choice — hosts have not converged, so per-host stubs are forced by the hosts. We minimize the
 cost the only way available: one SOT, N generated stubs (hub-and-spoke), never hand-kept.
 
 ## Recorded per host — `harness/setup/<host>.md` is the ONLY inventory
 
-Generating and placing stubs is part of **deploying the harness** (not a brain-content concern). Host
+Generating and placing stubs is part of **deploying the harness** (not a brain-content concern); the
+one exception is the bootstrap stub above, placed at install and adopted by init. Host
 command dirs (`<project>/.claude/commands/` or `~/.claude/commands/`, the Copilot/Cursor prompt-file locations) sit **OUTSIDE
 `.synaptic/`** — nothing inside the brain can see or clean them. So `harness/setup/<host>.md` is the
 **authoritative inventory** and MUST record:
@@ -105,6 +118,12 @@ command dirs (`<project>/.claude/commands/` or `~/.claude/commands/`, the Copilo
 - the **stub set** (which commands),
 - the **exact placement dir(s)** for that host,
 - the **generating engine-version** (matching the stub provenance line).
+
+**Init adopts the bootstrap stub.** It exists before any brain or host record does. When init
+generates the stub set it treats the file at the bootstrap location as its own `synaptic-init` stub
+(regenerating it when the provenance version/hash is stale) and records it with the others. Declining
+an optional step (boot import, hooks, the Day-1 walkthrough) never removes it. Until init has run, the
+install transaction record (`references/package-install.md` §4) is the only map to it.
 
 ## Drift check on `/synaptic-upgrade` (part of host-setup detection)
 
@@ -148,7 +167,8 @@ using the `harness/setup/<host>.md` inventory (never guess):
 **The user's own skills and commands are never touched.** Every stub delete or overwrite above, and
 the drift prune, acts only on a file that the host record lists **and** whose name starts with
 `synaptic` **and** that carries the `generated-from: synaptic-skill@` provenance line (a
-`synaptic-*-DESKTOP-*` conflict copy needs only the last two). Anything else in a host
+`synaptic-*-DESKTOP-*` conflict copy needs only the last two; so does the bootstrap stub at its exact
+install location, which no record lists before init adopts it). Anything else in a host
 skill or command folder (a skill the user built, with or without scripts) is left as it is, even when
 its name clashes; report the clash instead.
 
