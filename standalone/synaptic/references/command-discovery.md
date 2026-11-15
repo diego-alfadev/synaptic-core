@@ -63,7 +63,9 @@ stale and gets regenerated or pruned.
   loads in every workspace on the machine, so it must never point at a project-only skill. Project
   stubs live in the repo next to the project skill and are committed with it, like the skill; a
   user who does not want them shared gitignores both. One stub per command, with frontmatter
-  `description:` so the command surfaces in the `/` menu with its one-liner. Body (every host's stub):
+  `description:` so the command surfaces in the `/` menu with its one-liner. Always write it as a
+  YAML double-quoted scalar (`description: "…"`, escaping `"` and `\`): the summaries contain `: `,
+  which makes an unquoted value invalid frontmatter. Body (every host's stub):
   *"Run the synaptic skill's `<cmd>`: load the skill's `SKILL.md` first (its Operations preamble
   applies to every command), then follow `references/<cmd>.md`."* A command that takes an argument
   (`maintain [weave|synthesize]`, `ingest [file]`) ends its body with *"Argument: `<host token>`

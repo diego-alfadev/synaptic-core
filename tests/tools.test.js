@@ -368,6 +368,11 @@ test('install: the bootstrap stub is placed with the skill and the install promp
   assert(!/(^|[^\w/.])\/synaptic-/m.test(prompt[1]),'install prompt names a slash command that cannot exist before the install');
 });
 
+test('stub contract: descriptions are written as YAML double-quoted scalars', () => {
+  const contract = fs.readFileSync(path.join(ROOT, 'standalone', 'synaptic', 'references', 'command-discovery.md'), 'utf8');
+  assert(/description: "/.test(contract) && /double-quoted/.test(contract), 'command-discovery.md does not require a quoted description');
+});
+
 // --- export.js -----------------------------------------------------------------------------------
 test('export.js: single-file export contains every brain file under a FILE header', () => {
   const b = validBrain();

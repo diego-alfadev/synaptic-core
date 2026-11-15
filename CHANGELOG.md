@@ -14,6 +14,8 @@ Brain schema remains **1.0**: no knowledge-format migration.
   stale; declining an optional step never removes it. A file that is not a Synaptic stub is left alone.
 - The README install prompt asks the agent to run Synaptic's init instead of naming a slash command,
   so it also works on Codex and other hosts without command stubs.
+- Command stubs write their `description:` as a quoted value. Three generated stubs had invalid
+  frontmatter because their one-line summary contains `: `.
 - Claude Code 2.1.325 loaded the new command in the session that installed it. Other hosts are not
   verified; a fresh session is the supported check.
 
