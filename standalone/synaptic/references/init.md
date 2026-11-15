@@ -360,6 +360,10 @@ install still needs independent fresh-session loading and lifecycle/tool verific
   `generated-from: synaptic-skill@<engine-version> <sot-hash>`. Body: load the skill's `SKILL.md` first, then
   follow `references/<cmd>.md` (by content). Regenerate from the SOT on every deploy; the user
   maintains only one source.
+- **Bootstrap stub:** the install already placed `synaptic-init` at that scope
+  (`references/package-install.md` §4). Adopt it as this deploy's `synaptic-init` stub: regenerate it
+  when its provenance is stale and record it with the others. Declining an optional step never
+  removes it.
 - **Drift + prune (on `/synaptic-upgrade`):** compare recorded stubs/version vs the current SOT command
   list; report added/removed/renamed; **regenerate** changed and **PRUNE** stubs for commands no longer
   in the SOT; clean OneDrive KFM `synaptic-*-DESKTOP-*` conflict copies. **Cleanup:** on uninstall remove every

@@ -351,6 +351,28 @@ test('weave.md: every reader the typed-edge read table names exists and mentions
   }
 });
 
+test('install: the bootstrap stub is placed with the skill and the install prompt names no slash command', () => {
+  const read = (...p) => fs.readFileSync(path.join(ROOT, ...p), 'utf8').replace(/\r/g, '');
+  const stubs = ['.claude/commands/synaptic-init.md', '.github/prompts/synaptic-init.prompt.md'];
+  const install = read('standalone', 'synaptic', 'references', 'package-install.md');
+  assert(install.includes('references/command-discovery.md'), 'package-install.md does not point to the stub contract');
+  const contract = read('standalone', 'synaptic', 'references', 'command-discovery.md');
+  for (const [name, doc] of [['package-install.md', install], ['command-discovery.md', contract]]) {
+    for (const stub of stubs) assert(doc.includes(stub), `${name} never names the bootstrap stub ${stub}`);
+  }
+  const init = read('standalone', 'synaptic', 'references', 'init.md');
+  assert(/bootstrap stub/i.test(init), 'init.md never mentions the bootstrap stub it adopts');
+  const prompt = (read('README.md').split('## Quickstart')[1] || '').match(/```text\n([\s\S]*?)\n```/);
+  assert(prompt, 'README Quickstart install prompt not found');
+  assert(/Synaptic's init/.test(prompt[1]), 'install prompt does not ask for Synaptic\'s init');
+  assert(!/(^|[^\w/.])\/synaptic-/m.test(prompt[1]),'install prompt names a slash command that cannot exist before the install');
+});
+
+test('stub contract: descriptions are written as YAML double-quoted scalars', () => {
+  const contract = fs.readFileSync(path.join(ROOT, 'standalone', 'synaptic', 'references', 'command-discovery.md'), 'utf8');
+  assert(/description: "/.test(contract) && /double-quoted/.test(contract), 'command-discovery.md does not require a quoted description');
+});
+
 // --- export.js -----------------------------------------------------------------------------------
 test('export.js: single-file export contains every brain file under a FILE header', () => {
   const b = validBrain();

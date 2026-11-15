@@ -10,7 +10,7 @@ Synaptic gives your agent a brain: a folder of linked Markdown files it reads fi
 when you ask. Decisions, lessons and playbooks stay in files you own, so a fresh session, a
 different agent or another person can pick the work up from them.
 
-> **v1.7.0, usable beta.** The file-based brain works with any agent that can read and write files.
+> **v1.7.1, usable beta.** The file-based brain works with any agent that can read and write files.
 > Extras are optional previews. [Details](#what-is-automatic-and-what-is-not).
 
 ## Quickstart
@@ -22,7 +22,7 @@ Install Synaptic from https://github.com/diego-alfadev/synaptic-core/releases/la
 
 Download the synaptic-<version>.tar.gz asset (not the "Source code" archive) and check it against
 SHA256SUMS. Find any existing brain and project scope first. Stage and verify the full bundle, show
-me the changes and preserve my knowledge and rules. Then run /synaptic-init and tell me which
+me the changes and preserve my knowledge and rules. Then run Synaptic's init and tell me which
 capabilities actually work here. Do not install MCP if unavailable.
 ```
 

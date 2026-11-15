@@ -1,6 +1,6 @@
 ---
 name: synaptic
-version: 1.7.0     # engine semver; brain schema remains 1.0
+version: 1.7.1     # engine semver; brain schema remains 1.0
 supported_schema: ">=1.0 <2.0"   # brain schema/format versions this engine can read. A skill update reinstalls the skill with NO brain migration; only a schema/format change runs /synaptic-upgrade.
 description: >
   Knowledge-graph memory layer for project work — a portable, file-based brain that turns
@@ -27,6 +27,8 @@ An explicitly selected mutable branch must be resolved once to a commit before p
 Follow references/package-install.md from that same source: private staging → inventory/content
 verification → scope-aware diff and fresh backup → recoverable agent-run apply → separate
 installation and host-integration checks. Preserve MANIFEST.txt and SOURCE.json with the skill.
+On Claude Code and VS Code Local the install also places one bootstrap command stub, `synaptic-init`
+(references/command-discovery.md); on any host, init can be started by name from references/init.md.
 If only this file was supplied, obtain the package or that reference from its known immutable
 origin first, without changing installed files. A same version header never skips content checks.
 

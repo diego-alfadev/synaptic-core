@@ -3,7 +3,7 @@
 Guide for a prepared release package. Real host acceptance for the optional previews (VS Code,
 automatic curation) remains pending.
 
-The engine is **1.7.0**; its brain format remains **1.0**. This is not a knowledge-format migration.
+The engine is **1.7.1**; its brain format remains **1.0**. This is not a knowledge-format migration.
 
 VS Code users have a [project setup and recovery guide](docs/integrations/vscode.md), including the
 assisted no-Node/no-MCP route. Package integrity and project-file transactions do not prove host loading.

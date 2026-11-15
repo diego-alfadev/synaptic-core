@@ -27,7 +27,7 @@ Synaptic is a folder of plain Markdown files that turns your daily work into a k
 - Auditable by default: compliance can read every file; nothing is opaque
 - Works on-premise, air-gapped, or in any cloud — it is a folder of Markdown files
 
-**Where to start:** read [README.md](README.md) and run `/synaptic-init` with your agent. See [ROADMAP.md](ROADMAP.md) for what shipped in v1 and what is coming next.
+**Where to start:** read [README.md](README.md) and paste its install prompt into your agent. See [ROADMAP.md](ROADMAP.md) for what shipped in v1 and what is coming next.
 
 ---
 

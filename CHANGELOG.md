@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.7.1] - 2026-11-15
+
+> **The install leaves a working way to start.** A fresh install used to name `/synaptic-init`, a
+> command that only exists after init has run.
+
+Brain schema remains **1.0**: no knowledge-format migration.
+
+- The install now places one command stub, `synaptic-init`, next to the skill on Claude Code
+  (`.claude/commands/synaptic-init.md`) and the VS Code Local harness
+  (`.github/prompts/synaptic-init.prompt.md`), at the same scope as the skill. It is listed in the
+  changes shown before writing. Init adopts it, records it with the other stubs and refreshes it when
+  stale; declining an optional step never removes it. A file that is not a Synaptic stub is left alone.
+- The README install prompt asks the agent to run Synaptic's init instead of naming a slash command,
+  so it also works on Codex and other hosts without command stubs.
+- Command stubs write their `description:` as a quoted value. Three generated stubs had invalid
+  frontmatter because their one-line summary contains `: `.
+- Claude Code 2.1.325 loaded the new command in the session that installed it. Other hosts are not
+  verified; a fresh session is the supported check.
+
 ## [1.7.0] - 2026-11-12
 
 > **Better organised work.** Tasks and proposals keep their record and evidence, closing a playground
