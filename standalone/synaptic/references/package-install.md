@@ -10,7 +10,10 @@ hook firing, MCP discovery or semantic curation.
 
 ## 1. Resolve the existing setup and selected source before choosing a destination
 
-**Old-engine handoff.** During an upgrade, the old engine only installs the selected verified
+**Old-engine handoff.** The owner first directs the agent to the selected complete package's
+`docs/UPGRADE-TO-1.7.2.AGENT.md`, before invoking the old installed command. A new package cannot
+change an unread old procedure; a bare old `/synaptic-upgrade` is not proof of this handoff.
+During the directed upgrade, the old engine only installs the selected verified
 complete package. It must not execute its previous host detection, proof or repair steps. Reload
 the installed SKILL.md and references before any setup detection; if a reload is unavailable,
 report installed files and pending setup, without executing the old procedure. The read-only

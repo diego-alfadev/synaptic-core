@@ -4,6 +4,11 @@
 
 ## Entry dispatcher — apply before the historical migration phases
 
+For entry from an older engine, the owner must first direct the agent to the selected complete
+package's `docs/UPGRADE-TO-1.7.2.AGENT.md`. A bare old `/synaptic-upgrade` still follows its old
+detection order; this new file cannot retroactively replace that behavior. The selected package's
+instruction establishes the handoff before the old command runs. Record that entry explicitly.
+
 Follow `references/package-install.md` first: identify the existing brain/schema, host and scope;
 stage and verify one immutable source package before selected live writes. Keep its source receipt
 and current-state backup. For an already-schema-1.0 brain, this is a light engine/wiring update,

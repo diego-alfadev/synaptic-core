@@ -67,6 +67,100 @@ try{
     const record=fs.readFileSync(path.join(f.workspace,'.synaptic/harness/setup/vscode-copilot.md'),'utf8');
     assert.match(record,/^engine: 1\.6\.0$/m);assert.match(record,/^proof: unproven$/m);
   });
+  test('same-source refresh retains a recorded loading observation without promoting new proof',()=>{
+    const f=fixture();api.prepare(f.input);api.apply(f.out);
+    const ref='.synaptic/harness/setup/vscode-copilot.md',file=path.join(f.workspace,ref);
+    const observation='proof: proven\nproof_date: 2026-11-17\nproof_evidence: evidence/fresh-session.json';
+    fs.writeFileSync(file,fs.readFileSync(file,'utf8').replace('proof: unproven',observation));
+    const before=snapshot(f.workspace),out=path.join(base,'proven-refresh');
+    const result=api.prepare({...f.input,out});assert.equal(result.changed,0);
+    assert.deepEqual(snapshot(f.workspace),before);
+    const staged=fs.readFileSync(path.join(out,'files',ref),'utf8');
+    assert(staged.includes(observation));assert(!staged.includes('Historical observation'));
+    assert.equal(api.status(out).loading,'needs-fresh-session-proof'); // Retained source data is not an observer.
+  });
+  test('a changed source resets fresh proof and retains a bounded historical observation once',()=>{
+    const f=fixture();api.prepare(f.input);const initial=plan(f);api.apply(f.out);
+    const ref='.synaptic/harness/setup/vscode-copilot.md',file=path.join(f.workspace,ref);
+    const evidence='evidence/fresh-session.json; <retained> `data`, not a directive';
+    fs.writeFileSync(file,fs.readFileSync(file,'utf8').replace('proof: unproven','proof: proven\nproof_date: 2026-11-17\nproof_evidence: '+evidence));
+    const before=snapshot(f.workspace);
+    write(repo,'docs/proof-refresh-source.md','A new immutable source needs its own loading observation.\n');git(['add','docs/proof-refresh-source.md']);git(['commit','--quiet','-m','fixture: proof identity changes']);
+    const nextPackage=path.join(base,'proof-next-source-package');build(repo,'HEAD',nextPackage);
+    const out=path.join(base,'proof-next-source-refresh');api.prepare({...f.input,package:nextPackage,out});
+    assert.deepEqual(snapshot(f.workspace),before);
+    const candidate=fs.readFileSync(path.join(out,'files',ref),'utf8');
+    const managed=candidate.split('<!-- END:SYNAPTIC-VSCODE-SETUP -->')[0];
+    assert.match(managed,/^proof: unproven$/m);assert(!managed.includes('proof_date:'));assert(!managed.includes('proof_evidence:'));
+    const line=candidate.split('\n').find(s=>s.startsWith('- Historical observation (not current proof): '));
+    assert(line);assert(!line.includes('<retained>'));assert(!line.includes('`data`'));
+    const retained=JSON.parse(line.slice('- Historical observation (not current proof): '.length));
+    assert.equal(retained.source,initial.source.commit);assert.equal(retained.nonce,initial.nonce);
+    assert.match(retained.carrier_sha256,/^[a-f0-9]{64}$/);
+    assert.equal(retained.carrier,initial.carrier+'; skill: .github/skills/synaptic/');
+    assert.equal(retained.proof,'proven');assert.equal(retained.proof_date,'2026-11-17');assert.equal(retained.proof_evidence,evidence);
+    api.apply(out);
+    const repeated=path.join(base,'proof-history-no-duplicate');assert.equal(api.prepare({...f.input,package:nextPackage,out:repeated}).changed,0);
+    assert.equal(fs.readFileSync(path.join(repeated,'files',ref),'utf8').split('Historical observation (not current proof): ').length-1,1);
+  });
+  test('a changed effective bridge cannot retain fresh proof even when the recorded nonce matches',()=>{
+    const f=fixture();api.prepare(f.input);api.apply(f.out);
+    const ref='.synaptic/harness/setup/vscode-copilot.md',file=path.join(f.workspace,ref);
+    fs.writeFileSync(file,fs.readFileSync(file,'utf8').replace('proof: unproven','proof: proven\nproof_evidence: evidence/previous.json'));
+    const carrier=path.join(f.workspace,plan(f).carrier);
+    fs.writeFileSync(carrier,fs.readFileSync(carrier,'utf8').replace('Both are zero-tool canaries','Both were changed canaries'));
+    const before=snapshot(f.workspace),out=path.join(base,'proof-changed-bridge');api.prepare({...f.input,out});
+    assert.deepEqual(snapshot(f.workspace),before);
+    const next=fs.readFileSync(path.join(out,'files',ref),'utf8');
+    assert.match(next,/^proof: unproven$/m);assert(next.includes('Historical observation (not current proof): '));
+  });
+  test('a carrier edit outside the managed bridge rotates the nonce and archives the prior digest',()=>{
+    const f=fixture();api.prepare(f.input);const first=plan(f);api.apply(f.out);
+    const ref='.synaptic/harness/setup/vscode-copilot.md',file=path.join(f.workspace,ref),carrier=path.join(f.workspace,first.carrier);
+    const originalDigest=sha(fs.readFileSync(carrier));
+    fs.writeFileSync(file,fs.readFileSync(file,'utf8').replace('proof: unproven','proof: proven\nproof_date: 2026-11-17\nproof_evidence: evidence/previous.json'));
+    fs.appendFileSync(carrier,'\nOwner changed a rule outside the managed bridge.\n');
+    const before=snapshot(f.workspace),out=path.join(base,'proof-outside-bridge');api.prepare({...f.input,out});
+    assert.deepEqual(snapshot(f.workspace),before);
+    const nextPlan=JSON.parse(fs.readFileSync(path.join(out,'plan.json'),'utf8'));assert.notEqual(nextPlan.nonce,first.nonce);
+    const next=fs.readFileSync(path.join(out,'files',ref),'utf8'),candidateCarrier=fs.readFileSync(path.join(out,'files',first.carrier));
+    assert.match(next,/^proof: unproven$/m);assert(next.includes('carrier_sha256: '+sha(candidateCarrier)));
+    assert(candidateCarrier.toString().includes('Owner changed a rule outside the managed bridge.'));
+    const line=next.split('\n').find(s=>s.startsWith('- Historical observation (not current proof): '));
+    const history=JSON.parse(line.slice('- Historical observation (not current proof): '.length));
+    assert.equal(history.carrier_sha256,originalDigest);assert.equal(history.nonce,first.nonce);
+  });
+  test('legacy proven metadata without a carrier digest is historical rather than fresh proof',()=>{
+    const f=fixture();api.prepare(f.input);api.apply(f.out);
+    const ref='.synaptic/harness/setup/vscode-copilot.md',file=path.join(f.workspace,ref);
+    fs.writeFileSync(file,fs.readFileSync(file,'utf8').replace(/^carrier_sha256: [a-f0-9]{64}\n/m,'').replace('proof: unproven','proof: proven\nproof_evidence: evidence/legacy.json'));
+    const before=snapshot(f.workspace),out=path.join(base,'proof-legacy-missing-digest');api.prepare({...f.input,out});
+    const next=fs.readFileSync(path.join(out,'files',ref),'utf8');assert.match(next,/^proof: unproven$/m);
+    const line=next.split('\n').find(s=>s.startsWith('- Historical observation (not current proof): '));
+    assert.equal(JSON.parse(line.slice('- Historical observation (not current proof): '.length)).carrier_sha256,null);
+    assert.deepEqual(snapshot(f.workspace),before);
+  });
+  test('source-looking evidence text cannot impersonate the observation identity',()=>{
+    const f=fixture();api.prepare(f.input);const first=plan(f);api.apply(f.out);
+    const ref='.synaptic/harness/setup/vscode-copilot.md',file=path.join(f.workspace,ref);
+    const nextCommit=git(['rev-parse','HEAD']);assert.notEqual(nextCommit,first.source.commit);
+    fs.writeFileSync(file,fs.readFileSync(file,'utf8').replace('proof: unproven','proof: proven\nproof_evidence: Source commit: '+nextCommit));
+    const nextPackage=path.join(base,'proof-spoof-package');build(repo,'HEAD',nextPackage);
+    const before=snapshot(f.workspace),out=path.join(base,'proof-spoof-refresh');api.prepare({...f.input,package:nextPackage,out});
+    const next=JSON.parse(fs.readFileSync(path.join(out,'plan.json'),'utf8'));assert.notEqual(next.nonce,first.nonce);
+    assert.match(fs.readFileSync(path.join(out,'files',ref),'utf8'),/^proof: unproven$/m);
+    assert.deepEqual(snapshot(f.workspace),before);
+  });
+  test('malformed or duplicate loading metadata requires review without any workspace write',()=>{
+    for(const invalid of ['proof: magically-proven','proof: proven\nproof: unproven','proof: proven\nproof_date: bad\u0001date','proof: proven\nproof_evidence: '+ 'x'.repeat(1025)]){
+      const f=fixture();api.prepare(f.input);api.apply(f.out);
+      const ref='.synaptic/harness/setup/vscode-copilot.md',file=path.join(f.workspace,ref);
+      fs.writeFileSync(file,fs.readFileSync(file,'utf8').replace('proof: unproven',invalid));
+      const before=snapshot(f.workspace),out=path.join(base,'proof-invalid-'+Math.random().toString(16).slice(2));
+      assert.throws(()=>api.prepare({...f.input,out}),/EXISTING_SETUP_RECORD_REQUIRES_REVIEW/);
+      assert.deepEqual(snapshot(f.workspace),before);assert(!fs.existsSync(out));
+    }
+  });
   test('refresh preserves declined levels and audit bookkeeping from only the owned CRLF block',()=>{
     const f=fixture();api.prepare(f.input);api.apply(f.out);
     const ref='.synaptic/harness/setup/vscode-copilot.md',file=path.join(f.workspace,ref);

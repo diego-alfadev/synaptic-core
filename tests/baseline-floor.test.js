@@ -6,6 +6,7 @@ const {spawnSync}=require('node:child_process');
 const {createHash}=require('node:crypto');
 const {build,verifySkill,inventory}=require('../tools/package-release');
 const api=require('../tools/vscode-integration');
+const {createBrain}=require('../tools/lib/core-lib');
 const product=path.resolve(__dirname,'..');
 const base=fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(),'syn-baseline-')));
 const repo=path.join(base,'source'),hooks=path.join(base,'empty-hooks');
@@ -73,6 +74,29 @@ try{
   for(const ref of ['docs/UPGRADE-v0.3-to-v1.md','docs/UPGRADE-v0.3-to-v1.AGENT.md','tools/migrate.js','tools/check.js'])put(repo,ref,'Synthetic migration dependency\n');
   git(['add','.']);git(['commit','--quiet','-m','fixture: shipped baseline contract']);
   packageRoot=path.join(base,'package');build(repo,'HEAD',packageRoot);
+  test('a partial optional skill cannot route normal boot through installation gates',()=>{
+    const skill=read('SKILL.md'),entry=skill.indexOf('## Entry routing — before bootstrap'),bootstrap=skill.indexOf('## Bootstrap / self-install');
+    assert(entry>=0 && entry<bootstrap,'The normal-boot guard must precede incomplete-bundle acquisition');
+    const guard=skill.slice(entry,bootstrap);
+    matches(guard,/Unless the user explicitly requests install,\s+upgrade or repair, skip Bootstrap \/ self-install entirely, even when/);
+    matches(guard,/absent or incomplete/);
+    matches(guard,/Do not acquire files, run installation verification gates, ask for a package\/source, offer\s+repair/);
+    matches(guard,/specific operation\s+as unavailable/);matches(guard,/without blocking brain reads/);
+    // This is a source-routing contract plus real file availability, not a host-agent execution.
+    const f=fixture();api.prepare(f.input);api.apply(f.out);
+    const installed=path.join(f.workspace,'.github/skills/synaptic');
+    const missing=path.join(installed,'references/host-setup.md');fs.unlinkSync(missing);
+    const before=snap(f.workspace),carrier=fs.readFileSync(path.join(f.workspace,'.github/copilot-instructions.md'),'utf8');
+    assert(carrier.includes(api.START));assert(carrier.includes('`.synaptic/BRAIN.md`'));
+    const partial=fs.readFileSync(path.join(installed,'SKILL.md'),'utf8');
+    assert(partial.includes('## Entry routing — before bootstrap'));
+    assert(fs.readFileSync(path.join(installed,'MANIFEST.txt'),'utf8').includes('references/host-setup.md'));
+    assert.throws(()=>verifySkill(installed),/PACKAGE_INVENTORY_MISMATCH/);
+    const brain=createBrain(path.join(f.workspace,'.synaptic'));
+    assert(brain.read('BRAIN.md').text.includes('schema_version: 1.0'));
+    assert.equal(brain.read('journal/_current.md').text,'# Resume\nRetain this existing source.\n');
+    assert.deepEqual(snap(f.workspace),before);assert(!fs.existsSync(missing));
+  });
   test('no-record assisted setup uses real shipped bytes and leaves settings, MCP and hooks alone',()=>{
     const f=fixture(),before=snap(f.workspace);
     assert(!fs.existsSync(path.join(f.workspace,'.synaptic/harness/setup')));

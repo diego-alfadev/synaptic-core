@@ -7,6 +7,10 @@ does not trigger repair; unknown adapters stay limited with user-paste guidance.
 hooks and MCP never block the baseline. Outside-brain writes require a supported adapter, an exact
 approved plan, fresh byte-preserving preimages and rollback. An upgrade reloads the newly installed
 engine before host detection. Existing VS Code selections and declined optional levels are preserved.
+Use the selected package's [entry instruction](docs/UPGRADE-TO-1.7.2.AGENT.md) before invoking an
+older installed upgrade command. An incomplete optional skill does not initiate repair during
+ordinary boot. Loading observations survive an unchanged refresh and are retained as history
+when the source, profile or effective carrier changes.
 
 `synaptic ping` is the optional token-only, zero-tool debug check; `synaptic status` is its alias
 for 1.7.x. Init/upgrade never request either. Ask explicitly for a situation report to inspect work.

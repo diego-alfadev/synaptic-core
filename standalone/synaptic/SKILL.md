@@ -11,7 +11,30 @@ description: >
   /synaptic-handover (routine: /synaptic-upgrade; 1.6 aliases: /synaptic-weave /synaptic-synthesize).
 ---
 
+## Entry routing — before bootstrap
+
+**Canary first.** An explicitly requested `synaptic ping` or its `synaptic status` alias takes
+the loaded-context zero-read path before this boot flow: return only the already-loaded token,
+or `SYNAPTIC-BOOT-UNKNOWN` when none was loaded. Do not read this file or the brain to find a token.
+
+**Normal boot is not an installation request.** Unless the user explicitly requests install,
+upgrade or repair, skip Bootstrap / self-install entirely, even when this skill's bundle,
+manifest, source receipt or references are absent or incomplete. Resolve the existing brain
+and read its available `BRAIN.md` and, when resuming, `journal/_current.md` directly. An effective,
+scope-safe L1 bridge remains a successful baseline independently of optional L2 integrity.
+Do not acquire files, run installation verification gates, ask for a package/source, offer
+repair, or write skill/host setup merely because the bundle is incomplete. Installation integrity
+is unknown until explicitly checked; diagnose it on an explicit audit without blocking brain reads.
+
+If an explicitly invoked operation needs an unavailable reference, report that specific operation
+as unavailable and retain access to readable brain files. Do not invent its procedure or turn the
+missing reference into an implicit installation request. An explicit install, upgrade or repair
+request alone enters the verified, approved package flow below; it never bypasses its safeguards.
+
 ## Bootstrap / self-install
+
+**Explicit install, upgrade or repair requests only.** The entry-routing rule above takes
+precedence over every acquisition, source question, verification gate and stop condition here.
 
 A raw SKILL.md is an entry point, not a complete installation. If its bundle/manifest is absent
 or incomplete, **do not write either live skill carrier yet**. Resolve the existing brain,
@@ -43,7 +66,8 @@ host detection or repair procedure. Reload the installed SKILL.md and its refere
 only the new engine detects the host and proposes any wiring. If a reload cannot be established,
 stop after reporting the installed files; host setup remains pending, never delegated to old code.
 
-If the complete bundle is already present and no install/repair was requested, boot normally.
+Without an explicit install, upgrade or repair request, boot normally through Entry routing,
+whether the bundle is complete or incomplete.
 Legacy bundles with unknown source metadata are not prevented from being read; their origin and
 installation integrity remain unverified until checked. Package tooling prepares/verifies files;
 it is not an installer or a mechanism that starts curation.

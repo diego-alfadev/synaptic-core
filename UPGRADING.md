@@ -18,6 +18,13 @@ assisted no-Node/no-MCP route. Package integrity and project-file transactions d
 
 ## Start from one exact release
 
+**Entering from an older engine (including 1.6).** Do not start by invoking its installed
+`/synaptic-upgrade`: that version still contains its old detection order. Give the agent the
+selected complete package and the [entry instruction](docs/UPGRADE-TO-1.7.2.AGENT.md) first.
+It prepares the new procedure's exact recoverable plan; only after the selected files are
+installed and reread does the new engine perform host detection. This explicit handoff is
+required; the new package cannot change an old entry point before the agent reads it.
+
 Give its GitHub page or authorised local package to your existing agent. The package records its
 source commit in `RELEASE-MANIFEST.json`; the skill retains `MANIFEST.txt` and generated `SOURCE.json`.
 Use the release page's manifest digest: the line `manifestSha256` in its notes, also found in the

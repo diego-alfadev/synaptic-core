@@ -121,3 +121,10 @@ explicitly re-runs init; upgrade, audit and boot neither re-offer nor deploy tha
 diagnosis only. Audit reports `unproven`/`limited` once per engine by checking/updating
 `audit_reported_engine`; a repeated audit stays quiet. An absent legacy `<host>.md` is not itself an
 advisory or permission to invent one. Canary metadata never reintroduces a setup proof prompt.
+
+The scoped VS Code helper also records `carrier_sha256`, computed from the exact emitted carrier
+bytes. A same-source/profile/carrier refresh retains `proof`, `proof_date` and `proof_evidence`
+only when the recorded digest and nonce still match. These fields preserve supplied observations;
+the helper does not verify or create loading proof. A changed identity or missing legacy digest
+makes prior evidence historical, retained outside the managed setup block, and resets current
+proof to unproven. Unavailable hashing never authorises an invented digest or a fresh proof claim.

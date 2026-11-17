@@ -8,15 +8,21 @@
 - Normal boot observes existing wiring and reads approved rules without adding carriers. Explicit
   setup preserves the selected VS Code profile. Unknown adapters remain `limited` at L1; optional
   commands/hooks/MCP do not block completion and declined levels stay declined until explicit init.
+- An incomplete optional skill bundle no longer enters acquisition or blocks ordinary brain reads.
+  A missing operation reference makes that operation unavailable until explicitly repaired.
 - Upgrade hands off from the old engine to the newly installed complete package before host
   detection. All external-brain writes require a supported adapter, exact approved plan, fresh
   byte-preserving preimages and rollback. Missing legacy records are baseline evidence, not repair work.
+  Older engines need the explicit owner-provided entry instruction before their installed command;
+  a new package cannot retroactively change an unread old procedure.
 - `synaptic ping` is the token-only, zero-tool canary. `synaptic status` remains its alias for 1.7.x;
   work-item reporting requires an explicit situation-report request. Init/upgrade never request a ping.
 - Setup records separate adapter support, wiring and proof, with a deterministic carrier/harness
   identity. Audit reports unproven/limited once per engine when its bookkeeping can be persisted.
 - The VS Code helper emits the safe boot/ping contract and keeps its observation nonce on an
   unchanged source/profile refresh. Automatic discovery and multi-profile bindings remain for 1.8.
+  It retains existing loading observations for the unchanged source/profile/carrier bytes and keeps
+  replaced observations as history when that identity changes; preparation never proves loading.
 
 These are agent-run procedures plus synthetic package/transaction checks. Real older-host upgrade,
 unlisted-host agent compliance and fresh-session observations remain acceptance work.

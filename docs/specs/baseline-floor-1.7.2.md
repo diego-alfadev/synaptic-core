@@ -27,6 +27,14 @@ multi-binding identity, profile discovery and concurrent session anchors belong 
 | R7 | Audit reports unproven/limited once per engine using brain-local bookkeeping. If persistence is unavailable, disclose the limit and suppress repeats within the session. |
 | R8 | L3/L4 choices use `declined`, `not-configured`, `configured`. Declined is terminal until the owner explicitly re-runs init. |
 
+R0 requires an explicit entry instruction from the owner before the installed old command:
+`docs/UPGRADE-TO-1.7.2.AGENT.md`. Version 1.6 cannot learn new routing from a package it has not
+read. Acceptance must name this directed handoff and must not describe a bare old command as fixed.
+R3 also applies when optional L2 is incomplete: normal boot neither acquires a package nor asks
+for a source. A requested operation needing a missing reference reports that operation unavailable;
+the readable brain and baseline remain usable. A same-identity helper refresh retains recorded
+loading observations; changed identity makes them historical rather than deleting them.
+
 The leak/reach gate precedes recognition of L1 and generation of snippets: private/global
 brain pointers never become an accepted project baseline in a committed or synced carrier.
 Already-approved operating rules may be read from their existing sources without deployment;
