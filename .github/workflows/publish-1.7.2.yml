@@ -22,10 +22,8 @@ jobs:
       contents: write
       actions: read
     env:
-      GH_TOKEN: ${{ github.token }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       GH_REPO: ${{ github.repository }}
-      PREPARED: ${{ runner.temp }}/synaptic-1.7.2-prepared
-      RELEASE_BODY: ${{ runner.temp }}/synaptic-1.7.2-body.md
     steps:
       - uses: actions/checkout@v5
         with:
@@ -34,6 +32,12 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: '22'
+      - name: Set runner-local staging paths
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "PREPARED=$RUNNER_TEMP/synaptic-1.7.2-prepared" >> "$GITHUB_ENV"
+          echo "RELEASE_BODY=$RUNNER_TEMP/synaptic-1.7.2-body.md" >> "$GITHUB_ENV"
       - name: Require exact tag source on main and successful CI
         shell: bash
         run: |
