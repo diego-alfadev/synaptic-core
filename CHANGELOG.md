@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.8.0-rc.2] - 2026-11-17
+
+Local correction candidate; RC1 assets remain unchanged. Brain schema remains 1.0.
+
+- Apply validates captured setup-intent read preconditions, including absence, before writes and
+  at checkpoints. A retained plan cannot ignore a later refusal. Changed intent does not disable
+  status/rollback; mid-apply drift remains a visible recoverable partial result.
+- Assisted preparation works without the optional context file. Missing native permissions still
+  fail closed. Failed bounded reads stop before the shared verifier can reopen oversized content.
+- Diagnostics distinguish inspected project configuration, unresolved effective configuration and
+  observed execution. Missing execution proof no longer requests reconfiguration of a configured
+  capability. Explicit supplied observation records expose age/applicability without authenticating
+  their observer or creating live execution proof.
+- Added a thin T3 CORE procedure, pilot specification and evidence template for one selected
+  local/manual existing-provider instance. This is prepared pilot material, not an executable
+  T3 port or completed real-host acceptance. T3 settings/auth, native hooks, managed/shadow homes,
+  remote execution and worktrees remain outside this first pilot.
+
 ## [1.8.0-rc.1] - 2026-11-17
 
 Local development candidate, not published or installed. Brain schema remains 1.0.

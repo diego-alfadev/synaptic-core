@@ -65,6 +65,7 @@ jobs:
         run: |
           set -euo pipefail
           node tests/setup-state.test.js
+          node tests/setup-observations.test.js
           node tests/setup-adapter.test.js
           node tests/setup-inspection.test.js
           node tests/setup-flow.test.js

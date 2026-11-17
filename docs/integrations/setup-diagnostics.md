@@ -51,6 +51,51 @@ Native recommendations are candidates based on this adapter's implemented Copilo
 
 ## Select a target and prepare a concrete plan
 
+The report distinguishes `projectConfigured`, `effectiveConfiguration`, `configGaps` and
+`observationGaps`. `gaps` aliases configuration gaps for compatibility. Only confirmed missing
+configuration suggests setup completion; a configured capability awaiting proof suggests a separate
+host observation. Neither an effective host configuration nor execution is inferred from project
+files. Native project configuration recognition also checks the supported command arguments and
+readable runtime inventory; it does not authenticate those runtime files or demonstrate firing.
+
+Supply recorded observations explicitly when available:
+
+```text
+node tools/setup.js inspect --workspace /synthetic/project --harness copilot --context /private/context.json --evidence /private/observations.json
+```
+
+The observation file has format `synaptic-setup-observations-v1`, an `observations` array (maximum128)
+and an optional non-negative integer `maxAgeMs`. Each record contains `claim`, `kind`, `source`,
+`observedAt` and `context`. Claims are installation-integrity, configuration, file-access, loading,
+native-firing, mcp-connectivity or semantic-quality; kinds are respectively file-check,
+configuration-inspection, file-read, host-observation (for loading/firing/connectivity) or
+reviewed-output. Context includes the inspection fingerprint and the identity dimensions relevant
+to the record; execution claims require matching host/harness/profile/session/fingerprint. Unknown
+identity is not a wildcard. For example, a minimal recorded file read can use:
+
+```json
+{
+  "format": "synaptic-setup-observations-v1",
+  "observations": [{
+    "claim": "file-access",
+    "kind": "file-read",
+    "source": "owner-retained-read-record",
+    "observedAt": "2026-11-17T10:00:00Z",
+    "context": {
+      "workspace": "<canonical-workspace-from-the-scoped-report>",
+      "fingerprint": "<64-lowercase-hex-from-the-scoped-report>"
+    }
+  }]
+}
+```
+
+Replace the workspace and fingerprint with the actual scoped values. Execution records must also
+account for all known current version, source, carrier and adapter identity dimensions; omitting
+one cannot erase the current identity or make a record applicable. The CLI reports applicability,
+age, optional expiry and reasons without fetching source references or authenticating observers.
+`recordedObservations` is distinct from live `execution`, which this utility cannot prove. An omitted
+document says none was supplied, not that no observations exist. `recommend` accepts the same flag.
+
 Targets select independent capability categories: `files`, `skill`, `commands`, `capture`, `curation` and `mcp`. Choose the supported compatible combination after inspecting the recommendation and permission constraints. Preserve existing owner targets and refusals; recommendation is not consent.
 
 Example target with native capture still selected but deferred pending permission review:
@@ -101,6 +146,12 @@ node tools/vscode-integration.js rollback --plan /private/new-plan
 ```
 
 These commands retain the [VS Code transaction and recovery limits](vscode.md). Current-byte drift requires replanning. Competing skill carriers, existing native adapter material, unknown extras and ambiguous/global project bridges may need a separately reviewed migration; this interface does not make the helper a universal upgrader. Rollback only restores touched targets and refuses later edits. Keep interrupted receipts/preimages and diagnose retained locks explicitly.
+
+New plans also capture the current setup intent as a read precondition, including its absence.
+Apply rechecks it before writes and at checkpoints. An older plan cannot bypass a later refusal
+merely because its own write destinations are unchanged. Legacy plans missing that precondition
+require replan when a current rich record was not captured. A change during apply can leave a
+diagnosable partial result; status/rollback remain available and preserve newer outside-plan intent.
 
 ## Pending work remains visible
 

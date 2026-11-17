@@ -21,6 +21,66 @@ for(const ref of ['docs/UPGRADE-v0.3-to-v1.md','docs/UPGRADE-v0.3-to-v1.AGENT.md
 git(['add','.']);git(['commit','--quiet','-m','fixture: setup target source']);
 const packageRoot=path.join(base,'package');build(repo,'HEAD',packageRoot);
 let serial=0;const planInput=(workspace,target=deferred,extra={})=>({workspace,harness:'copilot',context,target,package:packageRoot,out:path.join(base,'plan-'+(++serial)),...extra});
+const assisted={format:'synaptic-setup-intent-v1',selected:{...selected,capture:false},decisions:[]};
+const declined={...assisted,decisions:[{capability:'capture',state:'declined',at:now,reason:'Owner explicitly refuses native capture.'}]};
+function legacyInput(workspace,extra={}){return {workspace,harness:'copilot',package:packageRoot,out:path.join(base,'legacy-'+(++serial)),...extra};}
+function emulateOlderPlan(out){const ref=path.join(out,'plan.json'),p=JSON.parse(fs.readFileSync(ref,'utf8'));delete p.intentPrecondition;fs.writeFileSync(ref,JSON.stringify(p,null,2)+'\n');}
+test('optional context works through public API and CLI without permitting native configuration',()=>{
+  const workspace=fixture(),before=snap(workspace),input=planInput(workspace,assisted,{context:undefined});
+  flow.prepare(input);assert.deepEqual(snap(workspace),before);transaction.apply(input.out);
+  const p=JSON.parse(fs.readFileSync(path.join(input.out,'plan.json'),'utf8'));assert.deepEqual(p.intentPrecondition,{path:'.synaptic/harness/setup/intent-vscode-copilot.json',before:null});
+  const record=JSON.parse(fs.readFileSync(path.join(workspace,'.synaptic/harness/setup/intent-vscode-copilot.json'),'utf8'));
+  assert.equal(record.observedAt,null);assert.equal(record.profile,null);
+  assert.equal(inspection.notify({workspace,harness:'copilot'}).recordState,'recorded');
+  assert.throws(()=>flow.prepare(planInput(fixture(),{...deferred,decisions:[]},{context:undefined})),/TARGET_PERMISSIONS/);
+  assert.throws(()=>flow.prepare(planInput(fixture(),assisted,{context:null})),/INVALID_SETUP_CONTEXT/);
+  const targetFile=path.join(base,'assisted-target.json');fs.writeFileSync(targetFile,JSON.stringify(assisted));
+  const cliWorkspace=fixture(),cliBefore=snap(cliWorkspace),out=path.join(base,'cli-without-context');
+  const result=spawnSync(process.execPath,[path.join(product,'tools/setup.js'),'prepare','--workspace',cliWorkspace,'--harness','copilot','--package',packageRoot,'--out',out,'--target',targetFile],{encoding:'utf8'});
+  assert.equal(result.status,0,result.stderr);assert.equal(JSON.parse(result.stdout).state,'prepared-not-installed');assert.deepEqual(snap(cliWorkspace),cliBefore);
+});
+test('a native plan cannot apply after a newer refusal even when all its write preimages still match',()=>{
+  const workspace=fixture(),baseline=legacyInput(workspace);transaction.prepare(baseline);transaction.apply(baseline.out);
+  const native=legacyInput(workspace,{runtime:'node',capture:'counter'});transaction.prepare(native);
+  const refuse=planInput(workspace,declined);flow.prepare(refuse);transaction.apply(refuse.out);
+  const before=snap(workspace);assert.throws(()=>transaction.apply(native.out),/SETUP_INTENT_CHANGED_SINCE_PREPARE/);
+  assert.deepEqual(snap(workspace),before);assert(!fs.existsSync(path.join(workspace,transaction.HOOK)));
+  assert.equal(transaction.status(native.out).lastTransaction,'not-applied');
+  // A no-write repeat of the already-applied baseline is safe and remains idempotent.
+  assert.equal(transaction.apply(baseline.out).state,'applied');assert.deepEqual(snap(workspace),before);
+  transaction.rollback(refuse.out);transaction.rollback(baseline.out);
+});
+test('retained pre-guard legacy plans require replan when rich intent appears, but remain usable when none exists',()=>{
+  const workspace=fixture(),baseline=legacyInput(workspace);transaction.prepare(baseline);emulateOlderPlan(baseline.out);transaction.apply(baseline.out);
+  const native=legacyInput(workspace,{runtime:'node',capture:'counter'});transaction.prepare(native);emulateOlderPlan(native.out);
+  const refuse=planInput(workspace,declined);flow.prepare(refuse);transaction.apply(refuse.out);
+  const before=snap(workspace);assert.throws(()=>transaction.apply(native.out),/INTENT_PRECONDITION_MISSING_REQUIRES_REPLAN/);assert.deepEqual(snap(workspace),before);
+  assert.equal(transaction.status(native.out).lastTransaction,'not-applied');
+  transaction.rollback(refuse.out);transaction.rollback(baseline.out);
+});
+test('older rich plans derive the intent prerequisite from their own target preimage',()=>{
+  const workspace=fixture(),input=planInput(workspace,assisted);flow.prepare(input);emulateOlderPlan(input.out);
+  transaction.apply(input.out);assert.equal(inspection.notify({workspace,harness:'copilot',context}).recordState,'recorded');
+  transaction.apply(input.out);transaction.rollback(input.out);
+});
+test('a changed non-refusal intent also invalidates the prepared target before workspace writes',()=>{
+  const workspace=fixture(),first=planInput(workspace);flow.prepare(first);transaction.apply(first.out);
+  const allowed={...context,permissions:{node:'allowed',hooks:'allowed'}},native=planInput(workspace,{...deferred,decisions:[]},{context:allowed});flow.prepare(native);
+  const changed=planInput(workspace,assisted);flow.prepare(changed);transaction.apply(changed.out);
+  const before=snap(workspace);assert.throws(()=>transaction.apply(native.out),/SETUP_INTENT_CHANGED_SINCE_PREPARE/);assert.deepEqual(snap(workspace),before);
+  transaction.rollback(changed.out);transaction.rollback(first.out);
+});
+test('mid-apply intent drift remains partial-pending and rollback preserves the new decision',()=>{
+  const workspace=fixture(),baseline=legacyInput(workspace);transaction.prepare(baseline);transaction.apply(baseline.out);
+  const input=legacyInput(workspace,{runtime:'node',capture:'counter'});transaction.prepare(input);
+  const intentRef='.synaptic/harness/setup/intent-vscode-copilot.json',lateDecision=JSON.stringify({format:'synaptic-setup-record-v1',harness:'copilot',profile:null,observedAt:null,intent:declined,configured:{...assisted.selected}})+'\n';
+  const rename=fs.renameSync;let injected=false;
+  fs.renameSync=function(from,to){const result=rename.apply(this,arguments);if(!injected && to===path.join(workspace,transaction.HOOK)){injected=true;put(workspace,intentRef,lateDecision);}return result;};
+  try{assert.throws(()=>transaction.apply(input.out),/SETUP_INTENT_CHANGED_SINCE_PREPARE/);}finally{fs.renameSync=rename;}
+  assert(injected);assert.equal(transaction.status(input.out).lastTransaction,'partial-pending');
+  transaction.rollback(input.out);assert(!fs.existsSync(path.join(workspace,transaction.HOOK)));assert.equal(fs.readFileSync(path.join(workspace,intentRef),'utf8'),lateDecision);
+  transaction.rollback(baseline.out);
+});
 test('deferred target stages only permitted subset, persists through reviewed apply and stays passively visible',()=>{
   const workspace=fixture(),before=snap(workspace),input=planInput(workspace),result=flow.prepare(input);
   assert.deepEqual(snap(workspace),before);assert.equal(result.target.capture,true);assert.equal(result.configuredSubset.capture,false);
@@ -42,7 +102,10 @@ test('explicit completion adds permitted native configuration, keeps execution u
   assert(p.entries.some(e=>e.path===transaction.HOOK));assert(p.entries.some(e=>e.path.endsWith('/tools/lib/setup-policy.js')));
   transaction.apply(input.out);transaction.apply(input.out);
   assert.deepEqual(inspection.notify({workspace,harness:'copilot',context:allowed}).notices,[]);
-  assert.equal(inspection.inspect({workspace,harness:'copilot',context:allowed}).execution.nativeFiring,'unknown');
+  const report=inspection.inspect({workspace,harness:'copilot',context:allowed});
+  assert.equal(report.execution.nativeFiring,'unknown');assert.equal(report.projectConfigured.capture,true);
+  assert(!report.configGaps.some(g=>g.capability==='capture'));assert(report.observationGaps.some(g=>g.capability==='capture' && g.claim==='native-firing'));
+  assert(!report.nextActions.some(action=>action.includes('request setup completion')));
   const before=snap(workspace);assert.throws(()=>flow.prepare(planInput(workspace,{...deferred,decisions:[]},{context:allowed})),/EXISTING_ADAPTER_REQUIRES_REVIEW/);assert.deepEqual(snap(workspace),before);
   transaction.rollback(input.out);assert.equal(inspection.notify({workspace,harness:'copilot',context}).notices[0].state,'deferred');
 });
@@ -90,6 +153,22 @@ test('CLI operations are explicit, reject ambiguous flags and never repurpose st
   const future={...context,observedAt:'2099-01-01T00:00:00Z',permissions:{node:'allowed',hooks:'allowed'}};
   const report=inspection.inspect({workspace,harness:'copilot',context:future,now});assert.equal(report.declarationFreshness.state,'future-declaration');assert.equal(report.capabilities.recommended.capture,false);assert.equal(report.progress.capture.permitted,'unknown');
   assert.throws(()=>flow.prepare(planInput(workspace,deferred,{context:future})),/FUTURE_SETUP_DECLARATION/);
+});
+test('explicit CLI observation documents report applicability without promoting records to host proof or reading sources',()=>{
+  const workspace=fixture(),before=snap(workspace),cli=path.join(product,'tools/setup.js');
+  const first=spawnSync(process.execPath,[cli,'inspect','--workspace',workspace,'--harness','copilot'],{encoding:'utf8'});assert.equal(first.status,0,first.stderr);
+  const initial=JSON.parse(first.stdout);assert.equal(initial.observationInput.state,'not-supplied');assert.deepEqual(initial.recordedObservations,[]);
+  const evidence=path.join(base,'observations.json');fs.writeFileSync(evidence,JSON.stringify({format:'synaptic-setup-observations-v1',observations:[
+    {claim:'file-access',kind:'file-read',source:'not-followed-or-executed',observedAt:now,context:{fingerprint:initial.fingerprint,workspace:initial.scope.workspace}},
+    {claim:'native-firing',kind:'configuration-inspection',source:'not-native-evidence',observedAt:now,context:{fingerprint:initial.fingerprint}}
+  ]}));
+  for(const operation of ['inspect','recommend']){
+    const run=spawnSync(process.execPath,[cli,operation,'--workspace',workspace,'--harness','copilot','--evidence',evidence],{encoding:'utf8'});assert.equal(run.status,0,run.stderr);
+    const report=JSON.parse(run.stdout);assert.equal(report.observationInput.state,'supplied');assert.equal(report.recordedObservations[0].state,'applicable');assert.equal(report.recordedObservations[0].assurance,'recorded-not-independently-verified');assert.equal(report.recordedObservations[1].state,'unknown');
+    if(operation==='inspect')assert.equal(report.execution.nativeFiring,'unknown');
+  }
+  const rejected=spawnSync(process.execPath,[cli,'notify','--workspace',workspace,'--harness','copilot','--evidence',evidence],{encoding:'utf8'});assert.notEqual(rejected.status,0);
+  assert.deepEqual(snap(workspace),before);
 });
 test('shipped CORE routes diagnostics and each consolidate passive notice without boot wiring',()=>{
   const skill=fs.readFileSync(path.join(product,'standalone/synaptic/SKILL.md'),'utf8'),consolidate=fs.readFileSync(path.join(product,'standalone/synaptic/references/consolidate.md'),'utf8'),manifest=fs.readFileSync(path.join(product,'standalone/synaptic/MANIFEST.txt'),'utf8');

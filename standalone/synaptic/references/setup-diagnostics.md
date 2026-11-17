@@ -2,6 +2,14 @@
 
 # Setup diagnostics and completion
 
+**Configuration and observation are separate queues.** The optional project inspector exposes
+`projectConfigured`, `effectiveConfiguration`, `configGaps` and `observationGaps`. Its compatibility
+field `gaps` means configuration gaps only. Request completion for confirmed missing configuration;
+inspect unresolved configuration without assuming absence. Configured-but-unobserved capabilities
+need a scoped observation, not another installation. An explicit `--evidence` document can expose
+dated recorded observations and their applicability; it never authenticates their source or creates
+independent execution proof. CORE can interpret the same supplied records through file reads.
+
 Run this procedure on an explicit setup-diagnostic, recommendation or completion request. Normal boot reads existing memory and does not start this procedure. CORE needs only permitted file tools; optional runtime tooling can enforce mechanical checks but is never required to read the brain.
 
 ## Inspect the declared boundary
@@ -82,3 +90,6 @@ Where the trusted complete package and permitted Node are available, `tools/setu
 The project inspector does not load retained private plans or transaction receipts. An explicitly requested check of an already-known plan uses `vscode-integration.js status` separately. Its byte/transaction findings do not establish loading, native firing or machine-wide configuration.
 
 Keep activation diagnostics separate from the work-item situation report. `synaptic ping` remains the explicit zero-read debug canary. Preserve an existing `synaptic status` canary alias where installed; never silently dispatch it to this file-based report.
+
+For a selected T3 Code local/manual provider pilot, use `references/t3.md`. The current deterministic
+CLI remains scoped to VS Code; a CORE T3 procedure does not create an executable T3 plugin port.

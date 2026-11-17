@@ -25,6 +25,11 @@ function skill(root,extra={}){
   for(const [ref,value] of Object.entries(data))put(root,prefix+ref,value);
   put(root,prefix+'SOURCE.json',JSON.stringify({format:'synaptic-skill-source-v1',source:{repository:'https://github.com/diego-alfadev/synaptic-core',commit:'a'.repeat(40)},engineVersion:'1.8.0',files:Object.entries(data).map(([ref,value])=>({path:ref,bytes:Buffer.byteLength(value),sha256:sha(Buffer.from(value))}))}));
 }
+function nativeProject(root,{capture='counter',curation='assisted'}={}){
+  const refs=['tools/vscode-integration.js','tools/package-release.js','tools/lib/publish-new-directory.js','tools/lib/curation-stop.js','tools/lib/core-lib.js','tools/lib/brain-graph.js','tools/lib/setup-policy.js'];
+  for(const ref of refs)put(root,'.synaptic-adapter/vscode/'+ref,'// Synthetic presence fixture; never executed.\n');
+  put(root,'.github/hooks/synaptic-vscode.json',JSON.stringify({version:1,hooks:{agentStop:[{type:'command',command:`node .synaptic-adapter/vscode/tools/vscode-integration.js event --workspace . --capture ${capture} --curation ${curation} --source journal/_current.md`,timeoutSec:10}]}}));
+}
 
 test('inspection without a retained plan reports bounded coverage and leaves all bytes unchanged',()=>{
   const root=fixture();put(root,'AGENTS.md','# Owner rules\r\n<!-- BEGIN:SYNAPTIC -->\r\nBrain: `.synaptic/BRAIN.md`\r\n<!-- END:SYNAPTIC -->\r\n');
@@ -162,6 +167,27 @@ test('different corrupt bytes in an allowed non-entry skill file change the insp
   const second=api.inspect(input(root));assert.notEqual(second.fingerprint,first.fingerprint);
   assert.equal(second.coverage.inspected.find(x=>x.path==='.github/skills/synaptic/references/fixture.md').reason,'INVALID_UTF8');
 });
+test('oversized installed content is rejected before any later verifier reads its bytes',()=>{
+  const root=fixture(),ref='.github/skills/synaptic/references/large.md';
+  skill(root,{'references/large.md':'# Small receipt declaration\n'});
+  put(root,ref,Buffer.alloc(2*1024*1024+1,65));
+  const target=path.join(root,ref),before=snapshot(root),originalOpen=fs.openSync,originalRead=fs.readFileSync,originalClose=fs.closeSync,tracked=new Set();
+  let contentReads=0,report;
+  try{
+    fs.openSync=function(file,...args){const fd=originalOpen.call(fs,file,...args);if(typeof file==='string' && path.resolve(file)===target)tracked.add(fd);return fd;};
+    fs.closeSync=function(fd,...args){tracked.delete(fd);return originalClose.call(fs,fd,...args);};
+    fs.readFileSync=function(file,...args){if(typeof file==='number'?tracked.has(file):typeof file==='string' && path.resolve(file)===target)contentReads++;return originalRead.call(fs,file,...args);};
+    report=api.inspect(input(root));
+  }finally{fs.openSync=originalOpen;fs.readFileSync=originalRead;fs.closeSync=originalClose;}
+  assert.equal(contentReads,0,'A failed bounded read must never fall through to an unbounded content verifier.');
+  assert.equal(report.installation.state,'failed');assert.equal(report.coverage.inspected.find(e=>e.path===ref).reason,'INSPECTION_FILE_LIMIT');
+  assert.deepEqual(snapshot(root),before);
+});
+test('a valid installed reference at the exact read boundary remains content-checkable',()=>{
+  const root=fixture();skill(root,{'references/boundary.md':Buffer.alloc(2*1024*1024,65)});
+  const report=api.inspect(input(root));assert.equal(report.installation.state,'content-verified-receipt');
+  assert.equal(report.coverage.inspected.find(e=>e.path.endsWith('/references/boundary.md')).state,'read');
+});
 test('deep empty skill directories terminate within the disclosed inventory bound',()=>{
   const root=fixture();skill(root);
   fs.mkdirSync(path.join(root,'.github/skills/synaptic',...Array(18).fill('d')),{recursive:true});
@@ -183,8 +209,58 @@ test('profile-bound record is historical in a different or unresolved profile',(
 test('project-harness record can describe target gaps without claiming a profile binding',()=>{
   const root=fixture();setupRecord(root);const report=api.inspect(input(root));
   assert.equal(report.intent.state,'recorded');assert.equal(report.intent.scope,'project-harness');
-  assert(report.gaps.some(x=>x.capability==='capture' && x.state==='needs-checking'));
+  assert(report.configGaps.some(x=>x.capability==='capture' && x.state==='missing'));
+  assert.deepEqual(report.gaps,report.configGaps);
   assert.equal(report.execution.nativeFiring,'unknown');
+});
+test('configured project native targets need observation rather than repeated setup completion',()=>{
+  const root=fixture();skill(root);nativeProject(root,{curation:'native'});
+  setupRecord(root,{configured:{files:true,skill:true,commands:false,capture:true,curation:true,mcp:false},value:intent({selected:{...selected,curation:true},decisions:[]})});
+  const before=snapshot(root),report=api.inspect(input(root,{context:context()}));
+  assert.equal(report.projectConfigured.capture,true);assert.equal(report.projectConfigured.curation,true);
+  assert.equal(report.progress.capture.configured,'yes');assert.equal(report.progress.capture.targetState,'configured');
+  assert.equal(report.effectiveConfiguration.state,'unknown');assert.equal(report.execution.nativeFiring,'unknown');assert.equal(report.execution.semanticQuality,'not-checked');
+  assert.deepEqual(report.configGaps,[]);assert.deepEqual(report.gaps,[]);
+  assert(report.observationGaps.some(g=>g.capability==='capture' && g.claim==='native-firing'));
+  assert(report.observationGaps.some(g=>g.capability==='curation' && g.claim==='semantic-quality'));
+  assert(!report.nextActions.some(action=>action.includes('setup completion')));
+  assert(report.nextActions.some(action=>action.includes('host observation')));assert.deepEqual(snapshot(root),before);
+});
+test('a saved configured snapshot cannot hide missing native runtime files',()=>{
+  const root=fixture();skill(root);nativeProject(root);setupRecord(root,{configured:{files:true,skill:true,commands:false,capture:true,curation:false,mcp:false},value:intent({decisions:[]})});
+  fs.renameSync(path.join(root,'.synaptic-adapter/vscode/tools/lib/setup-policy.js'),path.join(root,'.synaptic-adapter/vscode/tools/lib/retained-policy.js'));
+  const report=api.inspect(input(root));assert.equal(report.projectConfigured.capture,false);
+  assert(report.configGaps.some(g=>g.capability==='capture' && g.state==='missing'));
+  assert(!report.observationGaps.some(g=>g.capability==='capture'));
+  assert(report.nextActions.some(action=>action.includes('setup completion')));
+});
+test('unrecognised registration remains unresolved instead of passing from saved metadata or mere presence',()=>{
+  const root=fixture();skill(root);setupRecord(root,{configured:{files:true,skill:true,commands:false,capture:true,curation:false,mcp:false},value:intent({decisions:[]})});
+  put(root,'.github/hooks/synaptic-vscode.json',JSON.stringify({version:1,hooks:{agentStop:[{type:'command',command:'some-other-command'}]}}));
+  const report=api.inspect(input(root));assert.equal(report.configuration.capture,'project-registration-present');assert.equal(report.projectConfigured.capture,null);
+  assert(report.configGaps.some(g=>g.capability==='capture' && g.state==='needs-checking'));
+  assert(!report.nextActions.some(action=>action.includes('setup completion')));assert(report.nextActions.some(action=>action.includes('unresolved project configuration')));
+});
+test('nominal built-in native commands with unsafe arguments or invalid hook parameters remain unresolved',()=>{
+  const root=fixture();nativeProject(root);
+  const hookRef='.github/hooks/synaptic-vscode.json',registered=JSON.parse(fs.readFileSync(path.join(root,hookRef),'utf8')),command=registered.hooks.agentStop[0].command;
+  for(const entry of [
+    {type:'command',command:command+' && other-command'},
+    {type:'command',command:command.replace('journal/_current.md','journal/../outside.md')},
+    {type:'command',command,timeoutSec:-1},
+    {type:'command',command,timeoutSec:'10'}
+  ]){
+    put(root,hookRef,JSON.stringify({version:1,hooks:{agentStop:[entry]}}));
+    assert.equal(api.inspect(input(root)).projectConfigured.capture,null);
+  }
+});
+test('MCP project registration and connectivity remain separate and unrelated servers do not satisfy the target',()=>{
+  const root=fixture();setupRecord(root,{value:intent({selected:{...selected,capture:false,mcp:true},decisions:[]})});
+  put(root,'.vscode/mcp.json',JSON.stringify({servers:{unrelated:{command:'other-service'}}}));
+  assert.equal(api.inspect(input(root)).projectConfigured.mcp,null);
+  put(root,'.vscode/mcp.json',JSON.stringify({servers:{synaptic:{command:'owner-configured-synaptic-service'}}}));
+  const report=api.inspect(input(root));assert.equal(report.projectConfigured.mcp,true);assert.equal(report.execution.mcpConnectivity,'unknown');
+  assert(!report.configGaps.some(g=>g.capability==='mcp'));assert(report.observationGaps.some(g=>g.claim==='mcp-connectivity'));
 });
 test('passive notices repeat selected deferred gaps on each call without inspecting configuration or writing',()=>{
   const root=fixture();setupRecord(root);put(root,'.vscode/settings.json',Buffer.from([0xff]));

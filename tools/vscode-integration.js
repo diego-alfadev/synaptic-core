@@ -262,7 +262,11 @@ function prepare(input){
     if(!targetAllowed(ref))fail('INVALID_TARGET');const old=existing(workspace,ref);
     return {path:ref,before:old===null?null:{sha256:sha(old),bytes:old.length},after:{sha256:sha(data),bytes:data.length},changed:old===null || !old.equals(data)};
   });
-  const plan={format:'synaptic-vscode-plan-v1',source:verified.source,packageManifestSha256:verified.manifestSha256,workspace,selected,installedSkill,carrier:carrierRef,nonce,sources,createdAt:new Date().toISOString(),entries};
+  // Intent is a semantic read prerequisite even for a legacy preparation that
+  // does not write it. Destination preimages alone cannot protect a later refusal.
+  const intentPrecondition={path:intentRef,before:oldIntentBytes===null?null:{sha256:sha(oldIntentBytes),bytes:oldIntentBytes.length}};
+  const plan={format:'synaptic-vscode-plan-v1',source:verified.source,packageManifestSha256:verified.manifestSha256,workspace,selected,installedSkill,carrier:carrierRef,nonce,sources,createdAt:new Date().toISOString(),entries,intentPrecondition};
+  checkIntentPrecondition(workspace,plan);
   const stage=fs.mkdtempSync(path.join(parent,'.synaptic-vscode-plan-'));
   for(const entry of entries){
     const old=existing(workspace,entry.path);
@@ -271,7 +275,8 @@ function prepare(input){
   }
   verifySkill(path.join(stage,'files/.github/skills/synaptic'));
   writeNew(stage,'plan.json',Buffer.from(JSON.stringify(plan,null,2)+'\n'));
-  writeNew(stage,'REVIEW.md',Buffer.from(`# Prepared VS Code project integration\n\nNot installed; no live-host proof. Source: ${plan.source.commit}.\n\nSelected: ${JSON.stringify(selected)}\nExisting skill: ${JSON.stringify(installedSkill)}\n\n`+entries.filter(e=>e.changed).map(e=>`- ${e.path}: ${e.before===null?'create':'replace from archived current bytes'}; after sha256:${e.after.sha256}`).join('\n')+'\n\nReview candidate files and archived preimages. Explicit apply/rollback needs Node and re-checks current bytes. Legacy source-unknown skill replacement additionally requires --accept-legacy yes after review. Without Node, use the standalone VS Code guide and permitted agent file tools; that manual path is not an executable transaction.\nNative hooks in other project/user/policy sources are not inventoried or disabled by this plan. A selected optional capability is not live-proven.\n'));
+  writeNew(stage,'REVIEW.md',Buffer.from(`# Prepared VS Code project integration\n\nNot installed; no live-host proof. Source: ${plan.source.commit}.\n\nSelected: ${JSON.stringify(selected)}\nExisting skill: ${JSON.stringify(installedSkill)}\nIntent prerequisite: ${JSON.stringify(intentPrecondition)}\n\n`+entries.filter(e=>e.changed).map(e=>`- ${e.path}: ${e.before===null?'create':'replace from archived current bytes'}; after sha256:${e.after.sha256}`).join('\n')+'\n\nReview candidate files and archived preimages. Explicit apply/rollback needs Node and re-checks current bytes. Legacy source-unknown skill replacement additionally requires --accept-legacy yes after review. Without Node, use the standalone VS Code guide and permitted agent file tools; that manual path is not an executable transaction.\nNative hooks in other project/user/policy sources are not inventoried or disabled by this plan. A selected optional capability is not live-proven.\n'));
+  checkIntentPrecondition(workspace,plan);
   publishNewDirectory(stage,out);
   return {operation:'prepare',plan:path.join(out,'plan.json'),state:'prepared-not-installed',selected,changed:entries.filter(e=>e.changed).length,source:plan.source};
 }
@@ -288,7 +293,25 @@ function loadPlan(input,options={}){
     if(e.before!==null){const old=bytes(safe(dir,'before/'+e.path));if(old.length!==e.before.bytes || sha(old)!==e.before.sha256)fail('BACKUP_CHANGED');}
     if(e.changed!==(e.before===null || e.before.sha256!==e.after.sha256))fail('INVALID_PLAN');
   }
+  intentPrecondition(plan); // Validate metadata without enforcing current intent on status/rollback.
   return {dir,plan,workspace};
+}
+function sameImage(a,b){return a===null?b===null:b!==null && a.sha256===b.sha256 && a.bytes===b.bytes;}
+function intentPrecondition(plan){
+  const ref=`.synaptic/harness/setup/intent-vscode-${plan.selected.harness}.json`,entry=plan.entries.find(e=>e.path===ref);
+  const guard=plan.intentPrecondition;
+  if(guard===undefined)return entry?{path:ref,before:entry.before}:null; // Older rich plans already captured this prerequisite as a target.
+  const validImage=v=>v===null || plain(v) && Object.keys(v).length===2 && /^[a-f0-9]{64}$/.test(v.sha256) && Number.isSafeInteger(v.bytes) && v.bytes>=0 && v.bytes<=MAX_FILE;
+  if(!plain(guard) || Object.keys(guard).length!==2 || guard.path!==ref || !validImage(guard.before) || entry && !sameImage(guard.before,entry.before))fail('INVALID_INTENT_PRECONDITION');
+  return guard;
+}
+function checkIntentPrecondition(workspace,plan,completed=[]){
+  const ref=`.synaptic/harness/setup/intent-vscode-${plan.selected.harness}.json`,guard=intentPrecondition(plan),current=existing(workspace,ref);
+  if(guard===null){if(current!==null)fail('INTENT_PRECONDITION_MISSING_REQUIRES_REPLAN');return;}
+  const entry=plan.entries.find(e=>e.path===ref);
+  const expected=entry && completed.includes(ref)?entry.after:guard.before;
+  const actual=current===null?null:{sha256:sha(current),bytes:current.length};
+  if(!sameImage(expected,actual))fail('SETUP_INTENT_CHANGED_SINCE_PREPARE');
 }
 function stateOf(data,e){if(data===null)return e.before===null?'before':'missing';const digest=sha(data);if(digest===e.after.sha256 && data.length===e.after.bytes)return 'after';if(e.before!==null && digest===e.before.sha256 && data.length===e.before.bytes)return 'before';return 'changed';}
 function takeLock(lock){
@@ -330,16 +353,19 @@ function apply(input,options={}){
     const old=fs.existsSync(safe(dir,'TRANSACTION.json'))?json(safe(dir,'TRANSACTION.json')):null;
     if(old!==null && old.state==='applied' && observed.every(state=>state==='after'))return {state:'applied',repeated:false};
     if(old!==null)fail('TRANSACTION_REQUIRES_REVIEW');
+    checkIntentPrecondition(workspace,plan);
     if(observed.some((state,i)=>state!=='before' && !(state==='after' && !plan.entries[i].changed)))fail('WORKSPACE_CHANGED_SINCE_PREPARE');
     receipt(dir,{state:'applying',startedAt:new Date().toISOString(),applied:[]});
     const completed=[];
     try{
       for(const e of plan.entries.filter(e=>e.changed)){
+        checkIntentPrecondition(workspace,plan,completed);
         if(stateOf(existing(workspace,e.path),e)!=='before')fail('WORKSPACE_CHANGED_DURING_APPLY');
         const destination=safe(workspace,e.path);fs.mkdirSync(path.dirname(destination),{recursive:true});safe(workspace,e.path);
         atomic(destination,bytes(safe(dir,'files/'+e.path)),e.before);completed.push(e.path);
         receipt(dir,{state:'applying',applied:completed});
       }
+      checkIntentPrecondition(workspace,plan,completed);
       if(plan.entries.some(e=>stateOf(existing(workspace,e.path),e)!=='after'))fail('APPLY_VERIFICATION_FAILED');
       receipt(dir,{state:'applied',finishedAt:new Date().toISOString(),applied:completed});
       return {state:'applied',changed:completed.length,integration:'needs-checking',selected:plan.selected};

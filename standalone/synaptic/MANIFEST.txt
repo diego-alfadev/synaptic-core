@@ -41,3 +41,5 @@ references/package-install.md
 references/vscode.md
 references/setup-diagnostics.md
 templates/templates/setup-adapter.md
+references/t3.md
+templates/templates/t3-pilot.md

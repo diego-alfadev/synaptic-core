@@ -63,7 +63,10 @@ function evaluateEvidence(evidence, current, options) {
   if (evidence.kind !== CLAIM_KINDS[current.claim]) return result('unknown', 'insufficient-observation-kind');
   const ageMs = instant(options.now) - instant(evidence.observedAt);
   if (ageMs < 0) return result('unknown', 'future-observation');
-  const details = {ageMs, source: evidence.source, observedAt: evidence.observedAt};
+  // Age/freshness and identity applicability are separate axes. Even an
+  // unresolved or historical identity can have a deterministically expired date.
+  const details = {ageMs, source: evidence.source, observedAt: evidence.observedAt,
+    freshness: own(options, 'maxAgeMs') ? ageMs > options.maxAgeMs ? 'stale' : 'within-policy' : 'unknown'};
   const required = EXECUTION.has(current.claim) ? ['host', 'harness', 'profile', 'session', 'fingerprint'] : ['fingerprint'];
   const keys = [...new Set([...required, ...Object.keys(current.context), ...Object.keys(evidence.context)])];
   // Inspect all dimensions before returning: a known mismatch is historical even

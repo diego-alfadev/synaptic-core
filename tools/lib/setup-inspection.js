@@ -8,6 +8,7 @@ const {capabilityProgress}=require('./setup-state');
 const sha=b=>crypto.createHash('sha256').update(b).digest('hex');
 const fail=code=>{throw Object.assign(new Error(code),{code});};
 const MAX=2*1024*1024;
+const RUNTIME_FILES=['tools/vscode-integration.js','tools/package-release.js','tools/lib/publish-new-directory.js','tools/lib/curation-stop.js','tools/lib/core-lib.js','tools/lib/brain-graph.js','tools/lib/setup-policy.js'].map(ref=>'.synaptic-adapter/vscode/'+ref);
 function workspaceRoot(input){const root=fs.realpathSync(input);if(!fs.statSync(root).isDirectory())fail('WORKSPACE_DIRECTORY_REQUIRED');return root;}
 function read(root,ref){
   let file=root;
@@ -75,11 +76,25 @@ function loadIntent(root,harness,context){
     return {state:'recorded',intent,configured:v.configured,notices,source:result.path,observedAt:v.observedAt || null,historyEntries:v.history?.length || 0,scope:v.profile===null?'project-harness':'declared-profile'};
   }catch(e){return {state:'unknown',reason:e.code || 'INVALID_SETUP_RECORD',source:result.path};}
 }
+function nativeProjectConfiguration(hook,runtime,harness){
+  const unresolved=reason=>({capture:null,curation:null,reason});
+  if(hook.state==='absent')return {capture:false,curation:false,reason:'No registration in the inspected Synaptic project hook file.'};
+  if(hook.state!=='read' || hook.value?.version!==1 || !Array.isArray(hook.value?.hooks?.agentStop))return unresolved('Project hook shape or contents are unresolved.');
+  const entries=hook.value.hooks.agentStop;
+  if(entries.length!==1 || entries[0]?.type!=='command' || typeof entries[0].command!=='string' || entries[0].timeoutSec!==undefined && (!Number.isSafeInteger(entries[0].timeoutSec) || entries[0].timeoutSec<=0))return unresolved('A unique supported Synaptic command registration was not established.');
+  const match=entries[0].command.match(/^node \.synaptic-adapter\/vscode\/tools\/vscode-integration\.js event --workspace \. --capture (off|counter) --curation (assisted|native)((?: --source (?:journal|playgrounds)\/[A-Za-z0-9_./-]+\.md)+)$/);
+  if(!match || harness!=='copilot')return unresolved('Registration is not the built-in adapter command for this declared harness.');
+  const sources=[...match[3].matchAll(/ --source ([^ ]+)/g)].map(m=>m[1]);
+  if(sources.length>8 || new Set(sources).size!==sources.length || sources.some(ref=>ref.split('/').some(part=>!part || ['.','..','scratch','curation'].includes(part))))return unresolved('Registered source arguments are outside the supported command shape.');
+  const runtimeState=runtime.every(file=>file.state==='read')?true:runtime.some(file=>file.state==='absent')?false:null;
+  return {capture:match[1]==='counter'?runtimeState:false,curation:match[2]==='native'?runtimeState:false,
+    reason:runtimeState===true?'Supported project registration and required runtime files are present; loading and execution are unobserved.':runtimeState===false?'The project registration refers to missing required runtime files.':'Required runtime files could not all be inspected.'};
+}
 function inspect(input){
   if(!input || !['copilot','local'].includes(input.harness))fail('DECLARED_HARNESS_REQUIRED');
   const workspace=workspaceRoot(input.workspace),context=validateContext(input.context===undefined?{}:input.context),harness=input.harness;
   const now=input.now || new Date().toISOString();if(!validInstant(now))fail('INVALID_CHECK_TIME');
-  const refs=['.synaptic/BRAIN.md','AGENTS.md','AGENTS.override.md','.github/copilot-instructions.md','.vscode/settings.json','.vscode/mcp.json','.github/hooks/synaptic-vscode.json',`.synaptic/harness/setup/vscode-${harness}.md`,'.github/skills/synaptic/SOURCE.json','.github/skills/synaptic/SKILL.md'];
+  const refs=['.synaptic/BRAIN.md','AGENTS.md','AGENTS.override.md','.github/copilot-instructions.md','.vscode/settings.json','.vscode/mcp.json','.github/hooks/synaptic-vscode.json',`.synaptic/harness/setup/vscode-${harness}.md`,'.github/skills/synaptic/SOURCE.json','.github/skills/synaptic/SKILL.md',...RUNTIME_FILES];
   const files=refs.map(ref=>ref.endsWith('.json')?jsonFile(workspace,ref):read(workspace,ref));
   const get=ref=>files.find(f=>f.path===ref);
   const carriers=files.filter(f=>['AGENTS.md','AGENTS.override.md','.github/copilot-instructions.md'].includes(f.path)).map(f=>({path:f.path,state:f.state==='read'?bridge(f.text).state:f.state}));
@@ -99,8 +114,8 @@ function inspect(input){
       if(JSON.stringify(expected)!==JSON.stringify(installedInventory.files.map(f=>f.path).sort()))fail('UNEXPECTED_INSTALLED_FILES');
       // Only the bounded, permitted, complete declared inventory authorises content reads.
       installedInventory.files=installedInventory.files.map(f=>read(workspace,f.path));
-      const result=verifySkill(path.join(workspace,skillPath));
       if(installedInventory.files.some(f=>f.state!=='read'))fail('INSTALLED_CONTENT_UNREADABLE');
+      const result=verifySkill(path.join(workspace,skillPath));
       installation={state:'content-verified-receipt',engine:result.engineVersion,source:result.source,provenance:'self-consistency-only',reason:'No trusted external manifest digest supplied; content is not host loading proof.'};
     }
     catch(e){installation={state:'failed',provenance:'not-authenticated',reason:'INSTALLED_SKILL_CONTENT_CHECK_FAILED'};}
@@ -110,18 +125,27 @@ function inspect(input){
   const configuration={instructionCarrier:candidates.length===1?'scope-safe-candidate':candidates.length>1?'ambiguous':'unknown',effective:'unknown',reason:'User/profile/policy instruction sources are outside this project-only inspection.',carriers,
     capture:get('.github/hooks/synaptic-vscode.json').state==='read' && Array.isArray(get('.github/hooks/synaptic-vscode.json').value?.hooks?.agentStop) && get('.github/hooks/synaptic-vscode.json').value.hooks.agentStop.length>0 && get('.github/hooks/synaptic-vscode.json').value.hooks.agentStop.every(e=>e && e.type==='command' && typeof e.command==='string' && e.command.length>0)?'project-registration-present':'unknown',
     mcp:get('.vscode/mcp.json').state==='read' && get('.vscode/mcp.json').value && typeof get('.vscode/mcp.json').value==='object' && !Array.isArray(get('.vscode/mcp.json').value)?'project-config-present':'unknown'};
-  const currentConfigured={files:brain.state==='read'?true:brain.state==='absent'?false:null,skill:installation.state==='content-verified-receipt'?true:get(skillPath+'/SKILL.md').state==='absent'?false:null,commands:null,capture:null,curation:null,mcp:null};
-  const gaps=intent.state==='recorded'?Object.entries(intent.intent.selected).filter(([k,v])=>v && currentConfigured[k]!==true).map(([capability])=>({capability,state:currentConfigured[capability]===false?'missing':'needs-checking',reason:'Current execution/effective configuration is not inferred from the recorded setup.'})):[];
+  const nativeConfiguration=nativeProjectConfiguration(get('.github/hooks/synaptic-vscode.json'),RUNTIME_FILES.map(get),harness);
+  const mcpFile=get('.vscode/mcp.json'),mcpServer=mcpFile.value?.servers?.synaptic;
+  const projectConfigured={files:brain.state==='read'?true:brain.state==='absent'?false:null,skill:installation.state==='content-verified-receipt'?true:get(skillPath+'/SKILL.md').state==='absent'?false:null,commands:null,
+    capture:nativeConfiguration.capture,curation:nativeConfiguration.curation,
+    mcp:mcpFile.state==='absent'?false:mcpFile.state==='read' && mcpServer && typeof mcpServer==='object' && !Array.isArray(mcpServer) && (typeof mcpServer.command==='string' && mcpServer.command.length>0 || typeof mcpServer.url==='string' && /^https?:\/\//.test(mcpServer.url))?true:null};
+  const configGaps=intent.state==='recorded'?Object.entries(intent.intent.selected).filter(([k,v])=>v && projectConfigured[k]!==true).map(([capability])=>({capability,state:projectConfigured[capability]===false?'missing':'needs-checking',scope:'inspected-project-files',reason:projectConfigured[capability]===false?'Required configuration is missing within the inspected project boundary.':'Project configuration could not be established; this is not a claim of missing execution proof.'})):[];
+  const observationClaims={skill:'loading',commands:'menu-discovery',capture:'native-firing',curation:'semantic-quality',mcp:'mcp-connectivity'};
+  const observationGaps=intent.state==='recorded'?Object.entries(intent.intent.selected).filter(([k,v])=>v && projectConfigured[k]===true && observationClaims[k]).map(([capability])=>({capability,claim:observationClaims[capability],state:'unknown',reason:'Project configuration is present; applicable effective-host or execution observation is unavailable.'})):[];
   return {format:'synaptic-setup-report-v1',observedAt:now,observer:'explicit-read-only-check',
-    adapter:{id:'vscode-project',contract:'synaptic-setup-report-v1',revision:'1.8.0-rc.1'},
+    adapter:{id:'vscode-project',contract:'synaptic-setup-report-v1',revision:'1.8.0-rc.2'},
     declarationFreshness:{observedAt:context.observedAt,ageMs:future?null:declarationAge,state:future?'future-declaration':context.observedAt===null?'not-supplied':'declaration-only',freshness:'unknown',reason:'No expiry policy or authenticated host observer is assumed.'},
     scope:{workspace,host:'vscode',hostVersion:context.hostVersion || null,harness,harnessVersion:context.harnessVersion || null,profile:context.profile || null,session:context.session || null,identitySource:context.source,contextObservedAt:context.observedAt},
     coverage:{inspected:[...new Map([...files,...installedInventory.files].map(f=>[f.path,f])).values()].map(({path,state,reason,sha256})=>({path,state,...(reason?{reason}:{}),...(sha256?{sha256}:{})})),additionalChecks:receipt.state==='read'?[{path:skillPath,operation:'recursive-inventory-and-content-verification',state:installation.state,coverage:installedInventory.complete?'complete-tree':'verification-incomplete',limit:512}]:[],intentRecord:{path:intent.source,state:intent.state},excluded:['user configuration','policy configuration','other profiles','other hosts','nested instruction files','other project hooks','credential/auth files'],computerWide:false},
-    baseline:{files:brain.state==='read'?'readable':'unknown',bridge:configuration.instructionCarrier,effective:'unknown'},installation,configuration,capabilities,intent,gaps,
+    baseline:{files:brain.state==='read'?'readable':'unknown',bridge:configuration.instructionCarrier,effective:'unknown'},installation,configuration,capabilities,intent,
+    projectConfigured,projectConfigurationReasons:{native:nativeConfiguration.reason,mcp:'Only a syntactic project server registration named synaptic is recognised; server identity and connection are unverified.'},
+    effectiveConfiguration:{state:'unknown',reason:configuration.reason},configGaps,observationGaps,gaps:configGaps,
     execution:{loading:'unknown',nativeFiring:'unknown',mcpConnectivity:'unknown',semanticQuality:'not-checked',reason:'File presence, configuration and retained metadata do not prove live execution.'},
     fingerprint:sha(JSON.stringify({files:[...files,...installedInventory.files].map(f=>[f.path,f.state,f.sha256 || null]),installation})),
-    progress:Object.fromEntries(Object.keys(capabilities.adapterMaximum).map(k=>[k,capabilityProgress({supported:capabilities.adapterMaximum[k]?'yes':'no',permitted:future?'unknown':['capture','curation'].includes(k)?context.permissions.node==='denied' || context.permissions.hooks==='denied'?'no':context.permissions.node==='allowed' && context.permissions.hooks==='allowed'?'yes':'unknown':'unknown',selected:intent.state==='recorded'?intent.intent.selected[k]?'yes':'no':'unknown',configured:currentConfigured[k]===null?'unknown':currentConfigured[k]?'yes':'no',decision:intent.state==='recorded'?intent.intent.decisions.find(d=>d.capability===k)?.state || 'unknown':'unknown'})])),
-    nextActions:[...(intent.state!=='recorded'?['Select an explicit capability target during setup.']:[]),...(gaps.length?['Review selected target gaps; request setup completion when ready.']:[]),'Use a separately authorised real-host observation for loading, native events or MCP connectivity.'],writesPerformed:0};
+    progressScope:'inspected-project-files; effective configuration and execution are separate',
+    progress:Object.fromEntries(Object.keys(capabilities.adapterMaximum).map(k=>[k,capabilityProgress({supported:capabilities.adapterMaximum[k]?'yes':'no',permitted:future?'unknown':['capture','curation'].includes(k)?context.permissions.node==='denied' || context.permissions.hooks==='denied'?'no':context.permissions.node==='allowed' && context.permissions.hooks==='allowed'?'yes':'unknown':'unknown',selected:intent.state==='recorded'?intent.intent.selected[k]?'yes':'no':'unknown',configured:projectConfigured[k]===null?'unknown':projectConfigured[k]?'yes':'no',decision:intent.state==='recorded'?intent.intent.decisions.find(d=>d.capability===k)?.state || 'unknown':'unknown'})])),
+    nextActions:[...(intent.state!=='recorded'?['Select an explicit capability target during setup.']:[]),...(configGaps.some(g=>g.state==='missing')?['Review confirmed project configuration gaps; request setup completion when ready.']:[]),...(configGaps.some(g=>g.state==='needs-checking')?['Inspect unresolved project configuration without inferring absence or repairing it.']:[]),...(observationGaps.length?['Request a separately authorised host observation for configured capabilities; missing proof alone needs no setup change.']:[])],writesPerformed:0};
 }
 function notify(input){
   if(!['copilot','local'].includes(input.harness))fail('DECLARED_HARNESS_REQUIRED');

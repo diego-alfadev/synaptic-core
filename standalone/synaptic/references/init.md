@@ -13,6 +13,10 @@ minimum baseline, owner-selected target, actual configuration and observed execu
 Preserve prior choices; deferred goals remain visible. Prepare the exact plan before approval.
 No additional discovery or setup offer is added to ordinary boot.
 
+When T3 Code is explicitly declared, first use `references/t3.md` to identify its selected
+environment, provider and instance. Do not infer a plain terminal provider or reuse the VS Code
+writer. The thin CORE pilot excludes T3 settings/auth, native hooks and advanced account modes.
+
 ## Onboarding Interview — /synaptic-init
 
 Ask **1–2 questions at a time**. Build on answers. Generate files from `templates/` when done.

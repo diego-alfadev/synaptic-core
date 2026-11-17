@@ -1,4 +1,13 @@
-# v1.8.0-rc.1 — Scoped setup
+# v1.8.0-rc.2 — Scoped setup
+
+RC2 corrects the RC1 adversarial findings: apply rechecks semantic intent prerequisites so a
+retained plan cannot ignore a later refusal; omitted context works for assisted setup; failed
+bounded reads stop before verification; configuration gaps and observation gaps have different
+actions. Explicit observation records retain their source/time/applicability without establishing
+trusted live execution. The immutable RC1 is not the corrected candidate.
+
+The [T3 CORE pilot](docs/integrations/t3.md) supplies a bounded provider-aware procedure and
+synthetic acceptance plan. It does not install T3, change its settings or claim a completed pilot.
 
 Local candidate, not published or live-installed. Brain schema remains 1.0. The published
 baseline is v1.7.2; its notes follow below as historical upgrade context.

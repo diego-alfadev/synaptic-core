@@ -11,6 +11,11 @@
 > Older text does not authorise automatic carrier installation or establish current feature absence.
 > Real-host acceptance remains distinct from implementation.
 
+> The local RC2 correction validates intent again at apply and separates project configuration
+> from observation tasks. [T3 CORE pilot](docs/specs/t3-core-pilot.md) is the bounded next host
+> exploration: one owner-selected local/manual provider, with no generic plugin runner or broad
+> account discovery. Prepared procedures are not completed real-host acceptance.
+
 > Horizon traced, not promised. The shipped section describes what is in v1. The Cortex-horizon section describes where this is going and what each item needs to get there — none of it is committed for a specific date.
 
 > **Layer language (v1):** CORE = files/text on the runtime the agent already has, **hooks included** (host-run config). **Cortex** = optional utilities that need a runtime *we* add (the MCP server, the Node tools, a semantic sidecar) — deletable; the brain never depends on them. **Ecosystem** = the future team/shared ring. The horizon items below are **Cortex** unless noted.

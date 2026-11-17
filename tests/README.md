@@ -5,6 +5,10 @@
 validation without execution/authority, read-only scoped diagnostics, intent/deferral/refusal and
 reviewed target transactions/rollback. They never launch an editor or prove native loading/firing.
 
+`setup-observations.test.js` verifies explicit recorded-evidence applicability without trusting
+observers or promoting JSON to live execution proof. Setup flow includes retained cross-plan
+refusal changes, intent drift during apply, legacy-plan prerequisites and omitted context.
+
 Executable verification for the parts of synaptic-core that are code. CORE — the skill — is prose and
 needs no runtime; nothing here is required to *use* Synaptic. Until these suites existed, every
 acceptance criterion in the CHANGELOG was by-inspection.

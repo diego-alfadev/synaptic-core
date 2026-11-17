@@ -10,13 +10,17 @@ Synaptic gives your agent a brain: a folder of linked Markdown files it reads fi
 when you ask. Decisions, lessons and playbooks stay in files you own, so a fresh session, a
 different agent or another person can pick the work up from them.
 
-> **1.8.0-rc.1 development candidate; published baseline: v1.7.2.** The file-based brain works with any agent that can read and write files.
+> **1.8.0-rc.2 development candidate; published baseline: v1.7.2.** The file-based brain works with any agent that can read and write files.
 > Extras are optional previews. [Details](#what-is-automatic-and-what-is-not).
 
 This candidate adds [scoped setup diagnostics and explicit capability targets](docs/integrations/setup-diagnostics.md),
 reviewable custom adapter procedures and passive setup-pending notices after consolidation.
 Diagnostics are read-only. CORE still needs no added runtime or MCP. Real-host loading and native
 execution remain separate observations; this branch is not a published or live-installed 1.8 release.
+
+RC2 protects against retained plans that predate a refusal and separates configuration gaps from
+observation gaps. A [thin T3 CORE pilot](docs/integrations/t3.md) is prepared for a selected local
+existing-provider instance; it has not been accepted on a real T3 host.
 
 ## Quickstart
 

@@ -21,6 +21,33 @@ This supersedes the archived proposal's per-session discovery and “not now” 
 
 ## Architecture and reuse
 
+### Corrections after the first candidate audit
+
+The next local candidate is `1.8.0-rc.2`; the previous RC remains immutable. Apply must validate
+semantic intent read prerequisites as well as write-target preimages. New plans capture absence
+or the exact current intent digest/size; relevant changes after preparation require replanning.
+Legacy plans without a guard may not proceed over a newer intent record they did not capture.
+Status and rollback remain available after intent changes. This is a recoverable transaction:
+drift detected during apply retains a partial-pending receipt, not an atomic all-or-none guarantee.
+
+Absent optional context remains absent across the wrapper/helper boundary; assisted setup still
+works, while native permissions require a supplied allowed declaration. A failed bounded content
+read stops verification before an unbounded downstream reader can reopen that payload.
+
+Project configuration progress is independent of effective host configuration and execution.
+`configGaps` and `observationGaps` route to different actions. The compatibility `gaps` field aliases
+configuration gaps only. A recognised built-in project command and readable runtime files establish
+syntactic project configuration, not trusted runtime integrity or genuine native firing.
+
+The optional explicit observation document is interpreted by the existing evidence primitive.
+Matching, historical and unresolved records retain claim/source/time/age/reasons and remain
+`recorded-not-independently-verified`; their source references are never followed. Live execution
+fields stay unknown without a reliable observer. Bounded re-offer eligibility remains a pure
+reference primitive plus CORE procedure, not an installed prompting workflow.
+
+The [T3 CORE pilot](t3-core-pilot.md) is a separately bounded structured procedure for one selected
+local/manual provider. It does not extend the deterministic VS Code CLI or declare a completed pilot.
+
 The public optional CLI is `tools/setup.js`. Its `inspect` and `recommend` operations read without altering the workspace, configuration or setup history. `prepare` creates a new private plan outside the workspace/package; it does not apply that plan. The VS Code transaction continues to own exact destination checks, preimages, receipts and rollback. No general installer or host process is introduced.
 
 Use [the package verifier](../../tools/package-release.js) for inventory/content checks and [the VS Code helper](../../tools/vscode-integration.js) for supported project preparation. A receipt matching its installed files proves content consistency; trusted provenance additionally requires an independently trusted source or digest. Never execute unverified package helpers merely to inspect package metadata.
