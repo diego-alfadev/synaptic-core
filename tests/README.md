@@ -1,5 +1,10 @@
 # tests/
 
+1.8 setup suites (Node 18+, synthetic data): `setup-state.test.js`, `setup-adapter.test.js`,
+`setup-inspection.test.js` and `setup-flow.test.js`. They verify evidence applicability, adapter
+validation without execution/authority, read-only scoped diagnostics, intent/deferral/refusal and
+reviewed target transactions/rollback. They never launch an editor or prove native loading/firing.
+
 Executable verification for the parts of synaptic-core that are code. CORE — the skill — is prose and
 needs no runtime; nothing here is required to *use* Synaptic. Until these suites existed, every
 acceptance criterion in the CHANGELOG was by-inspection.

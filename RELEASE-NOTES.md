@@ -1,4 +1,26 @@
-# v1.7.2 — Baseline floor
+# v1.8.0-rc.1 — Scoped setup
+
+Local candidate, not published or live-installed. Brain schema remains 1.0. The published
+baseline is v1.7.2; its notes follow below as historical upgrade context.
+
+This candidate adds explicit project diagnostics, independent capability targets and bounded
+setup completion for the existing VS Code project adapter. It distinguishes installed content,
+known configuration, selected goals and actual execution evidence. It reports unknown where
+user/policy/profile information or a reliable host observation is unavailable.
+
+Deferred targets remain visible through a passive notice after each consolidation. No ordinary
+boot discovery, interactive reminder, automatic repair or retry is added. Custom structured
+adapters are reviewable under a shared contract; owner acceptance and approval of an exact write
+plan remain separate. Descriptor validation never executes custom code or approves writes.
+
+Use the [diagnostic guide](docs/integrations/setup-diagnostics.md) and
+[implementation specification](docs/specs/setup-1.8.md). CORE retains the file procedure with
+no added runtime or MCP. The optional Node CLI stages plans through existing preimage/rollback
+checks. It does not configure host MCP/command menus or refresh an existing native adapter
+without a separately reviewed migration. Multi-profile discovery and concurrent session
+storage are deferred. Synthetic checks do not establish real host loading or native events.
+
+## Published v1.7.2 baseline context
 
 Engine version 1.7.2; brain schema stays 1.0, so no knowledge-format migration.
 

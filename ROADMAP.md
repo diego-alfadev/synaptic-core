@@ -1,5 +1,16 @@
 # ROADMAP — SYNAPTIC-CORE
 
+> **2026-11-17 current-state reconciliation.** Published 1.7.2 supplies the baseline/no-repair
+> floor. The focused 1.8 candidate adds scoped diagnostics, separate selected capability targets,
+> bounded explicit completion, custom adapter review and passive consolidation notices. See the
+> [1.8 specification](docs/specs/setup-1.8.md) and [operating guide](docs/integrations/setup-diagnostics.md).
+> Multi-profile discovery/bindings and concurrent session anchors are deferred to a separately
+> scoped delivery; no machine-wide inspection or per-session setup prompts are part of 1.8.
+> Historical descriptions below predate current integration and Cortex work: current behaviour
+> is defined by the selected package's SKILL/references, CHANGELOG and scoped integration guides.
+> Older text does not authorise automatic carrier installation or establish current feature absence.
+> Real-host acceptance remains distinct from implementation.
+
 > Horizon traced, not promised. The shipped section describes what is in v1. The Cortex-horizon section describes where this is going and what each item needs to get there — none of it is committed for a specific date.
 
 > **Layer language (v1):** CORE = files/text on the runtime the agent already has, **hooks included** (host-run config). **Cortex** = optional utilities that need a runtime *we* add (the MCP server, the Node tools, a semantic sidecar) — deletable; the brain never depends on them. **Ecosystem** = the future team/shared ring. The horizon items below are **Cortex** unless noted.

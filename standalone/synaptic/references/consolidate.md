@@ -358,6 +358,16 @@ BRAIN.md updated: field bumped to {date}.
 
 ---
 
+## Passive setup pending notice
+
+At the end of **each** consolidation, including one invoked by maintain, read the already-known
+setup intent pool as described in `references/setup-diagnostics.md`, “Passive notice on every consolidation”.
+Emit one short noninteractive notice: pending/deferred capabilities and their recorded reasons,
+“no pending setup items recorded” within that pool, or unknown when its scope/data is unresolved.
+Declined options are choices and are excluded from pending enablement reminders. The pool records
+the prior setup snapshot, not current activation. Do not inspect the machine, start setup, ask for
+approval, retry configuration, acquire a runtime or write notification bookkeeping for this notice.
+
 ## Worked Mini-Example
 
 > Situation: session on an API integration left two journal notes and a closed playground.

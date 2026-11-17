@@ -7,6 +7,12 @@
 > approved plan and rollback before any write outside the brain. On upgrade reload the new package
 > before its detection runs; the old engine only installs it. L1 baseline completes installation.
 
+**1.8 capability target:** during this explicit setup, follow `references/setup-diagnostics.md` to
+recommend the strongest supported compatible configuration permitted by the environment. Keep
+minimum baseline, owner-selected target, actual configuration and observed execution separate.
+Preserve prior choices; deferred goals remain visible. Prepare the exact plan before approval.
+No additional discovery or setup offer is added to ordinary boot.
+
 ## Onboarding Interview — /synaptic-init
 
 Ask **1–2 questions at a time**. Build on answers. Generate files from `templates/` when done.

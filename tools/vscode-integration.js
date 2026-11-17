@@ -11,13 +11,14 @@ const {createBrain,inside}=require('./lib/core-lib');
 const {parseFrontmatterLite}=require('./lib/brain-graph');
 const curation=require('./lib/curation-stop');
 const {publishNewDirectory}=require('./lib/publish-new-directory');
+const {validateIntent,validateContext,configuredTarget,reconcileIntent}=require('./lib/setup-policy');
 const sha=bytes=>crypto.createHash('sha256').update(bytes).digest('hex');
 const MAX_FILE=2*1024*1024,MAX_ENTRIES=128;
 const START='<!-- BEGIN:SYNAPTIC -->',END='<!-- END:SYNAPTIC -->';
 const SETUP_START='<!-- BEGIN:SYNAPTIC-VSCODE-SETUP -->',SETUP_END='<!-- END:SYNAPTIC-VSCODE-SETUP -->';
 const HOOK='.github/hooks/synaptic-vscode.json';
 const RUNTIME='.synaptic-adapter/vscode';
-const RUNTIME_FILES=['tools/vscode-integration.js','tools/package-release.js','tools/lib/publish-new-directory.js','tools/lib/curation-stop.js','tools/lib/core-lib.js','tools/lib/brain-graph.js'];
+const RUNTIME_FILES=['tools/vscode-integration.js','tools/package-release.js','tools/lib/publish-new-directory.js','tools/lib/curation-stop.js','tools/lib/core-lib.js','tools/lib/brain-graph.js','tools/lib/setup-policy.js'];
 const plain=v=>v!==null && typeof v==='object' && !Array.isArray(v);
 const fail=code=>{const e=new Error(code);e.code=code;throw e;};
 function decode(bytes){try{return new TextDecoder('utf-8',{fatal:true,ignoreBOM:true}).decode(bytes);}catch(_){fail('INVALID_UTF8');}}
@@ -146,7 +147,7 @@ function historicalProof(data,observation){
   if(result.length>MAX_FILE)fail('SETUP_HISTORY_LIMIT_REQUIRES_REVIEW');
   return result;
 }
-function targetAllowed(ref){return ['AGENTS.md','.github/copilot-instructions.md',HOOK,'.synaptic/harness/setup/vscode-copilot.md','.synaptic/harness/setup/vscode-local.md'].includes(ref) || ref.startsWith('.github/skills/synaptic/') || ref.startsWith(RUNTIME+'/');}
+function targetAllowed(ref){return ['AGENTS.md','.github/copilot-instructions.md',HOOK,'.synaptic/harness/setup/vscode-copilot.md','.synaptic/harness/setup/vscode-local.md','.synaptic/harness/setup/intent-vscode-copilot.json','.synaptic/harness/setup/intent-vscode-local.json'].includes(ref) || ref.startsWith('.github/skills/synaptic/') || ref.startsWith(RUNTIME+'/');}
 function directoryFiles(dir){const result=[];if(!fs.existsSync(dir))return result;function walk(p){for(const e of fs.readdirSync(p,{withFileTypes:true})){if(e.isSymbolicLink())fail('UNSAFE_PATH');const f=path.join(p,e.name);if(e.isDirectory())walk(f);else if(e.isFile())result.push(path.relative(dir,f).replace(/\\/g,'/'));else fail('UNSAFE_PATH');}}walk(dir);return result;}
 function inspectInstalledSkill(installed,selectedFiles){
   // Rollback can leave empty parent directories; a tree with no files is not an install.
@@ -169,6 +170,25 @@ function prepare(input){
   const selectedInput={...input};
   if(recorded.selected)for(const key of ['runtime','capture','curation','mcp'])if(input[key]===undefined)selectedInput[key]=recorded.selected[key];
   const selected=selections(selectedInput);
+  let setupIntent=null,setupContext=null;
+  const intentRef=`.synaptic/harness/setup/intent-vscode-${selected.harness}.json`,oldIntentBytes=existing(workspace,intentRef);
+  let previousIntent=null;
+  if(oldIntentBytes!==null){
+    try{previousIntent=JSON.parse(decode(oldIntentBytes));}catch(_){fail('SETUP_INTENT_REVIEW_REQUIRED');}
+    if(input.setupIntent===undefined)fail('RICH_INTENT_REQUIRES_TARGET');
+    if(!plain(previousIntent) || previousIntent.format!=='synaptic-setup-record-v1' || previousIntent.harness!==selected.harness)fail('SETUP_INTENT_REVIEW_REQUIRED');
+    validateIntent(previousIntent.intent);
+  }
+  if(input.setupIntent!==undefined){
+    setupContext=validateContext(input.setupContext || {});
+    if(setupContext.observedAt && Date.parse(setupContext.observedAt)>Date.now())fail('FUTURE_SETUP_DECLARATION');
+    if(previousIntent && previousIntent.profile!==null && previousIntent.profile!==setupContext.profile)fail('SETUP_INTENT_REVIEW_REQUIRED');
+    setupIntent=reconcileIntent(previousIntent && previousIntent.intent,input.setupIntent,input.reopenDeclines===true);
+    const target=configuredTarget(setupIntent);
+    if(!target.skill || target.commands || target.mcp)fail('TARGET_REQUIRES_ANOTHER_ADAPTER');
+    if(target.capture!==(selected.capture==='counter') || target.curation!==(selected.curation==='native'))fail('TARGET_CONFIGURATION_MISMATCH');
+    if((target.capture || target.curation) && (setupContext.permissions.node!=='allowed' || setupContext.permissions.hooks!=='allowed'))fail('TARGET_PERMISSIONS_UNCONFIRMED');
+  }
   if(recorded.fields.l4==='declined' && (selected.capture!=='off' || selected.curation==='native'))fail('DECLINED_LEVEL_REQUIRES_INIT');
   const sourceRoot=root(input.package),verified=verifyPackage(sourceRoot,input.sha256);
   const sourceTool=existing(sourceRoot,'tools/vscode-integration.js');
@@ -216,6 +236,18 @@ function prepare(input){
     `Source commit: ${verified.source.commit}\nHarness: ${selected.harness}; target VS Code/extension version: TBD (owner pilot).\nCarrier: ${carrierRef}; skill: .github/skills/synaptic/\n${selectionLine}\nsetup_id: ${setupId}\ncarrier_id: ${carrierId}\ncarrier_sha256: ${nextCarrierDigest}\ndeclared_harness: ${selected.harness}\nadapter: supported\nengine: ${verified.engineVersion}\nwired: baseline\nproof: ${proof}${proofDetails}\nl3: ${recorded.fields.l3 || 'not-configured'}\nl4: ${recorded.fields.l4==='declined'?'declined':selected.capture!=='off' || selected.curation==='native'?'configured':'not-configured'}\ncanary_offered_minor: ${recorded.fields.canary_offered_minor || 'none'}\naudit_reported_engine: ${recorded.fields.audit_reported_engine || 'none'}\nLoading observation: recorded proof metadata above; hook firing and model quality: needs checking; preparation is not live-host evidence.\nProof nonce: ${nonce}\nObserver: manual or explicit status command; no continuous health claim.\nNative curation, when selected, covers only explicit saved sources and produces a checked draft, not promoted wiki knowledge.`,SETUP_START,SETUP_END);
   if(!sameObservation && recorded.observation && (recorded.fields.proof==='proven' || recorded.fields.proof_date || recorded.fields.proof_evidence))nextRecord=historicalProof(nextRecord,recorded.observation);
   payload.set(recordRef,nextRecord);
+  if(setupIntent){
+    const configured={files:true,skill:true,commands:false,capture:selected.capture==='counter',curation:selected.curation==='native',mcp:false};
+    const nextIntent={format:'synaptic-setup-record-v1',harness:selected.harness,profile:setupContext.profile || null,observedAt:setupContext.observedAt,intent:setupIntent,configured};
+    if(previousIntent){
+      if(previousIntent.history!==undefined && (!Array.isArray(previousIntent.history) || previousIntent.history.length>16))fail('SETUP_HISTORY_REVIEW_REQUIRED');
+      const {history=[],...snapshot}=previousIntent;
+      const changed=JSON.stringify(snapshot)!==JSON.stringify(nextIntent);
+      if(changed && history.length>=16)fail('SETUP_HISTORY_REVIEW_REQUIRED');
+      if(history.length || changed)nextIntent.history=changed?[...history,snapshot]:history;
+    }
+    payload.set(intentRef,Buffer.from(JSON.stringify(nextIntent,null,2)+'\n'));
+  }
   const sources=input.sources || ['journal/_current.md'];
   curation.configure({brain,workspace,profile:'assisted',sources}); // Validate scope even when native options are off.
   if(existing(workspace,HOOK)!==null || fs.existsSync(safe(workspace,RUNTIME)))fail('EXISTING_ADAPTER_REQUIRES_REVIEW');

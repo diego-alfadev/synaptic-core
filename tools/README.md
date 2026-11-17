@@ -1,5 +1,10 @@
 # tools/ — Optional Synaptic Brain Helpers
 
+Setup diagnostics and completion: `node tools/setup.js inspect|recommend|notify --workspace PATH --harness copilot`
+is optional, bounded and read-only. `prepare` stages an explicit capability target through the
+existing VS Code transaction; `adapter-check` validates a supplied structured procedure without
+executing it or approving writes. See [the guide](../docs/integrations/setup-diagnostics.md).
+
 ## Local Cortex candidate
 
 See [Minimum local Cortex](../docs/concepts/cortex-local.md) for the read-only CLI, lexical SQLite

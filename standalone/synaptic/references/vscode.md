@@ -2,6 +2,12 @@
 
 # VS Code — files first, optional integrations independent
 
+For explicit activation diagnostics or setup completion, use `references/setup-diagnostics.md`.
+The optional 1.8 CLI inspects project scope without a retained plan and prepares a selected target
+through this same transaction. It discloses uninspected user/policy layers; context declarations
+never prove host loading, native firing or MCP connectivity. Existing native installs may still
+require a separately reviewed migration rather than an automatic refresh.
+
 The assisted path needs a file-capable agent, readable brain files and permission to
 write any captured result. It requires no MCP or new runtime. Capture/consolidation are explicit
 agent work unless a real permitted trigger/executor is separately configured and proved.

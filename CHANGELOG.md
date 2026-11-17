@@ -1,5 +1,26 @@
 # Changelog
 
+## [1.8.0-rc.1] - 2026-11-17
+
+Local development candidate, not published or installed. Brain schema remains 1.0.
+
+- Explicit project-scoped setup inspection and recommendation work without a retained plan.
+  Reports distinguish content consistency, provenance, configuration, independent capability
+  targets and execution evidence, disclosing uninspected user/policy/profile sources.
+- Optional `tools/setup.js` prepares a concrete selected target through the existing VS Code
+  transaction. Deferred goals remain selected and visible; unsupported targets fail explicitly.
+  Intent persists with preimages and rollback. Existing native material still requires review.
+- Every consolidation ends with one passive notice from its known setup-pending pool. This
+  never prompts, discovers profiles, retries setup or changes an explicit refusal.
+- Official, user and generated structured adapter procedures share revision/scope/destination
+  checks. Local owner acceptance and concrete-plan approval remain separate; validation executes
+  no adapter code and grants no write authority.
+- Pure evidence interpretation accounts for claim type, identity, timestamps and freshness.
+  Configuration cannot prove loading, firing, connectivity or semantic quality.
+- CORE includes equivalent file procedures and an adapter review template; Node/MCP remain
+  optional. Multi-profile discovery and concurrent session anchors are deferred. Real-host
+  observations remain separate acceptance work, not inferred from synthetic checks.
+
 ## [1.7.2] - 2026-11-17
 
 > **Baseline floor.** A readable, scope-safe bridge completes setup; missing host proof no longer

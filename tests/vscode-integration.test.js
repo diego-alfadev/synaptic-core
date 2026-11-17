@@ -43,7 +43,7 @@ function complete(f,result){
 }
 try{
   git(['init','--quiet','--initial-branch=main']);git(['config','user.name','Fixture']);git(['config','user.email','fixture@example.invalid']);git(['config','core.autocrlf','false']);
-  const sources=['tools/vscode-integration.js','tools/package-release.js','tools/lib/publish-new-directory.js','tools/lib/curation-stop.js','tools/lib/core-lib.js','tools/lib/brain-graph.js'];
+  const sources=['tools/vscode-integration.js','tools/package-release.js','tools/lib/publish-new-directory.js','tools/lib/curation-stop.js','tools/lib/core-lib.js','tools/lib/brain-graph.js','tools/lib/setup-policy.js'];
   for(const ref of sources)write(repo,ref,fs.readFileSync(path.join(product,ref)));
   write(repo,'standalone/synaptic/SKILL.md','---\nname: synaptic\nversion: 1.6.0\n---\n# Synthetic skill\n');
   write(repo,'standalone/synaptic/MANIFEST.txt','SKILL.md\nreferences/vscode.md\n');

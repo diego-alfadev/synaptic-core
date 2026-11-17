@@ -39,3 +39,5 @@ references/situation.md
 templates/templates/skills-registry.md
 references/package-install.md
 references/vscode.md
+references/setup-diagnostics.md
+templates/templates/setup-adapter.md

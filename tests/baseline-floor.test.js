@@ -70,7 +70,7 @@ try{
   git(['init','--quiet','--initial-branch=main']);git(['config','user.name','Fixture']);git(['config','user.email','fixture@example.invalid']);git(['config','core.autocrlf','false']);
   const bundle=path.join(product,'standalone/synaptic'),manifest=fs.readFileSync(path.join(bundle,'MANIFEST.txt'),'utf8');
   for(const ref of ['MANIFEST.txt',...inventory(manifest)])put(repo,'standalone/synaptic/'+ref,fs.readFileSync(path.join(bundle,...ref.split('/'))));
-  for(const ref of ['tools/vscode-integration.js','tools/package-release.js','tools/lib/publish-new-directory.js','tools/lib/curation-stop.js','tools/lib/core-lib.js','tools/lib/brain-graph.js'])put(repo,ref,fs.readFileSync(path.join(product,ref)));
+  for(const ref of ['tools/vscode-integration.js','tools/package-release.js','tools/lib/publish-new-directory.js','tools/lib/curation-stop.js','tools/lib/core-lib.js','tools/lib/brain-graph.js','tools/lib/setup-policy.js'])put(repo,ref,fs.readFileSync(path.join(product,ref)));
   for(const ref of ['docs/UPGRADE-v0.3-to-v1.md','docs/UPGRADE-v0.3-to-v1.AGENT.md','tools/migrate.js','tools/check.js'])put(repo,ref,'Synthetic migration dependency\n');
   git(['add','.']);git(['commit','--quiet','-m','fixture: shipped baseline contract']);
   packageRoot=path.join(base,'package');build(repo,'HEAD',packageRoot);

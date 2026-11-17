@@ -59,6 +59,15 @@ jobs:
       - name: Owner RC handoff preparation
         if: ${{ !cancelled() }}
         run: node tests/prepare-release.test.js
+      - name: Setup diagnostics and target transactions (synthetic)
+        if: ${{ !cancelled() }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          node tests/setup-state.test.js
+          node tests/setup-adapter.test.js
+          node tests/setup-inspection.test.js
+          node tests/setup-flow.test.js
 
   cortex:
     name: cortex (node 24, ${{ matrix.os }})

@@ -2,6 +2,12 @@
 
 # Host setup — compat-check and host-setup detection
 
+**1.8 extension:** `references/setup-diagnostics.md` defines explicit read-only diagnostics,
+capability targets, bounded completion and owner-reviewed custom procedures. The L1 safety floor
+below remains unchanged. Rich intent records supplement legacy records; missing metadata never
+becomes a refusal. Known pending intent supplies a passive notice after each consolidation without
+discovery, setup prompts, automatic retries or changes to wiring.
+
 > Read by `/synaptic-init` and the `/synaptic-upgrade` routine, and at boot only when the compat-check has to warn.
 
 ## Compat-check (warn-not-gate — v1-final §5.4)
