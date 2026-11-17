@@ -1,6 +1,6 @@
 # Changelog
 
-## [1.7.2] - Unreleased
+## [1.7.2] - 2026-11-17
 
 > **Baseline floor.** A readable, scope-safe bridge completes setup; missing host proof no longer
 > starts a repair loop. Brain schema remains **1.0**.

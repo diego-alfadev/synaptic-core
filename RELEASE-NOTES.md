@@ -1,4 +1,4 @@
-# v1.7.2 — Baseline floor (unreleased)
+# v1.7.2 — Baseline floor
 
 Engine version 1.7.2; brain schema stays 1.0, so no knowledge-format migration.
 
@@ -70,8 +70,8 @@ does not activate them. [Upgrade guide](UPGRADING.md).
 
 ## Evidence and limits
 
-This is an unreleased candidate. Its local verification is recorded with the implementation;
-exact-commit CI and release preparation remain separate steps before publication.
+Local source, package and synthetic transaction checks cover this patch. Publication requires
+successful CI for the exact source commit and verification of the prepared release assets.
 Filesystem/protocol tests are distinct from host loading, native firing and semantic quality. The
 owner-run VS Code journey and a demonstrated automatic-curation profile are still pending, which is
 why those features are previews. Automatic capture is claimed only for verified host configurations.

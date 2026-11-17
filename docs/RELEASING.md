@@ -1,10 +1,26 @@
 # Owner release handoff
 
-This guide prepares a release from an exact committed source and leaves GitHub actions to the
-owner on a computer with GitHub CLI access. Preparation itself never fetches, tags, pushes, publishes,
+This guide prepares a release from an exact committed source. Manual GitHub actions use the
+owner's authenticated CLI; the separately scoped 1.7.2 workflow below is an alternative.
+Preparation itself never fetches, tags, pushes, publishes,
 merges main, changes host configuration or updates a brain. The example below is the normal release
 **v1.7.1**, not a schema migration. A release candidate uses a `vX.Y.Z-rc.N` tag and adds
 `--prerelease` to each `gh release create` command.
+
+## Authorised v1.7.2 publication
+
+`.github/workflows/publish-1.7.2.yml` responds only to the exact `v1.7.2` tag in this repository.
+Push the reviewed source to a release branch first, and wait for that exact commit's CI and
+package preparation to succeed. Fast-forward main without discarding concurrent changes, then
+create the immutable tag at the reviewed commit. The publisher requires that commit on main and
+a successful CI run for it, verifies the four prepared assets, creates a draft and checks its
+asset inventory before publication. It never replaces an existing release or asset. A failed
+draft needs explicit inspection; do not move the tag or overwrite its bytes to hide the failure.
+
+The workflow has write permission only in its publish job and only responds to this version's
+tag. It grants no future-version publishing route. The release body uses committed notes with
+exact package provenance; the checksummed assets remain the verified builder outputs.
+Real host acceptance stays pending and is not inferred from publication or CI.
 
 ## Route A — GitHub CLI only on the owner computer
 

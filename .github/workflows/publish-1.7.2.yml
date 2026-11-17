@@ -1,0 +1,75 @@
+name: publish-1.7.2
+run-name: Publish Synaptic v1.7.2
+
+# One explicitly authorised release only; this is not a publisher for future tags.
+on:
+  push:
+    tags: ['v1.7.2']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-v1.7.2
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.repository == 'diego-alfadev/synaptic-core' && github.ref == 'refs/tags/v1.7.2'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      PREPARED: ${{ runner.temp }}/synaptic-1.7.2-prepared
+      RELEASE_BODY: ${{ runner.temp }}/synaptic-1.7.2-body.md
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Require exact tag source on main and successful CI
+        shell: bash
+        run: |
+          set -euo pipefail
+          SOURCE_COMMIT=$(git rev-parse 'refs/tags/v1.7.2^{commit}')
+          export SOURCE_COMMIT
+          test "$(git rev-parse HEAD)" = "$SOURCE_COMMIT"
+          git merge-base --is-ancestor "$SOURCE_COMMIT" origin/main
+          gh run list --workflow ci.yml --commit "$SOURCE_COMMIT" --status success --json headSha,conclusion --limit 100 > "$RUNNER_TEMP/release-ci.json"
+          node -e 'const fs=require("node:fs"); const runs=JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP+"/release-ci.json","utf8")); if(!runs.some(r=>r.headSha===process.env.SOURCE_COMMIT&&r.conclusion==="success")) throw Error("EXACT_SOURCE_CI_REQUIRED");'
+          echo "SOURCE_COMMIT=$SOURCE_COMMIT" >> "$GITHUB_ENV"
+      - name: Prepare and verify immutable assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          node tools/prepare-release.js --repo . --ref "$SOURCE_COMMIT" --version v1.7.2 --out "$PREPARED"
+          node tools/prepare-release.js --verify "$PREPARED"
+      - name: Write release body from committed notes and package provenance
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require('node:fs');
+          const meta=JSON.parse(fs.readFileSync(process.env.PREPARED+'/PREPARED-RELEASE.json','utf8'));
+          if(meta.tag!=='v1.7.2'||meta.sourceCommit!==process.env.SOURCE_COMMIT)throw Error('RELEASE_IDENTITY_MISMATCH');
+          const repo=process.env.GH_REPO;
+          const notes=fs.readFileSync('RELEASE-NOTES.md','utf8').replace(/\]\((?![a-z]+:|#)([^)]+)\)/gi,(_,ref)=>'](https://github.com/'+repo+'/blob/v1.7.2/'+ref+')');
+          const extra='\n\n## Package verification\n\nExact source: `'+meta.sourceCommit+'`.\n\nDownload the prepared **'+meta.archive+'** asset below; GitHub source-code archives are not the prepared installation package.\n\nTrusted package digest, also in PREPARED-RELEASE.json: `manifestSha256`: `'+meta.manifestSha256+'`.\n\nArchive SHA-256: `'+meta.archiveSha256+'`.\n';
+          fs.writeFileSync(process.env.RELEASE_BODY,notes+extra,{flag:'wx'});
+          NODE
+      - name: Create draft with all four assets, then publish
+        shell: bash
+        run: |
+          set -euo pipefail
+          # No --clobber or edit of an existing release: a retry cannot replace published bytes.
+          gh release create v1.7.2 --verify-tag --draft --title 'Synaptic v1.7.2 — Baseline floor' --notes-file "$RELEASE_BODY" "$PREPARED/synaptic-1.7.2.tar.gz" "$PREPARED/SHA256SUMS" "$PREPARED/PREPARED-RELEASE.json" "$PREPARED/RELEASE-NOTES.md"
+          gh release view v1.7.2 --json isDraft,tagName,assets > "$RUNNER_TEMP/release-draft.json"
+          node -e 'const fs=require("node:fs"); const r=JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP+"/release-draft.json","utf8")); const expected=["synaptic-1.7.2.tar.gz","SHA256SUMS","PREPARED-RELEASE.json","RELEASE-NOTES.md"].sort(); if(!r.isDraft||r.tagName!=="v1.7.2"||JSON.stringify(r.assets.map(a=>a.name).sort())!==JSON.stringify(expected))throw Error("DRAFT_ASSET_INVENTORY_MISMATCH");'
+          gh release edit v1.7.2 --draft=false --latest

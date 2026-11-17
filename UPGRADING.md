@@ -3,7 +3,7 @@
 Guide for a prepared release package. Real host acceptance for the optional previews (VS Code,
 automatic curation) remains pending.
 
-The next engine is **1.7.2 — Baseline floor**; its brain format remains **1.0**. This is not a knowledge-format migration.
+The engine is **1.7.2 — Baseline floor**; its brain format remains **1.0**. This is not a knowledge-format migration.
 
 The old engine installs the selected verified package and then reloads the new skill before host
 detection. A scope-safe bridge completes baseline setup; optional commands, hooks and MCP do not
