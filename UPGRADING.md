@@ -3,7 +3,15 @@
 Guide for a prepared release package. Real host acceptance for the optional previews (VS Code,
 automatic curation) remains pending.
 
-The engine is **1.7.1**; its brain format remains **1.0**. This is not a knowledge-format migration.
+The next engine is **1.7.2 — Baseline floor**; its brain format remains **1.0**. This is not a knowledge-format migration.
+
+The old engine installs the selected verified package and then reloads the new skill before host
+detection. A scope-safe bridge completes baseline setup; optional commands, hooks and MCP do not
+block it. Unknown adapters remain limited with user-paste instructions only. Every write outside
+the brain needs a supported adapter, exact approved plan, fresh byte-preserving backup and rollback.
+Missing loading proof never triggers repair, and setup never requests a canary. For optional manual
+debugging, `synaptic ping` returns only the loaded token without tools; `synaptic status` remains
+its compatibility alias through 1.7.x. Ask explicitly for a situation report to inspect work items.
 
 VS Code users have a [project setup and recovery guide](docs/integrations/vscode.md), including the
 assisted no-Node/no-MCP route. Package integrity and project-file transactions do not prove host loading.
@@ -36,13 +44,14 @@ Do not use a floating `main` URL or mix files from different releases.
 
 1. **Keep your brain.** Back up the installed skill and affected host settings. Do not replace your
    knowledge or journal with the release's templates or a stale staging copy.
-2. **Update the complete skill bundle.** Discover the actual host and existing scope before selecting
-   targets. Do not write both carriers by default or add user/global wiring. Review the
+2. **Update the complete skill bundle.** Inventory safe destinations and existing scope, install
+   the selected package, then reload its new procedures before detecting host integration. Do not
+   write both carriers by default or add user/global wiring. Review the
    exact files/settings it changes. All files must come from the same pinned release and be verified
    in staging before live writes. Engine version and brain file format are separate.
-3. **Verify your working mode.** Start a fresh session, check loading, resume a known task, and
-   confirm capture in the way your environment supports. Setup must distinguish file presence,
-   configured hooks/tools and actual execution.
+3. **Report your working mode.** Distinguish file presence, configured hooks/tools and actual
+   execution. Missing proof leaves integration unproven while baseline setup succeeds. A fresh
+   session and capture check can be run separately when the owner chooses; they never trigger repair.
 
 Two brain-side steps the bundle update does not do for you:
 

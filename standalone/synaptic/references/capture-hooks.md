@@ -10,10 +10,18 @@ Wire the **layered, host-aware capture mechanism**. **Hooks are CORE** — a hoo
 (`settings.json`, `.github/hooks/*.json`, `.cursor/hooks.json`, `AGENTS.md`) is plain text/JSON
 the **host already runs**; it needs no runtime we ship. Each hook calls into the synaptic skill
 (e.g. invokes `/synaptic-consolidate` or appends a journal breadcrumb) using the host's own
-runtime — Synaptic ships no daemon. **Detect the host, deploy the layers it supports, and degrade
-gracefully** — never fail if a layer is unavailable.
+runtime — Synaptic ships no daemon. Hooks are an optional L4 target, not the L1 baseline. Resolve the
+declared harness and its supported adapter; deploy only the selected layers through the approved
+plan, and degrade gracefully when a layer is unavailable. `l4: declined` is terminal until the
+user explicitly re-runs init; upgrade and missing proof never reopen it. `adapter: unknown` means
+`limited`, maximum L1: zero host-config writes, only leak-safe user-paste instructions on request.
 
-**The four layers, plus the silent liveness bookkeeping (deploy each where the host supports it):**
+Every out-of-brain hook/config/script write, including cleanup, requires a supported adapter's
+exact file list, fresh byte-preserving preimages (including recorded absence), the owner's approved
+plan and rollback. Do not improvise edits to `settings.json`, `mcp.json`, `config.toml` or a carrier.
+Follow `references/host-setup.md` for this transaction; a hook recipe alone is not an adapter.
+
+**The four layers, plus silent liveness bookkeeping (deploy only when selected and adapter-supported):**
 
 | Layer | Trigger | Host support | What it does |
 |---|---|---|---|
@@ -88,7 +96,7 @@ gracefully** — never fail if a layer is unavailable.
 >
 > **Bound / rollup is AGENT-owned, never the hook.** `/synaptic-consolidate` (Journal Trim) — or
 > `/synaptic-maintain` — prunes and rolls up old per-day activity logs. **Not `/synaptic-audit`**: audit
-> is diagnose-only and writes nothing; it merely *reports* when the ledger is over its bound. The hook
+> never edits the ledger; it merely *reports* when it is over its bound (its setup-report stamp is separate). The hook
 > only ever blind-appends. **Retention:** a rollup must keep raw logs covering the audit window and
 > preserve per-day `boot` counts (they are the yield denominator).
 >
@@ -110,7 +118,7 @@ gracefully** — never fail if a layer is unavailable.
 >
 > **Migration (v1.4.0 → v1.5.0).** The v1.4.0 boot heartbeat wrote `- boot: …` **into
 > `journal/_current.md`**. v1.5.0 moves the boot event into the activity log so there is **ONE
-> authoritative boot ledger**; `/synaptic-upgrade` deploys the (a0) hooks, creates `journal/_activity/`,
+> authoritative boot ledger**; an approved L4 upgrade deploys the (a0) hooks, creates `journal/_activity/`,
 > and stops emitting the in-body boot line (existing `- boot:` lines in `_current.md` are harmless
 > history — `/synaptic-consolidate` prunes them on its next Journal-Trim pass). `_current.md` keeps only
 > its curated Resume Anchor / Watch List / Log + semantic breadcrumbs, protecting its ≤80-line budget.
@@ -155,12 +163,13 @@ gracefully** — never fail if a layer is unavailable.
 
 **Deploy logic (host-gated, idempotent):**
 
-1. **Detect the host harness** from what is present in the project root: `.claude/` → Claude Code
-   (`settings.json` hooks); `.github/` → Copilot; Codex / `AGENTS.md` host; `.cursor/` → Cursor
-   (`.cursor/hooks.json`); Gemini CLI. Wire `Stop` and `SessionStart`, plus `SessionEnd` for the silent liveness `end` only, on each (per-host
+1. **Resolve the actual host harness** from the effective session/profile and supported adapter,
+   not from `.claude/`, `.github/` or another directory alone. Respect the recorded L4 target and
+   terminal decline before preparing any hook writes. In the approved supported profile, wire
+   `Stop` and `SessionStart`, plus `SessionEnd` for the silent liveness `end` only (per-host
    coverage: step 5). `PreCompact` exists on some hosts but is **not wired** (its stdout does not
    reach the model; see the layer table). `SessionEnd` is wired only for the silent liveness `end` (v1.7).
-2. For each supported layer, **write the host's native hook config** (marker-wrapped / idempotent,
+2. For each selected, adapter-supported layer in the approved transaction, **write the host's native hook config** (marker-wrapped / idempotent,
    same discipline as the AGENTS.md fragment: replace a `BEGIN:SYNAPTIC-HOOKS` … `END:SYNAPTIC-HOOKS`
    block if present, else add it; never touch unmarked user hooks). The commands are the recipe's
    shell scripts (`recipes/session-end-consolidate.md`, Option A; the skill bundle does not ship the
@@ -168,11 +177,11 @@ gracefully** — never fail if a layer is unavailable.
    `synaptic-pending rescue`; `SessionStart` with source `compact` → `synaptic-pending compact` only
    (a compaction is not a new session, so no `boot`). `SessionEnd` → `synaptic-pending end` (silent). On Windows use the `.ps1` twins. No shell hook can
    run a slash command such as `/synaptic-consolidate`.
-2b. **Deploy the layer-(a0) activity marker (v1.5.0) wherever the host runs a shell command on a
-   hook** — create `journal/_activity/` and wire the pinned platform-appropriate one-liner (UTF-8
+2b. **Deploy the layer-(a0) activity marker (v1.5.0) only for an approved L4 target whose adapter verifies shell hooks**
+   — create `journal/_activity/` and wire the pinned platform-appropriate one-liner (UTF-8
    no-BOM) to `Stop` (`stop`) and to `SessionStart` startup / resume / clear / fork (`boot`; never on `compact`). This is the only layer that does not depend
    on the agent complying, so deploy it first and report whether the host accepted it.
-3. **Always deploy `Stop`** (universal). Deploy `SessionStart` (rescue on startup / resume / clear / fork;
+3. **Deploy `Stop` only when the selected L4 target and adapter support it.** Deploy `SessionStart` (rescue on startup / resume / clear / fork;
    the recovery line on `compact`) where the host supports it. Do not wire `PreCompact`; wire `SessionEnd` only for the silent `end` (absent on a host → the heartbeat TTL covers it).
 4. **Degrade gracefully:** if the host exposes **no usable hooks**, deploy nothing and fall back to
    the **instruction layer**: the breadcrumb contract in `BRAIN.md` still instructs the agent to
@@ -207,7 +216,7 @@ gracefully** — never fail if a layer is unavailable.
 > "nothing is lost": the semantic breadcrumb is best-effort, so an un-captured turn's detail can be
 > genuinely gone. What the activity log guarantees is that the session itself is never invisible.)*
 
-> **SessionStart boot marker (capture-INDEPENDENT — the FIRST thing a session writes).** Before the
+> **When L4 is configured: SessionStart boot marker (capture-INDEPENDENT).** Before the
 > rescue detect and before any work, `SessionStart` (startup / resume / clear / fork; not `compact`) records a single **boot marker**. This is
 > **decoupled from capture**: it fires even when *nothing else* is captured, so "session opened" is
 > counted separately from "work captured." That separation is what lets `/synaptic-audit` (see

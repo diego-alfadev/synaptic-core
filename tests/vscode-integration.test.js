@@ -58,6 +58,57 @@ try{
     assert(p.entries.some(e=>e.path==='.github/skills/synaptic/SKILL.md'));assert(!p.entries.some(e=>e.path===api.HOOK || e.path.includes('mcp.json')));
     assert.equal(api.status(f.out).loading,'needs-fresh-session-proof');
   });
+  test('same-source refresh preserves nonce and has no changed target entries',()=>{
+    const f=fixture();api.prepare(f.input);const first=plan(f);api.apply(f.out);
+    const before=snapshot(f.workspace),out=path.join(base,'same-source-refresh');
+    const result=api.prepare({...f.input,out}),again=JSON.parse(fs.readFileSync(path.join(out,'plan.json'),'utf8'));
+    assert.equal(result.changed,0);assert.equal(again.nonce,first.nonce);assert(again.entries.every(e=>!e.changed));
+    assert.deepEqual(snapshot(f.workspace),before);
+    const record=fs.readFileSync(path.join(f.workspace,'.synaptic/harness/setup/vscode-copilot.md'),'utf8');
+    assert.match(record,/^engine: 1\.6\.0$/m);assert.match(record,/^proof: unproven$/m);
+  });
+  test('refresh preserves declined levels and audit bookkeeping from only the owned CRLF block',()=>{
+    const f=fixture();api.prepare(f.input);api.apply(f.out);
+    const ref='.synaptic/harness/setup/vscode-copilot.md',file=path.join(f.workspace,ref);
+    const owned=fs.readFileSync(file,'utf8').replace('l3: not-configured','l3: declined').replace('l4: not-configured','l4: declined')
+      .replace('canary_offered_minor: none','canary_offered_minor: 1.7').replace('audit_reported_engine: none','audit_reported_engine: 1.7.2');
+    // User prose resembling fields must neither override the owned block nor create duplicates.
+    fs.writeFileSync(file,('l3: configured\nl4: configured\nRuntime selection: node; capture selection: counter; curation selection: native; MCP: not enabled.\n'+owned).replace(/\n/g,'\r\n'));
+    const before=snapshot(f.workspace),out=path.join(base,'declined-refresh');
+    assert.equal(api.prepare({...f.input,out}).changed,0);assert.deepEqual(snapshot(f.workspace),before);
+    const staged=fs.readFileSync(path.join(out,'files',ref),'utf8');
+    assert(staged.includes('l3: declined\r\n'));assert(staged.includes('l4: declined\r\n'));
+    assert(staged.includes('audit_reported_engine: 1.7.2\r\n'));assert(staged.includes('canary_offered_minor: 1.7\r\n'));
+    assert.throws(()=>api.prepare({...f.input,out:path.join(base,'declined-native'),runtime:'node',capture:'counter'}),/DECLINED_LEVEL_REQUIRES_INIT/);
+    assert.deepEqual(snapshot(f.workspace),before);
+    write(repo,'docs/refresh-source.md','Same engine, another immutable source.\n');git(['add','docs/refresh-source.md']);git(['commit','--quiet','-m','fixture: next source']);
+    const nextPackage=path.join(base,'next-source-package');build(repo,'HEAD',nextPackage);
+    const nextOut=path.join(base,'next-source-refresh');api.prepare({...f.input,package:nextPackage,out:nextOut});
+    const refreshed=fs.readFileSync(path.join(nextOut,'files',ref),'utf8');
+    assert(refreshed.includes('audit_reported_engine: 1.7.2\r\n'));assert(refreshed.includes('canary_offered_minor: 1.7\r\n'));
+    assert(refreshed.includes('l3: declined\r\n'));assert(refreshed.includes('l4: declined\r\n'));assert.deepEqual(snapshot(f.workspace),before);
+  });
+  test('omitted profile options inherit recorded choices and explicit changes remain reviewable',()=>{
+    const f=fixture({runtime:'node'});api.prepare(f.input);api.apply(f.out);
+    const out=path.join(base,'inherit-profile'),result=api.prepare({workspace:f.workspace,package:packageRoot,out,harness:'copilot',runtime:undefined});
+    assert.equal(result.selected.runtime,'node');assert.equal(result.changed,0);
+    const explicit=api.prepare({workspace:f.workspace,package:packageRoot,out:path.join(base,'explicit-profile'),harness:'copilot',runtime:'none'});
+    assert.equal(explicit.selected.runtime,'none');assert(explicit.changed>0);
+    const ref='.synaptic/harness/setup/vscode-copilot.md',file=path.join(f.workspace,ref);
+    fs.writeFileSync(file,fs.readFileSync(file,'utf8').replace('curation selection: assisted','curation selection: unknown'));
+    const before=snapshot(f.workspace);assert.throws(()=>api.prepare({workspace:f.workspace,package:packageRoot,out:path.join(base,'invalid-profile'),harness:'copilot'}),/EXISTING_SETUP_RECORD_REQUIRES_REVIEW/);
+    assert.deepEqual(snapshot(f.workspace),before);
+  });
+  test('a recorded native profile cannot be silently replaced by assisted defaults',()=>{
+    const f=fixture({runtime:'node',capture:'counter',curation:'native'});api.prepare(f.input);
+    // Retain the prepared profile record without claiming its native adapter was applied.
+    const ref='.synaptic/harness/setup/vscode-copilot.md';write(f.workspace,ref,fs.readFileSync(path.join(f.out,'files',ref)));
+    const before=snapshot(f.workspace),out=path.join(base,'inherit-native-profile');
+    const result=api.prepare({workspace:f.workspace,package:packageRoot,out,harness:'copilot'});
+    assert.deepEqual(result.selected,{harness:'copilot',runtime:'node',capture:'counter',curation:'native',mcp:'not-enabled'});
+    assert(JSON.parse(fs.readFileSync(path.join(out,'plan.json'),'utf8')).entries.some(e=>e.path===api.HOOK));
+    assert.deepEqual(snapshot(f.workspace),before);
+  });
   test('missing or unsupported brain schema requires review before staging or applying',()=>{
     for(const brainText of [null,'# Pre-schema brain\n','---\nschema_version: 0.3\n---\n','---\nschema_version: 2.0\n---\n']){
       const f=fixture();if(brainText===null)fs.unlinkSync(path.join(f.brain,'BRAIN.md'));else write(f.brain,'BRAIN.md',brainText);

@@ -1,6 +1,6 @@
 ---
 name: synaptic
-version: 1.7.1     # engine semver; brain schema remains 1.0
+version: 1.7.2     # engine semver; brain schema remains 1.0
 supported_schema: ">=1.0 <2.0"   # brain schema/format versions this engine can read. A skill update reinstalls the skill with NO brain migration; only a schema/format change runs /synaptic-upgrade.
 description: >
   Knowledge-graph memory layer for project work — a portable, file-based brain that turns
@@ -36,6 +36,12 @@ CORE needs no new runtime. With no Node/network/MCP, use the permitted file tool
 local package; report verification limits. If a complete source or safe backup/copy cannot be
 obtained, stop before live writes. Do not suggest a network/package-manager command as the fix
 for a denied fetch. Existing readable files remain usable while an upgrade is pending.
+
+**Upgrade handoff (including entry from 1.6).** The old engine only acquires, verifies and installs
+the selected complete package using its recoverable file transaction. It does not run its old
+host detection or repair procedure. Reload the installed SKILL.md and its referenced procedures;
+only the new engine detects the host and proposes any wiring. If a reload cannot be established,
+stop after reporting the installed files; host setup remains pending, never delegated to old code.
 
 If the complete bundle is already present and no install/repair was requested, boot normally.
 Legacy bundles with unknown source metadata are not prevented from being read; their origin and
@@ -78,14 +84,13 @@ Does a brain resolve?
 ├── YES → Read BRAIN.md frontmatter schema/format version.
 │         Run COMPAT-CHECK (warn-not-gate — see below). Booting NEVER waits on it.
 │         schema ≥ 1.0 → Boot: read BRAIN.md, follow it.
-│           Is harness wired? (BEGIN:SYNAPTIC bridge AND BEGIN:SYNAPTIC-RULES present AND skill dir present
-│             AND, on Claude Code with a project CLAUDE.md, an @AGENTS.md import — or a recorded
-│             `boot: declined`, which is respected and never re-asked — or a setup record written by
-│             a setup helper: `harness/setup/vscode-<harness>.md` with a BEGIN:SYNAPTIC-VSCODE-SETUP
-│             block. A recorded setup counts as wired, needs no RULES block, and is never re-wired on
-│             boot: do not add another bridge or carrier. Repair it only through that helper.)
-│           ├── All present → normal boot.
-│           └── Any missing → run Harness Self-Wire (`references/init.md`; wire + deploy; no interview), then boot.
+│           Normal boot observes existing wiring; it does not install, repair, redeploy or add
+│             carriers. An effective, scope-safe bridge is the L1 baseline; missing optional
+│             rules markers, skills, stubs, hooks, setup records or proof never trigger Self-Wire.
+│             A recorded `boot: declined` is respected and never re-asked at boot.
+│             A VS Code setup record preserves its selected harness and single carrier.
+│           ├── Baseline present → boot; integration proof remains a separate observation.
+│           └── Baseline missing/uncertain → read available brain files; diagnose on explicit audit.
 │         schema < 1.0 (0.4, 0.5) → offer /synaptic-upgrade: "Found a v{X} brain — run /synaptic-upgrade to migrate."
 │
 └── NO BRAIN.md — but a brain DIRECTORY exists (CWD .synaptic/ or the bridge-pointed dir) with no BRAIN.md?
@@ -112,6 +117,20 @@ blocks reading the brain. Wording and binding rules: `references/host-setup.md`.
 **Host-setup detection** runs on `/synaptic-init` and every `/synaptic-upgrade` run (never on a
 normal boot): `references/host-setup.md`.
 
+**Approved-rules fallback (read-only).** If already-approved conventions or guardrails are not
+known to be exposed by the selected profile, read their existing brain sources without deploying
+them. Unknown approval or inaccessible rules remain pending. Preserve persona, optional settings
+and the selected carrier; a missing SYNAPTIC-RULES marker is not permission to create another.
+
+**Baseline floor (1.7.2).** After the leak/reach gate, L1 is successful setup. Optional L2 skill,
+L3 commands and L4 hooks/MCP are target-driven and never block completion. An unknown adapter is
+`limited`, maximum L1; no host configuration is inferred or written. Missing proof and `failed`
+are diagnostic states, never repair triggers. Init/upgrade never request a canary. If the user
+explicitly asks `synaptic ping` (or `synaptic status`, the compatibility alias for 1.7.x), before
+any reads/tools return only `SYNAPTIC-BOOT-OK <nonce>` from loaded instructions; if none is loaded,
+return `SYNAPTIC-BOOT-UNKNOWN`. No file reads, tools or situation report belong to either canary.
+An explicit request for a situation report instead follows `references/situation.md`.
+
 For a VS Code project, follow `references/vscode.md`: choose the actual harness and permitted
 profile, keep no-Node/no-MCP operation assisted, and separate project-file installation from
 fresh loading/native execution proof. Do not silently add a second brain or competing skill carrier.
@@ -128,9 +147,12 @@ Knowledge nodes MAY carry an optional `lifecycle: project | area | resource | do
 
 ## Harness Self-Wire
 
-Run on `/synaptic-init`, or on a boot where wiring is missing (Detect on Load). The procedure — the
+Run only on an explicit `/synaptic-init` or reviewed upgrade/setup request. The procedure — the
 `BEGIN:SYNAPTIC` bridge, skill install, operating-rules deploy, capture hooks, Cursor shim — is
 `references/init.md` (capture hooks: `references/capture-hooks.md`).
+All writes outside the brain require a supported adapter naming every destination, fresh
+byte-preserving preimages, an approved exact plan and rollback. Unknown adapters supply user-paste
+instructions only after the leak gate. Host detection itself never authorises a write.
 
 ---
 
@@ -146,7 +168,7 @@ guardrails) change only when the user approves the exact change; `harness/setup/
 
 | Command | What it does | Reference |
 |---|---|---|
-| `/synaptic-init` | No brain → topology (reach) intake + interview + generate (from `templates/`) + wire (project OR user-global) + deploy operating rules + deploy capture hooks + generate discovery stubs, then **OFFER the optional Day-1 guided first-value walkthrough** on the fresh empty brain. Brain present but unwired → run host-setup detection, wire + deploy. Brain present + wired → extend (add cluster / registries / ingest). Brain from an older schema (< 1.0) → **offers** the upgrade routine (below); an older engine's wiring → the shared host-setup detection + stub-drift step re-deploys it. Always runs host-setup detection first. | `references/init.md` · `references/host-setup.md` · `references/day-one.md` (Day-1 flow — optional, fresh brain only) |
+| `/synaptic-init` | Resolve reach and inspect the declared host read-only. No brain → interview and generate from templates; a scope-safe L1 bridge completes baseline setup. Only selected supported adapters apply an exact approved plan for optional skill, rules exposure, stubs or capture. Existing profiles and declined levels are preserved; unsupported hosts remain limited. An older schema offers upgrade. A fresh empty brain may offer the optional Day-1 walkthrough. | `references/init.md` · `references/host-setup.md` · `references/day-one.md` (Day-1 flow — optional, fresh brain only) |
 | `/synaptic-consolidate` | Run the six-step capture contract on session output (journal + playground artifacts); the manual fallback when no capture hooks are wired | `references/consolidate.md` |
 | `/synaptic-ingest [file]` | Distill a document into an atomic node + reference entry | `references/ingest.md` |
 | `/synaptic-audit` | DIAGNOSE: staleness, orphans, broken `[[wikilinks]]`, MOC coverage, cross-link coverage, **god-nodes (over-connected hubs, degree ≥ 15 or ≥ 3× median) + surprising edges (cross-cluster links)**, half-done/unconsolidated + pending-breadcrumb check, **capture-yield + used-but-capture-dead advisory**, **status/lifecycle typo advisory**, registry integrity, oversized untyped nodes, tag hygiene. Reads ALL statuses and ALL lifecycles. | `references/audit.md` |
@@ -158,7 +180,7 @@ list them separately.
 
 | Name | What it is | Reference |
 |---|---|---|
-| `/synaptic-upgrade` | **Routine.** Migrate an older brain (v0.3 / v0.4 / v0.5 → v1; schema/format change), or re-deploy wiring after a skill update on the light already-`1.0` path. Always runs host-setup detection + stub-drift check; redeploys operating rules + capture hooks. `/synaptic-init` offers it when it finds an older brain; the upgrade runbooks call it by name. | `references/upgrade-to-v1.md` · `references/host-setup.md` |
+| `/synaptic-upgrade` | **Routine.** Install one selected verified package, reload its new procedures, then inspect host setup and propose only selected supported adapter changes. Schema 1.0 needs no knowledge migration; pre-v1 uses the supervised migration. L1 succeeds independently of optional levels or proof; init/upgrade never request a ping. | `references/upgrade-to-v1.md` · `references/host-setup.md` |
 | `/synaptic-weave` | **Compatibility alias (deprecated since 1.6)** for `/synaptic-maintain weave`; retained in 1.7. | `references/weave.md` |
 | `/synaptic-synthesize` | **Compatibility alias (deprecated since 1.6)** for `/synaptic-maintain synthesize`; retained in 1.7. | `references/synthesize.md` |
 

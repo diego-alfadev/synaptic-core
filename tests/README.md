@@ -55,3 +55,9 @@ legacy and competing carriers, native-dialect mapping and visible pending failur
 `node tests/prepare-release.test.js` checks exact source/version binding, generated archive/receipts,
 digests, new-output protection and extraction by a standard tar consumer. Both run on Node 18+;
 neither starts an editor, trusts a hook, invokes a model or publishes a release.
+
+`node tests/baseline-floor.test.js` checks the actual packaged skill's baseline/proof contracts
+and synthetic no-record assisted preparation, repeated apply, profile preservation, untouched
+settings/MCP/hooks, leak refusal and rollback. It does not execute an agent starting from 1.6.0,
+an unknown host, live init/audit idempotence or a zero-tool canary. Those remain transcript-based
+acceptance checks in [the 1.7.2 specification](../docs/specs/baseline-floor-1.7.2.md).

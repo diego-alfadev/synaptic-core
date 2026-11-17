@@ -1,4 +1,4 @@
-<!-- summary: Migrate a v0.3 / v0.4 / v0.5 brain to v1 (schema/format change) via the supervised M→C→V flow; always runs host-setup detection first + stub-drift check; redeploys operating rules + capture hooks. -->
+<!-- summary: Install one verified engine package, reload its procedures, then review baseline-safe host setup; migrate pre-v1 brains via the supervised M→C→V flow only. -->
 
 # /synaptic-upgrade — source-pinned dispatch and migration to v1.0
 
@@ -8,6 +8,21 @@ Follow `references/package-install.md` first: identify the existing brain/schema
 stage and verify one immutable source package before selected live writes. Keep its source receipt
 and current-state backup. For an already-schema-1.0 brain, this is a light engine/wiring update,
 not M→C→V or a knowledge rewrite. Offer the applicable additive changes; preserve stricter rules.
+
+**1.7.2 execution gate (all phases).** The old engine only installs the verified package; reload
+the new SKILL.md and references before host detection. If reload is not established, stop after
+the file-install report. Never continue an old 1.6 detection or repair procedure against new files.
+Then follow `references/host-setup.md`: a leak-safe effective L1 bridge completes baseline setup.
+Unknown adapter = `limited`, maximum L1, user-paste only; no settings, MCP or hook writes. Every
+external-brain destination requires a supported adapter, exact approved file list, fresh
+byte-preserving preimages and rollback, including historical M3/M5 and hook/stub changes below.
+Missing proof or a `failed` result never triggers repair. Init/upgrade never request `synaptic ping`
+or its one-release `synaptic status` alias. Optional l3/l4 `declined` is terminal until explicit init.
+
+**For an existing VS Code profile**, preserve its recorded harness, carrier, skill location and
+runtime/capture/curation/MCP selections. Use its selected helper or reviewed file-only adapter;
+do not apply generic AGENTS/CLAUDE defaults or add a second bridge. A missing legacy host record
+means baseline evidence only; do not search for or invent that filename.
 
 Only a pre-v1 brain enters the historical migration below. Its canonical `docs/` guides, recipes
 and optional `tools/` come from the **same selected package/source commit**. Open them at the
@@ -23,7 +38,9 @@ capture events, MCP discovery or model curation. Report those integration result
 > **`docs/UPGRADE-v0.3-to-v1.md`**. Point all real migration work there — it is the deliverable the
 > 4 production users run. This reference file is the **skill-side companion** that the agent follows
 > during the supervised **M → C → V** flow; where the two ever diverge, `docs/UPGRADE-v0.3-to-v1.md`
-> wins. Always migrate **on a copy** and **switch only when green** (see below).
+> governs the knowledge migration. The 1.7.2 entry dispatcher and adapter safety gate above
+> govern engine handoff and all host writes, including when an older guide says otherwise.
+> Always migrate **on a copy** and **switch only when green** (see below).
 
 ---
 
@@ -44,7 +61,7 @@ capture events, MCP discovery or model curation. Report those integration result
   one-liner is also self-creating (`mkdir -p` / `New-Item -Force`) — belt and braces, because this is
   precisely the failure class v1.5.0 exists to remove. Resolve the brain root explicitly in the hook
   command; never assume the host's cwd is the brain root.
-- **Deploy the layer-(a0) activity marker** per `references/capture-hooks.md` "Deterministic activity marker": wire the
+- **If L4 capture is selected and supported in the approved adapter plan**, deploy the layer-(a0) activity marker per `references/capture-hooks.md` "Deterministic activity marker": wire the
   pinned platform-appropriate one-liner (**UTF-8 no-BOM**; `[IO.File]::AppendAllText` on PowerShell —
   never `>>` (UTF-16LE+BOM) or `Add-Content` (ANSI by default; a BOM with `-Encoding utf8` on 5.1)) to `Stop` (`stop`) and `SessionStart`
   startup / resume / clear / fork (`boot`; never on the `compact` source), writing to `journal/_activity/<host-token>-<YYYY-MM-DD>.log`. Marker-wrapped + idempotent like
@@ -58,14 +75,15 @@ capture events, MCP discovery or model curation. Report those integration result
   **unknown** rather than inferring capture-death. **Do not** repeat the retired pre-v1.5.0 claim that
   the instruction-layer breadcrumb "closes issue #2" on a hook-less host.
 - **Host coverage is UNVERIFIED beyond Claude Code** (`references/capture-hooks.md` "Per-host activity marker support")
-  — detect, attempt, verify, and report; never assert parity.
+  — inspect read-only, deploy only through a supported selected adapter, and report; never assert parity.
 - **v1.6 privacy of the ledger (re-deploy the hooks).** The new one-liners write `<host-token>-<date>.log`
-  with `boot`/`stop`-only lines and add `journal/_activity/.gitignore`. Re-deploy them on every host.
+  with `boot`/`stop`-only lines and add `journal/_activity/.gitignore`. Refresh only selected,
+  supported L4 capture through the approved adapter plan; declined or unsupported hosts are skipped.
   Existing `<host>-<date>.log` files stay readable (readers count the last field). If the brain is in
   git and the ledger was committed, offer `git -C "<brain>" rm --cached -- "journal/_activity/*.log"` (files stay on disk)
   and list what it untracks; run it only with the owner's OK. Old raw-host file names age out through
   the Journal-Trim rollup; never rename them silently.
-- **v1.6 hook shape (re-deploy on every host).** Inside the `BEGIN:SYNAPTIC-HOOKS` block (or the
+- **v1.6 hook shape (selected supported L4 only).** Inside the `BEGIN:SYNAPTIC-HOOKS` block (or the
   hand-wired entries the host record lists), with the owner's OK:
   1. **Remove** the `PreCompact` entry, the old `SessionEnd` *reminder* entry (`synaptic-consolidate-reminder`) and the old `SessionStart` rescue entry; keep a v1.7 `synaptic-pending end` entry;
      delete the old script files (`synaptic-consolidate-reminder.sh` / `.ps1`, `synaptic-rescue.sh`),
@@ -76,9 +94,9 @@ capture events, MCP discovery or model curation. Report those integration result
   3. **Audit note:** a capture-yield window that straddles this re-deploy counts compactions as
      `boot` before it and not after; report it like the v1.4 → v1.5 straddle (`references/audit.md`
      Step 9b).
-  4. **Claude Code with a project `CLAUDE.md`:** offer the `SYNAPTIC-BOOT` block
-     (`references/init.md` §a2), then run the boot check (`references/audit.md` Step 10b).
-- **v1.7 liveness (re-deploy the hooks).** Add `synaptic-pending beat` to `Stop`, chained after the breadcrumb in the same command (recipe A.4); where the host has
+  4. **Claude Code with a project `CLAUDE.md`:** include the `SYNAPTIC-BOOT` block only in an
+     approved adapter plan (`references/init.md` §a2); record proof as unproven without requesting a ping.
+- **v1.7 liveness (selected supported L4 only).** In the approved adapter plan, add `synaptic-pending beat` to `Stop`, chained after the breadcrumb in the same command (recipe A.4); where the host has
   `SessionEnd` (not Cursor; Copilot only in its newer docs), add an entry with `synaptic-pending end` and a
   10 s `timeout` (recipe A.4); elsewhere the heartbeat TTL covers it. Register `SessionStart` once per
   source (startup, resume, clear, fork) instead of one alternation matcher. Replace
@@ -98,24 +116,15 @@ capture events, MCP discovery or model curation. Report those integration result
   the two v1.7 tier additions to the brain's own tier table (AUTO: add a proposal row; PROPOSE-THEN-APPROVE:
   promote or drop a proposal); until the owner accepts, adding a row is proposed, not automatic (§5).
 
-## v1.4.0 addendum — host-setup detection is an ALWAYS-RUN step (not migration-only)
+## Host-setup detection — after the new engine reloads
 
-> **This runs on EVERY `/synaptic-upgrade` and every `/synaptic-init`, including the light
-> already-schema-`1.0` path — not just a pre-v1 migration.** The canonical procedure is **`references/host-setup.md` →
-> "Host-setup detection"**; this addendum binds it into the upgrade flow. The convert-to-global runbook
-> (`references/convert-to-global.md`) reuses the same detect+classify+re-deploy step.
-
-- **Actively DETECT where + how the brain + harness are wired, then re-deploy the correct wiring** —
-  never silently assume a repo-local `.synaptic/`. Run the six steps in `references/host-setup.md` "Host-setup
-  detection": resolve brain location (project-local vs global) → scan all carriers → read
-  `harness/setup/<host>.md` and report drift → **classify** → **re-deploy accordingly** → update the
-  record. **Emit a one-line classification** (brain location · host · wiring level).
-- **Interaction with the schema dispatcher.** For a brain already on schema `1.0` (the common
-  `v1.x → v1.4.0` case), the upgrade is **not a migration** — it does the light path. **v1.4.0 adds:**
-  even on that light no-op path, host-setup detection + correct re-deploy of user-level wiring for a
-  **global** brain **still runs**, so a global-brain refresh **re-asserts its user-level wiring** rather
-  than assuming repo-local. For a genuine pre-v1 (`< 1.0`) brain, detection runs *before* M→C→V and
-  drives the "Global/seat harness wiring — DETECT current, then deploy" step below.
+Every explicit init/upgrade uses `references/host-setup.md` after the engine handoff, including
+the already-schema-1.0 path. Detection is read-only: resolve brain and effective carrier, read an
+existing setup record if known, preserve the selected profile, and report reach, adapter and L1.
+Do not search for a missing legacy `<host>.md` or equate its absence with a broken install.
+Only a selected supported adapter may propose a deployment; apply its exact approved plan with
+fresh byte-preserving preimages and rollback. L1 completes setup; optional levels never block it.
+For a pre-v1 brain the same safety gate applies before M→C→V and any external carrier changes.
 - **MISCONFIGURED-global (the classic "brain covers only one folder" symptom):** brain reachable at a
   global root but wiring found only at project level → **flag + OFFER to fix** by promoting wiring to
   user level (convert flow, or just the wiring half if the brain is already global-rooted).
@@ -126,8 +135,8 @@ capture events, MCP discovery or model curation. Report those integration result
   carrier for this brain's bridge/rules in any foreign committed **or synced** file → count MUST be zero.
 - **Stub-drift check.** As part of detection, run the command-discovery stub-drift check
   (`references/command-discovery.md`): compare recorded stubs/version vs the current SOT command list,
-  regenerate + **prune** stale stubs, clean OneDrive KFM `synaptic-*-DESKTOP-*` conflict copies, and regenerate
-  the Layer-1 bridge command descriptions from the SOT summaries.
+  propose stale owned-stub changes only when L3 is selected and supported, archive before prune,
+  and include every external destination in the approved adapter plan. Declined L3 is not re-offered.
 
 - **Topology first (does NOT change the migration — only the wiring).** Detect/ask whether the brain
   is a single-project `.synaptic/` *inside* one repo, or a **shared/global** `.synaptic/` sitting
@@ -162,7 +171,7 @@ capture events, MCP discovery or model curation. Report those integration result
 - **Staging is deleted LAST, never at Phase V time.** Keep `_migration-staging/` through Phase V **and**
   a post-cutover soak; deleting it is the final action after stability — this OVERRIDES the C12 step's
   "delete as final step of Phase C". A mis-file found in Phase V/early-soak must still be recoverable.
-- **Global/seat harness wiring — DETECT current, then deploy (prefer user-level, prefer symlink).**
+- **Global/seat harness wiring — inspect, then plan through the selected adapter.**
   First SCAN for the existing wiring (VS Code Copilot `*.chatmode.md` + `*.instructions.md` with
   `applyTo:`, `.github/copilot-instructions.md`, `AGENTS.md`, `CLAUDE.md`, `.cursor/rules/*`) to learn
   the current→desired delta. The default bridge TEXT hardcodes a CWD-relative `.synaptic/`, and
@@ -179,9 +188,10 @@ capture events, MCP discovery or model curation. Report those integration result
   (grep-recoverable on hosts that don't discover user-level skill dirs — `references/init.md` §a). Deploy
   conventions+guardrails as the always-on rules — **SYMLINK the `harness/` source ONLY on a POSIX local
   (non-synced) path where the host allows it; on Windows or any OneDrive/DFS-synced location symlinks are
-  NOT allowed (they break on sync/copy) — emit the block / generate a pointer file** instead. Only
-  AGENTS.md / Cursor hosts that don't climb to a shared root need per-repo wiring. In ALL cases install
-  the current v1 skill — its Detect-on-Load already resolves the bridge pointer and stays silent when a
+  NOT allowed (they break on sync/copy) — emit the block / generate a pointer file** instead.
+  A private/global brain must never fall back to per-repo wiring; if a safe user-level carrier
+  cannot be established, report limited reach and supply only a leak-safe user-paste plan. Install
+  only the selected package and adapter destinations — Detect-on-Load resolves the bridge pointer when a
   `BEGIN:SYNAPTIC` bridge is present (NO manual patch). Grep the wired file(s): a bare CWD-relative
   `.synaptic/BRAIN.md` must be ZERO.
 - **Cutover = git fast-forward (primary), folder rename (non-git fallback).** The brain is a git repo;
@@ -224,7 +234,7 @@ capture events, MCP discovery or model curation. Report those integration result
 - **Owner orientation (always, alongside the technical report).** Produce a plain-language, owner-facing
   "how to use your new brain" section — what it now contains (cluster/node/registry/reference counts),
   the navigation rule (`BRAIN.md` → `INDEX.md` → cluster `_index.md` → node), how it stays current
-  (`/synaptic-consolidate`, `/synaptic-audit`; rules are deployed, not read from the brain), and a
+  (`/synaptic-consolidate`, `/synaptic-audit`; approved rules use the selected carrier or read-only fallback), and a
   **soak/cleanup checklist** (keep the backup + `pre-v1` tag + `_migration-staging/` through the soak;
   delete staging LAST once stable).
 - **Report (always).** Emphasize the **refactor before vs after** (counts: nodes/links/orphans/MOC
@@ -233,10 +243,10 @@ capture events, MCP discovery or model curation. Report those integration result
   decision log.
 
 > **Operating rules live in the harness, not in BRAIN.md (resolved).** Conventions + guardrails are the
-> brain's SOURCE in `harness/`, and are **deployed into the harnessing / system prompt** (**copy, or a
+> brain's SOURCE in `harness/`, and may be **deployed into the selected harness** (**copy, or a
 > symlink ONLY on a POSIX local, non-synced path** — no symlinks on Windows/OneDrive) — read from the
-> brain only when edited or to verify sync, never at session
-> start. The v1 `templates/BRAIN.md` no longer ships a `## Top Guardrails` block (a boot-time read
+> brain when approved exposure is unknown via SKILL.md's read-only fallback. No deployment is
+> required merely to read approved rules. The v1 `templates/BRAIN.md` no longer ships a `## Top Guardrails` block (a boot-time read
 > would duplicate the system prompt); BRAIN.md carries only the harness deploy-source pointer. Phase V
 > greps `BRAIN.md` for `Top Guardrails` (must be empty).
 
@@ -319,7 +329,7 @@ carries a status line: `pending`, `approved → <destination>`, or `discarded`. 
 
 | Old location / structure | v1 destination | Notes |
 |---|---|---|
-| `BRAIN.md` (v0.4/0.5 boot file) | `BRAIN.md` (updated to v1 layout) | Add Context Capsule, Capture Contract, deploy-source pointer, Brain Map. **No guardrails block** — operating rules go to `harness/` as source and are **deployed** by `/synaptic-init`/`/synaptic-upgrade`; they are NOT left for runtime load. |
+| `BRAIN.md` (v0.4/0.5 boot file) | `BRAIN.md` (updated to v1 layout) | Add Context Capsule, Capture Contract, deploy-source pointer, Brain Map. **No guardrails block** — operating rules go to `harness/` as source, exposed by the selected approved adapter or read-only approved-rules fallback. |
 | `BOOTSTRAP.md` / `MANIFEST.md` / `HEARTBEAT.md` (v0.3) | → `BRAIN.md` Context Capsule (2–4 lines) | Remainder discarded after Phase C |
 | `identity/ROLE.md` (v0.4) | → `BRAIN.md` Context Capsule | Not persona |
 | `identity/CONTACTS.md` (v0.4) | → `knowledge/people-routing.md` (type: knowledge) | Project routing knowledge |
@@ -400,9 +410,9 @@ committed or synced repo — the leak rule in `references/init.md` §a). Search 
 This project has a Synaptic brain at `.synaptic/`. Before working: read `.synaptic/BRAIN.md`
 and follow its capture contract (route durable knowledge, lessons, playbooks, and task
 workspaces as specified; files are authoritative over any agent-native memory).
-Operating rules (conventions, guardrails) are in the SYNAPTIC-RULES section below.
+Operating rules use the selected carrier or the skill's read-only approved-rules fallback.
 Commands (synaptic skill): /synaptic-init /synaptic-consolidate /synaptic-ingest /synaptic-audit /synaptic-maintain /synaptic-handover · routine: /synaptic-upgrade
-Boot check: asked "synaptic status" before reading any file, reply "SYNAPTIC-BOOT-OK <nonce>".
+Debug only: for "synaptic ping" ("synaptic status" alias in 1.7.x), reply only "SYNAPTIC-BOOT-OK <nonce>" from loaded context, with zero tools or file reads.
 <!-- END:SYNAPTIC -->
 ```
 
@@ -418,7 +428,9 @@ without selecting them explicitly. Keep the installed manifest and source receip
 
 ### M5 — Optional Cursor shim
 
-If `.cursor/` exists at the project root, write `.cursor/rules/synaptic.mdc`:
+Directory presence alone does not authorise a write. Only if the declared Cursor adapter names
+this exact project target in the approved plan, write `.cursor/rules/synaptic.mdc`; otherwise
+supply a leak-safe user-paste snippet without touching host configuration:
 
 ```
 This project has a Synaptic brain. See AGENTS.md (BEGIN:SYNAPTIC block) for instructions.
@@ -490,7 +502,7 @@ Phase C consumes `_migration-staging/`; it is **deleted LAST, after the soak** (
 
 - Extract a 2–4-line summary of what the brain covers + the owner's role. Write as the **Context Capsule** block in `BRAIN.md`.
 - Extract the **Capture Contract** (consolidation formula) block into `BRAIN.md` using the v1 `templates/BRAIN.md` format.
-- **Do NOT write a Top Guardrails block in BRAIN.md.** Operating rules (guardrails + conventions) found here are collected in the question-5 file like the PRINCIPLES items below — `harness/` is the **deployable source**, written and then deployed by the Deploy step in Harness Self-Wire (`/synaptic-init`) only after (5) is approved, not left for runtime load from the brain. BRAIN.md carries only the 1-line deploy-source pointer.
+- **Do NOT write a Top Guardrails block in BRAIN.md.** Operating rules found here are collected in the question-5 file like the PRINCIPLES items below. `harness/` is the source, written only after (5) is approved; expose it through the selected approved adapter or read-only approved-rules fallback. BRAIN.md carries only the 1-line deploy-source pointer.
 - Do NOT copy persona, tone, language preferences, or agent behavior rules into BRAIN.md.
 
 **From `identity/CONTACTS.md` (v0.4):**
@@ -614,7 +626,9 @@ and delete it LAST, once the owner confirms the new brain is stable.
 
 ## Phase V — Verification Checklist
 
-Close the migration only when all items are checked. Run `node tools/check.js` if available;
+Close the knowledge migration only when its applicable items are checked. Mark optional or
+unsupported host items not applicable with a reason; they never block successful L1 setup.
+Run `node tools/check.js` if available;
 otherwise use manual greps / inspection.
 
 > **`check.js` green is NECESSARY but NOT SUFFICIENT.** A brain can pass every structural check (0
@@ -649,7 +663,7 @@ otherwise use manual greps / inspection.
 - [ ] Custom project skills preserved, inert, in `harness/skills/` (if any existed)
 
 **Harness (deployed — outer harness):**
-- [ ] `AGENTS.md` contains `<!-- BEGIN:SYNAPTIC-RULES --> … <!-- END:SYNAPTIC-RULES -->` block with deployed conventions + guardrails
+- [ ] Approved rules are exposed through the selected profile or read in place via the approved-rules fallback; a RULES block is optional, never added merely to complete this checklist
 - [ ] Nothing from `harness/skills/` was installed into host skill folders (nothing is installed from the brain's contents; the skill bundle and hook commands come from the release)
 
 **Registries:**
@@ -668,9 +682,9 @@ otherwise use manual greps / inspection.
       LAST; while it still exists this box stays open, it is not a failure)
 
 **Harness wiring:**
-- [ ] `AGENTS.md` has `<!-- BEGIN:SYNAPTIC --> … <!-- END:SYNAPTIC -->` block
-- [ ] Old synaptic bridge files removed
-- [ ] Skill package present in `.claude/skills/synaptic/` and/or `.agents/skills/synaptic/`
+- [ ] The selected effective, leak-safe carrier has one `BEGIN:SYNAPTIC` bridge (L1); do not require AGENTS.md for an existing alternative profile
+- [ ] Any retirement of an owned old bridge is archived and included in the approved adapter plan; absent optional cleanup does not block L1
+- [ ] If L2 was selected and supported, its complete skill is in the selected verified location; unknown adapters require no guessed skill directory
 
 **Journal:**
 - [ ] `journal/_current.md` ≤80 lines, three-section format

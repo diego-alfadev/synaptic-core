@@ -53,6 +53,9 @@ jobs:
       - name: VS Code project integration (synthetic)
         if: ${{ !cancelled() }}
         run: node tests/vscode-integration.test.js
+      - name: Baseline floor (shipped contract and synthetic files)
+        if: ${{ !cancelled() }}
+        run: node tests/baseline-floor.test.js
       - name: Owner RC handoff preparation
         if: ${{ !cancelled() }}
         run: node tests/prepare-release.test.js

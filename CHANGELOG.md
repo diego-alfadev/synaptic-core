@@ -1,5 +1,26 @@
 # Changelog
 
+## [1.7.2] - Unreleased
+
+> **Baseline floor.** A readable, scope-safe bridge completes setup; missing host proof no longer
+> starts a repair loop. Brain schema remains **1.0**.
+
+- Normal boot observes existing wiring and reads approved rules without adding carriers. Explicit
+  setup preserves the selected VS Code profile. Unknown adapters remain `limited` at L1; optional
+  commands/hooks/MCP do not block completion and declined levels stay declined until explicit init.
+- Upgrade hands off from the old engine to the newly installed complete package before host
+  detection. All external-brain writes require a supported adapter, exact approved plan, fresh
+  byte-preserving preimages and rollback. Missing legacy records are baseline evidence, not repair work.
+- `synaptic ping` is the token-only, zero-tool canary. `synaptic status` remains its alias for 1.7.x;
+  work-item reporting requires an explicit situation-report request. Init/upgrade never request a ping.
+- Setup records separate adapter support, wiring and proof, with a deterministic carrier/harness
+  identity. Audit reports unproven/limited once per engine when its bookkeeping can be persisted.
+- The VS Code helper emits the safe boot/ping contract and keeps its observation nonce on an
+  unchanged source/profile refresh. Automatic discovery and multi-profile bindings remain for 1.8.
+
+These are agent-run procedures plus synthetic package/transaction checks. Real older-host upgrade,
+unlisted-host agent compliance and fresh-session observations remain acceptance work.
+
 ## [1.7.1] - 2026-11-15
 
 > **The install leaves a working way to start.** A fresh install used to name `/synaptic-init`, a

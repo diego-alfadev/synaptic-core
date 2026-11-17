@@ -22,8 +22,9 @@ Cortex utility; CORE never depends on it — every check here is grep-able by ha
 > **`/synaptic-audit` + `SessionStart`-rescue = the abandonment safety sweep:** on next boot, the
 > rescue hook prints an offer; Step 9 here is the full half-done check that recovers sessions that ended before consolidation.
 
-Do not auto-fix findings. Surface a prioritised list; ask for confirmation before any change — and
-route each finding to the procedure that treats it.
+Do not auto-fix findings. Surface a prioritised list and route each finding to the procedure that
+treats it. The sole bookkeeping exception is Step 10b's `audit_reported_engine` stamp inside an
+existing brain setup record, when permitted; it changes no wiring, proof, host config or content.
 
 > **Scaffolding exclusion (link checks).** `templates/` and `references/raw/` are **scaffolding,
 > not knowledge** — exclude both from the **broken-link check (Step 3)** and the
@@ -453,8 +454,8 @@ hook smoke-test."* A different brain: *"0 boots in 7 days → not-used (benign)"
 **Activity-log hygiene (v1.5.0) — diagnose here, TREAT elsewhere.** The layer-(a0) hook only ever
 **blind-appends** — it never prunes. So this step **reports** when `journal/_activity/` has grown past a
 sane bound (e.g. > 30 `*.log` day-files, or any file > ~2k lines) and **routes the rollup/prune to
-`/synaptic-consolidate`** (Journal Trim) or `/synaptic-maintain`. **Audit itself writes nothing** — it
-never prunes the ledger, consistent with this file's diagnose-only contract. **Retention contract:**
+`/synaptic-consolidate`** (Journal Trim) or `/synaptic-maintain`. **Audit never prunes the ledger**;
+Step 10b's brain-local report stamp is its only bookkeeping exception. **Retention contract:**
 rollup MUST keep raw per-day logs covering at least this step's audit window, and any rollup summary MUST
 preserve **per-day `boot` counts** — a rollup that discards them would silently destroy the denominator
 and mask a real capture-dead condition as `not-used (benign)`. Read the activity log **only** as this
@@ -479,38 +480,48 @@ Check whether the deployed harness block in the outer harness file is in sync wi
 
 - Look for a `<!-- BEGIN:SYNAPTIC-RULES -->` marker in the project's AGENTS.md (or CLAUDE.md, .cursorrules — wherever the harness was self-wired by `/synaptic-init`).
 - If found: compare the content of that block against the current content of `.synaptic/harness/conventions.md` and `.synaptic/harness/guardrails.md`. If the deployed block contains edits not present in the `harness/` source files, **warn**: "Deployed SYNAPTIC-RULES block appears to have been edited directly. The `harness/` source is authoritative — re-run `/synaptic-init` (Deploy step) to re-sync. Direct edits to the deployed block are clobbered on the next deploy."
-- If the outer harness file exists but has no `BEGIN:SYNAPTIC-RULES` marker: note that the harness has not been deployed; suggest running `/synaptic-init`.
+- If the outer harness file exists but has no `BEGIN:SYNAPTIC-RULES` marker: report rule exposure as unknown only when the selected profile requires a deployed block. An assisted profile may read approved rule sources in place; a missing marker is never a repair trigger or a failed baseline installation.
 - If no outer harness file is found: skip silently (not all environments use one).
 
 This check closes the silent drift vector where a user edits the deployed block directly and loses those edits on next `/synaptic-init` or `/synaptic-upgrade`.
 
 ---
 
-## Step 10b — Boot proof: is the bridge actually loaded? (v1.6)
+## Step 10b — Baseline and loading evidence (1.7.2)
 
-"Wired" means **observed loaded**, not files present. Read `harness/setup/<host>.md` first; its
-`boot:` / `wired:` lines are what this step checks and updates.
+Installation and loading evidence are separate. An effective, scope-safe L1 bridge is a successful
+baseline installation even when `proof: unproven` (legacy `wired: unproven`); higher levels and proof never gate it. Apply
+the leak/reach gate first: a private/global bridge in a committed or synced project carrier is
+not an acceptable L1. Do not repair, move it or emit a paste snippet during audit.
 
-1. **Static check (CORE-floor, by reading files).** On Claude Code, for a project-reach brain: if any
-   of `CLAUDE.md`, `.claude/CLAUDE.md`, `CLAUDE.local.md` exists and none carries an `@AGENTS.md` line
-   outside a code fence, loading is **unproven** → finding *"Claude Code boot import is absent;
-   inspect the adapter (`references/init.md` §a2) and run a fresh-session boot check"*. If the import is there (or no CLAUDE file exists) and
-   `AGENTS.md` holds the `BEGIN:SYNAPTIC` bridge, report `wired: expected`. A record that says
-   `boot: declined` is reported once, not re-asked.
-1a. **Codex:** inspect the effective global/project instruction chain and any `AGENTS.override.md`
-    that excludes the recorded carrier; check the combined instruction byte limit. Use
-    `references/init.md` §a3, not the Claude import rule. Report static compatibility as
-    `expected` and actual loading as `unproven` until a fresh-session proof exists.
-1b. **VS Code:** read the recorded session harness and versions first; check the bridge carrier
-    against §a4. Local discovery settings do not establish Copilot/Codex wiring. Inspect hook
-    configuration separately; an instruction proof is not evidence that capture ran.
-2. **The live proof (a new session only).** It cannot run inside this audit: this session has already
-   read brain and skill files. Tell the user to open a new session and, as the first message, ask
-   `synaptic status` (Claude Code: `claude -p "synaptic status"`). A reply with
-   `SYNAPTIC-BOOT-OK <nonce>` matching the record → `wired: proven` with the date. Anything else, or a
-   reply after the agent first opened files → stays `unproven`. An agent never upgrades `unproven` to
-   `proven` from file evidence or self-report.
-3. A setup record that says "fully wired" with no `wired: proven` line is reported as **unproven**.
+1. Resolve the current `setup_id` (carrier id + declared harness) using `references/host-setup.md`.
+   Read `harness/setup/setups/<setup_id>.md` if it exists. Read an already-known legacy/helper
+   record such as `vscode-<harness>.md` in place; if both refer to the same setup id, count once
+   and diagnose contradictory fields without merging or choosing a more favourable proof.
+   **missing legacy `<host>.md` = baseline**, not a reason to search other hosts, invent a record,
+   install an adapter, run init or retry setup. Do not read authentication material.
+2. Inspect the effective carrier read-only, preserving the selected profile. Claude imports,
+   Codex instruction overrides/limits and VS Code's recorded harness have different semantics
+   (`references/init.md` §a2–a4); a directory name is not a harness identity. Record findings in the
+   report, without turning static compatibility into loading or hook proof.
+3. Report adapter support separately from `wired`: `adapter: unknown` means `limited`, maximum
+   L1. A known adapter with no fresh proof stays `unproven`. `failed` is diagnosis only; neither
+   it nor missing proof triggers repair, a canary request, a new bridge or any host config write.
+   A historical "fully wired" claim without proof stays unproven. Respect `boot: declined` and
+   terminal `l3`/`l4: declined`; only an explicit new init can reopen the declined options.
+4. Report `unproven`/`limited` at most once per engine version: compare the current engine with
+   `audit_reported_engine` in that setup record. After displaying the advisory, update only that
+   field if brain-local bookkeeping is permitted; subsequent audits suppress the advisory for
+   that engine. Never create a missing legacy record just to stamp it. With no existing writable
+   record, suppress repeats in the current session and state once that cross-session suppression
+   cannot be persisted. Do not claim a durable once-only result when no stamp was saved.
+5. **Optional user-initiated debug proof only.** `synaptic ping` replies with the loaded
+   `SYNAPTIC-BOOT-OK <nonce>` token and performs zero tool/file reads; `synaptic status` remains
+   its compatibility alias for the 1.7.x line. Audit/init/upgrade never request this test. If the
+   user supplies an independently checked fresh-session result, or a verified native host event
+   supplies the matching source/nonce evidence, report that scoped proof and date. File presence,
+   an agent's assertion or an answer after reads never establishes `proven`; audit does not
+   mutate the proof fields. A ping proves carrier loading only, not capture, MCP or curation.
 
 ---
 
@@ -577,7 +588,8 @@ Brain audit — N findings (showing top N):  [audit DIAGNOSES; weave/consolidate
 > (broken links, orphans, missing MOC coverage) when the list is capped.
 
 Ask: "Apply all? Or pick specific items?" — do not make changes without confirmation. Route each
-finding to its treating procedure; audit itself writes nothing.
+finding to its treating procedure; audit changes no content or wiring (only the permitted
+Step 10b report stamp).
 
 ---
 

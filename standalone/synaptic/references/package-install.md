@@ -10,11 +10,22 @@ hook firing, MCP discovery or semantic curation.
 
 ## 1. Resolve the existing setup and selected source before choosing a destination
 
-Read the actual bridge, brain/schema and setup records first. An unreachable brain pointer is not
+**Old-engine handoff.** During an upgrade, the old engine only installs the selected verified
+complete package. It must not execute its previous host detection, proof or repair steps. Reload
+the installed SKILL.md and references before any setup detection; if a reload is unavailable,
+report installed files and pending setup, without executing the old procedure. The read-only
+inventory needed to choose safe package destinations is not a host integration pass.
+
+Read the actual bridge, brain/schema and existing setup records first. An unreachable brain pointer is not
 a missing brain. Identify the selected host/harness and project/user scope; preserve that scope.
 Use `references/host-setup.md` and `references/init.md` host adapters. Do not create another brain,
 mirror into both carriers, change global guidance or install optional runtimes to compensate for
-missing evidence. Show any user-global effect and obtain approval before that change.
+missing evidence. Every write outside the brain, including a project carrier or skill, requires
+a supported adapter that names the exact destination in the approved plan, fresh byte-preserving
+preimages and rollback. Unknown adapters supply user-paste only after the leak/reach gate;
+never infer configuration paths. A leak-safe effective L1 bridge is successful baseline setup;
+optional L2/L3/L4 and missing proof never block it or trigger repair. Show any user-global effect
+and obtain approval before that change.
 
 Choose the release/candidate the owner requested and its complete package. A package records one
 full source commit; never silently substitute `main`, `latest` or a different release. If the user
@@ -130,7 +141,7 @@ claim that merely reading it has executed or mechanically enforced the transacti
 
 ## 5. Dispatch schema work and report the working mode
 
-- **Existing schema 1.0:** update selected engine files and review host wiring; do not run the
+- **Existing schema 1.0:** update selected engine files, reload the new engine, then review host wiring; do not run the
   old-schema M→C→V transformation. Work-item adoption and rule changes remain explicit offers.
 - **Pre-v1:** read the matching guide under the selected package's `docs/` plus
   `references/upgrade-to-v1.md`. Any older guide's “install current/latest” step is overridden by
@@ -140,7 +151,9 @@ claim that merely reading it has executed or mechanically enforced the transacti
 Report installation separately from integration: source/engine/schema, files changed, verification
 scope and backup/restore path; then actual host mode, proof dates, off/unavailable options and
 manual actions still needed. Fresh-session carrier proof, lifecycle firing, tool discovery and
-model-curation output are independent observations. No executable observer means no guaranteed
+model-curation output are independent observations. Init and upgrade never request `synaptic ping`
+or its `synaptic status` alias; those are optional user-initiated zero-tool diagnostics. Missing
+proof never triggers repair. No executable observer means no guaranteed
 automatic warning about a later disconnect. No-MCP is a valid selected profile; do not retry it.
 
 Reading the bundle or passing its checks never establishes semantic self-maintenance. A claim of

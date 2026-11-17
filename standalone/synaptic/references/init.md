@@ -2,7 +2,10 @@
 
 # /synaptic-init — onboarding, generate, self-wire
 
-> Run host-setup detection first: `references/host-setup.md`.
+> Explicit owner-requested setup only, never normal boot. Follow `references/host-setup.md`:
+> read-only inspection, leak/reach gate, adapter-listed targets, fresh byte-preserving preimages,
+> approved plan and rollback before any write outside the brain. On upgrade reload the new package
+> before its detection runs; the old engine only installs it. L1 baseline completes installation.
 
 ## Onboarding Interview — /synaptic-init
 
@@ -44,21 +47,23 @@ Tailor framing to the answer (e.g. "your stack" for project, "your domains" for 
    chosen broad dev root. The brain is created at `<global-root>/.synaptic/`.
 2. **Generate the brain** at the global root from `templates/` (the normal Generate step — no change to
    brain structure).
-3. **Detect the host + its user-level instruction context** (see `references/host-setup.md`; record in
-   `harness/setup/<host>.md`).
-4. **Wire the bridge at user level** — write `BEGIN:SYNAPTIC` into the host's user-level instruction
+3. **Identify the declared harness + effective user-level carrier** (`references/host-setup.md`).
+   An unknown adapter stops at a leak-safe user-paste snippet; write no external files.
+4. **Plan the L1 bridge at user level** — for a supported adapter, list `BEGIN:SYNAPTIC` in the approved transaction for the effective user-level instruction
    context, both pointer lines rewritten to the brain's **absolute** path, **plus the skill's absolute
    path** (grep-recoverable). Never into a foreign committed **or synced** repo.
-5. **Deploy rules at user level** — `BEGIN:SYNAPTIC-RULES`. Symlink `harness/` **only** on a POSIX local
+5. **Select rule exposure separately** — preserve existing approved rules and selected profile.
+   Deploy `BEGIN:SYNAPTIC-RULES` only if listed by this adapter and in the approved plan. Symlink `harness/` **only** on a POSIX local
    (non-synced) path where allowed; on **Windows or any OneDrive/DFS-synced location, symlinks are NOT
    allowed** — emit the block / generate a pointer file.
-6. **Deploy capture hooks at user level, host-gated** (see `references/capture-hooks.md`) so they fire across all folders (e.g. the
-   host's user-level hook location, not `.github/hooks` inside one repo). Degrade to the
-   instruction-layer breadcrumb if no user-level hook path exists.
-7. **Install the skill** in the user-level skill discovery paths; **also** write the skill's absolute
+6. **Optional L4, only if selected:** supported-adapter user-level hooks from `references/capture-hooks.md`,
+   with exact targets in the approved plan. Preserve declined/off choices. Missing hooks never block
+   L1; use assisted capture instead. Never improvise a hook/MCP path or edit settings to get proof.
+7. **Optional L2:** install the skill in the selected verified user-level discovery path; include the skill's absolute
    path into the user-level bridge (step 4) so hosts that don't discover user-level skill dirs can still
    load it by path.
-8. **Record + report** — write the wiring to `<global-root>/.synaptic/harness/setup/<host>.md`; report
+8. **Apply the approved plan, record + report** — use the deterministic setup record in
+   `references/host-setup.md`; report
    which folders it now serves, where the wiring lives, the nesting warning, and any host limitation
    (no user-level skill discovery → skill reachable only via the bridge's absolute path; no user-level
    hook path → breadcrumb-only capture).
@@ -92,7 +97,7 @@ Use the answers to seed `knowledge/INDEX.md` cluster stubs and generate a first 
 **Round 3 — Working conventions + guardrails:**
 > "Any team norms an inheriting teammate must know — languages per channel, commit style, etiquette? Any hard rules that must never be violated?"
 
-Collect conventions → `harness/conventions.md` (instantiate from the bundled `templates/`). Collect hard rules → `harness/guardrails.md`. Both files will be deployed to the outer harness by the Deploy step in Harness Self-Wire — do NOT write a guardrails block into BRAIN.md.
+Collect conventions → `harness/conventions.md` (instantiate from the bundled `templates/`). Collect hard rules → `harness/guardrails.md`. Expose them through the selected profile only in its approved adapter plan, or use SKILL.md's read-only approved-rules fallback. Do NOT write a guardrails block into BRAIN.md.
 
 **Round 4 — Registries:**
 > "Any lookup tables you reference often — infra resources, repo catalog, glossary, environments?"
@@ -106,8 +111,9 @@ Yes → run /synaptic-ingest on the document now. Queue further documents for po
 
 **Stop condition:** scope + at least one cluster + `harness/conventions.md` exist. Further rounds optional.
 
-After the interview, run **Harness Self-Wire** (wire AGENTS.md + install skill + deploy operating
-rules + **deploy capture hooks**), then report the file list.
+After the interview, run **Harness Self-Wire** for the declared harness and selected profile.
+Report L1 installation success separately from optional skill/menu/hooks/MCP and loading proof.
+Higher levels are opt-in and never block completion. Do not request a ping or fresh-chat proof.
 
 **Day-1 first-value offer (fresh brain only — OPTIONAL follow-through).** Once the brain is generated
 and wired, and it is still **empty** (a true first run, no existing nodes), **OFFER** the guided
@@ -179,16 +185,30 @@ Use real data — no `{{placeholder}}` values in generated files. Report the ful
 
 ## Harness Self-Wire
 
-Run after /synaptic-init or on any boot where wiring is absent. Goal: make every agent in the project aware of the brain automatically, without touching user persona config.
+Run only in an owner-requested init, upgrade or explicit repair, never on normal boot. Missing
+markers, missing legacy records, missing proof and `failed` do not authorise repair. First apply
+the complete transaction contract from `references/host-setup.md`, including fresh preimages and
+rollback for every external file. Unknown adapters have no write path: offer only a leak-safe
+user-paste bridge for the named effective carrier. No host-config/skill/hook/menu writes or guesses.
+
+**Host-profile precedence (before steps a–f).** Inspect the effective carrier and known setup record
+when present; preserve harness, skill path, assisted/off selections and one bridge. For VS Code,
+follow `references/vscode.md` before generic steps. Its helper record and selected carrier do not
+require a separate RULES marker or generic second AGENTS.md bridge. Use SKILL.md's approved-rules
+read-only fallback when exposure is unknown; do not redeploy to resolve uncertainty. All steps below
+are conditional on supported adapter, selected scope and exact approved targets. Never re-offer L3
+or L4 marked `declined` until the user explicitly re-runs init; never retry a failed level implicitly.
 
 ### a. AGENTS.md fragment (idempotent, marker-wrapped)
 
-Search for `<!-- BEGIN:SYNAPTIC -->` in the project root `AGENTS.md`.
+Use the effective carrier selected by the supported adapter, not a generic additional file. For a
+project adapter whose effective carrier is root `AGENTS.md`, inspect `<!-- BEGIN:SYNAPTIC -->` there.
+Apply the leak/reach gate before preparing this block, including for user-paste output.
 
-- **Found:** replace the entire BEGIN:SYNAPTIC … END:SYNAPTIC block with the block below.
-- **Not found:** append the block (create `AGENTS.md` if it does not exist).
+- **Found:** propose replacing its owned block only when changed.
+- **Not found:** propose appending it (or creating the carrier), only within the adapter's file list.
 
-Write exactly this block — ≤13 lines, no additions:
+In the approved plan use this baseline block; keep it consistent with the selected rules exposure:
 
 ```
 <!-- BEGIN:SYNAPTIC -->
@@ -196,17 +216,16 @@ Write exactly this block — ≤13 lines, no additions:
 This project has a Synaptic brain at `.synaptic/`. Before working: read `.synaptic/BRAIN.md`
 and follow its capture contract (route durable knowledge, lessons, playbooks, and task
 workspaces as specified; files are authoritative over any agent-native memory).
-Operating rules (conventions, guardrails) are in the SYNAPTIC-RULES section below.
+Operating rules use the selected carrier or the skill's read-only approved-rules fallback.
 Commands (synaptic skill): /synaptic-init /synaptic-consolidate /synaptic-ingest /synaptic-audit /synaptic-maintain /synaptic-handover · routine: /synaptic-upgrade
-Boot check: asked "synaptic status" before reading any file, reply "SYNAPTIC-BOOT-OK <nonce>".
+Debug only: for "synaptic ping" ("synaptic status" alias in 1.7.x), reply only "SYNAPTIC-BOOT-OK <nonce>" from loaded context, with zero tools or file reads.
 <!-- END:SYNAPTIC -->
 ```
 
 **Brain pointer (global / seat brains).** The block above hardcodes `.synaptic/` for a brain nested at
 the workspace root. For a **global / seat** brain (one `.synaptic/` serving a workspace that holds many
-repos, from a higher root or pointed to from elsewhere), replace `.synaptic/` in BOTH pointer lines with
-the brain's actual path — relative to the workspace root, or **absolute** for a fixed local per-user
-brain. For a **user-global** brain (reach = user-level placement), the pointer MUST be the brain's
+repos, from a higher root or pointed to from elsewhere), keep its bridge in a user-level non-synced
+carrier, never the repo. Replace the pointer with the brain's absolute path. For a **user-global** brain (reach = user-level placement), the pointer MUST be the brain's
 **absolute** path, and the bridge block MUST also carry the **skill's absolute path** on its own line
 (e.g. `Skill: <abs-path>/.claude/skills/synaptic/`) so an agent on a host that does **not** discover
 user-level skill dirs can still locate + load the skill by **reading the bridge** (grep-recoverable —
@@ -219,33 +238,35 @@ wired file for a bare CWD-relative `.synaptic/BRAIN.md` MUST be ZERO for a globa
 > **Command listing in the bridge (Layer-1 discoverability floor).** The `Commands (synaptic skill): …`
 > line above is the universal floor: any agent that reads the bridge knows the commands and can invoke
 > them by name even on a chat-only host. Enrich it with a **one-line description per command DERIVED from
-> the SOT** (each command's `references/<cmd>.md` `summary:` line), regenerated on every deploy — see
+> the SOT** (each command's `references/<cmd>.md` `summary:` line), changed only in the approved carrier transaction — see
 > `references/command-discovery.md`. There is no hand-authored command description anywhere but the SOT.
 
-> **Boot check (the canary line).** "Wired" must mean *observed loaded*, not *files present*. Init
-> replaces `<nonce>` in the `Boot check:` line with a fresh 6-character token (letters and digits; any
-> value that appears nowhere else in the project) and writes the same token into
-> `harness/setup/<host>.md`. The proof: in a **new** session, before any file is read, the user asks
-> `synaptic status` (or runs `claude -p "synaptic status"` on Claude Code). The reply carries the token
-> only if the bridge is in the loaded instructions. `/synaptic-audit` Step 10b compares the reply
-> with the record.
+> **Optional debug nonce.** When this approved bridge transaction adds a nonce, replace `<nonce>`
+> with a 6-character alphanumeric token and retain it in the deterministic setup record. Keep an
+> unchanged bridge's nonce. `wired` describes installed levels; `proof: unproven` is separate.
+> If no nonce is selected, omit the template's Debug line rather than leaving `<nonce>` in a carrier;
+> a user-requested ping then returns `SYNAPTIC-BOOT-UNKNOWN` without reads or tools.
+> Init/upgrade never ask the user to run a canary or open another chat. Only a user-initiated
+> `synaptic ping` (token-only `synaptic status` alias in 1.7.x) or genuine native-host evidence may
+> establish loading proof. Missing proof is diagnosis only; audit reports it once per engine.
 
 ### a2. Claude Code boot adapter (the `SYNAPTIC-BOOT` block — v1.6, decision X1a)
 
 Per the Claude Code memory docs (read 2026-11-01): Claude Code loads a project `AGENTS.md` only when
 the project has no `CLAUDE.md`; otherwise an `@AGENTS.md` import in `CLAUDE.md` is the route. Without
 it the bridge is not loaded and the brain freezes silently (this workspace's own brain had no writes for
-weeks). Treat this as a claim the boot check verifies on each install, not as settled.
+weeks). Treat this as a documentation-based capability, not measured loading proof. This adapter
+lists only the selected effective carrier and its import target in the approved external-file plan.
 
 1. **Reach gate.** Only for a **project-reach** brain in a repo the user owns. Skip for a global, seat
    or private brain whose bridge lives at user level, and never write into a foreign committed or synced
    repo (the leak rule above). Those cases are specified separately; record `boot: skipped (reach)`.
-2. **Detect** Claude Code (`.claude/` present, or the user says so) and its project memory files:
+2. **Confirm** Claude Code from the declared harness, not `.claude/` alone; inspect effective project memory files:
    `CLAUDE.md`, `.claude/CLAUDE.md`, `CLAUDE.local.md`.
    - **Already wired by the user:** any of them carries an `@AGENTS.md` line outside a code fence →
      write nothing; record `boot: user-import` (never removed by Synaptic).
    - **None exists** → write nothing (native `AGENTS.md` loading should apply); record `boot: native`,
-     `wired: expected`, and rely on the boot check.
+     baseline evidence, leaving `proof: unproven`. No proof request follows.
    - **Otherwise** the target is the committed `CLAUDE.md` (else `.claude/CLAUDE.md`). If only
      `CLAUDE.local.md` exists it may be used, recorded as `personal` (it wires this user only).
 3. **Ask first.** Show the exact block, the target file, and the cost: it makes the whole `AGENTS.md`
@@ -261,12 +282,12 @@ weeks). Treat this as a claim the boot check verifies on each install, not as se
    @AGENTS.md
    <!-- END:SYNAPTIC-BOOT -->
    ```
-5. **Record** in `harness/setup/claude-code.md`: `boot: claude-md-import`, the file written, the boot
-   nonce, and `wired: unproven` until the boot check passes (then `proven` and the date).
-6. **Removable:** delete the four lines. Uninstall, downgrade and convert-to-global remove it from the
-   record (`references/command-discovery.md` "Cleanup"). If a future Claude Code also reads `AGENTS.md`
-   natively next to a `CLAUDE.md`, the import loads the bridge twice (identical text, double cost):
-   remove the block then.
+5. **Record** `boot: claude-md-import`, file and nonce in the deterministic setup record
+   (`references/host-setup.md`); preserve any known legacy record. L1 installation succeeds with
+   `proof: unproven`; neither init nor upgrade asks for ping/fresh-session proof.
+6. **Removable:** a separately requested cleanup may remove the owned four lines only through this
+   adapter's approved file transaction, preserving user imports. If native loading changes, report
+   a potential duplicate for review; never delete or rewrite the carrier during boot.
 
 The guarantee is therefore **"at most one marker-wrapped block (one `@AGENTS.md` import line) in a
 project `CLAUDE.md`, only with approval"** (ADR-002, amended in v1.6). User-level `~/.claude/CLAUDE.md`
@@ -288,9 +309,9 @@ Source: [Codex instruction discovery](https://learn.chatgpt.com/docs/agent-confi
 3. **Global reach:** propose a marker block in the effective global guidance file with absolute brain
    and skill pointers. Show the target, diff and all-workspaces effect; do not write without approval.
    Never copy a private/global bridge into a foreign project to compensate for missing user wiring.
-4. **Record and prove:** write `harness/setup/codex.md` with carrier, scope, skill path, target
-   version and nonce; `wired: expected` is static evidence only. Apply §a's fresh-session canary;
-   until observed before tool/file reads, live loading is `unproven`.
+4. **Record:** use the deterministic setup record with carrier, scope, skill path, target version
+   and nonce. Preserve a known existing legacy record. Record baseline installation separately
+   from `proof: unproven`; do not request a canary or another chat. Optional debug is §a only.
 
 ### a4. VS Code adapter (identify the session harness first)
 
@@ -311,19 +332,23 @@ Documentation snapshot: **2026-11-07**. Sources:
    `chat.useNestedAgentsMdFiles`. These Local settings do **not** control Copilot or Codex
    discovery. Do not change them silently. Keep prompt-menu enhancement separate from boot wiring
    (`references/command-discovery.md`).
-3. **Reach and proof:** the same private/global reach gate as §a3 applies. User-level changes need
-   an approved diff. Record `harness/setup/vscode-<harness>.md` (harness = `copilot` or
-   `local`), carrier, scope, versions, nonce and `wired: expected | unproven | proven <date>`.
-   A new chat's first response must pass the canary before file/tool reads to become proven.
+3. **Reach and record:** the same private/global reach gate as §a3 applies. All external writes need
+   exact adapter-listed targets, fresh byte-preserving preimages, approved plan and rollback.
+   Preserve the actual carrier, skill path and assisted/off selections; no generic second bridge
+   or separate RULES marker is required. Keep an existing helper-owned
+   `harness/setup/vscode-<harness>.md` (harness = `copilot` or `local`) with the deterministic
+   fields in `references/host-setup.md`; otherwise use that reference's new setup record path.
+   Keep `wired` levels separate from `proof: unproven`; init/upgrade never request ping/fresh chat.
 4. **Hooks are separate evidence.** Do not reuse Claude hook JSON merely because the folder or
    event name looks familiar. The Copilot reference supports camelCase and VS Code-compatible
    PascalCase events; the name selects the payload dialect. Record that dialect, supported sources,
    output contract and timeout. `sessionStart` consumes `additionalContext`; lifecycle availability
-   varies by runtime. Keep instruction-only capture until an innocuous hook smoke-test passes.
+   varies by runtime. L4 stays not-configured or declined unless explicitly selected in the approved
+   plan; hook/MCP configuration and a smoke-test are optional and never block L1 completion.
    Sources: [VS Code hooks (Preview)](https://code.visualstudio.com/docs/agent-customization/hooks),
    [Copilot hook reference](https://docs.github.com/en/copilot/reference/hooks-reference).
-5. **Mini-spike:** in a synthetic workspace, test the chosen carrier and any override separately,
-   fresh-chat nonce, one command with an argument, and an optional hook that records only event/tool
+5. **Separate optional mini-spike:** only on an explicit test request, use a synthetic workspace
+   to test chosen carrier/override, fresh-chat nonce, command arguments and an optional hook recording only event/tool
    name. Record loaded/menu-rendered/hook-fired separately; no prompt, argument or result capture.
    Static fixtures and documentation do not establish a live-host support claim.
 
@@ -342,10 +367,10 @@ a command to mirror every carrier. Do not overwrite installed files during packa
 
 Compare the complete selected bundle, retained manifest/source receipt and installed bytes even
 when `version:` matches. Only an exact inventory/content match is already present; a missing file,
-unknown receipt or modified same-version file needs a reviewed repair. Archive current preimages
+unknown receipt or modified same-version file is diagnostic; repair requires a separately reviewed delta. Archive current preimages
 and apply only the selected carrier through the recoverable procedure in
 `references/package-install.md`. Do not prune unrelated or unrecognised user content. An approved
-install still needs independent fresh-session loading and lifecycle/tool verification.
+install does not prove loading or lifecycle/tool behaviour; missing proof never blocks L1 or triggers repair.
 
 **Command discoverability (layered floor + per-host stubs).** Full procedure:
 `references/command-discovery.md`. Two layers:
@@ -358,45 +383,54 @@ install still needs independent fresh-session loading and lifecycle/tool verific
   Local `*.prompt.md` (§a4); other harness menus only when documented and verified). **NOT symlinks** (fragile on Windows/OneDrive —
   they break on sync/copy). Each stub carries a provenance line
   `generated-from: synaptic-skill@<engine-version> <sot-hash>`. Body: load the skill's `SKILL.md` first, then
-  follow `references/<cmd>.md` (by content). Regenerate from the SOT on every deploy; the user
+  follow `references/<cmd>.md` (by content). Regenerate selected configured L3 targets only through
+  the adapter-listed approved transaction; the user
   maintains only one source.
 - **Bootstrap stub:** the install already placed `synaptic-init` at that scope
-  (`references/package-install.md` §4). Adopt it as this deploy's `synaptic-init` stub: regenerate it
-  when its provenance is stale and record it with the others. Declining an optional step never
+  (`references/package-install.md` §4). Record it as the bootstrap `synaptic-init` stub; if its
+  provenance is stale, refresh only in its approved adapter transaction. Declining an optional step never
   removes it.
-- **Drift + prune (on `/synaptic-upgrade`):** compare recorded stubs/version vs the current SOT command
-  list; report added/removed/renamed; **regenerate** changed and **PRUNE** stubs for commands no longer
-  in the SOT; clean OneDrive KFM `synaptic-*-DESKTOP-*` conflict copies. **Cleanup:** on uninstall remove every
-  recorded stub then clear the record; on convert-to-global remove the project-level stubs.
+- **L3 selection:** menus are optional. Persist `l3: declined | not-configured | configured`;
+  declined is terminal until an explicit init request. Keep the bootstrap init stub when declining.
+- **Drift + prune (on `/synaptic-upgrade`):** compare configured recorded stubs/version with SOT
+  read-only; report differences. Only regenerate/prune adapter-owned targets listed individually
+  in the approved plan with fresh preimages and rollback. Uninstall/convert cleanup uses the same
+  transaction gate; no unrecognised/user-owned stub or conflict copy is removed automatically.
 
-**Record the wiring.** After wiring + deploy, write/update `harness/setup/<host>.md` in the brain (e.g.
-`harness/setup/vscode.md`) capturing what was deployed where for this host: the bridge location + brain
+**Record the wiring.** Use the deterministic record contract in `references/host-setup.md`, retaining
+an actual helper-owned legacy path when applicable. A missing legacy host record is baseline;
+never search for or invent it. Capture what was deployed: the bridge location + brain
 pointer (+ **absolute skill path** for a global brain), the rules target, the hook config, and — because
 stubs live **OUTSIDE** the brain and this record is the **only** map to them — the **command-stub set,
 the exact placement dir(s), and the generating engine-version** (matching the stub provenance line); on
 Claude Code also the boot lines (`boot: claude-md-import | user-import | native | declined | skipped
-(reach)`, the file written, the boot nonce, `wired: expected | unproven | proven <date>`), which audit
-Step 10b reads and updates. This
+(reach)`, the file written, the optional debug nonce), installation levels in `wired`, separate
+`proof: unproven`, `adapter`, `l3`, `l4`, `canary_offered_minor` and `audit_reported_engine`. Audit
+Step 10b reports unproven/limited once per engine, never repairs or requests canary proof. This
 documents the setup, is the **re-deploy recipe when you move machines**, and travels in the backup.
 
 ### c. Deploy operating rules (idempotent)
 
-This step materializes `harness/conventions.md` and `harness/guardrails.md` into the outer
-harness so the agent reads them natively — without reaching into the brain at work-time.
+When selected, this step exposes approved `harness/conventions.md` and `harness/guardrails.md`
+through the existing profile's effective carrier. It never introduces a generic second carrier
+or makes a RULES marker mandatory. Missing rule exposure uses SKILL.md's read-only approved-rules
+fallback and never triggers setup. Unknown adapters may only provide leak-safe paste text.
 
-**If you have cloned the full repo and `tools/` is present:** run `node tools/deploy.js <project-root>`
-— it backs up AGENTS.md before writing, prints a diff preview, and refuses to deploy if `harness/`
-still contains `{{placeholder}}` content. Use `--dry-run` to preview without writing. Otherwise
-(`tools/` is not in the skill bundle) use the manual fallback below — it is the default path.
+**If the full repo and `tools/` are present:** `node tools/deploy.js <project-root> --dry-run` may
+preview a supported project AGENTS.md adapter target. Apply only when that exact file is in the
+approved plan with fresh byte-preserving preimage and rollback; tool availability is not approval.
+Never use this generic AGENTS.md target for another selected VS Code carrier. The manual procedure
+below has the same adapter/transaction gate; it is not a fallback around an unsupported adapter.
 
 **Manual fallback (default — no `tools/`):**
 1. Read `.synaptic/harness/conventions.md` and `.synaptic/harness/guardrails.md`.
 2. **STOP** — if either file still contains `{{placeholder}}` values, do NOT deploy. Inform the
    user: "harness/ contains unfilled placeholders — complete the onboarding interview (/synaptic-init) first."
-3. Show the user a diff of the proposed SYNAPTIC-RULES block change and require confirmation
-   before writing.
+3. List the adapter's exact effective-carrier target, diff, fresh byte-preserving preimage and
+   rollback; obtain approval for that concrete plan before writing. Recheck preimages at apply.
 4. Compose a combined rules block from both files.
-5. Search for `<!-- BEGIN:SYNAPTIC-RULES -->` in the project root `AGENTS.md`:
+5. In the adapter-selected carrier (project root `AGENTS.md` only for that selected adapter),
+   inspect `<!-- BEGIN:SYNAPTIC-RULES -->`:
    - **Found:** replace the entire BEGIN:SYNAPTIC-RULES … END:SYNAPTIC-RULES block.
    - **Not found:** append the block after the BEGIN:SYNAPTIC block.
    - Never touch content outside the marked block.
@@ -419,17 +453,26 @@ The block written looks like:
 <!-- END:SYNAPTIC-RULES -->
 ```
 
-**On re-deploy** (any subsequent `/synaptic-init` or `/synaptic-upgrade` run): the marked block is fully replaced
-with the current source. Unmarked user content in AGENTS.md is never touched.
+**On reviewed re-deploy:** replace only changed owned blocks listed in the approved plan.
+An init/upgrade request does not blindly re-apply every optional feature. Preserve unrelated bytes,
+selected profile and assisted/off choices; an unchanged target is a no-op.
 
-### d. Capture mechanism — deploy host hooks (CORE)
+### d. Optional L4 capture mechanism (CORE)
 
 The full procedure (layers a0–c, the pinned activity-marker one-liners, per-host support, honesty
-rules) is `references/capture-hooks.md`. Run it here.
+rules) is `references/capture-hooks.md`. Read it only for an explicitly selected supported-adapter
+L4 plan. Persist `l4: declined | not-configured | configured`; declined is terminal until the user
+explicitly re-runs init. Never deploy a Stop hook merely because init/upgrade runs. List exact
+hook/settings/MCP targets with fresh byte-preserving preimages, approved diff and rollback before
+writing. Unknown adapters write none of them. A failure or missing native proof is diagnostic only;
+leave the verified L1 baseline successful and use assisted capture. Do not retry implicitly or
+ask for ping/fresh-chat proof.
 
 ### e. Cursor shim (optional)
 
-If `.cursor/` exists in the project root, write `.cursor/rules/synaptic.mdc`:
+The presence of `.cursor/` alone authorises no writes and identifies no supported adapter. Cursor
+remains an unknown adapter here: only offer this snippet for the user's identified carrier after
+the leak/reach gate; never create `.cursor/rules/synaptic.mdc` automatically:
 
 ```
 This project has a Synaptic brain. See AGENTS.md (BEGIN:SYNAPTIC block) for instructions.
@@ -438,5 +481,7 @@ Read `.synaptic/BRAIN.md` at session start. Commands: /synaptic-init /synaptic-c
 
 ### f. Cross-agent sync
 
-Cross-agent rule-sync tools (gentle-ai, ai-rules-sync, block/ai-rules, rulesync) pick up the skill directories automatically — nothing else to configure.
+External rule-sync tools may read skill directories according to their own configuration; their
+presence proves neither wiring nor loading. Do not run sync or modify their configuration during
+init/upgrade without a separately selected supported-adapter plan covering every external target.
 

@@ -1,11 +1,16 @@
-# v1.7.1 — Better organised work
+# v1.7.2 — Baseline floor (unreleased)
 
-Engine version 1.7.1; brain schema stays 1.0, so no knowledge-format migration.
+Engine version 1.7.2; brain schema stays 1.0, so no knowledge-format migration.
 
-**New in 1.7.1:** the install places a `synaptic-init` command next to the skill on Claude Code and
-the VS Code Local harness, and the README install prompt no longer names a slash command, so a first
-install has a working way to start on every host. Open a fresh session to see the command in the
-menu. Everything below is unchanged from 1.7.0.
+**New in 1.7.2:** an effective, scope-safe bridge completes baseline setup. Missing loading proof
+does not trigger repair; unknown adapters stay limited with user-paste guidance. Optional commands,
+hooks and MCP never block the baseline. Outside-brain writes require a supported adapter, an exact
+approved plan, fresh byte-preserving preimages and rollback. An upgrade reloads the newly installed
+engine before host detection. Existing VS Code selections and declined optional levels are preserved.
+
+`synaptic ping` is the optional token-only, zero-tool debug check; `synaptic status` is its alias
+for 1.7.x. Init/upgrade never request either. Ask explicitly for a situation report to inspect work.
+Automatic discovery, profile bindings and wire-to-max remain outside this patch.
 
 The 1.7 line was tested
 as 2.0.0-rc.1 and 2.0.0-rc.2 drafts; nothing in it breaks an existing brain, so it ships as a minor
@@ -30,8 +35,8 @@ Your Markdown brain remains the record.
 
 ## Upgrade
 
-Keep your existing brain, update the full skill bundle from the attached package, and verify a
-fresh-session resume and capture. Hooks and MCP need their own supported setup; updating files alone
+Keep your existing brain and update the full skill bundle from the selected verified package.
+Report baseline installation separately from loading and capture. Hooks and MCP need their own supported setup; updating files alone
 does not activate them. [Upgrade guide](UPGRADING.md).
 
 - **Git brains: check the ignore rule before you close a playground.** `playgrounds/.gitignore` must
@@ -61,7 +66,8 @@ does not activate them. [Upgrade guide](UPGRADING.md).
 
 ## Evidence and limits
 
-CI passes for the exact release commit on Linux, macOS and Windows with Node 18, 22 and 24.
+This is an unreleased candidate. Its local verification is recorded with the implementation;
+exact-commit CI and release preparation remain separate steps before publication.
 Filesystem/protocol tests are distinct from host loading, native firing and semantic quality. The
 owner-run VS Code journey and a demonstrated automatic-curation profile are still pending, which is
 why those features are previews. Automatic capture is claimed only for verified host configurations.

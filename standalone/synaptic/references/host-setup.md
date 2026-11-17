@@ -29,58 +29,95 @@ brain's schema/format version against `supported_schema`:
   learn about newer skill engines. An optional Cortex "check-latest" (GitHub Releases API) is the
   only networked path and is never required.
 
-## Host-setup detection (ALWAYS run on `/synaptic-init` and every `/synaptic-upgrade`)
+## Host-setup detection (explicit setup only)
 
-Beyond resolving the brain, **actively detect WHERE + HOW the brain + harness are wired** and
-**re-deploy the correct wiring** — never silently assume a repo-local `.synaptic/`. This is prose an
-agent executes by read/grep (zero-runtime); it is a **first-class, always-run** step of init and every
-upgrade, not just a pre-v1 migration step. (The convert flow, `references/convert-to-global.md`, and
-the upgrade addendum, `references/upgrade-to-v1.md`, reuse this same detect+classify+re-deploy step.)
+Run read-only inspection during an owner-requested init, upgrade or repair, never during normal
+boot. During upgrade the old engine only acquires/verifies/installs the selected new package through
+`references/package-install.md`; reload its `SKILL.md` and references before the **new engine alone**
+runs host detection. Do not run old-engine detection or deployment recipes before that reload.
 
-1. **Resolve the brain location** (reuse the resolution above): `CWD/.synaptic/BRAIN.md`, else the brain
-   at the `BEGIN:SYNAPTIC` bridge pointer. Record **project-local vs global** (is the brain under CWD, or
-   at a higher / absolute path?).
-2. **Scan for existing wiring** across all carriers: VS Code Copilot user-level + workspace
-   `*.chatmode.md` / `*.instructions.md`, `.github/copilot-instructions.md`, `AGENTS.md`, `CLAUDE.md`,
-   `.cursor/rules/*`. Determine **where the bridge + rules currently live** (project vs user level) and
-   **which host** (`.claude/`, `.github/`, `.cursor/`, `AGENTS.md`, Gemini).
-2a. **Identify the actual runtime, not a directory guess.** Follow `references/init.md` §a3–a4.
-   For Codex, inspect effective `$CODEX_HOME/AGENTS.override.md` / `AGENTS.md`, the project
-   instruction chain, byte limit and repo/user skill locations. For VS Code, record session
-   target/harness plus VS Code, extension and harness versions; inventory its native carriers.
-   The Local `chat.useAgentsMdFile` setting does not control Copilot or Codex discovery.
-   Existing `*.chatmode.md` files are historical inventory, not proof of an active carrier.
-3. **Reuse the recorded setup:** if `<brain>/harness/setup/<host>.md` exists, read it as the
-   authoritative record of the last deployment; reconcile recorded-vs-actual and **report drift**.
-4. **Classify the setup** and **emit a one-line classification** stating brain location
-   (project-local | global), host, and where wiring lives (project | user level):
-   - `{project-local brain + project-level wiring}` → re-deploy **project-level** wiring (existing behavior).
-   - `{global brain + user-level wiring}` → re-deploy **user-level** bridge + rules + hooks (absolute
-     pointer + absolute skill path; symlink only on a POSIX local non-synced path, else emit block /
-     pointer file). A `v1.x → v1.4.0` refresh of a global brain **re-asserts its user-level wiring** even
-     on the light (already-schema-`1.0`) no-op path — it never falls back to a bare repo-local bridge.
-   - `{global brain but wiring found only at project level = MISCONFIGURED}` (the classic "brain covers
-     only one folder" symptom) → **flag it and OFFER to fix**: promote wiring to user level (the convert
-     flow, `references/convert-to-global.md`, or just the wiring half if the brain is already at a global
-     root).
-   - `{bridge points at an unreachable path = broken pointer}` → **report it** (do NOT treat as "no
-     brain"; matches the unreachable-pointer branch of `SKILL.md` Detect on Load).
-5. **Run the command-discovery stub-drift check** (`references/command-discovery.md`): compare the
-   recorded stub set + version against the current SOT command list; regenerate + prune stale stubs;
-   clean OneDrive KFM `synaptic-*-DESKTOP-*` conflict copies; regenerate the Layer-1 bridge descriptions.
-6. **Update `harness/setup/<host>.md`** with the re-deployed state.
+### Baseline and adapter contract (1.7.2)
 
-> **Absolute skill path in the bridge (grep-recoverable).** When wiring at user level, the bridge block
-> carries the **skill's absolute path** as well as the brain's, so an agent on a host that does **not**
-> discover user-level skill dirs can still locate + load the skill by reading the bridge. Surface any
-> such host-limitation in the setup report.
+- **L0:** readable files. **L1:** a bridge in the effective instruction carrier after the leak/reach
+  gate. L1 means installation succeeded; L2 skill discovery, L3 menus and L4 hooks/MCP are optional,
+  separately selected capabilities and never block completion.
+- **Leak/reach gate first:** project brains use repo-relative pointers in project carriers.
+  Global/private brain and skill pointers belong only in effective user-level, non-synced carriers,
+  never a repo. Apply this gate before accepting L1 or generating a paste snippet. A private pointer
+  in a repo is a leak to report, not a successful baseline.
+- Record `adapter: supported | unknown` separately from `wired`. Supported means the declared
+  harness/scope has a documented procedure covering the exact targets. Unknown or ambiguous
+  harness/profile means `adapter: unknown`, `wired: limited`, maximum L1: zero agent writes outside
+  the brain, no guessed settings, skill, menu, hook or MCP paths. Offer only a leak-safe bridge
+  snippet for the user to paste into the carrier they identify. A folder does not identify a host.
+- Every write outside the brain, including carriers, skills, stubs, `settings.json`, `mcp.json`,
+  hooks and `config.toml`, requires an adapter listing that exact file, fresh byte-preserving
+  preimages (including absence), an approved concrete plan and rollback. Recheck preimages just
+  before apply; drift requires replanning. Preserve unrelated bytes and line endings. List removals
+  too; generic fallback procedures never bypass an adapter's file allowlist.
+- Missing proof, absent legacy metadata or `failed` is diagnosis only, never a repair trigger.
+  Boot performs no setup writes. Explicit setup permits only its reviewed delta, preserving the
+  selected profile and assisted/off choices.
+- Init/upgrade never request a canary or fresh chat. Optional user-initiated `synaptic ping` replies
+  only `SYNAPTIC-BOOT-OK <nonce>` from loaded instructions, with zero tools/file reads.
+  `synaptic status` is a token-only alias for 1.7.x; situation reporting has its own explicit request
+  (`references/situation.md`). Missing loading proof never blocks L1 completion.
 
+### Inspect, classify, plan
 
-## Adapter record and evidence (v1.7)
+1. Resolve the brain through the existing bridge or `CWD/.synaptic/BRAIN.md`. An unreachable bridge
+   is a broken pointer; report it without onboarding another brain.
+2. Identify the declared harness and effective carrier from the session/instruction chain. Inspect
+   only relevant configuration, never auth material. Record scope and overrides. Codex follows
+   `references/init.md` §a3; VS Code follows §a4. Historical chatmode files, folder names and the
+   selected language model do not identify the active harness.
+3. Preserve the effective carrier, selected skill path and assisted/off choices. For an existing
+   VS Code profile use its already-known `harness/setup/vscode-<harness>.md` when present and
+   `references/vscode.md` before generic init steps. A helper record or assisted carrier needs no
+   separate RULES marker; do not append another bridge because that marker is absent. Use SKILL.md's
+   read-only approved-rules fallback when approved rule exposure is missing or unknown.
+4. Read an already-known legacy record if present; compare its claims with actual files. Its absence
+   means baseline, not broken integration: never search for another host-named record, invent a
+   legacy record or repair. Derive the current deterministic record below only from inspected facts
+   during this explicit setup operation.
+5. Report brain reach, carrier scope, declared harness, adapter and L1 result. Global brain with
+   project-only wiring needs reach review, not automatic relocation. Unknown adapters stop at the
+   user-paste route; supported adapters prepare only the selected reviewed delta.
+6. Check stub drift read-only when L3 is configured; retain the installed bootstrap init stub even
+   when optional menus are declined. Regeneration/pruning and conflict-copy cleanup are writes:
+   list every adapter-owned target, preimage and rollback in the approved plan first.
+7. Apply only that plan and verify baseline and selected capabilities separately; record results.
+   On failure restore touched files from preimages and retain diagnosis/evidence. Do not retry a
+   failed optional level automatically or turn missing proof into another deployment.
 
-Use `harness/setup/codex.md` or `harness/setup/vscode-<harness>.md` for the new adapters.
-Record host/harness/version, scope, effective carrier, skill path, nonce, `wired:` state,
-proof date/evidence, and (if deployed) hook source/dialect/output contract. Do not upgrade a
-static `expected` configuration to `proven`. Build a proposed diff for any user-level edit;
-the detection or upgrade routine does not bypass approval. Native paths and citations are kept
-once in `references/init.md` §a3–a4; menus in `references/command-discovery.md`.
+### Minimal setup record (not 1.8 multi-binding)
+
+`carrier_id` is the scope-qualified effective carrier location: `project:<repo-relative-path>` for
+project scope, `user:<logical-user-root-relative-path>` for user scope. Use forward slashes. Hash the canonical UTF-8 text
+`carrier_id + "\n" + declared_harness` with SHA-256; the full lowercase hex digest is `setup_id`.
+Store a new record at `harness/setup/setups/<setup_id>.md`. Existing helper-owned records such as
+`harness/setup/vscode-<harness>.md` may retain that path and add the same fields in place; do not
+duplicate them or migrate all records. Audit deduplicates by `setup_id`. This is not a profile UUID, binding stamp
+or discovery feature. If carrier/harness cannot be resolved, report limited/unresolved; invent no id.
+
+Required fields (keep unknown evidence explicit):
+
+```yaml
+setup_id: <deterministic sha256>
+carrier_id: <scope-qualified effective carrier>
+declared_harness: <declared harness>
+adapter: supported # or unknown
+wired: baseline # none | baseline | partial | full | limited
+l3: not-configured # declined | not-configured | configured
+l4: not-configured # declined | not-configured | configured
+proof: unproven # separate from wired; never inferred from installed bytes
+canary_offered_minor: null # legacy bookkeeping only; never prompts from init/upgrade
+audit_reported_engine: null # audit stamps current engine after its one advisory
+```
+
+Also retain engine, scope, skill path, exact deployed file inventory, nonce when present, static
+checks, failure/evidence details and existing adapter metadata. `declined` is terminal until the user
+explicitly re-runs init; upgrade, audit and boot neither re-offer nor deploy that level. `failed` is
+diagnosis only. Audit reports `unproven`/`limited` once per engine by checking/updating
+`audit_reported_engine`; a repeated audit stays quiet. An absent legacy `<host>.md` is not itself an
+advisory or permission to invent one. Canary metadata never reintroduces a setup proof prompt.

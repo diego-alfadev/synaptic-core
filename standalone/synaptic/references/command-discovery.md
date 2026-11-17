@@ -33,6 +33,17 @@ exist and can **invoke them by name** — even a chat-only host with no slash-me
 
 ## Layer 2 — Per-host ENHANCEMENT (the nice `/`-menu-with-description UX)
 
+This is the optional L3 target. `l3: declined` remains terminal until the user explicitly re-runs
+init; an upgrade, absent menu proof or missing stub never reopens that decision. L1 success never
+depends on a menu. `adapter: unknown` means `limited`, maximum L1: do not create guessed command
+directories or host config; offer only leak-safe user-paste text when requested.
+
+Every out-of-brain write below (generation, refresh, move, prune, cleanup or uninstall) requires
+a supported adapter naming each exact destination, fresh byte-preserving preimages including
+recorded absence, an approved plan and rollback (`references/host-setup.md`). Ownership markers
+are necessary for cleanup, not permission to write. A declined L3 leaves an existing bootstrap
+init stub intact; it does not authorise any refresh outside an approved install transaction.
+
 For hosts that support a slash/prompt menu, generate thin **discovery stubs** from the ONE SOT —
 **hub-and-spoke: 1 source → N native targets**. Each stub is a **few-line pointer file** whose content
 points (by content, not by symlink) back to the SOT command definition and carries just enough native
@@ -54,7 +65,7 @@ and rely on the version). This is the anchor the drift check and the
 uninstall cleanup key off — a stub whose provenance version/hash no longer matches the current SOT is
 stale and gets regenerated or pruned.
 
-**Native targets (generate for the hosts the deploy detects):**
+**Native targets (generate only for the selected, supported adapter's approved L3 plan):**
 
 - **Claude Code** → `<scope>/.claude/commands/synaptic-*.md`, where `<scope>` matches **where the
   skill is installed**: a project-level skill (`<project>/.claude/skills/synaptic/`, the default) gets
@@ -109,17 +120,21 @@ in a fresh session; placing the file is not proof that the menu shows it.
 not our choice — hosts have not converged, so per-host stubs are forced by the hosts. We minimize the
 cost the only way available: one SOT, N generated stubs (hub-and-spoke), never hand-kept.
 
-## Recorded per host — `harness/setup/<host>.md` is the ONLY inventory
+## Recorded per setup — use the resolved inventory
 
 Generating and placing stubs is part of **deploying the harness** (not a brain-content concern); the
 one exception is the bootstrap stub above, placed at install and adopted by init. Host
 command dirs (`<project>/.claude/commands/` or `~/.claude/commands/`, the Copilot/Cursor prompt-file locations) sit **OUTSIDE
-`.synaptic/`** — nothing inside the brain can see or clean them. So `harness/setup/<host>.md` is the
-**authoritative inventory** and MUST record:
+`.synaptic/`**. The resolved setup record is the **authoritative inventory** and MUST record:
 
 - the **stub set** (which commands),
 - the **exact placement dir(s)** for that host,
 - the **generating engine-version** (matching the stub provenance line).
+
+Resolve `setup_id` from carrier id + declared harness per `references/host-setup.md`; new records
+live at `harness/setup/setups/<setup_id>.md`. Read an already-known legacy helper record (including
+`vscode-<harness>.md`) in place, without counting it again as a second setup. A missing legacy
+`<host>.md` means baseline: never search other host names or invent an inventory to enable cleanup.
 
 **Init adopts the bootstrap stub.** It exists before any brain or host record does. When init
 generates the stub set it treats the file at the bootstrap location as its own `synaptic-init` stub
@@ -129,32 +144,39 @@ install transaction record (`references/package-install.md` §4) is the only map
 
 ## Drift check on `/synaptic-upgrade` (part of host-setup detection)
 
-When `/synaptic-upgrade` runs host-setup detection, it MUST perform a **stub-drift check**:
+When the new engine runs host-setup detection, compare existing L3 inventory read-only. If L3 is
+declined, keep it and do not offer deployment; missing proof never triggers repair. For an
+already-configured or newly approved L3 target, prepare a **stub-drift check**:
 
-1. Compare the **recorded stub set + generating version** (from `harness/setup/<host>.md` / the stub
+1. Compare the **recorded stub set + generating version** (from the resolved setup record / stub
    provenance lines) against the **current SOT command list**: the rows of `SKILL.md`'s Operations
    and "Routine and aliases" tables (not every `references/*.md` file is a command).
 2. **Report** added / removed / renamed commands (SOT gained a command → stub missing; SOT dropped or
    renamed one → stub stale).
-3. **REGENERATE** stubs for added/changed commands and **PRUNE** stale stubs — stubs for commands **no
+3. In the approved adapter transaction only, **REGENERATE** stubs for added/changed commands and
+   archive before **PRUNING** stale owned stubs — stubs for commands **no
    longer in the SOT** are deleted (not left orphaned in the `/` menu pointing at a gone command).
-4. **Regenerate the Layer-1 bridge descriptions** from the current SOT summaries in the same pass.
+4. Include refreshed Layer-1 descriptions in the approved adapter plan, preserving scope and the
+   selected carrier. Never add another bridge merely because the menu is absent.
 4b. **Check placement, not only set and version.** If the recorded Claude Code stubs sit in
    `~/.claude/commands/` but the skill is installed at project level (stubs placed before v1.6), show
    the move and, with the user's OK, regenerate them in `<project>/.claude/commands/` and remove the
    user-level copies listed in the host record. Remove only stubs the record lists; never guess.
-5. Update `harness/setup/<host>.md` to the new stub set + version + placement dir.
+5. After verification, update the resolved setup record with the stub set + version + placement
+   dir and `l3: configured`; a partial failure remains a diagnosis, not an automatic retry.
 
 **OneDrive KFM conflict-copy cleanup.** Host command dirs under OneDrive Known-Folder-Move can
 accumulate **`*-DESKTOP-XXX` conflict copies** (e.g. `synaptic-audit-DESKTOP-AB12CD.md`) when sync
 collides across machines. They are not real stubs — they shadow the canonical one and can surface a
-stale duplicate in the `/` menu. The drift sweep MUST **detect and clean these `synaptic-*-DESKTOP-*` variants** (the `synaptic-` prefix is required: a conflict copy of any other file is the user's and is never touched).
+stale duplicate in the `/` menu. The drift sweep detects these `synaptic-*-DESKTOP-*` variants and
+lists any cleanup in the approved adapter plan, with fresh preimages and rollback (the `synaptic-`
+prefix is required: a conflict copy of any other file is the user's and is never touched).
 *(Author-complete; verify on a real run — actual filesystem/sync behavior needs a real host.)*
 
 ## Cleanup — uninstall / downgrade / convert-to-global
 
 Because stubs live outside the brain, removing the brain does NOT remove them. Clean them explicitly
-using the `harness/setup/<host>.md` inventory (never guess):
+using the resolved setup inventory and an approved adapter transaction (never guess):
 
 - **On uninstall** — remove every stub listed in the host record (the record is the only map to their
   out-of-brain locations), then clear the stub section from the record.

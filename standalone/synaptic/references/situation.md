@@ -2,8 +2,11 @@
 
 # Situation report — CORE procedure
 
-This is the one definition of the report. It is a read-only procedure, not another public command.
-Read the formats and stale rule in references/contract.md §6. No shell or runtime is required.
+This is the one definition of the report. Run it only for an explicit situation-report request;
+do not dispatch `synaptic ping` or `synaptic status` here. Those are the zero-read nonce check
+and its 1.7.x compatibility alias, respectively. The report is a read-only procedure, not an
+automatic boot action or another public slash command. Read the formats and stale rule in
+references/contract.md §6. No shell or runtime is required.
 
 1. Read BRAIN.md to resolve scope and an optional positive integer stale_after (default 14 days).
    State the UTC date used. Strip an optional UTF-8 BOM before reading leading frontmatter.
@@ -33,6 +36,7 @@ supersedes it, say that no replacement is recorded.
 
 No report edits, stamps, promotes or repairs a row. Route defects to audit, durable knowledge to
 consolidate and task promotion to the owner's approval. The report is not a boot proof: a report
-after file reads cannot establish whether initial instructions were loaded. Use the fresh-session
-nonce test separately. Runtime tabulation may implement this procedure later; no dual-shell report
+after file reads cannot establish whether initial instructions were loaded. The optional user-initiated
+`synaptic ping` debug check is separate; never request it as a report/setup completion gate. Runtime
+tabulation may implement this procedure later; no dual-shell report
 script is part of this cut.
