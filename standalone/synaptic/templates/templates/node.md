@@ -26,6 +26,9 @@ tags:
 # source: "{{T<n>/L<k> · odd/tasks/<feature>.md:<line>@<commit>}}"
 # confidence: how settled this knowledge is. Three-value enum ONLY: high | medium | low.
 # confidence: medium
+# evidence: what kind of proof exists, separate from confidence. Only where the root's frontmatter
+#           declares `evidence_levels`; one of those levels — for a compound claim, the weakest it reaches.
+# evidence: "{{one of the root's evidence_levels}}"
 # Bi-temporal recency (OPTIONAL): distinguish when the fact became TRUE from when you LEARNED it.
 # true_since: "{{YYYY-MM-DD — when the fact started being true in the world}}"
 # learned_on: "{{YYYY-MM-DD — when this brain captured it}}"

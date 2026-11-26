@@ -150,6 +150,26 @@ The optional [Codex automatic-curation adapter](docs/integrations/codex-curation
 preparation. Its native-event acceptance must pass before support is claimed. It curates selected
 saved sources into drafts; unsaved chat facts and wiki promotion are separate work.
 
+## Pin a release for checks in another repository
+
+A repository that lints its brain or node store in its own CI can pin one exact engine. Releases are
+immutable and attach `synaptic-X.Y.Z.tar.gz` and `SHA256SUMS`. Record the version and the tarball's
+SHA-256 once (from `SHA256SUMS` on the release page), then on every run download, verify against
+the recorded value, extract and check. Node 18 or later is enough; nothing is installed.
+
+```sh
+VERSION=1.8.0
+SHA256=<recorded sha256 of synaptic-1.8.0.tar.gz>
+gh release download "v$VERSION" -R diego-alfadev/synaptic-core -p "synaptic-$VERSION.tar.gz" -p SHA256SUMS
+echo "$SHA256  synaptic-$VERSION.tar.gz" | shasum -a 256 -c -   # Linux: sha256sum -c -
+tar -xzf "synaptic-$VERSION.tar.gz"
+node "synaptic-$VERSION/tools/check.js" path/to/.synaptic          # or a node store's folder
+```
+
+Without `gh`, fetch the same two assets from the release URL
+(`https://github.com/diego-alfadev/synaptic-core/releases/download/v1.8.0/…`). Check the recorded
+digest, not only the downloaded `SHA256SUMS`: that file proves consistency, not which release you chose.
+
 ## What is automatic and what is not
 
 Curation happens when you ask for it. Anything automatic is optional and is reported separately,
