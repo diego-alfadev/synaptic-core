@@ -903,6 +903,38 @@ test('check.js: in wikilink mode Markdown links stay invisible; in markdown mode
   check(s, 0);
 });
 
+// Wrong-case paths resolve on macOS and Windows but are broken on Linux and GitHub, so these cases must
+// report the same error on every filesystem; none of them may depend on how the host compares names.
+test('check.js: Markdown links - a wrong-case filename is an error naming the on-disk spelling', () => {
+  const s = storeFixture();
+  write(s, 'techniques/alpha.md', node('Alpha', 'See [beta](./Beta.md).'));
+  const r = check(s, 1, ['broken Markdown link: ./Beta.md (case differs on disk: beta.md)']);
+  assert((r.out.match(/broken Markdown link/g) || []).length === 1, `expected exactly one broken link\n${tail(r.out)}`);
+});
+
+test('check.js: Markdown links - a wrong-case directory segment is an error', () => {
+  const s = storeFixture();
+  write(s, 'techniques/alpha.md', node('Alpha', 'See [beta](beta.md) and [gamma](../Styles/gamma.md).'));
+  check(s, 1, ['broken Markdown link: ../Styles/gamma.md (case differs on disk: styles)']);
+});
+
+test('check.js: Markdown links - exact case through ./ and ../ segments is clean', () => {
+  const s = storeFixture();
+  write(s, 'techniques/alpha.md', node('Alpha', 'See [beta](./beta.md) and [gamma](../styles/./gamma.md).'));
+  const r = check(s, 0);
+  assert(!/case differs|broken/.test(r.out), `exact case reported\n${tail(r.out)}`);
+});
+
+test('check.js: a wrong-case typed-edge path is an error; a missing one keeps the plain broken error', () => {
+  const s = storeFixture();
+  const fm = (edge) => ['description: Alpha', 'type: concept', 'status: active', `updated: ${TODAY}`, 'tags: [ci]', `supersedes: ${edge}`];
+  write(s, 'techniques/alpha.md', node('Alpha', 'See [beta](beta.md).', fm('../styles/Gamma.md')));
+  check(s, 1, ['broken typed edge: ../styles/Gamma.md (case differs on disk: gamma.md)']);
+  write(s, 'techniques/alpha.md', node('Alpha', 'See [beta](beta.md) and [gone](Gone.md).', fm('../styles/gone.md')));
+  const r = check(s, 1, ['broken typed edge: ../styles/gone.md', 'broken Markdown link: Gone.md']);
+  assert(!/case differs/.test(r.out), `a missing target was reported as a case mismatch\n${tail(r.out)}`);
+});
+
 // --- done ----------------------------------------------------------------------------------------------
 for (const d of scratch) { try { fs.rmSync(d, { recursive: true, force: true }); } catch (_) { /* best effort */ } }
 console.log(`1..${n}`);

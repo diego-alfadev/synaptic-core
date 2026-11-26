@@ -337,7 +337,10 @@ brain with 0 nodes stays legal. The run prints a node line such as ``15 nodes in
 - Skipped: URLs (`scheme:`), `//host`, anchor-only `#x`, empty targets. A root-absolute `/path` is a
   WARN and is not checked: write it relative.
 - A target resolves from the containing file. Missing → ERROR (`broken Markdown link`), in MOC files
-  too: in `markdown` mode the hub alone makes a node reachable.
+  too: in `markdown` mode the hub alone makes a node reachable. Every path segment must match the
+  on-disk name exactly; a segment that differs only in case is the same
+  ERROR, naming the on-disk spelling, on every filesystem, because Linux and GitHub do not resolve it.
+  Typed-edge paths follow the same rule. Wikilink resolution is not changed by it.
 - An existing node `.md` in the root → an edge and MOC membership. Anything else that exists (a MOC, an
   excluded file, a non-`.md` file, a folder, a file outside the root) → fine, never an edge. Images
   are never edges.

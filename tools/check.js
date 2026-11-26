@@ -638,16 +638,44 @@ function checkBrokenLinks() {
   }
 }
 
-/** Relative Markdown links and typed-edge paths must exist; any existing file or folder is fine. */
+/**
+ * Walk a relative target from `fromDir` against real directory listings, so a wrong-case segment fails
+ * on case-insensitive filesystems (macOS, Windows) exactly as it does on Linux and GitHub.
+ * Returns { ok: true } | { ok: false } | { ok: false, onDisk }.
+ */
+function resolveExactCase(fromDir, target) {
+  let dir = fromDir;
+  for (const seg of path.posix.normalize(target).split('/')) {
+    if (seg === '' || seg === '.') continue;
+    if (seg === '..') { dir = path.dirname(dir); continue; }
+    let entries;
+    try {
+      entries = fs.readdirSync(dir);
+    } catch (_) {
+      // Unlistable (ENOTDIR, EACCES): fall back to plain existence rather than invent a finding.
+      return { ok: fs.existsSync(path.resolve(fromDir, target)) };
+    }
+    if (!entries.includes(seg)) {
+      const onDisk = entries.find((e) => e.toLowerCase() === seg.toLowerCase());
+      return onDisk ? { ok: false, onDisk } : { ok: false };
+    }
+    dir = path.join(dir, seg);
+  }
+  return { ok: true };
+}
+
+/** Relative Markdown links and typed-edge paths must exist with exact case; any file or folder is fine. */
 function checkMarkdownLinks(filePath, lines) {
   const checkTarget = (raw, label) => {
     const c = classifyMarkdownTarget(raw);
     if (!c) return;
     if (c.kind === 'absolute') {
       warn(filePath, `root-absolute Markdown link not checked: ${raw} (write it relative to this file)`);
-    } else if (!fs.existsSync(path.resolve(path.dirname(filePath), c.target))) {
-      err(filePath, `${label}: ${raw}`);
+      return;
     }
+    const r = resolveExactCase(path.dirname(filePath), c.target);
+    if (r.onDisk) err(filePath, `${label}: ${raw} (case differs on disk: ${r.onDisk})`);
+    else if (!r.ok) err(filePath, `${label}: ${raw}`);
   };
   stripNonProse(lines, (prose) => {
     for (const link of extractMarkdownLinks(prose)) checkTarget(link.raw, 'broken Markdown link');
