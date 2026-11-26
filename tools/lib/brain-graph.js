@@ -138,15 +138,10 @@ function extractFrontmatterEdges(lines) {
 }
 
 /**
- * Extract body [[wikilinks]], skipping frontmatter, fenced code blocks (``` / ~~~),
- * inline code spans (`...`), and HTML comment blocks (<!-- ... -->).
- * Mirrors check.js/graph.js extractWikilinks fence/comment handling.
+ * Walk prose lines from `startAt`, skipping fenced code blocks (``` / ~~~), inline code spans
+ * (`...`), and HTML comment blocks (<!-- ... -->). Mirrors check.js stripNonProse.
  */
-function extractBodyWikilinks(lines) {
-  const bounds = frontmatterBounds(lines);
-  const startAt = bounds ? bounds.end + 1 : 0; // skip frontmatter — its edges are handled separately
-
-  const links = [];
+function walkProse(lines, startAt, onProse) {
   let inComment = false;
   let inFence = false;
 
@@ -169,16 +164,80 @@ function extractBodyWikilinks(lines) {
       .replace(/`[^`]*`/g, m => ' '.repeat(m.length));
     if (line.includes('<!--')) {
       if (!line.includes('-->')) {
-        const before = line.slice(0, line.indexOf('<!--'));
-        for (const m of before.matchAll(/\[\[([^\]]+)\]\]/g)) links.push(m[1].trim());
+        onProse(line.slice(0, line.indexOf('<!--')));
         inComment = true;
         continue;
       }
       line = line.replace(/<!--.*?-->/g, '');
     }
-    for (const m of line.matchAll(/\[\[([^\]]+)\]\]/g)) links.push(m[1].trim());
+    onProse(line);
   }
+}
+
+function bodyStart(lines) {
+  const bounds = frontmatterBounds(lines);
+  return bounds ? bounds.end + 1 : 0; // skip frontmatter — its edges are handled separately
+}
+
+/** Extract body [[wikilinks]] (frontmatter, fences, inline code and comments skipped). */
+function extractBodyWikilinks(lines) {
+  const links = [];
+  walkProse(lines, bodyStart(lines), (prose) => {
+    for (const m of prose.matchAll(/\[\[([^\]]+)\]\]/g)) links.push(m[1].trim());
+  });
   return links;
+}
+
+// Inline `[text](target "title")` and `![alt](target)`. Reference-style `[text][ref]` is not parsed.
+const MARKDOWN_LINK_RE = /(!?)\[[^\]]*\]\(\s*(<[^>]*>|[^\s)]*)(?:\s+(?:"[^"]*"|'[^']*'|\([^)]*\)))?\s*\)/g;
+
+/** Markdown links in one prose string: [{ raw, image }], raw without its <…> wrapper. */
+function extractMarkdownLinks(prose) {
+  const out = [];
+  for (const m of prose.matchAll(MARKDOWN_LINK_RE)) {
+    out.push({ raw: m[2].replace(/^<([\s\S]*)>$/, '$1'), image: m[1] === '!' });
+  }
+  return out;
+}
+
+/** Body Markdown links of a node (frontmatter, fences, inline code and comments skipped). */
+function extractBodyMarkdownLinks(lines) {
+  const out = [];
+  walkProse(lines, bodyStart(lines), (prose) => { out.push(...extractMarkdownLinks(prose)); });
+  return out;
+}
+
+/**
+ * Classify a Markdown link target. null = not a file link (URL, //host, #anchor, empty,
+ * placeholder). Otherwise { kind: 'relative' | 'absolute', target } with the #fragment
+ * removed and percent-decoding applied.
+ */
+function classifyMarkdownTarget(raw) {
+  const t = String(raw || '').trim();
+  if (!t || t.startsWith('#') || t.startsWith('//') || t.includes('{{') || /^[a-z][a-z0-9+.-]*:/i.test(t)) return null;
+  let target = t.split('#')[0].replace(/\\/g, '/');
+  try { target = decodeURIComponent(target); } catch (_) { /* a stray % stays literal */ }
+  if (!target) return null;
+  return { kind: target.startsWith('/') ? 'absolute' : 'relative', target };
+}
+
+/** Absolute paths a file's non-image relative Markdown links point at (whole file, prose only). */
+function markdownLinkTargets(filePath) {
+  const set = new Set();
+  walkProse(readLines(filePath), 0, (prose) => {
+    for (const link of extractMarkdownLinks(prose)) {
+      const c = link.image ? null : classifyMarkdownTarget(link.raw);
+      if (c && c.kind === 'relative') set.add(path.resolve(path.dirname(filePath), c.target));
+    }
+  });
+  return set;
+}
+
+/** True if filePath sits under one of the `exclude` prefixes (posix, segment boundaries) of nodeRoot. */
+function isExcludedPath(nodeRoot, exclude, filePath) {
+  if (!exclude || !exclude.length) return false;
+  const rel = path.relative(nodeRoot, filePath).replace(/\\/g, '/');
+  return exclude.some(p => rel === p || rel.startsWith(p + '/'));
 }
 
 /** Normalise a wikilink target: strip #anchor and |alias, trim. */
@@ -199,7 +258,10 @@ function resolveId(target) {
 /**
  * Build THE canonical knowledge-scoped, MOC-excluded, undirected edge/degree universe.
  *
- * @param {string} brainRoot absolute path to a .synaptic/ directory.
+ * @param {string} brainRoot absolute path to a .synaptic/ directory (or a node store).
+ * @param {{nodeRoot: string, links: string, exclude: string[]}} [manifest] resolved by
+ *        tools/lib/brain-manifest.js. Absent → the brain defaults: knowledge/, wikilinks, no exclude.
+ *        Passed in rather than resolved here: this file ships alone in runtime bundles.
  * @returns {{
  *   nodes: Array<{id,label,cluster,type,tags,lifecycle,status,filePath}>,
  *   nodeById: Object,
@@ -215,17 +277,22 @@ function resolveId(target) {
  *   unresolvedCount: number           // link tokens that pointed at a non-node
  * }}
  */
-function buildBrainGraph(brainRoot) {
-  const knowledgeDir = path.join(brainRoot, 'knowledge');
+function buildBrainGraph(brainRoot, manifest) {
+  const knowledgeDir = manifest ? manifest.nodeRoot : path.join(brainRoot, 'knowledge');
+  const links = manifest ? manifest.links : 'wikilink';
+  const exclude = manifest ? manifest.exclude : [];
+  const isStore = !!manifest && manifest.kind === 'store';
 
   // --- node set: knowledge/ NON-MOC nodes only -----------------------------
   const nodes = [];
   const nodeById = Object.create(null);
+  const nodeByPath = new Map();
   const clusterSet = new Set();
 
   for (const filePath of walkMd(knowledgeDir)) {
-    if (isUnderTemplates(brainRoot, filePath)) continue;
+    if (!isStore && isUnderTemplates(brainRoot, filePath)) continue;
     if (isMocFile(filePath)) continue;
+    if (isExcludedPath(knowledgeDir, exclude, filePath)) continue;
 
     const id = path.basename(filePath, '.md');
     // cluster = immediate subdir of knowledge/ (top-level grouping); '' if directly in knowledge/
@@ -246,7 +313,7 @@ function buildBrainGraph(brainRoot) {
       filePath,
     };
     // First-wins on duplicate basenames (Check 3 forbids dupes in a clean brain).
-    if (!nodeById[id]) { nodes.push(node); nodeById[id] = node; }
+    if (!nodeById[id]) { nodes.push(node); nodeById[id] = node; nodeByPath.set(path.resolve(filePath), node); }
   }
 
   // --- edges: over knowledge non-MOC nodes only ----------------------------
@@ -260,14 +327,31 @@ function buildBrainGraph(brainRoot) {
     const lines = readLines(node.filePath);
 
     // (1) frontmatter typed edges — carry their edge kind
-    const typedTargets = extractFrontmatterEdgesTyped(lines);
-    for (const { target, kind } of typedTargets) {
-      addEdge(node.id, target, kind);
+    const typedTargets = extractFrontmatterEdgesTyped(lines, links);
+    for (const { target, kind, path: isPath } of typedTargets) {
+      if (isPath) addPathEdge(node, target, kind);
+      else addEdge(node.id, target, kind);
     }
-    // (2) body wikilinks — generic kind
-    for (const raw of extractBodyWikilinks(lines)) {
-      addEdge(node.id, raw, 'wikilink');
+    // (2) body links — generic kind; a Markdown link is the same body edge as a wikilink
+    if (links !== 'markdown') {
+      for (const raw of extractBodyWikilinks(lines)) {
+        addEdge(node.id, raw, 'wikilink');
+      }
     }
+    if (links !== 'wikilink') {
+      for (const link of extractBodyMarkdownLinks(lines)) {
+        if (!link.image) addPathEdge(node, link.raw, 'wikilink');
+      }
+    }
+  }
+
+  function addPathEdge(fromNode, rawTarget, kind) {
+    const c = classifyMarkdownTarget(rawTarget);
+    if (!c) return;
+    const target = c.kind === 'relative' ? nodeByPath.get(path.resolve(path.dirname(fromNode.filePath), c.target)) : null;
+    if (!target) { unresolvedCount++; return; }
+    if (target.id === fromNode.id) return;
+    addResolvedEdge(fromNode.id, target.id, kind);
   }
 
   function addEdge(fromId, rawTarget, kind) {
@@ -277,6 +361,10 @@ function buildBrainGraph(brainRoot) {
     // Target must be a knowledge non-MOC node (MOC targets excluded by construction —
     // nodeById never contains _index/INDEX/README).
     if (!nodeById[targetId]) { unresolvedCount++; return; }
+    addResolvedEdge(fromId, targetId, kind);
+  }
+
+  function addResolvedEdge(fromId, targetId, kind) {
     const directedKey = `${fromId}|${targetId}|${kind}`;
     if (!directedSet.has(directedKey)) {
       directedSet.add(directedKey);
@@ -308,7 +396,7 @@ function buildBrainGraph(brainRoot) {
   const edgesPerNode = nodeCount > 0 ? edgeCount / nodeCount : 0;
 
   // --- MOC-reachable (NET-NEW; mirrors check.js Check 4 reachability) --------
-  const mocReachableCount = computeMocReachable(brainRoot, knowledgeDir, nodes);
+  const mocReachableCount = computeMocReachable(brainRoot, knowledgeDir, nodes, links);
 
   const clusters = [...clusterSet].sort();
 
@@ -341,8 +429,24 @@ function neighbours(g, id, opts) {
 /**
  * Typed-edge extraction that also records the edge kind (which of the 7 keys produced it).
  * Same block-list walk as extractFrontmatterEdges but tagged with the active key.
+ * `links` is the manifest link mode: [[wikilinks]] are read unless it is 'markdown'; relative
+ * `.md` path values (scalar, inline list or block item) are read unless it is 'wikilink' and
+ * come back with `path: true`.
  */
-function extractFrontmatterEdgesTyped(lines) {
+function extractFrontmatterEdgesTyped(lines, links) {
+  const mode = links || 'wikilink';
+  const collect = (text, kind, out) => {
+    if (mode !== 'markdown') {
+      for (const m of text.matchAll(/\[\[([^\]]+)\]\]/g)) out.push({ target: m[1].trim(), kind });
+    }
+    if (mode === 'wikilink') return;
+    const t = text.trim();
+    const items = t.startsWith('[') && !t.startsWith('[[') && t.endsWith(']') ? t.slice(1, -1).split(',') : [t];
+    for (const item of items) {
+      const v = item.trim().replace(/^["']|["']$/g, '').trim();
+      if (v && !v.includes('[[') && /\.md(#.*)?$/i.test(v) && classifyMarkdownTarget(v)) out.push({ target: v, kind, path: true });
+    }
+  };
   const bounds = frontmatterBounds(lines);
   if (!bounds) return [];
   const out = [];
@@ -353,7 +457,7 @@ function extractFrontmatterEdgesTyped(lines) {
     // extractFrontmatterEdges above — a column-0 `#` would otherwise drop remaining edges).
     if (/^\s*#/.test(line)) continue;
     if (activeKey && /^\s+-\s+/.test(line)) {
-      for (const m of line.matchAll(/\[\[([^\]]+)\]\]/g)) out.push({ target: m[1].trim(), kind: activeKey });
+      collect(line.replace(/^\s+-\s+/, ''), activeKey, out);
       continue;
     }
     if (activeKey && !/^\s/.test(line)) activeKey = null;
@@ -363,7 +467,7 @@ function extractFrontmatterEdgesTyped(lines) {
       const rest = keyMatch[2].trim();
       if (TYPED_EDGE_KEYS.includes(key)) {
         activeKey = key;
-        for (const m of rest.matchAll(/\[\[([^\]]+)\]\]/g)) out.push({ target: m[1].trim(), kind: key });
+        collect(rest, key, out);
       } else {
         activeKey = null;
       }
@@ -377,24 +481,33 @@ function extractFrontmatterEdgesTyped(lines) {
  * or from their own cluster's _index.md — mirroring check.js Check 4's containment test
  * (`[[stem]]` / `[[stem.md]]`). A node is MOC-reachable if listed in either place.
  */
-function computeMocReachable(brainRoot, knowledgeDir, nodes) {
+function computeMocReachable(brainRoot, knowledgeDir, nodes, links) {
   const indexFile = path.join(knowledgeDir, 'INDEX.md');
   const indexText = fs.existsSync(indexFile) ? readText(indexFile) : '';
+  const wiki = links !== 'markdown';
+  const targetsByMoc = new Map();
+  const mdLinked = (mocFile, filePath) => {
+    if (links === 'wikilink' || !fs.existsSync(mocFile)) return false;
+    if (!targetsByMoc.has(mocFile)) targetsByMoc.set(mocFile, markdownLinkTargets(mocFile));
+    return targetsByMoc.get(mocFile).has(path.resolve(filePath));
+  };
 
   let reachable = 0;
   for (const node of nodes) {
     const stem = node.id;
-    let found =
+    let found = wiki && (
       indexText.includes(`[[${stem}]]`) ||
-      indexText.includes(`[[${stem}.md]]`);
+      indexText.includes(`[[${stem}.md]]`));
+    if (!found) found = mdLinked(indexFile, node.filePath);
     if (!found) {
       // cluster _index.md alongside the node
       const clusterIndexPath = path.join(path.dirname(node.filePath), '_index.md');
-      if (fs.existsSync(clusterIndexPath)) {
+      if (wiki && fs.existsSync(clusterIndexPath)) {
         const clusterText = readText(clusterIndexPath);
         found = clusterText.includes(`[[${stem}]]`) ||
                 clusterText.includes(`[[${stem}.md]]`);
       }
+      if (!found) found = mdLinked(clusterIndexPath, node.filePath);
     }
     if (found) reachable++;
   }
@@ -450,6 +563,12 @@ module.exports = {
   isMocFile,
   isUnderTemplates,
   extractBodyWikilinks,
+  extractBodyMarkdownLinks,
+  extractMarkdownLinks,
+  classifyMarkdownTarget,
+  markdownLinkTargets,
+  isExcludedPath,
+  walkProse,
   extractFrontmatterEdges,
   extractFrontmatterEdgesTyped,
   normLink,

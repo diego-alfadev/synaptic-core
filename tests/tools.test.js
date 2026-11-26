@@ -726,6 +726,183 @@ for (const [label, tasks, proposals, expect] of [
   });
 }
 
+// --- node stores and link modes ------------------------------------------------------------------------
+// A store is a folder whose INDEX.md frontmatter declares `synaptic: store`: no BRAIN.md, nodes anywhere
+// under it, Markdown links as edges. Every case below is storeFixture() plus one mutation.
+function storeFixture(manifest) {
+  const repo = tmp('store');
+  const s = path.join(repo, 'lib');
+  write(s, 'INDEX.md', ['---', ...(manifest || ['synaptic: store', 'links: markdown', 'exclude: [payloads]']), '---',
+    '# Library', '', '- [Alpha](techniques/alpha.md)', '- [Beta](techniques/beta.md)', '- [Gamma](styles/gamma.md)', ''].join('\n'));
+  write(s, 'techniques/alpha.md', node('Alpha', 'See [beta](beta.md).'));
+  write(s, 'techniques/beta.md', node('Beta', 'See [gamma](../styles/gamma.md#rules).'));
+  write(s, 'styles/gamma.md', node('Gamma', 'See [alpha](../techniques/alpha.md "Alpha").'));
+  write(s, 'payloads/raw.md', '# Raw payload\n\nNo frontmatter, and [a dead link](nowhere.md).\n');
+  write(repo, 'tools/x/README.md', '# Tool\n');
+  return s;
+}
+const readiness = (out, label) => {
+  const m = out.match(new RegExp(`${label}\\s*: (\\d+)`));
+  return m ? Number(m[1]) : NaN;
+};
+
+test('check.js: a brain with explicit default keys prints byte-identical output to one without them', () => {
+  const plain = validBrain();
+  write(plain, 'knowledge/alpha/node-one.md', node('Node one', 'Relates to [[node-two]] and [a dead link](missing.md).'));
+  const keyed = path.join(tmp('keyed'), '.synaptic');
+  copyDir(plain, keyed);
+  write(keyed, 'BRAIN.md', '---\nlinks: wikilink\nexclude: []\n---\n# CI fixture brain\n\nA minimal valid brain built by tests/tools.test.js.\n');
+  const a = check(plain, 0);
+  const b = check(keyed, 0);
+  assert(a.out === b.out, `outputs differ:\n${a.out}\n---\n${b.out}`);
+  assert(!/nodes in store/.test(a.out), 'a plain brain printed a store line');
+});
+
+test('check.js: a store with Markdown links and an excluded payload passes with 3 nodes', () => {
+  const r = check(storeFixture(), 0, ['3 nodes in store `lib`']);
+  assert(readiness(r.out, 'Edges') === 3, `expected 3 edges\n${tail(r.out)}`);
+  assert(readiness(r.out, 'MOC-reachable') === 3, `expected 3 MOC-reachable\n${tail(r.out)}`);
+});
+
+test('check.js: a store with 0 nodes is an error', () => {
+  const s = path.join(tmp('empty-store'), 'lib');
+  write(s, 'INDEX.md', '---\nsynaptic: store\nlinks: markdown\n---\n# Empty\n');
+  check(s, 1, ['store has no nodes']);
+});
+
+test('check.js: a brain with 0 nodes gets no new error', () => {
+  const b = path.join(tmp('empty-brain'), '.synaptic');
+  write(b, 'BRAIN.md', '# Empty brain\n');
+  write(b, 'knowledge/INDEX.md', '# Index\n');
+  const r = check(b, 0, ['Nodes            : 0']);
+  assert(!/no nodes/.test(r.out), `a 0-node brain reported a node-count finding\n${tail(r.out)}`);
+});
+
+test('check.js: Markdown links - a broken relative link is an error; URLs, anchors and existing out-of-root files are not', () => {
+  const s = storeFixture();
+  write(s, 'techniques/alpha.md', node('Alpha', 'See [beta](beta.md), [site](https://example.com/x.md), [top](#top), ' +
+    '[mail](mailto:a@example.com), [tool](../../tools/x/README.md) and [gone](gone/missing.md).'));
+  const r = check(s, 1, ['broken Markdown link: gone/missing.md']);
+  assert((r.out.match(/broken Markdown link/g) || []).length === 1, `expected exactly one broken link\n${tail(r.out)}`);
+  const { buildBrainGraph } = require(path.join(TOOLS, 'lib', 'brain-graph.js'));
+  const { resolveManifest } = require(path.join(TOOLS, 'lib', 'brain-manifest.js'));
+  const g = buildBrainGraph(s, resolveManifest(s));
+  assert(g.nodeCount === 3 && g.edgeCount === 3, `out-of-root link became an edge: ${JSON.stringify(g.edgeList)}`);
+});
+
+test('check.js: Markdown links - a node missing from the hub is an orphan; listed, it is covered and its edge counts', () => {
+  const s = storeFixture();
+  write(s, 'styles/delta.md', node('Delta', 'See [gamma](gamma.md).'));
+  check(s, 1, ['node "delta" not referenced']);
+  const idx = fs.readFileSync(path.join(s, 'INDEX.md'), 'utf8');
+  write(s, 'INDEX.md', `${idx}- [Delta](styles/delta.md)\n`);
+  const r = check(s, 0, ['4 nodes in store `lib`']);
+  assert(readiness(r.out, 'Edges') === 4 && readiness(r.out, 'MOC-reachable') === 4, `delta not counted\n${tail(r.out)}`);
+});
+
+test('check.js: a payload .md without frontmatter is an error without exclude and clean with it', () => {
+  check(storeFixture(['synaptic: store', 'links: markdown']), 1, ['missing frontmatter']);
+  check(storeFixture(['synaptic: store', 'links: markdown', 'exclude:', '  - payloads/']), 0);
+});
+
+test('check.js: evidence outside the declared levels warns; evidence with no levels warns "undeclared"', () => {
+  const ev = (level) => node('Alpha', 'See [beta](beta.md).', [
+    'description: Alpha', 'type: concept', 'status: active', `updated: ${TODAY}`, 'tags: [ci]', `evidence: ${level}`]);
+  const declared = storeFixture(['synaptic: store', 'links: markdown', 'exclude: [payloads]', 'evidence_levels: [candidate, reproduced, validated]']);
+  write(declared, 'techniques/alpha.md', ev('proven'));
+  check(declared, 0, ['frontmatter "evidence" is "proven"']);
+  write(declared, 'techniques/alpha.md', ev('reproduced'));
+  const clean = check(declared, 0);
+  assert(!/evidence/.test(clean.out), `a declared level warned\n${tail(clean.out)}`);
+  const undeclared = storeFixture();
+  write(undeclared, 'techniques/alpha.md', ev('candidate'));
+  check(undeclared, 0, ['undeclared']);
+});
+
+test('check.js: a folder with neither BRAIN.md nor a store manifest keeps the "BRAIN.md is missing" error', () => {
+  const s = storeFixture(['description: just an index']);
+  check(s, 1, ['BRAIN.md is missing']);
+});
+
+test('check.js: a library adopted only by adding BRAIN.md and an empty knowledge/INDEX.md reports 0 nodes (why that path is rejected)', () => {
+  const s = storeFixture(['description: library hub']);
+  write(s, 'BRAIN.md', '# Stub brain\n');
+  write(s, 'knowledge/INDEX.md', '# Index\n');
+  check(s, 0, ['Nodes            : 0']);
+});
+
+test('check.js: a folder with BRAIN.md and an INDEX.md declaring a store is an error', () => {
+  const s = storeFixture();
+  write(s, 'BRAIN.md', '# Stray brain\n');
+  check(s, 1, ['a store must not carry BRAIN.md']);
+});
+
+test('check.js: an invalid links value is an error', () => {
+  check(storeFixture(['synaptic: store', 'links: html', 'exclude: [payloads]']), 1, ['invalid links value "html"']);
+});
+
+test('check.js: a root-absolute Markdown link warns and is not checked', () => {
+  const s = storeFixture();
+  write(s, 'techniques/alpha.md', node('Alpha', 'See [beta](beta.md) and [root](/x.md).'));
+  check(s, 0, ['root-absolute Markdown link not checked: /x.md']);
+});
+
+test('check.js: an image link to a missing file is an error; to an existing file, it is not an edge', () => {
+  const s = storeFixture();
+  write(s, 'techniques/alpha.md', node('Alpha', 'See [beta](beta.md). ![shot](img/shot.png)'));
+  check(s, 1, ['broken Markdown link: img/shot.png']);
+  write(s, 'techniques/img/shot.png', 'png');
+  write(s, 'techniques/alpha.md', node('Alpha', 'See [beta](beta.md). ![shot](img/shot.png) ![g](../styles/gamma.md)'));
+  const r = check(s, 0);
+  assert(readiness(r.out, 'Edges') === 3, `an image became an edge\n${tail(r.out)}`);
+});
+
+test('check.js: a typed edge written as a relative path counts as an edge in markdown mode', () => {
+  const s = storeFixture();
+  write(s, 'techniques/alpha.md', node('Alpha', 'See [beta](beta.md).', [
+    'description: Alpha', 'type: concept', 'status: active', `updated: ${TODAY}`, 'tags: [ci]', 'supersedes: ../styles/gamma.md']));
+  const { buildBrainGraph } = require(path.join(TOOLS, 'lib', 'brain-graph.js'));
+  const { resolveManifest } = require(path.join(TOOLS, 'lib', 'brain-manifest.js'));
+  const g = buildBrainGraph(s, resolveManifest(s));
+  assert(g.edges.some((e) => e.from === 'alpha' && e.to === 'gamma' && e.type === 'supersedes'),
+    `typed path edge missing: ${JSON.stringify(g.edges)}`);
+  const r = check(s, 0);
+  assert(readiness(r.out, 'Edges') === 3, `check.js disagrees with brain-graph\n${tail(r.out)}`);
+  write(s, 'techniques/alpha.md', node('Alpha', 'No body links.', [
+    'description: Alpha', 'type: concept', 'status: active', `updated: ${TODAY}`, 'tags: [ci]', 'supersedes: [../styles/gone.md]']));
+  check(s, 1, ['broken typed edge: ../styles/gone.md']);
+});
+
+test('check.js: a store does not inherit brain-layout skips: templates/ and audits/ hold nodes', () => {
+  const s = storeFixture();
+  write(s, 'templates/tpl.md', node('Template node', 'See [alpha](../techniques/alpha.md).'));
+  write(s, 'audits/2026-old.md', node('Audit', 'See [gone](gone.md).'));
+  const r = check(s, 1, ['node "tpl" not referenced', 'broken Markdown link: gone.md']);
+  assert(r.out.includes('5 nodes in store `lib`'), `templates/ or audits/ skipped\n${tail(r.out)}`);
+});
+
+test('check.js: a brain may set links, exclude and evidence_levels in BRAIN.md', () => {
+  const b = validBrain();
+  write(b, 'BRAIN.md', '---\nlinks: both\nexclude: [alpha/payload]\nevidence_levels: [low, high]\n---\n# CI fixture brain\n');
+  write(b, 'knowledge/alpha/_index.md', '# Alpha\n\n- [[node-one]]\n- [Node two](node-two.md)\n- [Node three](node-three.md)\n');
+  write(b, 'knowledge/alpha/node-two.md', node('Node two', 'No links.', [
+    'description: Node two', 'type: concept', 'status: active', `updated: ${TODAY}`, 'tags: [ci]', 'evidence: high']));
+  write(b, 'knowledge/alpha/node-three.md', node('Node three', 'See [one](node-one.md) and [[node-two]].'));
+  write(b, 'knowledge/alpha/payload/raw.md', '# Raw\n');
+  const r = check(b, 0);
+  assert(readiness(r.out, 'Edges') === 3 && readiness(r.out, 'MOC-reachable') === 3, `brain keys ignored\n${tail(r.out)}`);
+  assert(!/evidence|nodes in store/.test(r.out), `unexpected output\n${tail(r.out)}`);
+});
+
+test('check.js: in wikilink mode Markdown links stay invisible; in markdown mode wikilinks are not parsed', () => {
+  const b = validBrain();
+  write(b, 'knowledge/alpha/node-one.md', node('Node one', 'Relates to [[node-two]] and [gone](gone.md).'));
+  check(b, 0);
+  const s = storeFixture();
+  write(s, 'techniques/alpha.md', node('Alpha', 'See [beta](beta.md) and [[no-such-node]].'));
+  check(s, 0);
+});
+
 // --- done ----------------------------------------------------------------------------------------------
 for (const d of scratch) { try { fs.rmSync(d, { recursive: true, force: true }); } catch (_) { /* best effort */ } }
 console.log(`1..${n}`);
