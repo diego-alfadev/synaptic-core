@@ -4,7 +4,7 @@
 
 This is the one definition of the report. Run it only for an explicit situation-report request;
 do not dispatch `synaptic ping` or `synaptic status` here. Those are the zero-read nonce check
-and its 1.7.x compatibility alias, respectively. The report is a read-only procedure, not an
+and its compatibility alias (retained in 1.8), respectively. The report is a read-only procedure, not an
 automatic boot action or another public slash command. Read the formats and stale rule in
 references/contract.md §6. No shell or runtime is required.
 

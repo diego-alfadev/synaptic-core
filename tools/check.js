@@ -11,7 +11,11 @@ const path = require('node:path');
 // Shared, canonical knowledge-scoped / MOC-excluded edge-graph universe.
 // KEEP IN SYNC: this is the SAME module tools/graph.js imports, so check.js and
 // graph.html always report the identical topology (council cross-cutting rule).
-const { buildBrainGraph } = require('./lib/brain-graph');
+const {
+  buildBrainGraph, extractMarkdownLinks, classifyMarkdownTarget, markdownLinkTargets,
+  extractFrontmatterEdgesTyped, isExcludedPath,
+} = require('./lib/brain-graph');
+const { parseFrontmatter, resolveManifest } = require('./lib/brain-manifest');
 
 // ---------------------------------------------------------------------------
 // CLI
@@ -23,6 +27,12 @@ if (!fs.existsSync(brainRoot)) {
   console.error(`ERROR: path not found: ${brainRoot}`);
   process.exit(1);
 }
+
+const manifest = resolveManifest(brainRoot);
+const isStore  = manifest.kind === 'store';
+const nodeRoot = manifest.nodeRoot;
+const wikiLinks = manifest.links !== 'markdown';
+const mdLinks   = manifest.links !== 'wikilink';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -38,6 +48,7 @@ function readLines(filePath) {
 
 /** True if file lives under templates/ (any depth). */
 function isUnderTemplates(filePath) {
+  if (isStore) return false; // brain-layout folders mean nothing in a store: every .md there is a node
   const rel = path.relative(brainRoot, filePath);
   return rel.startsWith('templates' + path.sep) || rel.startsWith('templates/');
 }
@@ -48,6 +59,7 @@ function isUnderTemplates(filePath) {
  * text, NOT an authored edge — so it is scaffolding excluded from link validation.
  */
 function isUnderReferencesRaw(filePath) {
+  if (isStore) return false;
   const rel = path.relative(brainRoot, filePath).replace(/\\/g, '/');
   return rel === 'references/raw' || rel.startsWith('references/raw/');
 }
@@ -62,12 +74,14 @@ function isUnderReferencesRaw(filePath) {
  * and its absence is never an error (additive, backward-compatible).
  */
 function isUnderAudits(filePath) {
+  if (isStore) return false;
   const rel = path.relative(brainRoot, filePath).replace(/\\/g, '/');
   return rel === 'audits' || rel.startsWith('audits/');
 }
 
 /** Closed work records are frozen history: a later rename must not turn them into errors. */
 function isUnderPlaygroundArchive(filePath) {
+  if (isStore) return false;
   return path.relative(brainRoot, filePath).replace(/\\/g, '/').startsWith('playgrounds/archive/');
 }
 
@@ -109,7 +123,7 @@ function walkMd(dir) {
       const full = path.join(current, entry.name);
       if (entry.isDirectory()) {
         // Scratch is non-authoritative intermediate material, never audited (contract §6).
-        if (entry.name === 'scratch' && path.relative(brainRoot, full).split(path.sep)[0] === 'playgrounds') continue;
+        if (!isStore && entry.name === 'scratch' && path.relative(brainRoot, full).split(path.sep)[0] === 'playgrounds') continue;
         walk(full);
       } else if (entry.isFile() && entry.name.endsWith('.md')) {
         results.push(full);
@@ -118,6 +132,11 @@ function walkMd(dir) {
   }
   walk(dir);
   return results;
+}
+
+/** The node-root walk minus the manifest's `exclude` prefixes (knowledge/ for a brain). */
+function walkNodes() {
+  return walkMd(nodeRoot).filter(f => !isExcludedPath(nodeRoot, manifest.exclude, f));
 }
 
 /**
@@ -139,72 +158,6 @@ function walkAll(dir) {
   }
   walk(dir);
   return results;
-}
-
-/**
- * Parse YAML frontmatter from an array of lines.
- * Handles:
- *   - scalar values:  key: value
- *   - inline lists:   tags: [a, b]
- *   - block lists:    tags:\n  - a\n  - b
- * Returns null if no frontmatter found, else an object where list fields are arrays.
- */
-function parseFrontmatter(lines) {
-  if (!lines.length || lines[0].trim() !== '---') return null;
-  let endIdx = -1;
-  for (let i = 1; i < lines.length; i++) {
-    if (lines[i].trim() === '---') { endIdx = i; break; }
-  }
-  if (endIdx === -1) return null;
-
-  const fields = {};
-  let currentKey = null;
-  let collectingList = false;
-
-  for (let i = 1; i < endIdx; i++) {
-    const line = lines[i];
-
-    // Full-line YAML comment: a no-op. It is neither a key nor a list item, so it must not
-    // terminate an open block list — a column-0 `#` would otherwise satisfy the non-indented
-    // terminator below and silently drop the remaining `- item` values from the list.
-    if (/^\s*#/.test(line)) continue;
-
-    // Block list item under a previous key
-    if (collectingList && /^\s+-\s+/.test(line)) {
-      const val = line.replace(/^\s+-\s+/, '').replace(/^["']|["']$/g, '').trim();
-      if (!Array.isArray(fields[currentKey])) fields[currentKey] = [];
-      fields[currentKey].push(val);
-      continue;
-    }
-    // Any non-indented line stops list collection
-    if (collectingList && !/^\s/.test(line)) {
-      collectingList = false;
-    }
-
-    const match = line.match(/^([\w-]+):\s*(.*)/);
-    if (!match) continue;
-    const key = match[1];
-    const raw = match[2].trim();
-    currentKey = key;
-    collectingList = false;
-
-    if (raw === '' || raw === '[]') {
-      // Empty value or empty inline list — may be a block list start or genuinely empty
-      fields[key] = raw === '[]' ? [] : null;
-      if (raw === '') collectingList = true;
-    } else if (raw.startsWith('[') && raw.endsWith(']')) {
-      // Inline list: [a, b, c]
-      const inner = raw.slice(1, -1).trim();
-      fields[key] = inner
-        ? inner.split(',').map(s => s.trim().replace(/^["']|["']$/g, ''))
-        : [];
-    } else {
-      // Scalar value
-      fields[key] = raw.replace(/^["']|["']$/g, '').trim();
-    }
-  }
-
-  return fields;
 }
 
 /**
@@ -305,7 +258,7 @@ function normLink(raw) {
  */
 function buildLinkIndex(root) {
   const index = new Set();
-  const dirs = [
+  const dirs = isStore ? [root] : [
     path.join(root, 'knowledge'),
     path.join(root, 'registries'),
     path.join(root, 'references'),
@@ -380,6 +333,12 @@ function warn(file, message) {
 // ---------------------------------------------------------------------------
 
 function checkLayout() {
+  for (const p of manifest.problems) err(p.file, p.message);
+  if (isStore) {
+    if (storeNodeCount() === 0) err(manifest.file, 'store has no nodes (a store must hold at least one node outside its MOC files and exclude prefixes)');
+    return;
+  }
+
   const brainFile = path.join(brainRoot, 'BRAIN.md');
   if (!fs.existsSync(brainFile)) {
     err(brainFile, 'BRAIN.md is missing');
@@ -425,6 +384,10 @@ function checkLayout() {
   }
 }
 
+function storeNodeCount() {
+  return walkNodes().filter(f => !isUnderTemplates(f) && !isMocFile(f)).length;
+}
+
 // ---------------------------------------------------------------------------
 // Check 2: Frontmatter required fields on knowledge nodes + registries
 // ---------------------------------------------------------------------------
@@ -435,8 +398,8 @@ function checkFrontmatter() {
   // Candidates: knowledge/**/*.md + registries/**/*.md
   // Exclude: INDEX.md, _index.md, README.md, templates/
   const candidates = [
-    ...walkMd(path.join(brainRoot, 'knowledge')),
-    ...walkMd(path.join(brainRoot, 'registries')),
+    ...walkNodes(),
+    ...(isStore ? [] : walkMd(path.join(brainRoot, 'registries'))),
   ];
 
   for (const filePath of candidates) {
@@ -507,6 +470,17 @@ function checkFrontmatter() {
         warn(filePath, `frontmatter "lifecycle" is "${lifecycle}" — expected one of ${LIFECYCLE_ENUM.join(' | ')} (optional field; leave absent for the default "area")`);
       }
     }
+
+    // evidence: optional; validated only against the ladder the manifest declares (weakest first).
+    const evidence = fm.evidence;
+    if (evidence !== undefined && evidence !== null) {
+      const levels = manifest.evidenceLevels;
+      if (!levels) {
+        warn(filePath, `frontmatter "evidence" is "${evidence}" but the manifest declares no evidence_levels (undeclared)`);
+      } else if (!levels.includes(String(evidence).trim())) {
+        warn(filePath, `frontmatter "evidence" is "${evidence}" — expected one of ${levels.join(' | ')} (evidence_levels; write a compound claim as its weakest level)`);
+      }
+    }
   }
 }
 
@@ -517,13 +491,12 @@ function checkFrontmatter() {
 const KEBAB_RE = /^[a-z0-9]+(-[a-z0-9]+)*\.md$/;
 
 function checkNaming() {
-  const knowledgeDir = path.join(brainRoot, 'knowledge');
-  if (!fs.existsSync(knowledgeDir)) return;
+  if (!fs.existsSync(nodeRoot)) return;
 
   const seen  = new Map(); // stem -> first file path
   const dupes = new Set(); // stems already reported
 
-  for (const filePath of walkMd(knowledgeDir)) {
+  for (const filePath of walkNodes()) {
     if (isUnderTemplates(filePath) || isMocFile(filePath)) continue;
 
     const base = path.basename(filePath);
@@ -550,8 +523,15 @@ function checkNaming() {
 // ---------------------------------------------------------------------------
 
 function checkMocCoverage() {
-  const knowledgeDir   = path.join(brainRoot, 'knowledge');
-  const knowledgeIndex = path.join(brainRoot, 'knowledge', 'INDEX.md');
+  const knowledgeDir   = nodeRoot;
+  const knowledgeIndex = path.join(nodeRoot, 'INDEX.md');
+  const hubLabel       = isStore ? 'INDEX.md' : 'knowledge/INDEX.md';
+  const targetsByMoc   = new Map();
+  const mdLinked = (mocFile, filePath) => {
+    if (!mdLinks || !fs.existsSync(mocFile)) return false;
+    if (!targetsByMoc.has(mocFile)) targetsByMoc.set(mocFile, markdownLinkTargets(mocFile));
+    return targetsByMoc.get(mocFile).has(path.resolve(filePath));
+  };
 
   if (!fs.existsSync(knowledgeDir)) return;
 
@@ -561,7 +541,7 @@ function checkMocCoverage() {
   const clusters = [];
   if (fs.existsSync(knowledgeDir)) {
     for (const entry of fs.readdirSync(knowledgeDir, { withFileTypes: true })) {
-      if (entry.isDirectory()) clusters.push(entry.name);
+      if (entry.isDirectory() && !isExcludedPath(nodeRoot, manifest.exclude, path.join(knowledgeDir, entry.name))) clusters.push(entry.name);
     }
   }
 
@@ -578,12 +558,12 @@ function checkMocCoverage() {
       indexText.includes(`[[${stemNoSlash}]]`) ||
       indexText.includes(cluster + '/'); // path reference
     if (!linked) {
-      err(clusterIndex, `cluster _index.md not linked from knowledge/INDEX.md: [[${stem}]]`);
+      err(clusterIndex, `cluster _index.md not linked from ${hubLabel}: [[${stem}]]`);
     }
   }
 
   // Every knowledge node must be referenced from its cluster _index.md OR from INDEX.md
-  for (const filePath of walkMd(knowledgeDir)) {
+  for (const filePath of walkNodes()) {
     if (isUnderTemplates(filePath) || isMocFile(filePath)) continue;
 
     const stem = path.basename(filePath, '.md');
@@ -592,20 +572,22 @@ function checkMocCoverage() {
 
     // Check cluster _index.md first
     let found = false;
-    if (fs.existsSync(clusterIndexPath)) {
+    if (wikiLinks && fs.existsSync(clusterIndexPath)) {
       const clusterText = readText(clusterIndexPath);
       found = clusterText.includes(`[[${stem}]]`) ||
               clusterText.includes(`[[${stem}.md]]`);
     }
+    if (!found) found = mdLinked(clusterIndexPath, filePath);
 
     // Fallback: check root INDEX.md
-    if (!found) {
+    if (!found && wikiLinks) {
       found = indexText.includes(`[[${stem}]]`) ||
               indexText.includes(`[[${stem}.md]]`);
     }
+    if (!found) found = mdLinked(knowledgeIndex, filePath);
 
     if (!found) {
-      err(filePath, `node "${stem}" not referenced from its cluster _index.md or knowledge/INDEX.md`);
+      err(filePath, `node "${stem}" not referenced from its cluster _index.md or ${hubLabel}`);
     }
   }
 }
@@ -628,11 +610,20 @@ function checkBrokenLinks() {
   //   - MOC files (_index.md, INDEX.md, README.md): they list nodes that
   //     should exist; the orphan check (check 4) covers the inverse.
   //     In a fresh/seed brain MOC files will always have placeholder links.
+  //   - manifest `exclude` prefixes (payloads under the node root).
+  // Markdown links are existence-checked in MOC files too: in markdown mode the hub is the
+  // only thing that makes a node reachable, so a dead hub link must not pass silently.
   for (const filePath of walkMd(brainRoot)) {
     if (isUnderTemplates(filePath) || isUnderReferencesRaw(filePath) ||
-        isUnderAudits(filePath) || isUnderPlaygroundArchive(filePath) || isMocFile(filePath)) continue;
+        isUnderAudits(filePath) || isUnderPlaygroundArchive(filePath) ||
+        isExcludedPath(nodeRoot, manifest.exclude, filePath)) continue;
+    const isMoc = isMocFile(filePath);
+    if (isMoc && !mdLinks) continue;
 
     const lines = readLines(filePath);
+    if (mdLinks) checkMarkdownLinks(filePath, lines);
+    if (isMoc || !wikiLinks) continue;
+
     const rawLinks = extractWikilinks(lines);
 
     for (const rawLink of rawLinks) {
@@ -644,6 +635,53 @@ function checkBrokenLinks() {
         err(filePath, `broken wikilink: [[${rawLink}]]`);
       }
     }
+  }
+}
+
+/**
+ * Walk a relative target from `fromDir` against real directory listings, so a wrong-case segment fails
+ * on case-insensitive filesystems (macOS, Windows) exactly as it does on Linux and GitHub.
+ * Returns { ok: true } | { ok: false } | { ok: false, onDisk }.
+ */
+function resolveExactCase(fromDir, target) {
+  let dir = fromDir;
+  for (const seg of path.posix.normalize(target).split('/')) {
+    if (seg === '' || seg === '.') continue;
+    if (seg === '..') { dir = path.dirname(dir); continue; }
+    let entries;
+    try {
+      entries = fs.readdirSync(dir);
+    } catch (_) {
+      // Unlistable (ENOTDIR, EACCES): fall back to plain existence rather than invent a finding.
+      return { ok: fs.existsSync(path.resolve(fromDir, target)) };
+    }
+    if (!entries.includes(seg)) {
+      const onDisk = entries.find((e) => e.toLowerCase() === seg.toLowerCase());
+      return onDisk ? { ok: false, onDisk } : { ok: false };
+    }
+    dir = path.join(dir, seg);
+  }
+  return { ok: true };
+}
+
+/** Relative Markdown links and typed-edge paths must exist with exact case; any file or folder is fine. */
+function checkMarkdownLinks(filePath, lines) {
+  const checkTarget = (raw, label) => {
+    const c = classifyMarkdownTarget(raw);
+    if (!c) return;
+    if (c.kind === 'absolute') {
+      warn(filePath, `root-absolute Markdown link not checked: ${raw} (write it relative to this file)`);
+      return;
+    }
+    const r = resolveExactCase(path.dirname(filePath), c.target);
+    if (r.onDisk) err(filePath, `${label}: ${raw} (case differs on disk: ${r.onDisk})`);
+    else if (!r.ok) err(filePath, `${label}: ${raw}`);
+  };
+  stripNonProse(lines, (prose) => {
+    for (const link of extractMarkdownLinks(prose)) checkTarget(link.raw, 'broken Markdown link');
+  });
+  for (const edge of extractFrontmatterEdgesTyped(lines, manifest.links)) {
+    if (edge.path) checkTarget(edge.target, 'broken typed edge');
   }
 }
 
@@ -676,10 +714,9 @@ function checkBrokenLinks() {
 const AUDIT_NAME_RE = /^\d{4}-\d{2}-\d{2}|^audit[-_]|[-_]audit\.md$/i;
 
 function checkNonLiveArtifacts() {
-  const knowledgeDir = path.join(brainRoot, 'knowledge');
-  if (!fs.existsSync(knowledgeDir)) return;
+  if (!fs.existsSync(nodeRoot)) return;
 
-  for (const filePath of walkMd(knowledgeDir)) {
+  for (const filePath of walkNodes()) {
     // templates/ under knowledge/ is legitimate scaffolding; MOC files are sentinels.
     if (isUnderTemplates(filePath) || isMocFile(filePath)) continue;
 
@@ -719,6 +756,7 @@ function checkNonLiveArtifacts() {
 // ---------------------------------------------------------------------------
 
 function checkRegistries() {
+  if (isStore) return;
   const registriesDir   = path.join(brainRoot, 'registries');
   const registriesIndex = path.join(brainRoot, 'registries', '_index.md');
 
@@ -754,6 +792,7 @@ function checkRegistries() {
 // ---------------------------------------------------------------------------
 
 function checkReferences() {
+  if (isStore) return;
   const refsDir   = path.join(brainRoot, 'references');
   const refsIndex = path.join(brainRoot, 'references', '_index.md');
 
@@ -792,8 +831,7 @@ function checkBudgets() {
   }
 
   // knowledge nodes
-  const knowledgeDir = path.join(brainRoot, 'knowledge');
-  for (const filePath of walkMd(knowledgeDir)) {
+  for (const filePath of walkNodes()) {
     if (isUnderTemplates(filePath) || isMocFile(filePath)) continue;
 
     const lines = readLines(filePath);
@@ -819,8 +857,8 @@ function checkBudgets() {
 function checkStaleness() {
   const now = Date.now();
   const candidates = [
-    ...walkMd(path.join(brainRoot, 'knowledge')),
-    ...walkMd(path.join(brainRoot, 'registries')),
+    ...walkNodes(),
+    ...(isStore ? [] : walkMd(path.join(brainRoot, 'registries'))),
   ];
 
   for (const filePath of candidates) {
@@ -884,6 +922,7 @@ const isEmptyCell = (v) => !v || v === '—' || v === '-';
 const citesId = (text, id) => new RegExp(`(^|[^A-Za-z0-9_])${id}([^A-Za-z0-9_]|$)`).test(text || '');
 
 function checkWorkItems() {
+  if (isStore) return;
   const indexes = [
     { kind: 'task', prefix: 'T', file: path.join(brainRoot, 'tasks', 'INDEX.md') },
     { kind: 'proposal', prefix: 'P', file: path.join(brainRoot, 'proposals', 'INDEX.md') },
@@ -990,6 +1029,8 @@ printFindings('ERRORS',   errors);
 printFindings('WARNINGS', warnings);
 printFindings('UNVERIFIED (outside the brain; never an error)', unverified);
 
+if (isStore) console.log(`\n${storeNodeCount()} nodes in store \`${path.basename(brainRoot)}\``);
+
 const totalErrors   = errors.length;
 const totalWarnings = warnings.length;
 
@@ -1004,7 +1045,7 @@ const totalWarnings = warnings.length;
 function printRetrievalReadiness() {
   let g;
   try {
-    g = buildBrainGraph(brainRoot);
+    g = buildBrainGraph(brainRoot, manifest);
   } catch (e) {
     console.log(`\nRetrieval-readiness: (skipped — ${e.message})`);
     return;
@@ -1066,7 +1107,8 @@ function printRetrievalReadiness() {
       console.log(`  God-nodes        : ${godNodes.length} ` +
         `(degree >= ${godThreshold} = min(15, 3x median ${median}))`);
       for (const n of godNodes.slice(0, 10)) {
-        const rel = n.cluster ? `knowledge/${n.cluster}/${n.id}.md` : `knowledge/${n.id}.md`;
+        const rel = isStore ? path.relative(brainRoot, n.filePath).replace(/\\/g, '/')
+          : n.cluster ? `knowledge/${n.cluster}/${n.id}.md` : `knowledge/${n.id}.md`;
         console.log(`    - ${rel} — degree ${g.degreeOf[n.id]} ` +
           '(candidate to split into atomic sub-nodes, or a legitimate hub — confirm)');
       }

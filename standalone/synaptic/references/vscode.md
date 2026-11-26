@@ -56,8 +56,8 @@ requested. Unknown rule approval/exposure is reported, never converted into perm
 ## Verify without requiring commands
 
 - The optional user-initiated debug request `synaptic ping` returns only the loaded
-  `SYNAPTIC-BOOT-OK <nonce>` token with **zero tool/file reads**; `synaptic status` is its 1.7.x
-  compatibility alias. Init/upgrade never request the ping or make it a completion condition.
+  `SYNAPTIC-BOOT-OK <nonce>` token with **zero tool/file reads**; `synaptic status` is its
+  compatibility alias, retained in 1.8. Init/upgrade never request the ping or make it a completion condition.
   A user-checked fresh-session token proves carrier loading only. Separately read sources to
   resume a known synthetic task; ask explicitly for a situation report to run that report.
 - A discovered skill may be invoked as `/synaptic`, with the operation/argument in the request.

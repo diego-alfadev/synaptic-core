@@ -44,7 +44,7 @@ try{
   test('ping and status alias are zero-read debug paths, separate from the situation report',()=>{
     const skill=read('SKILL.md'),situation=read('references/situation.md');
     matches(skill,/synaptic ping/);matches(skill,/synaptic status/);
-    matches(skill,/1\.7\.x/);matches(skill,/SYNAPTIC-BOOT-UNKNOWN/);
+    matches(skill,/retained in 1\.8/);matches(skill,/SYNAPTIC-BOOT-UNKNOWN/);
     matches(skill,/No file reads, tools or situation report belong to either canary/);
     matches(situation,/explicit/i);matches(situation,/synaptic ping/);
   });

@@ -3,7 +3,9 @@
 Guide for a prepared release package. Real host acceptance for the optional previews (VS Code,
 automatic curation) remains pending.
 
-The engine is **1.7.2 — Baseline floor**; its brain format remains **1.0**. This is not a knowledge-format migration.
+The engine is **1.8.0 — Node stores**; its brain format remains **1.0**. This is not a knowledge-format migration.
+A brain that keeps the default wikilink mode sees no new `check.js` findings; `links`, `exclude` and
+`evidence_levels` in `BRAIN.md`, and `evidence` on a node, now carry meaning ([changelog](CHANGELOG.md)).
 
 The old engine installs the selected verified package and then reloads the new skill before host
 detection. A scope-safe bridge completes baseline setup; optional commands, hooks and MCP do not
@@ -11,14 +13,17 @@ block it. Unknown adapters remain limited with user-paste instructions only. Eve
 the brain needs a supported adapter, exact approved plan, fresh byte-preserving backup and rollback.
 Missing loading proof never triggers repair, and setup never requests a canary. For optional manual
 debugging, `synaptic ping` returns only the loaded token without tools; `synaptic status` remains
-its compatibility alias through 1.7.x. Ask explicitly for a situation report to inspect work items.
+its compatibility alias, retained in 1.8. Ask explicitly for a situation report to inspect work items.
 
 VS Code users have a [project setup and recovery guide](docs/integrations/vscode.md), including the
 assisted no-Node/no-MCP route. Package integrity and project-file transactions do not prove host loading.
 
 ## Start from one exact release
 
-**Entering from an older engine (including 1.6).** Do not start by invoking its installed
+**Entering from 1.7.2.** Its installed `/synaptic-upgrade` already installs the selected verified
+package and rereads it before host detection, so give it the selected package directly.
+
+**Entering from an engine older than 1.7.2 (including 1.6).** Do not start by invoking its installed
 `/synaptic-upgrade`: that version still contains its old detection order. Give the agent the
 selected complete package and the [entry instruction](docs/UPGRADE-TO-1.7.2.AGENT.md) first.
 It prepares the new procedure's exact recoverable plan; only after the selected files are

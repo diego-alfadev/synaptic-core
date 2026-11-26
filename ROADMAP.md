@@ -108,11 +108,11 @@ The v1 file contract (frontmatter + tags + INDEX + `[[wikilinks]]` + registries)
 
 ### Shared / team brain — **Ecosystem (future ring)**
 
-**What:** a committed brain repository with governance: CODEOWNERS on `knowledge/`, a `validated:` flag for peer-reviewed nodes, pull-request-based knowledge contribution.
+**What:** a committed brain repository with governance: CODEOWNERS on `knowledge/`, peer review recorded as a node's `evidence` on a ladder the brain declares (`evidence_levels`, with `validated` as its top level), pull-request-based knowledge contribution.
 
 **Why:** a single shared brain for a team eliminates the n-copies-drift problem. Any contributor's agent consolidates into a PR; a maintainer reviews and merges. The knowledge graph becomes auditable by default.
 
-**Dependency:** a Git hosting platform; CODEOWNERS support; a `validated:` flag, which the frontmatter schema (`references/contract.md` §1) does not define yet, so adding it is a schema change.
+**Dependency:** a Git hosting platform; CODEOWNERS support. The evidence ladder already exists as optional frontmatter (`references/contract.md` §1, §8), so no new flag and no schema bump.
 
 **Constraint:** the governance layer is a social contract, not a technical one. The technical prerequisite (a committed repo + frontmatter contract) is satisfied by v1.
 
@@ -125,6 +125,8 @@ The v1 file contract (frontmatter + tags + INDEX + `[[wikilinks]]` + registries)
 **Why deferred:** the v1.4.0 REACH model and the nesting setup-check deliberately warn-don't-guard against a second brain nested inside a global brain's coverage, because simultaneous coexistence needs an arbitration layer that is out of scope for v1. It is parked to **Cortex / v2.0**; `references/convert-to-global.md` and the CHANGELOG reference this same deferral.
 
 **Constraint:** CORE never requires it — a workspace works fully with exactly one resolvable bridge.
+
+**Not this:** read-only mounts of a node store (planned) are not multi-brain coexistence. A store never boots and nothing is captured into it (`references/contract.md` §8).
 
 ### Engram-style searchable journal — **Cortex**
 

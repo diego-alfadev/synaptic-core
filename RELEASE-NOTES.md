@@ -1,81 +1,49 @@
-# v1.7.2 — Baseline floor
+# v1.8.0 — Node stores
 
-Engine version 1.7.2; brain schema stays 1.0, so no knowledge-format migration.
+Engine version 1.8.0; brain schema stays 1.0, so no knowledge-format migration.
 
-**New in 1.7.2:** an effective, scope-safe bridge completes baseline setup. Missing loading proof
-does not trigger repair; unknown adapters stay limited with user-paste guidance. Optional commands,
-hooks and MCP never block the baseline. Outside-brain writes require a supported adapter, an exact
-approved plan, fresh byte-preserving preimages and rollback. An upgrade reloads the newly installed
-engine before host detection. Existing VS Code selections and declined optional levels are preserved.
-Use the selected package's [entry instruction](docs/UPGRADE-TO-1.7.2.AGENT.md) before invoking an
-older installed upgrade command. An incomplete optional skill does not initiate repair during
-ordinary boot. Loading observations survive an unchanged refresh and are retained as history
-when the source, profile or effective carrier changes.
-
-`synaptic ping` is the optional token-only, zero-tool debug check; `synaptic status` is its alias
-for 1.7.x. Init/upgrade never request either. Ask explicitly for a situation report to inspect work.
-Automatic discovery, profile bindings and wire-to-max remain outside this patch.
-
-The 1.7 line was tested
-as 2.0.0-rc.1 and 2.0.0-rc.2 drafts; nothing in it breaks an existing brain, so it ships as a minor
-release. 2.0 stays reserved for Cortex as the core.
-
-Synaptic adds clearer work-item routing and optional local tools for reading and finding knowledge.
-Your Markdown brain remains the record.
+**New in 1.8.0:** a folder of curated docs can be linted in place without becoming a brain. An
+`INDEX.md` whose frontmatter declares `synaptic: store` makes its folder a node store: every `.md`
+under it except MOC files is a node, and `tools/check.js <folder>` checks it. A store never boots and
+must not carry `BRAIN.md`. Brains and stores may choose `links: wikilink | markdown | both`, so
+relative Markdown links count as edges and hub membership. A brain without the new keys gets
+byte-identical `check.js` output.
 
 ## What changes for you
 
-- Tasks and proposals retain their context and completion evidence; exports preserve those records.
-  Closing a playground now archives it instead of deleting it, and `check.js` flags broken work items.
-- Setup distinguishes host wiring from actual loading and capture, with clearer recovery steps.
-- Upgrades come as a source-pinned package with a trusted digest (`manifestSha256`) and
-  completeness/content checks. Applying it remains an agent-led, recoverable operation.
-- Optional previews:
-  - VS Code project setup stages a reviewable change and, with Node, supports explicit
-    apply/status/rollback. Restricted environments keep an assisted file-based route without MCP or Node.
-  - Cortex tools provide current-file reads, lexical search and a read-only MCP interface.
-  - A Codex event adapter drafts bounded, source-linked curation of selected saved sources. It is not
-    automatic wiki promotion or complete conversation retention.
+- **Markdown links are checked.** In `markdown` or `both` mode a relative link or typed-edge path to
+  a missing file is an error. A path whose case differs from the file on disk is an error too, on
+  every filesystem: macOS and Windows open it, Linux and GitHub do not. Wikilinks are unchanged.
+- **`exclude`** lists path prefixes under the node root that are payloads, not nodes.
+- **`evidence`** is an optional node field, separate from `confidence`, validated (WARN) against the
+  `evidence_levels` ladder the root declares. A compound claim is written as its weakest level. The
+  node template lists it.
+- **Promotion playbook.** `references/promote.md` moves a child brain's node into a parent's store:
+  parent first, git as transport, propose-then-approve with a confidentiality gate. `/synaptic-maintain`
+  points to it.
+- **Pin a release from another repository.** The README shows how a consumer records a version and
+  the tarball's SHA-256, then runs that release's `tools/check.js` on its brain or store.
+
+Read-only mounts of a store from a brain are planned, not part of this release.
 
 ## Upgrade
 
-Keep your existing brain and update the full skill bundle from the selected verified package.
-Report baseline installation separately from loading and capture. Hooks and MCP need their own supported setup; updating files alone
-does not activate them. [Upgrade guide](UPGRADING.md).
+Keep your existing brain and update the full skill bundle from the selected verified package
+([Upgrade guide](UPGRADING.md)). From 1.7.2, the installed `/synaptic-upgrade` already installs the
+package and reloads it before host detection. An engine older than 1.7.2 starts from the package's
+[entry instruction](docs/UPGRADE-TO-1.7.2.AGENT.md) instead.
 
-- **Git brains: check the ignore rule before you close a playground.** `playgrounds/.gitignore` must
-  contain both `*/scratch/` and `archive/*/*/scratch/` (the upgrade creates or completes it; check before
-  your first close). Without the second line, the next commit records every archived scratch asset, which cannot be
-  undone without rewriting history.
-- The work-item model is adopted gradually, per brain; old playgrounds keep working untouched
-  ([Work items](docs/concepts/work-items.md)).
-- **If you tested the 2.0.0-rc.1 draft with the Codex curation adapter:** requests still pending from
-  it read `PROTECTED_SCOPE_CHANGED` after the update, because the protected snapshot changed shape.
-  Their artifacts are kept; archive them explicitly (`codex-curation.js archive`) and let a later turn
-  create a fresh request.
-- `playgrounds/archive/` is protected as one listing of paths and sizes: adding, removing, renaming or
-  resizing a file there invalidates a pending curation request; an edit that keeps the same size does not.
-
-## Fixes from the release-candidate round
-
-- New: `prepare-release.js --verify-assets <dir>` checks the four downloaded release files, including
-  the archive's manifest digest; `shasum -c SHA256SUMS` passes on them. Stable tags are now prepared too.
-- VS Code helper: verification errors name the differing package file; status and rollback survive an
-  extra bridge or a killed apply; `recover-lock` clears a stale lock; a recorded setup counts as wired on boot.
-- Cortex search and status skip and list unreadable or duplicate notes instead of failing the brain;
-  `knowledge/SCRATCH/` is excluded regardless of case; errors no longer echo rejected refs.
-- Native curation tolerates the capture floor's own activity files and append-only source growth;
-  curation status labels its inventory as recorded at the last check.
-- Package verification compares Unicode-normalised names, so packages extracted on macOS verify.
+- `links`, `exclude` and `evidence_levels` in `BRAIN.md`, and `evidence` on a node, now carry
+  meaning. A brain that already used one of these names for something else gets new warnings (or an
+  "invalid links value" error) until the key is renamed.
+- A brain that stays in the default wikilink mode sees no new findings.
 
 ## Evidence and limits
 
-Local source, package and synthetic transaction checks cover this patch. Publication requires
-successful CI for the exact source commit and verification of the prepared release assets.
-Filesystem/protocol tests are distinct from host loading, native firing and semantic quality. The
-owner-run VS Code journey and a demonstrated automatic-curation profile are still pending, which is
-why those features are previews. Automatic capture is claimed only for verified host configurations.
-Live benchmark outcomes are not measured. The work-record procedures (archive on close, external task
-owners, the status rule) are prose; whether agents follow them has not been piloted on a real host.
+Local tool, package and synthetic checks cover this release; CI runs the tool suites on Linux, macOS
+and Windows with Node 18, 22 and 24. A real brain in wikilink mode gave byte-identical `check.js` output before and
+after. The Markdown parser does not read reference-style links or unencoded spaces in targets
+(`references/contract.md` §8). Real host acceptance for the optional previews (VS Code, automatic
+curation) remains pending, as in 1.7.2.
 
 Detailed changes belong in the [changelog](CHANGELOG.md).

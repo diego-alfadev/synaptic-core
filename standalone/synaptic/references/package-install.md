@@ -10,8 +10,9 @@ hook firing, MCP discovery or semantic curation.
 
 ## 1. Resolve the existing setup and selected source before choosing a destination
 
-**Old-engine handoff.** The owner first directs the agent to the selected complete package's
-`docs/UPGRADE-TO-1.7.2.AGENT.md`, before invoking the old installed command. A new package cannot
+**Old-engine handoff.** For an engine older than 1.7.2, the owner first directs the agent to the
+selected complete package's `docs/UPGRADE-TO-1.7.2.AGENT.md`, before invoking the old installed
+command. A 1.7.2 or later engine already carries this handoff in its installed `/synaptic-upgrade`. A new package cannot
 change an unread old procedure; a bare old `/synaptic-upgrade` is not proof of this handoff.
 During the directed upgrade, the old engine only installs the selected verified
 complete package. It must not execute its previous host detection, proof or repair steps. Reload

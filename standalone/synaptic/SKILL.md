@@ -1,6 +1,6 @@
 ---
 name: synaptic
-version: 1.7.2     # engine semver; brain schema remains 1.0
+version: 1.8.0     # engine semver; brain schema remains 1.0
 supported_schema: ">=1.0 <2.0"   # brain schema/format versions this engine can read. A skill update reinstalls the skill with NO brain migration; only a schema/format change runs /synaptic-upgrade.
 description: >
   Knowledge-graph memory layer for project work — a portable, file-based brain that turns
@@ -150,7 +150,7 @@ and the selected carrier; a missing SYNAPTIC-RULES marker is not permission to c
 L3 commands and L4 hooks/MCP are target-driven and never block completion. An unknown adapter is
 `limited`, maximum L1; no host configuration is inferred or written. Missing proof and `failed`
 are diagnostic states, never repair triggers. Init/upgrade never request a canary. If the user
-explicitly asks `synaptic ping` (or `synaptic status`, the compatibility alias for 1.7.x), before
+explicitly asks `synaptic ping` (or `synaptic status`, the compatibility alias retained in 1.8), before
 any reads/tools return only `SYNAPTIC-BOOT-OK <nonce>` from loaded instructions; if none is loaded,
 return `SYNAPTIC-BOOT-UNKNOWN`. No file reads, tools or situation report belong to either canary.
 An explicit request for a situation report instead follows `references/situation.md`.
@@ -196,7 +196,7 @@ guardrails) change only when the user approves the exact change; `harness/setup/
 | `/synaptic-consolidate` | Run the six-step capture contract on session output (journal + playground artifacts); the manual fallback when no capture hooks are wired | `references/consolidate.md` |
 | `/synaptic-ingest [file]` | Distill a document into an atomic node + reference entry | `references/ingest.md` |
 | `/synaptic-audit` | DIAGNOSE: staleness, orphans, broken `[[wikilinks]]`, MOC coverage, cross-link coverage, **god-nodes (over-connected hubs, degree ≥ 15 or ≥ 3× median) + surprising edges (cross-cluster links)**, half-done/unconsolidated + pending-breadcrumb check, **capture-yield + used-but-capture-dead advisory**, **status/lifecycle typo advisory**, registry integrity, oversized untyped nodes, tag hygiene. Reads ALL statuses and ALL lifecycles. | `references/audit.md` |
-| `/synaptic-maintain [weave\|synthesize]` | The diagnose-then-treat sweep: audit, then consolidate, reconcile flagged `contradicts`/`supersedes`, **synthesize** and **weave**, approval-gated; bounded-reversible, diff-traced, archive-before-delete. A named pass runs alone: **`weave`** = graph-gardening (missing links + typed-edge proposals, under-connected nodes, concept gaps, near-duplicate merges, theme promotion; propose-never-write); **`synthesize`** = generative (cross-source patterns, concept evolution, orphan rescue; new nodes MOC-registered at write time). | `references/maintain.md` · passes: `references/weave.md`, `references/synthesize.md` |
+| `/synaptic-maintain [weave\|synthesize]` | The diagnose-then-treat sweep: audit, then consolidate, reconcile flagged `contradicts`/`supersedes`, **synthesize** and **weave**, approval-gated; bounded-reversible, diff-traced, archive-before-delete. A named pass runs alone: **`weave`** = graph-gardening (missing links + typed-edge proposals, under-connected nodes, concept gaps, near-duplicate merges, theme promotion; propose-never-write); **`synthesize`** = generative (cross-source patterns, concept evolution, orphan rescue; new nodes MOC-registered at write time). | `references/maintain.md` · passes: `references/weave.md`, `references/synthesize.md` · promotion between a brain and a node store: `references/promote.md` |
 | `/synaptic-handover` | Generate a new-joiner / covering-colleague day-1 **handover brief** FROM the brain (extractive, reproducible-from-files, leak-safe): project summary · owns · key decisions · where-to-look · open threads. Reads ALL statuses and ALL lifecycles (a binding `dormant`+`active` decision still appears). | `references/handover.md` |
 
 **Routine and aliases (not on the main menu).** These stay invocable by name; the bridge and stubs
@@ -205,7 +205,7 @@ list them separately.
 | Name | What it is | Reference |
 |---|---|---|
 | `/synaptic-upgrade` | **Routine.** Install one selected verified package, reload its new procedures, then inspect host setup and propose only selected supported adapter changes. Schema 1.0 needs no knowledge migration; pre-v1 uses the supervised migration. L1 succeeds independently of optional levels or proof; init/upgrade never request a ping. | `references/upgrade-to-v1.md` · `references/host-setup.md` |
-| `/synaptic-weave` | **Compatibility alias (deprecated since 1.6)** for `/synaptic-maintain weave`; retained in 1.7. | `references/weave.md` |
-| `/synaptic-synthesize` | **Compatibility alias (deprecated since 1.6)** for `/synaptic-maintain synthesize`; retained in 1.7. | `references/synthesize.md` |
+| `/synaptic-weave` | **Compatibility alias (deprecated since 1.6)** for `/synaptic-maintain weave`; retained in 1.8. | `references/weave.md` |
+| `/synaptic-synthesize` | **Compatibility alias (deprecated since 1.6)** for `/synaptic-maintain synthesize`; retained in 1.8. | `references/synthesize.md` |
 
 **Tools awareness:** if a runtime is available, prefer `tools/` scripts (check/migrate/export/vault-open) for the mechanical steps. If no runtime, perform the operation manually as described in the reference files.
