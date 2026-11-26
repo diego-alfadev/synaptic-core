@@ -1,5 +1,33 @@
 # Changelog
 
+## [Unreleased]
+
+> **Node stores.** A folder of curated docs can be linted in place without becoming a brain. Brain
+> schema remains **1.0**; a brain without the new keys gets byte-identical `check.js` output.
+> Upgrade note: `links`, `exclude` and `evidence_levels` in `BRAIN.md`, and `evidence` on a node, now
+> carry meaning. A brain that already used one of these names for something else gets new warnings
+> (or an "invalid links value" error) until the key is renamed.
+
+### Added
+
+- **Node stores.** An `INDEX.md` whose frontmatter declares `synaptic: store` makes its folder a node
+  store: every `.md` under it except MOC files is a node, checked by `tools/check.js <folder>`. A
+  store never boots and must not carry `BRAIN.md` (an error); a store with 0 nodes is an error.
+  Contract: `references/contract.md` §8; adoption path: `references/init.md`.
+- **Link modes.** Manifest key `links: wikilink | markdown | both`. In `markdown` or `both`, relative
+  Markdown links are existence-checked (MOC files included), make edges and MOC membership when they
+  point at a node, and typed edges accept relative `.md` paths (`references/weave.md`).
+  Reference-style links are not parsed.
+- **`exclude`.** Manifest list of path prefixes under the node root that are not nodes (payloads).
+- **`evidence`.** Optional node field, independent of `confidence`, validated (WARN) against the
+  ladder the manifest declares in `evidence_levels`, weakest first. A compound claim is written as
+  its floor. It replaces the undefined `validated:` flag in `ROADMAP.md`.
+- **Promotion playbook.** `references/promote.md`: a child brain's node moves into a parent's store,
+  parent first, git as transport, PROPOSE-THEN-APPROVE with an inline confidentiality gate (CONF-1
+  itself remains a draft specification).
+
+Read-only mounts of a store from a brain are planned, not part of this change.
+
 ## [1.7.2] - 2026-11-17
 
 > **Baseline floor.** A readable, scope-safe bridge completes setup; missing host proof no longer

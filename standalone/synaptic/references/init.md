@@ -6,6 +6,9 @@
 > read-only inspection, leak/reach gate, adapter-listed targets, fresh byte-preserving preimages,
 > approved plan and rollback before any write outside the brain. On upgrade reload the new package
 > before its detection runs; the old engine only installs it. L1 baseline completes installation.
+>
+> Adopting a folder of existing docs as a node store is a different path, with no brain and no
+> wiring: *Adopt existing docs as a node store*, at the end of this file.
 
 ## Onboarding Interview — /synaptic-init
 
@@ -485,3 +488,28 @@ External rule-sync tools may read skill directories according to their own confi
 presence proves neither wiring nor loading. Do not run sync or modify their configuration during
 init/upgrade without a separately selected supported-adapter plan covering every external target.
 
+---
+
+## Adopt existing docs as a node store
+
+For a folder of curated docs that should be linted in place, not absorbed by a brain (a shared
+library, a handbook, a docs folder another owner maintains). The result is a node store
+(`references/contract.md` §8): it is checked, never booted.
+
+1. **Add the manifest to the hub.** The folder's `INDEX.md` gets frontmatter: `synaptic: store`, a
+   `description`, `links: markdown` (or `both`) when the docs use `[text](path.md)` links, `exclude:`
+   for payload folders that are not nodes, and `evidence_levels:` only if the nodes will carry
+   `evidence`. The hub must link every node, directly or through a cluster `_index.md`.
+2. **Add frontmatter to each node** (`references/contract.md` §1): `description`, `type`, `status`,
+   `updated`, `tags`, plus `evidence` at its floor where it applies. Files stay where they are. Node
+   filenames must be kebab-case and unique by name across the folder; `README.md`, `INDEX.md` and
+   `_index.md` are MOC files, never nodes.
+3. **Run the check:** `node <synaptic>/tools/check.js <folder>`. Expect ``N nodes in store `<folder>` ``
+   and no errors. The tools ship with the Synaptic repository or release package, not with this skill
+   bundle: pin a release and call it by path from the folder owner's own checks.
+
+Nothing else: no `BRAIN.md`, no harness, no rules block, no `BEGIN:SYNAPTIC` bridge, no capture. **Do
+not add a `BRAIN.md`**, not even an empty one to make the check pass. A store is inherited by every
+repository that merges it, so a `BRAIN.md` there would be a second boot brain wherever the folder
+lands; `check.js` reports a folder that has both as an ERROR. A `BRAIN.md` with an empty
+`knowledge/INDEX.md` also passes while checking none of the docs (`Nodes: 0`).

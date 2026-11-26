@@ -60,6 +60,12 @@ or are co-cited from a third node but do not link to each other:
 > (`- "[[x]]"`), never inline (`depends_on: [[x]]` mangles the parser). The frontmatter wikilink
 > **is** the edge — never a separate edges file or derived index.
 >
+> **Path values (Markdown link mode):** in a root whose manifest sets `links: markdown` or `both`
+> (`references/contract.md` §8), a typed-edge value may also be a relative `.md` path, resolved from
+> the node's own folder (`- ../styles/grid.md`). `markdown` mode reads only paths; `both` reads paths
+> and wikilinks. A missing path is a `check.js` ERROR (`broken typed edge`). In `wikilink` mode a path
+> value is ignored. The vocabulary stays frozen and one direction is still the only one authored.
+>
 > **Additive-no-bump:** typed edges are backward-compatible optional frontmatter. Adding them must
 > **NOT** bump `schema_version` (the BRAIN.md schema/format key) or trigger `/synaptic-upgrade`.
 
@@ -70,7 +76,9 @@ is computed on demand, for any key `K` and node `X`:
 - **Where code runs:** `node tools/graph.js <brain> --neighbours X --type K --direction in`.
 - **Where it does not:** grep `knowledge/` for `"[[X]]"` and keep the hits inside a file's
   frontmatter whose nearest key line above them is `K:` (the parser-safe block-list form puts each
-  target on its own line under its key). A body `[[X]]` is a plain link, not a `K` edge.
+  target on its own line under its key). A body `[[X]]` is a plain link, not a `K` edge. In
+  Markdown link mode, also grep for `X.md` under the same rule; `tools/graph.js` does not read path
+  values yet, so this grep is the way there.
 
 Edges with a named reader today:
 

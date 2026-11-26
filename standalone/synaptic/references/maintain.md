@@ -145,6 +145,8 @@ Re-verify: graph clean / N residual findings.
 - **`/synaptic-maintain weave`** — the link/edge-repair leg. Run alone for a graph-gardening pass.
 - **`/synaptic-maintain`** — runs all of the above in diagnose-then-treat order, approval-gated, as
   one sweep. The Cortex OS-cron timer (if installed) simply triggers this same procedure on a cadence.
+- **Cross-brain promotion** (a child node → a parent's node store) — not a maintain leg; follow
+  `references/promote.md`.
 
 ---
 

@@ -1,10 +1,10 @@
-<!-- summary: The node contract — one home for the frontmatter schema (fields, enums, read semantics, lifecycle, typed edges), the skill-side default autonomy tiers, and the work-item formats (proposals, tasks, playgrounds). -->
+<!-- summary: The node contract — one home for the frontmatter schema (fields, enums, read semantics, lifecycle, typed edges), the skill-side default autonomy tiers, the work-item formats (proposals, tasks, playgrounds), and roots and manifests (brains and node stores). -->
 
 # Node contract — frontmatter schema + default autonomy tiers + work items
 
 > **One home.** This file is the only skill-side definition of the frontmatter schema and of the
-> default autonomy tiers (the typed-edge vocabulary stays in `references/weave.md`, §4 below), and of the
-> work-item formats (§6).
+> default autonomy tiers (the typed-edge vocabulary stays in `references/weave.md`, §4 below), of the
+> work-item formats (§6), and of roots and their manifest keys (§8).
 > consolidate, audit, handover, maintain and the node template point here; `tools/check.js`
 > (`STATUS_ENUM`) is the mechanical enforcer where Node exists. `templates/` copies into every brain
 > and drifts, so the node template keeps only the field list plus a short gloss a skill-less agent can
@@ -23,6 +23,7 @@
 | `source` | no | path / URL / "session YYYY-MM-DD" / work locator | provenance: every claim traceable to its origin. A node written from work cites a qualified locator: `T<n>/L<k>` (brain task, log line in its `tasks.md`), or `path:line@commit` for another tool's document (commit when in git) |
 | `content_hash` | no | `sha256-lf:<12 hex>` \| `TBD` | brains **outside git** only; legacy `git:` / `sha256:` = unverifiable. Commands: `references/fingerprint.md` |
 | `confidence` | no | `high` \| `medium` \| `low` | how settled the knowledge is |
+| `evidence` | no | one level of the root's declared `evidence_levels` (§8) | what kind of proof exists, independent of `confidence`. A compound claim is written as its **floor**, the weakest level it claims; the body keeps the detail. Off the declared ladder, or set where no ladder is declared → a `check.js` WARN |
 | `true_since` / `learned_on` | no | `YYYY-MM-DD` | bi-temporal recency: when the fact became true vs when the brain captured it |
 | typed edges | no | §4 | the frontmatter wikilink **is** the edge |
 
@@ -123,6 +124,11 @@ much approval is required.
 | **AUTO** (bounded + reversible) | Act without asking; the change is small, reversible, and on record. | Append a journal breadcrumb · reindex / regenerate a derived cache · author the `contradicts` / `supersedes` edge for a pair the user confirmed · capture a decision EXPLICITLY stated in the session · fix a broken `[[wikilink]]` · consolidate may add a proposal row (a candidate nobody committed to; reversible). |
 | **PROPOSE-THEN-APPROVE** | Draft the change and surface it; apply only on a yes. | Promote a node / merge or split nodes · restructure a cluster or MOC · rewrite an existing node during consolidation · author a `contradicts` / `supersedes` edge the user has not confirmed · change a registry's schema · supersede a page's substance · promote or drop a proposal. |
 | **HUMAN-ONLY** | Never automate; the human does it (or explicitly directs it each time). | Delete knowledge · purge / burn anything beyond a consolidated playground · edit persona/behavior (lives in the harness, not the brain) · irreversible ops (force-push, schema migration, secret rotation). |
+
+**Promotion in the PROPOSE-THEN-APPROVE row.** *Promote a node* includes **cross-brain promotion**: a
+child brain's node becomes a node of a parent's store (procedure: `references/promote.md`). *Promote
+or drop a proposal* is **proposal → task** inside one brain (§6, *Promotion*). Each needs its own
+approval.
 
 Self-improving is bounded and reversible only: structural change is propose-then-approve; deletion
 and persona are human-only.
@@ -274,3 +280,69 @@ the text if printing commands; redact private repository paths from shareable ha
 Init may display recovery guidance; consolidate may propose a row; registration requires approval.
 None of these readers installs, edits or deletes the owner's skills. Existing skill provenance and
 delete/overwrite protection in command-discovery remains in force.
+
+## 8. Roots and manifest (brains and node stores)
+
+A **root** is the folder whose nodes follow this contract. Its **manifest** is the frontmatter of one
+root file, so the manifest's location *is* the root: there is no free root path to mis-set.
+
+| Kind | Manifest | Nodes | Boots |
+|---|---|---|---|
+| brain | `BRAIN.md` frontmatter | `knowledge/**` | yes: the one boot brain of its workspace |
+| node store | `INDEX.md` frontmatter with `synaptic: store` | every `.md` under the folder | never |
+
+A **node store** is a folder of nodes that meets §1 (fields), the MOC chain and the link rules below,
+and nothing else: no `BRAIN.md`, harness, journal, capture or work items. It fits curated docs that
+another owner maintains in place, such as a shared library or a handbook. Adopting one:
+`references/init.md`, *Adopt existing docs as a node store*.
+
+| Key | In | Default | Meaning |
+|---|---|---|---|
+| `synaptic` | store `INDEX.md` | absent: not a store | `store` marks the folder as a node store |
+| `links` | brain or store | `wikilink` | `wikilink` \| `markdown` \| `both`: which link syntax makes edges and MOC membership; any other value is an ERROR |
+| `exclude` | brain or store | `[]` | path prefixes under the node root that are not nodes (payloads), matched on whole path segments |
+| `evidence_levels` | brain or store | absent | ordered list, weakest first; validates the optional `evidence` field (§1) |
+
+In a brain, nodes, edges and `exclude` are scoped to `knowledge/`; with `links: markdown` or `both`,
+Markdown-link existence is checked brain-wide (every `.md` outside `templates/`, `references/raw/`,
+`audits/` and `playgrounds/archive/`), so a dead link in `journal/` is an ERROR too. Planned, not built: read-only `mounts` in `BRAIN.md`. Until
+then a brain reaches a store's files with relative Markdown links, as out-of-root files (existence-
+checked, never edges). Only `tools/check.js` and its readiness block read the manifest today; other
+tools see a brain's `[[wikilinks]]` only.
+
+**Resolution** (`node tools/check.js <folder>`):
+
+1. `<folder>/BRAIN.md` exists → brain. If `<folder>/INDEX.md` also declares `synaptic: store` → ERROR
+   (a store must not carry `BRAIN.md`).
+2. Else `<folder>/INDEX.md` declares `synaptic: store` → store.
+3. Else → brain, so a folder with neither reports `BRAIN.md is missing`.
+
+**A store never boots and never carries `BRAIN.md`.** Boot reads `.synaptic/BRAIN.md` or the brain a
+`BEGIN:SYNAPTIC` bridge points at, and a store has neither. A store's files are merged into every
+repository that inherits it, so a `BRAIN.md` there would become a second boot brain in each of them:
+the multi-brain case deferred to v2.0 (`ROADMAP.md`).
+
+**A store run.** MOC files (`INDEX.md`, `_index.md`, `README.md`) and `exclude` prefixes are not nodes.
+Brain-layout folder names mean nothing in a store: `templates/`, `audits/`, `references/raw/` and
+`playgrounds/` hold ordinary nodes. Node checks run as for a brain (frontmatter, kebab-case and unique
+filenames, MOC coverage, links, non-live artifacts, soft budget, staleness); brain-only checks
+(layout, registries, the references index, work items) do not. A store with 0 nodes is an ERROR; a
+brain with 0 nodes stays legal. The run prints a node line such as ``15 nodes in store `library` ``.
+
+**Markdown links** (`links: markdown` or `both`; in `wikilink` mode they stay invisible):
+
+- Read: inline links `[text](target)` and images `![alt](target)` in prose (code fences, inline code
+  and comments are skipped), with an optional `<target>` wrapper and `"title"`. The `#fragment` is
+  dropped and the target is percent-decoded.
+- Skipped: URLs (`scheme:`), `//host`, anchor-only `#x`, empty targets. A root-absolute `/path` is a
+  WARN and is not checked: write it relative.
+- A target resolves from the containing file. Missing → ERROR (`broken Markdown link`), in MOC files
+  too: in `markdown` mode the hub alone makes a node reachable.
+- An existing node `.md` in the root → an edge and MOC membership. Anything else that exists (a MOC, an
+  excluded file, a non-`.md` file, a folder, a file outside the root) → fine, never an edge. Images
+  are never edges.
+- `markdown` mode ignores `[[wikilinks]]` everywhere, typed edges included; `both` reads both.
+  Typed-edge values as paths: `references/weave.md`.
+- Not parsed (no edge, no check): reference-style links `[text][ref]`, link text with nested
+  brackets, a target with an unencoded space (write `%20` or `<…>`). A `)` inside a target ends it
+  early and reads as a false `broken Markdown link`: write `%29` or wrap the target in `<…>`.
