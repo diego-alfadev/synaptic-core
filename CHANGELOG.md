@@ -1,12 +1,18 @@
 # Changelog
 
-## [Unreleased]
+## [1.8.0] - 2026-11-26
 
-> **Node stores.** A folder of curated docs can be linted in place without becoming a brain. Brain
-> schema remains **1.0**; a brain without the new keys gets byte-identical `check.js` output.
+> **Node stores.** A folder of curated docs can be linted in place without becoming a brain, with
+> Markdown links as edges, and a consumer repository can pin one exact release for those checks.
+> Brain schema remains **1.0**: no knowledge-format migration. A brain without the new keys gets
+> byte-identical `check.js` output.
 > Upgrade note: `links`, `exclude` and `evidence_levels` in `BRAIN.md`, and `evidence` on a node, now
 > carry meaning. A brain that already used one of these names for something else gets new warnings
-> (or an "invalid links value" error) until the key is renamed.
+> (or an "invalid links value" error) until the key is renamed. From a 1.7.2 engine, its installed
+> `/synaptic-upgrade` is the entry; an older engine starts from `docs/UPGRADE-TO-1.7.2.AGENT.md`.
+> The compatibility aliases `synaptic status`, `/synaptic-weave` and `/synaptic-synthesize` are
+> retained in 1.8; their removal will ship in a release of its own, announced ahead. Generated bridge
+> text keeps its existing wording, so installed bridges do not drift.
 
 ### Added
 
@@ -24,7 +30,14 @@
   its floor. It replaces the undefined `validated:` flag in `ROADMAP.md`.
 - **Promotion playbook.** `references/promote.md`: a child brain's node moves into a parent's store,
   parent first, git as transport, PROPOSE-THEN-APPROVE with an inline confidentiality gate (CONF-1
-  itself remains a draft specification).
+  itself remains a draft specification). `SKILL.md` routes to it from `/synaptic-maintain`.
+- **Case-exact link paths.** A relative Markdown link or typed-edge path whose spelling differs from
+  the file or folder on disk only by case is an error naming the on-disk spelling, on every
+  filesystem: macOS and Windows resolve it, Linux and GitHub do not. Wikilink resolution is
+  unchanged.
+- **Node template.** `templates/templates/node.md` lists the optional `evidence` field.
+- **Pinning a release.** The README shows how another repository pins a version and the tarball's
+  SHA-256, then runs that release's `tools/check.js` on its brain or store.
 
 Read-only mounts of a store from a brain are planned, not part of this change.
 

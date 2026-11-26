@@ -60,7 +60,7 @@ runs host detection. Do not run old-engine detection or deployment recipes befor
   selected profile and assisted/off choices.
 - Init/upgrade never request a canary or fresh chat. Optional user-initiated `synaptic ping` replies
   only `SYNAPTIC-BOOT-OK <nonce>` from loaded instructions, with zero tools/file reads.
-  `synaptic status` is a token-only alias for 1.7.x; situation reporting has its own explicit request
+  `synaptic status` is a token-only alias, retained in 1.8; situation reporting has its own explicit request
   (`references/situation.md`). Missing loading proof never blocks L1 completion.
 
 ### Inspect, classify, plan

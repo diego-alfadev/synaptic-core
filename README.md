@@ -10,7 +10,7 @@ Synaptic gives your agent a brain: a folder of linked Markdown files it reads fi
 when you ask. Decisions, lessons and playbooks stay in files you own, so a fresh session, a
 different agent or another person can pick the work up from them.
 
-> **v1.7.2, usable beta.** The file-based brain works with any agent that can read and write files.
+> **v1.8.0, usable beta.** The file-based brain works with any agent that can read and write files.
 > Extras are optional previews. [Details](#what-is-automatic-and-what-is-not).
 
 ## Quickstart

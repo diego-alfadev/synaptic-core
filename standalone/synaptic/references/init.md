@@ -250,7 +250,7 @@ wired file for a bare CWD-relative `.synaptic/BRAIN.md` MUST be ZERO for a globa
 > If no nonce is selected, omit the template's Debug line rather than leaving `<nonce>` in a carrier;
 > a user-requested ping then returns `SYNAPTIC-BOOT-UNKNOWN` without reads or tools.
 > Init/upgrade never ask the user to run a canary or open another chat. Only a user-initiated
-> `synaptic ping` (token-only `synaptic status` alias in 1.7.x) or genuine native-host evidence may
+> `synaptic ping` (token-only `synaptic status` alias, retained in 1.8) or genuine native-host evidence may
 > establish loading proof. Missing proof is diagnosis only; audit reports it once per engine.
 
 ### a2. Claude Code boot adapter (the `SYNAPTIC-BOOT` block — v1.6, decision X1a)

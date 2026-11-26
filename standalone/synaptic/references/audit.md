@@ -517,7 +517,7 @@ not an acceptable L1. Do not repair, move it or emit a paste snippet during audi
    cannot be persisted. Do not claim a durable once-only result when no stamp was saved.
 5. **Optional user-initiated debug proof only.** `synaptic ping` replies with the loaded
    `SYNAPTIC-BOOT-OK <nonce>` token and performs zero tool/file reads; `synaptic status` remains
-   its compatibility alias for the 1.7.x line. Audit/init/upgrade never request this test. If the
+   its compatibility alias, retained in 1.8. Audit/init/upgrade never request this test. If the
    user supplies an independently checked fresh-session result, or a verified native host event
    supplies the matching source/nonce evidence, report that scoped proof and date. File presence,
    an agent's assertion or an answer after reads never establishes `proven`; audit does not
