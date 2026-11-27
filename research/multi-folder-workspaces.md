@@ -104,6 +104,16 @@ only that the two map to each other.
 The change is what makes the agent load the skill and state the limit. Without it, the outcome depends
 on whether the agent happens to list the folder.
 
+**After the parent-session review (scope split, path-based resolve, fixtures).** Setup:
+- primary folder `brand`, with a project brain and the skill;
+- added folder `foundation`, with no brain, and a `fixture: true` brain under `tests/fx/`;
+- a `lab` brain that is not a session folder.
+
+| Run | Task | Observed |
+|---|---|---|
+| R10 | Edit `foundation/notes.md` and `foundation/tests/fx/data.md` | Read `multi-folder.md` and found the fixture brain, then skipped it as `fixture: true`. It did **not** write the foundation work into the brand journal, because a project brain covers only its own tree. It said once that nothing captured that work. The brand journal stayed unchanged |
+| R11 | Edit `lab/notes.md`, reached by path only (read and edit allowed for that path) | Resolved the nearest enclosing brain, `lab/.synaptic/`, and journaled there by hand. It left the brand brain alone and stated the manual-capture limit |
+
 A mis-run whose cwd was the common parent of P and A also showed something useful. When the extra
 folder sits *inside* the primary folder, its `CLAUDE.md` and nested `CLAUDE.md` load on demand like
 any subfolder of P.
@@ -171,8 +181,8 @@ that touches that folder only".
 - **Contract first, rule only on request.** At the pure-contract level the skill description is the
   trigger. On Claude Code a project skill in an added folder is discovered (probed R7, R8), so this works
   with no extra setup. The user-level rule (`references/init.md` §a5) is installed only when asked for,
-  never offered: an unexplained optional question gets answered blind and goes stale. It is refused
-  while a user-global bridge is wired, which is the 2.0 coexistence case.
+  never offered: an unexplained optional question gets answered blind and goes stale. It works with
+  or without a user-global brain.
 - **Limitation stated, not hidden.** Hooks of an additional folder never run, so capture there is
   manual. What is written waits for the rescue of the next session that opens the folder as primary.
 
@@ -184,9 +194,9 @@ that touches that folder only".
 | Capture when A is additional (no host runs A's hooks) | None for A; P is unaffected | Assisted breadcrumbs routed by path. No deterministic activity marker for A: a user-level hook sees only the primary cwd | Assisted, and only after the skill triggers; a skill is not an always-on boot | Assisted (manual), stated plainly; the next primary session's rescue recovers playgrounds |
 | Detect-on-Load hazard (wrong brain / second brain) | **Removed** by the guard | Removed, provided arbitration is defined | Removed where the folder list is exposed; otherwise unchanged | **Removed** (guard, plus the rule's "that folder's work only") |
 | New external writes | None (skill text only) | One approval-gated user-level block, plus upkeep when folders move | None, or a user-level skill install | One optional, approval-gated user-level block that never changes |
-| Contract impact | Fits 1.8 | **Multi-binding**: `host-setup.md` says "not 1.8 multi-binding", and `init.md` defers coexistence to 2.0. It needs arbitration when P and A both have brains, and a registry schema | Implicit multi-binding without a registry; still needs arbitration | Fits 1.8: no registry; scoping by folder is the arbitration; excluded alongside a global bridge |
+| Contract impact | Fits 1.8 | **Multi-binding**: `host-setup.md` says "not 1.8 multi-binding", and `init.md` defers coexistence to 2.0. It needs arbitration when P and A both have brains, and a registry schema | Implicit multi-binding without a registry; still needs arbitration | Fits 1.8: no registry. Scoping by nearest enclosing brain is the arbitration; global + folder brain on the same path stays 2.0 |
 | Privacy | Unchanged | Every session sees the list of brain paths, the same posture as a global brain; never in a repo | Unchanged | No paths or names anywhere |
-| Cost per session | ~0 | Router block resident everywhere | ~0 until triggered | ~124 tokens per skill load and ~15 in the description; the rule (~110 tokens) only if requested |
+| Cost per session | ~0 | Router block resident everywhere | ~0 until triggered | ~128 tokens per skill load and ~15 in the description; the rule (~120 tokens) only if requested |
 
 ## Recommendation (decided: D4)
 
@@ -194,22 +204,30 @@ that touches that folder only".
    schema change. Changes on this branch:
    - **`references/multi-folder.md`** (new, loaded on demand) holds the rules:
      - the CWD brain resolves at load as before;
-     - a folder with its own brain is served only by it, read lazily and COMPAT-checked;
-     - a folder without one is served as before, so a user-global brain keeps capturing there;
+     - a touched path's brain is its **nearest enclosing** valid `.synaptic/BRAIN.md`, found by the
+       path rather than the session's folder list, then read lazily and COMPAT-checked;
+     - a brain is skipped when it has no `schema_version`, has `fixture: true`, or has no `BRAIN.md`;
+     - a **project** brain serves only its own tree;
+     - a **user-global** brain serves only paths with no valid enclosing brain;
+     - otherwise nothing captures the work, and the agent says so once;
+     - node stores are never treated as brains;
      - onboarding is offered only for the CWD;
      - the manual-capture limit is stated once.
-   - **`SKILL.md`:** a three-line pointer, and a description trigger for `.synaptic/` in any session
-     folder.
+   - **`references/contract.md` §8:** the `fixture: true` brain key. The bench fixture carries it.
+   - **`SKILL.md`:** a three-line pointer, and a description trigger for `.synaptic/` in a session
+     folder or above a touched path.
    - **`init.md`:**
      - a Round 0.5 multi-folder answer that states the rule and asks nothing more;
      - the nesting check also reports brains in sibling session folders;
      - §a5, the `BEGIN:SYNAPTIC-DISCOVERY` rule, installed **only on request**: an optional question
-       asked without context gets answered blind and goes stale.
+       asked without context gets answered blind and goes stale. It is compatible with a global brain,
+       and coexistence is partly defined: a folder brain owns its tree, and the global brain serves
+       the rest.
    - **`host-setup.md`:** the record field `discovery: configured | not-configured`.
    - **`capture-hooks.md`:** no layer runs for a brain in an additional folder.
 
    **Cost (bytes/4):**
-   - `SKILL.md` +499 bytes (~124 tokens) per skill load;
+   - `SKILL.md` +512 bytes (~128 tokens) per skill load;
    - the description +~15 tokens, always resident;
    - everything else on demand.
 
