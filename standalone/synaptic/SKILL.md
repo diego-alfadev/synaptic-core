@@ -126,8 +126,9 @@ The optional user-level discovery rule (`references/init.md` §a5) carries this 
 where the skill is not loaded.
 
 ```
-Resolve brain: CWD .synaptic/BRAIN.md, else the BRAIN.md at the BEGIN:SYNAPTIC bridge's pointer;
-               in a multi-folder session, also a session folder's .synaptic/BRAIN.md for work in that folder.
+Resolve brain PER FOLDER OF THE WORK (the CWD, unless the work touches another session folder):
+  that folder's .synaptic/BRAIN.md, else the BRAIN.md at the BEGIN:SYNAPTIC bridge's pointer.
+  A brain resolved for one folder never receives another folder's work (multi-folder guard).
 Does a brain resolve?
 ├── YES → Read BRAIN.md frontmatter schema/format version.
 │         Run COMPAT-CHECK (warn-not-gate — see below). Booting NEVER waits on it.
@@ -149,8 +150,9 @@ Does a brain resolve?
         ├── A BEGIN:SYNAPTIC bridge IS present (it names a brain path that is currently unreachable)
         │     → DO NOT offer onboarding. A bridge means a brain is intended; report the unreachable
         │       pointer instead ("bridge points at <path> but no brain is there — fix the path / restore it").
-        ├── A known session folder holds a brain → do NOT onboard here; apply the multi-folder guard.
-        └── No bridge AND no brain dir → Offer onboarding: "No brain found — start the setup interview? (y/n)"
+        └── No bridge AND no brain dir for this folder → Offer onboarding for THIS folder only:
+              "No brain found — start the setup interview? (y/n)". If another session folder holds
+              a brain, first say once that it exists and serves only its own folder's work.
               (on yes: load references/init.md)
 ```
 

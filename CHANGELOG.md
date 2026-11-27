@@ -22,6 +22,10 @@
 ### Changed
 
 - The nesting setup-check also reports brains in sibling session folders.
+- Detect-on-Load resolves the brain per folder of the work (the CWD unless the work touches another
+  session folder), and offers onboarding only for that folder.
+- The global branch and `references/convert-to-global.md` plan the removal of an existing discovery
+  rule, because a global brain plus folder brains is the coexistence case deferred to 2.0.
 - `references/capture-hooks.md` documents that no capture layer runs for a brain in an additional
   folder, and what the rescue recovers later.
 

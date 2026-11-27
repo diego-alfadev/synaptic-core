@@ -81,6 +81,10 @@ repo, plus the history warning above.
 1. **Topology intake + classify + confirm.** Confirm the source is a project-wired `.synaptic/`, run
    the git classification (§0), and choose sub-case (a) re-wire-only or (b) relocate (offer the OS
    default root; ask to confirm).
+   **Discovery rule present?** If the user-level carrier holds a `BEGIN:SYNAPTIC-DISCOVERY` block, or
+   a setup record says `discovery: configured` (`references/init.md` §a5), a global brain plus folder
+   brains is the coexistence case deferred to v2.0. Show the block, list its removal in this convert's
+   plan, and keep it only if the user explicitly chooses to, after the nesting warning.
 2. **HARD-GATE safeguard (before touching anything):**
    - **`pre-global` tag on a brain-ONLY repo.** Untracked → `git init` a dedicated repo + commit +
      tag `pre-global`. Tracked in a shared work repo → do NOT tag the work repo; create a dedicated

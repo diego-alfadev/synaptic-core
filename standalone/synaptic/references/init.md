@@ -62,7 +62,9 @@ Tailor framing to the answer (e.g. "your stack" for project, "your domains" for 
    An unknown adapter stops at a leak-safe user-paste snippet; write no external files.
 4. **Plan the L1 bridge at user level** — for a supported adapter, list `BEGIN:SYNAPTIC` in the approved transaction for the effective user-level instruction
    context, both pointer lines rewritten to the brain's **absolute** path, **plus the skill's absolute
-   path** (grep-recoverable). Never into a foreign committed **or synced** repo.
+   path** (grep-recoverable). Never into a foreign committed **or synced** repo. If that carrier
+   already holds a `BEGIN:SYNAPTIC-DISCOVERY` block (§a5), list its removal in the same plan, and keep
+   it only on the user's explicit choice after the nesting warning.
 5. **Select rule exposure separately** — preserve existing approved rules and selected profile.
    Deploy `BEGIN:SYNAPTIC-RULES` only if listed by this adapter and in the approved plan. Symlink `harness/` **only** on a POSIX local
    (non-synced) path where allowed; on **Windows or any OneDrive/DFS-synced location, symlinks are NOT
@@ -367,7 +369,8 @@ Documentation snapshot: **2026-11-07**. Sources:
 
 Offer this only from the Round 0.5 multi-folder answer, or on an explicit request. Do not offer it
 while a user-global `BEGIN:SYNAPTIC` bridge is wired: a global brain plus folder brains is the
-coexistence case deferred to v2.0.
+coexistence case deferred to v2.0. The reverse order is covered too: the global branch (step 4) and
+`references/convert-to-global.md` step 1 check for this block and plan its removal.
 
 The rule is the multi-folder guard in always-loaded form. It names no brain and no path, so it
 passes the leak/reach gate, survives folder moves and covers later brains too.
