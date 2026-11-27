@@ -126,9 +126,11 @@ The optional user-level discovery rule (`references/init.md` §a5) carries this 
 where the skill is not loaded.
 
 ```
-Resolve brain PER FOLDER OF THE WORK (the CWD, unless the work touches another session folder):
-  that folder's .synaptic/BRAIN.md, else the BRAIN.md at the BEGIN:SYNAPTIC bridge's pointer.
-  A brain resolved for one folder never receives another folder's work (multi-folder guard).
+Resolve brain at load for the CWD, exactly as in a single-folder session:
+  CWD .synaptic/BRAIN.md, else the BRAIN.md at the BEGIN:SYNAPTIC bridge's pointer.
+Other session folders resolve lazily: the first time the work touches files in one of them,
+  read that folder's .synaptic/BRAIN.md (if any) for that work. The CWD brain never receives
+  another folder's work, and a folder's brain never receives the CWD's (multi-folder guard).
 Does a brain resolve?
 ├── YES → Read BRAIN.md frontmatter schema/format version.
 │         Run COMPAT-CHECK (warn-not-gate — see below). Booting NEVER waits on it.
@@ -150,10 +152,11 @@ Does a brain resolve?
         ├── A BEGIN:SYNAPTIC bridge IS present (it names a brain path that is currently unreachable)
         │     → DO NOT offer onboarding. A bridge means a brain is intended; report the unreachable
         │       pointer instead ("bridge points at <path> but no brain is there — fix the path / restore it").
-        └── No bridge AND no brain dir for this folder → Offer onboarding for THIS folder only:
+        └── No bridge AND no brain dir for the CWD → Offer onboarding for the CWD only:
               "No brain found — start the setup interview? (y/n)". If another session folder holds
               a brain, first say once that it exists and serves only its own folder's work.
-              (on yes: load references/init.md)
+              A session folder without a brain gets no offer merely because the work touched it;
+              onboarding there needs an explicit request. (on yes: load references/init.md)
 ```
 
 When booting: read `BRAIN.md` only. Load all other files on demand through `knowledge/INDEX.md`.

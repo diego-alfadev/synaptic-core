@@ -64,7 +64,8 @@ Tailor framing to the answer (e.g. "your stack" for project, "your domains" for 
    context, both pointer lines rewritten to the brain's **absolute** path, **plus the skill's absolute
    path** (grep-recoverable). Never into a foreign committed **or synced** repo. If that carrier
    already holds a `BEGIN:SYNAPTIC-DISCOVERY` block (§a5), list its removal in the same plan, and keep
-   it only on the user's explicit choice after the nesting warning.
+   it only on the user's explicit choice after the nesting warning. On removal, set the record to
+   `discovery: not-configured` in the same plan.
 5. **Select rule exposure separately** — preserve existing approved rules and selected profile.
    Deploy `BEGIN:SYNAPTIC-RULES` only if listed by this adapter and in the approved plan. Symlink `harness/` **only** on a POSIX local
    (non-synced) path where allowed; on **Windows or any OneDrive/DFS-synced location, symlinks are NOT
