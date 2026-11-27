@@ -222,7 +222,7 @@ that touches that folder only".
      - §a5, the `BEGIN:SYNAPTIC-DISCOVERY` rule, installed **only on request**: an optional question
        asked without context gets answered blind and goes stale. It is compatible with a global brain,
        and coexistence is partly defined: a folder brain owns its tree, and the global brain serves
-       the rest.
+       the rest. The owner confirmed this scoped coexistence on 2026-11-27.
    - **`host-setup.md`:** the record field `discovery: configured | not-configured`.
    - **`capture-hooks.md`:** no layer runs for a brain in an additional folder.
 
