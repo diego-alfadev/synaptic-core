@@ -1,6 +1,7 @@
 # Spike: a brain in an additional folder of a multi-folder workspace
 
-Status: research spike, 2026-11-27. No engine change. Engine under study: 1.8.0.
+Status: research spike, 2026-11-27, decision recorded the same day (D4). No engine change; the
+skill-text changes ship on the same branch. Engine under study: 1.8.0.
 
 ## Question
 
@@ -18,9 +19,10 @@ Codex `--add-dir` and app secondary folders, OpenCode, Cursor multi-root)?
   folder's `.claude/skills/`. A loaded `synaptic` skill resolves the brain from the primary folder
   (`CWD/.synaptic/`). It can then offer onboarding in the wrong folder, or boot the primary folder's
   brain for work done in the other folder.
-- **Recommendation: D1 now, D2 later only on demand.** D1 is a documented primary-folder rule plus a
-  small Detect-on-Load guard. D2, a user-level workspace router, is the only design that covers every
-  host, but it brings forward the multi-binding/coexistence work deferred to 2.0.
+- **Decision (owner, 2026-11-27): D4.** It combines a Detect-on-Load guard in the skill, an optional
+  path-free discovery rule at user level, and the limitation stated plainly: full automation needs the
+  brain's folder as the primary folder. The router (D2) was rejected as too much for the core. A single
+  global brain stays parked for the 2.0 Cortex decision.
 
 ## Evidence labels and method
 
@@ -121,8 +123,9 @@ Case: a project-reach brain in folder A, used in a session whose primary folder 
   - when one is found, do not onboard and do not route its work into another brain;
   - report it once instead: "the brain in `<folder>` is not booted in this session; open that folder
     as the primary folder to use it".
-- Harden the bridge text to say its pointer is relative to the folder that holds the carrier, which
-  matters on Cursor.
+- Hardening the bridge text (pointer relative to the folder holding the carrier, for Cursor) was
+  considered and **dropped**. 1.8.0 keeps generated bridge wording fixed so installed bridges do not
+  drift; a wording change belongs in a release that announces it.
 
 ### D2 — User-level workspace router
 
@@ -140,39 +143,72 @@ Case: a project-reach brain in folder A, used in a session whose primary folder 
 - It depends on the skill being loaded, and on the host telling the model which folders the session
   has.
 
+### D4 — Guard + path-free discovery rule + stated limitation (adopted)
+
+This design came out of the owner review. It takes D1's guard, and replaces D2's registry with a
+**rule**: "a folder of this session that holds `.synaptic/BRAIN.md` has its own brain; use it for work
+that touches that folder only".
+
+- **Pattern: engine global, brain local.** This is how a globally installed tool such as gentle-ai
+  serves per-project data. The skill and the rule can sit at user level while every brain stays in its
+  own folder.
+- **Trigger: the files the task touches, not the working directory.** The cwd is always the primary
+  folder. A README fix or a dependency read in that folder mentions the brain once and moves on.
+  Asking every time would be noise.
+- **Optional.** The rule is offered by init (`references/init.md` §a5), is approval-gated and goes
+  only into a user-level carrier. It is not offered while a user-global bridge is wired: that
+  combination is the 2.0 coexistence case.
+- **Limitation stated, not hidden.** Hooks of an additional folder never run, so capture there is
+  manual. What is written waits for the rescue of the next session that opens the folder as primary.
+
 ### Scoring
 
-| Criterion | D1 primary-folder rule + guard | D2 user-level router | D3 skill-level discovery |
-|---|---|---|---|
-| L1 when A is additional, without the host loading anything from A | No (inert, but announced) | **Yes**, on all four hosts | Only where the skill loads: Claude Code from A; Codex and OpenCode need a user-level skill install |
-| Capture when A is additional (no host runs A's hooks) | None for A; P is unaffected | Assisted breadcrumbs routed by path. No deterministic activity marker for A: a user-level hook sees only the primary cwd | Assisted, and only after the skill triggers; a skill is not an always-on boot |
-| Detect-on-Load hazard (wrong brain / second brain) | **Removed** by the guard | Removed, provided arbitration is defined | Removed where the folder list is exposed; otherwise unchanged |
-| New external writes | None (skill text only) | One approval-gated user-level block, plus upkeep when folders move | None, or a user-level skill install |
-| Contract impact | Fits 1.8 | **Multi-binding**: `host-setup.md` says "not 1.8 multi-binding", and `init.md` defers coexistence to 2.0. It needs arbitration when P and A both have brains, and a registry schema | Implicit multi-binding without a registry; still needs arbitration |
-| Privacy | Unchanged | Every session sees the list of brain paths, the same posture as a global brain; never in a repo | Unchanged |
-| Cost per session | ~0 | Router block resident everywhere | ~0 until triggered |
+| Criterion | D1 primary-folder rule + guard | D2 user-level router | D3 skill-level discovery | **D4 guard + discovery rule** |
+|---|---|---|---|---|
+| L1 when A is additional, without the host loading anything from A | No (inert, but announced) | **Yes**, on all four hosts | Only where the skill loads: Claude Code from A; Codex and OpenCode need a user-level skill install | **Yes** where the rule is installed and the host names its folders; otherwise D1 |
+| Capture when A is additional (no host runs A's hooks) | None for A; P is unaffected | Assisted breadcrumbs routed by path. No deterministic activity marker for A: a user-level hook sees only the primary cwd | Assisted, and only after the skill triggers; a skill is not an always-on boot | Assisted (manual), stated plainly; the next primary session's rescue recovers playgrounds |
+| Detect-on-Load hazard (wrong brain / second brain) | **Removed** by the guard | Removed, provided arbitration is defined | Removed where the folder list is exposed; otherwise unchanged | **Removed** (guard, plus the rule's "that folder's work only") |
+| New external writes | None (skill text only) | One approval-gated user-level block, plus upkeep when folders move | None, or a user-level skill install | One optional, approval-gated user-level block that never changes |
+| Contract impact | Fits 1.8 | **Multi-binding**: `host-setup.md` says "not 1.8 multi-binding", and `init.md` defers coexistence to 2.0. It needs arbitration when P and A both have brains, and a registry schema | Implicit multi-binding without a registry; still needs arbitration | Fits 1.8: no registry; scoping by folder is the arbitration; excluded alongside a global bridge |
+| Privacy | Unchanged | Every session sees the list of brain paths, the same posture as a global brain; never in a repo | Unchanged | No paths or names anywhere |
+| Cost per session | ~0 | Router block resident everywhere | ~0 until triggered | ~80 words resident when installed |
 
-## Recommendation
+## Recommendation (decided: D4)
 
-1. **Adopt D1 in a 1.8.x patch.** It is skill and reference text only, with no engine code:
-   - add the Detect-on-Load guard;
-   - document the primary-folder rule in `init.md` and `capture-hooks.md`;
-   - harden the bridge-text pointer;
-   - extend the nesting check to sibling session folders when the host lists them.
-
-   It removes the only harmful behaviour found: wrong-brain boot and onboarding a second brain.
+1. **Ship D4 in the next 1.8.x.** It is skill and reference text only, with no engine code and no
+   schema change. Changes on this branch:
+   - **`SKILL.md` Detect-on-Load:** the multi-folder guard, with the trigger extended to session folders.
+   - **`init.md`:**
+     - a third Round 0.5 answer;
+     - the nesting check also reports brains in sibling session folders;
+     - §a5, the optional `BEGIN:SYNAPTIC-DISCOVERY` rule.
+   - **`host-setup.md`:** the `discovery:` record field.
+   - **`capture-hooks.md`:** no layer runs for a brain in an additional folder.
 2. **For the first consumer now:** start sessions in the consumer's own folder and add the other
    folders as extras. Its project-scope capture hooks fire only then. Do not rely on
    `CLAUDE_CODE_ADDITIONAL_DIRECTORIES_CLAUDE_MD`:
    - it never loads `AGENTS.md`;
    - the boot import was not followed in `-p`;
    - it never makes A's hooks run.
-3. **Hold D2 as the 2.0 coexistence candidate.** Build it only if the owner confirms that working in a
-   brain's folder as an *extra* folder is a regular pattern, not an occasional one. It is the only
-   design that covers all four hosts. Its real cost is the arbitration and registry work deferred to
-   2.0, not the carrier write.
+3. **Reject D2.** It would need a registry and arbitration, which is 2.0 work and too heavy for the core.
 4. **Reject D3 as the primary mechanism.** A skill is not a boot, and the session folder list is not
-   exposed uniformly across hosts. Its scanning idea survives inside D1's guard.
+   exposed uniformly across hosts. Its scanning idea survives inside the guard.
+5. **Revisit if hosts standardise multi-folder configuration.** If a host starts loading an added
+   folder's instructions and hooks, the limitation shrinks to a host-version note.
+
+## Note for the 2.0 decision: a single global brain
+
+**A user-global brain solves this problem completely.** Its bridge and its hooks sit at user level
+with absolute paths, so:
+- they load and fire whatever the primary folder is;
+- the activity marker, breadcrumbs and rescue all work in every session.
+
+This joins earlier cases where a global brain was the simpler answer. The open risk is unchanged:
+discovery and performance when one brain spans several *areas*, not only several repositories of one
+area. That is what the 2.0 Cortex layer is meant to answer.
+
+Project brains keep their place for isolation: shared with colleagues, a work-only brain, a client.
+D4 does not block a later move to a global brain. It is excluded while a global bridge is wired.
 
 ## Open questions (not verified)
 
