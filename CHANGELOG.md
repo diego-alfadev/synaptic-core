@@ -9,22 +9,26 @@
 
 ### Added
 
-- **Multi-folder guard** in `SKILL.md` Detect-on-Load:
-  - check the session's other folders for a brain before concluding "no brain";
-  - never onboard or write one folder's work into another folder's brain;
-  - use a folder's brain only for work that touches that folder;
-  - state once that capture there is manual.
+- **`references/multi-folder.md`** (loaded only when another session folder holds `.synaptic/`, or
+  the work touches one):
+  - the CWD brain resolves at load as before;
+  - a folder with its own brain is served only by that brain, which is read lazily and
+    COMPAT-checked;
+  - a folder without one is served as before, so a user-global brain keeps capturing there;
+  - onboarding is offered only for the CWD;
+  - the manual-capture limit is stated once.
+
+  `SKILL.md` carries a three-line pointer and a stronger description trigger, about 124 tokens per
+  skill load.
 - **Optional discovery rule** (`references/init.md` §a5): a path-free `BEGIN:SYNAPTIC-DISCOVERY`
-  block for the user-level carrier, offered from a new Round 0.5 answer. It is approval-gated and
-  recorded as `discovery:` in the setup record; `declined` is terminal.
+  block for the user-level carrier, installed only on explicit request and never offered unprompted.
+  It is recorded as `discovery: configured | not-configured`.
 - `research/multi-folder-workspaces.md`: host matrix, Claude Code probes and the design choice.
 
 ### Changed
 
+- Round 0.5 gains a multi-folder answer that states the primary-folder rule.
 - The nesting setup-check also reports brains in sibling session folders.
-- Detect-on-Load still resolves the CWD brain at load. Another session folder's brain is read lazily,
-  when the work first touches that folder. Onboarding is offered only for the CWD; a folder the work
-  merely touched gets no offer.
 - The global branch and `references/convert-to-global.md` plan the removal of an existing discovery
   rule, because a global brain plus folder brains is the coexistence case deferred to 2.0.
 - `references/capture-hooks.md` documents that no capture layer runs for a brain in an additional

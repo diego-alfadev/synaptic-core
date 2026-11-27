@@ -117,7 +117,8 @@ audit_reported_engine: null # audit stamps current engine after its one advisory
 
 Also retain engine, scope, skill path, exact deployed file inventory, nonce when present, static
 checks, failure/evidence details and existing adapter metadata. When the optional discovery rule
-was offered (`references/init.md` §a5), also retain `discovery: declined | not-configured | configured`.
+was installed or removed (`references/init.md` §a5), also retain `discovery: configured | not-configured`.
+A missing field means `not-configured`, and the carrier block is authoritative.
 `declined` is terminal until the user
 explicitly re-runs init; upgrade, audit and boot neither re-offer nor deploy that level. `failed` is
 diagnosis only. Audit reports `unproven`/`limited` once per engine by checking/updating

@@ -221,7 +221,7 @@ Follow `references/host-setup.md` for this transaction; a hook recipe alone is n
 > breadcrumbs, playgrounds, a manual `/synaptic-consolidate`. What it wrote waits for the next session
 > that opens the folder as primary, whose SessionStart rescue offers to consolidate. Step 9b sees no
 > boots from such sessions: their yield is *unknown*, not zero. Full automation needs the brain's folder
-> as the primary folder (`SKILL.md`, multi-folder guard; repo `research/multi-folder-workspaces.md`).
+> as the primary folder (`references/multi-folder.md`; repo `research/multi-folder-workspaces.md`).
 
 > **No compaction recovery on this host? SessionStart-rescue is the net.** On any host without a
 > compaction source on SessionStart, the next-boot rescue detects the unconsolidated

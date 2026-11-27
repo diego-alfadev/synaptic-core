@@ -6,7 +6,8 @@ description: >
   Knowledge-graph memory layer for project work — a portable, file-based brain that turns
   daily work into structured, indexable, agent-usable knowledge. Two planes: wiki (what you
   know) + harness (deployable operating-rules source). Triggers: `.synaptic/` present in the
-  workspace or in any folder of the session, user wants persistent project memory or an AI brain, or user invokes
+  workspace or in any folder of the session (load before working in that folder), user wants
+  persistent project memory or an AI brain, or user invokes
   /synaptic-init /synaptic-consolidate /synaptic-ingest /synaptic-audit /synaptic-maintain
   /synaptic-handover (routine: /synaptic-upgrade; 1.6 aliases: /synaptic-weave /synaptic-synthesize).
 ---
@@ -102,35 +103,13 @@ modes. "Going global" = moving the bridge up to user level (the brain folder can
 user-level bridge points at the brain's **absolute** path, Detect-on-Load resolves it from **any**
 folder — that is what makes one brain serve every folder.
 
-**Multi-folder sessions (guard).** The working directory is the session's primary folder.
-Folders added to a session are file access, not configuration roots:
-- Claude Code `--add-dir` / desktop "add folders", Codex `--add-dir` / app secondary folders, and
-  OpenCode extra paths are not loaded as a folder's own instructions, so their `AGENTS.md` bridge
-  is not read as that folder's own.
-- No host checked runs their project hooks.
-- Cursor multi-root loads every root's `AGENTS.md` for the whole workspace.
-
-A project brain belongs to the folder that holds its `.synaptic/`. When the host names other
-session folders, check each for `.synaptic/BRAIN.md` before concluding "no brain".
-- **Never** offer onboarding, and never write a folder's work into another folder's brain, while the
-  folder the work touches holds its own brain.
-- **When the task touches files in a folder with a brain**, read that `BRAIN.md` and follow its
-  capture contract for that work only.
-- **When the task does not concern that brain** (a dependency read, a README fix), mention it once
-  and continue. Ask only when relevance is genuinely ambiguous.
-- **State the limit once:** that brain's capture hooks run only when its folder is the primary
-  folder. Capture there is manual: journal breadcrumbs, playgrounds, `/synaptic-consolidate`. The
-  next session that opens the folder as primary offers the rescue.
-
-The optional user-level discovery rule (`references/init.md` §a5) carries this guard into sessions
-where the skill is not loaded.
+**Multi-folder sessions.** When another folder of the session holds `.synaptic/`, or the work
+touches one, load `references/multi-folder.md` before acting there: a folder brain serves only its
+own folder's work, and capture in an added folder is manual.
 
 ```
-Resolve brain at load for the CWD, exactly as in a single-folder session:
-  CWD .synaptic/BRAIN.md, else the BRAIN.md at the BEGIN:SYNAPTIC bridge's pointer.
-Other session folders resolve lazily: the first time the work touches files in one of them,
-  read that folder's .synaptic/BRAIN.md (if any) for that work. The CWD brain never receives
-  another folder's work, and a folder's brain never receives the CWD's (multi-folder guard).
+Resolve brain: CWD .synaptic/BRAIN.md, else the BRAIN.md at the BEGIN:SYNAPTIC bridge's pointer.
+               Other session folders: references/multi-folder.md.
 Does a brain resolve?
 ├── YES → Read BRAIN.md frontmatter schema/format version.
 │         Run COMPAT-CHECK (warn-not-gate — see below). Booting NEVER waits on it.
@@ -152,11 +131,9 @@ Does a brain resolve?
         ├── A BEGIN:SYNAPTIC bridge IS present (it names a brain path that is currently unreachable)
         │     → DO NOT offer onboarding. A bridge means a brain is intended; report the unreachable
         │       pointer instead ("bridge points at <path> but no brain is there — fix the path / restore it").
-        └── No bridge AND no brain dir for the CWD → Offer onboarding for the CWD only:
-              "No brain found — start the setup interview? (y/n)". If another session folder holds
-              a brain, first say once that it exists and serves only its own folder's work.
-              A session folder without a brain gets no offer merely because the work touched it;
-              onboarding there needs an explicit request. (on yes: load references/init.md)
+        └── No bridge AND no brain dir → Offer onboarding (for the CWD only; another session folder
+              holding a brain: references/multi-folder.md first): "No brain found — start the setup interview? (y/n)"
+              (on yes: load references/init.md)
 ```
 
 When booting: read `BRAIN.md` only. Load all other files on demand through `knowledge/INDEX.md`.

@@ -12,6 +12,7 @@ references/host-setup.md
 references/ingest.md
 references/init.md
 references/maintain.md
+references/multi-folder.md
 references/promote.md
 references/synthesize.md
 references/upgrade-to-v1.md
