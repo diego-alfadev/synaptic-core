@@ -1,5 +1,30 @@
 # Changelog
 
+## [Unreleased]
+
+> **Multi-folder sessions.** A project brain whose folder is only an additional folder of a session
+> (Claude Code `--add-dir` / desktop "add folders", Codex secondary folders, Cursor multi-root) is
+> not booted by any host checked, and its project hooks never run. Skill text only: no engine
+> change, no schema change, and no change to generated bridge wording.
+
+### Added
+
+- **Multi-folder guard** in `SKILL.md` Detect-on-Load:
+  - check the session's other folders for a brain before concluding "no brain";
+  - never onboard or write one folder's work into another folder's brain;
+  - use a folder's brain only for work that touches that folder;
+  - state once that capture there is manual.
+- **Optional discovery rule** (`references/init.md` §a5): a path-free `BEGIN:SYNAPTIC-DISCOVERY`
+  block for the user-level carrier, offered from a new Round 0.5 answer. It is approval-gated and
+  recorded as `discovery:` in the setup record; `declined` is terminal.
+- `research/multi-folder-workspaces.md`: host matrix, Claude Code probes and the design choice.
+
+### Changed
+
+- The nesting setup-check also reports brains in sibling session folders.
+- `references/capture-hooks.md` documents that no capture layer runs for a brain in an additional
+  folder, and what the rescue recovers later.
+
 ## [1.8.0] - 2026-11-26
 
 > **Node stores.** A folder of curated docs can be linted in place without becoming a brain, with

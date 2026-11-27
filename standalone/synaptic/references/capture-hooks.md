@@ -208,6 +208,21 @@ Follow `references/host-setup.md` for this transaction; a hook recipe alone is n
    - **Gemini CLI** — Stop + SessionStart where exposed; anything not exposed →
      instruction-only breadcrumbs + manual `/synaptic-consolidate`.
 
+> **Brain in an additional session folder: no layer runs.** Project-scope hooks run only from the
+> session's primary folder:
+> - **Claude Code:** an added folder's settings are read only for plugin keys, and its hooks did not
+>   fire in a probe.
+> - **Codex:** hooks come only from trusted `.codex/` layers from the project root to the cwd.
+> - **OpenCode:** has no added-folder concept.
+> - **Cursor:** undocumented.
+>
+> So a brain whose folder is only an extra folder of the session gets no (a0) marker, no compaction
+> recovery and no rescue in that session. Capture there is the instruction layer alone: journal
+> breadcrumbs, playgrounds, a manual `/synaptic-consolidate`. What it wrote waits for the next session
+> that opens the folder as primary, whose SessionStart rescue offers to consolidate. Step 9b sees no
+> boots from such sessions: their yield is *unknown*, not zero. Full automation needs the brain's folder
+> as the primary folder (`SKILL.md`, multi-folder guard; repo `research/multi-folder-workspaces.md`).
+
 > **No compaction recovery on this host? SessionStart-rescue is the net.** On any host without a
 > compaction source on SessionStart, the next-boot rescue detects the unconsolidated
 > breadcrumbs / active playgrounds and offers to consolidate (see `references/audit.md`'s half-done
