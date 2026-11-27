@@ -91,6 +91,19 @@ only that the two map to each other.
 | R6 | cwd P3 with an extra import `@../A4/BRIDGE.md`, no add-dir | The in-folder import loaded; the out-of-folder import did **not** (external import, and `-p` shows no approval dialog), which confounds R4/R5 |
 | R7 | cwd P4 (`CLAUDE.md`, skill `probe-dup`, command `probe-cmd`, `sub2/AGENTS.md` only); `--add-dir A5` (same skill and command names) | Two skills: `probe-dup` (P4) and `A5:probe-dup` (A5); one command, P4's; `sub2/AGENTS.md` not loaded on read |
 
+**End-to-end runs with the real skill (after D4).** Setup:
+- primary folder `main`, with no brain;
+- added folder `lab`, with `.synaptic/BRAIN.md` and the Synaptic skill as a project skill;
+- task: "add a line to `lab/notes.md`"; n=1 each, same model.
+
+| Run | Skill version | Observed |
+|---|---|---|
+| R8 | This branch | Invoked the `synaptic` skill and read `references/multi-folder.md` and `BRAIN.md`. It added the journal line to the lab brain only, and said three things: the brain covers only `lab/`, its hooks do not run in this session, and `/synaptic-consolidate` or the next session opened in `lab/` picks the capture up |
+| R9 | 1.8.0 (control) | Never invoked the skill. It found `.synaptic/` only because it listed the folder, followed the `BRAIN.md` line, and offered to delete that journal line. It mentioned neither the hooks nor consolidation |
+
+The change is what makes the agent load the skill and state the limit. Without it, the outcome depends
+on whether the agent happens to list the folder.
+
 A mis-run whose cwd was the common parent of P and A also showed something useful. When the extra
 folder sits *inside* the primary folder, its `CLAUDE.md` and nested `CLAUDE.md` load on demand like
 any subfolder of P.
@@ -155,9 +168,11 @@ that touches that folder only".
 - **Trigger: the files the task touches, not the working directory.** The cwd is always the primary
   folder. A README fix or a dependency read in that folder mentions the brain once and moves on.
   Asking every time would be noise.
-- **Optional.** The rule is offered by init (`references/init.md` §a5), is approval-gated and goes
-  only into a user-level carrier. It is not offered while a user-global bridge is wired: that
-  combination is the 2.0 coexistence case.
+- **Contract first, rule only on request.** At the pure-contract level the skill description is the
+  trigger. On Claude Code a project skill in an added folder is discovered (probed R7, R8), so this works
+  with no extra setup. The user-level rule (`references/init.md` §a5) is installed only when asked for,
+  never offered: an unexplained optional question gets answered blind and goes stale. It is refused
+  while a user-global bridge is wired, which is the 2.0 coexistence case.
 - **Limitation stated, not hidden.** Hooks of an additional folder never run, so capture there is
   manual. What is written waits for the rescue of the next session that opens the folder as primary.
 
@@ -171,19 +186,35 @@ that touches that folder only".
 | New external writes | None (skill text only) | One approval-gated user-level block, plus upkeep when folders move | None, or a user-level skill install | One optional, approval-gated user-level block that never changes |
 | Contract impact | Fits 1.8 | **Multi-binding**: `host-setup.md` says "not 1.8 multi-binding", and `init.md` defers coexistence to 2.0. It needs arbitration when P and A both have brains, and a registry schema | Implicit multi-binding without a registry; still needs arbitration | Fits 1.8: no registry; scoping by folder is the arbitration; excluded alongside a global bridge |
 | Privacy | Unchanged | Every session sees the list of brain paths, the same posture as a global brain; never in a repo | Unchanged | No paths or names anywhere |
-| Cost per session | ~0 | Router block resident everywhere | ~0 until triggered | ~80 words resident when installed |
+| Cost per session | ~0 | Router block resident everywhere | ~0 until triggered | ~124 tokens per skill load and ~15 in the description; the rule (~110 tokens) only if requested |
 
 ## Recommendation (decided: D4)
 
 1. **Ship D4 in the next 1.8.x.** It is skill and reference text only, with no engine code and no
    schema change. Changes on this branch:
-   - **`SKILL.md` Detect-on-Load:** the multi-folder guard, with the trigger extended to session folders.
+   - **`references/multi-folder.md`** (new, loaded on demand) holds the rules:
+     - the CWD brain resolves at load as before;
+     - a folder with its own brain is served only by it, read lazily and COMPAT-checked;
+     - a folder without one is served as before, so a user-global brain keeps capturing there;
+     - onboarding is offered only for the CWD;
+     - the manual-capture limit is stated once.
+   - **`SKILL.md`:** a three-line pointer, and a description trigger for `.synaptic/` in any session
+     folder.
    - **`init.md`:**
-     - a third Round 0.5 answer;
+     - a Round 0.5 multi-folder answer that states the rule and asks nothing more;
      - the nesting check also reports brains in sibling session folders;
-     - §a5, the optional `BEGIN:SYNAPTIC-DISCOVERY` rule.
-   - **`host-setup.md`:** the `discovery:` record field.
+     - §a5, the `BEGIN:SYNAPTIC-DISCOVERY` rule, installed **only on request**: an optional question
+       asked without context gets answered blind and goes stale.
+   - **`host-setup.md`:** the record field `discovery: configured | not-configured`.
    - **`capture-hooks.md`:** no layer runs for a brain in an additional folder.
+
+   **Cost (bytes/4):**
+   - `SKILL.md` +499 bytes (~124 tokens) per skill load;
+   - the description +~15 tokens, always resident;
+   - everything else on demand.
+
+   A first draft put the whole guard in `SKILL.md`: +2.2 KB, ~550 tokens per load. It was moved out to
+   keep the 1.6 small-core budget.
 2. **For the first consumer now:** start sessions in the consumer's own folder and add the other
    folders as extras. Its project-scope capture hooks fire only then. Do not rely on
    `CLAUDE_CODE_ADDITIONAL_DIRECTORIES_CLAUDE_MD`:
@@ -209,6 +240,23 @@ area. That is what the 2.0 Cortex layer is meant to answer.
 
 Project brains keep their place for isolation: shared with colleagues, a work-only brain, a client.
 D4 does not block a later move to a global brain. It is excluded while a global bridge is wired.
+
+## Follow-up spike: a deterministic path hook (core full, not this change)
+
+A user-level `PostToolUse` hook could walk up from each touched file path to the nearest
+`.synaptic/BRAIN.md` and act once per brain per session:
+- inject one line of context;
+- optionally append that brain's (a0) activity marker.
+
+That would be the only way to restore a mechanical capture floor for a brain in an added folder.
+- **Cost:** no tokens beyond that one line, but a process spawn on every matching tool call, in every
+  session, including the many where it never fires.
+- **Owner condition:** it must not become a hook that slows the harness or needs watching.
+
+The spike must measure p50/p99 latency per call. It must also decide the matcher scope (file tools
+only), opt-in installation, the per-session state and its edge cases (symlinks, very deep trees,
+network mounts). Whether Claude Code accepts `additionalContext` on `PostToolUse`, and what Codex
+offers, is unverified.
 
 ## Open questions (not verified)
 
