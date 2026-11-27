@@ -62,10 +62,8 @@ Tailor framing to the answer (e.g. "your stack" for project, "your domains" for 
    An unknown adapter stops at a leak-safe user-paste snippet; write no external files.
 4. **Plan the L1 bridge at user level** — for a supported adapter, list `BEGIN:SYNAPTIC` in the approved transaction for the effective user-level instruction
    context, both pointer lines rewritten to the brain's **absolute** path, **plus the skill's absolute
-   path** (grep-recoverable). Never into a foreign committed **or synced** repo. If that carrier
-   already holds a `BEGIN:SYNAPTIC-DISCOVERY` block (§a5), list its removal in the same plan, and keep
-   it only on the user's explicit choice after the nesting warning. On removal, set the record to
-   `discovery: not-configured` in the same plan.
+   path** (grep-recoverable). Never into a foreign committed **or synced** repo. An existing
+   `BEGIN:SYNAPTIC-DISCOVERY` block (§a5) stays: it is compatible with a global brain.
 5. **Select rule exposure separately** — preserve existing approved rules and selected profile.
    Deploy `BEGIN:SYNAPTIC-RULES` only if listed by this adapter and in the approved plan. Symlink `harness/` **only** on a POSIX local
    (non-synced) path where allowed; on **Windows or any OneDrive/DFS-synced location, symlinks are NOT
@@ -368,10 +366,11 @@ Documentation snapshot: **2026-11-07**. Sources:
 
 ### a5. Optional discovery rule (multi-folder sessions)
 
-Install this only on the user's explicit request; init never offers it unprompted. Refuse it, with
-the reason, while a user-global `BEGIN:SYNAPTIC` bridge is wired: a global brain plus folder brains is
-the coexistence case deferred to v2.0. The reverse order is covered too: the global branch (step 4)
-and `references/convert-to-global.md` step 1 check for this block and plan its removal.
+Install this only on the user's explicit request; init never offers it unprompted. It works with or
+without a user-global brain. Coexistence is partly defined in 1.8.x: a user-global brain serves only
+paths with no valid enclosing brain, and a folder brain owns its own tree
+(`references/multi-folder.md`). Full arbitration between a global and a folder brain on the same
+path stays 2.0; that is the nesting warning above.
 
 The rule carries the core of `references/multi-folder.md` in always-loaded form, for sessions where the
 skill is not loaded. It names no brain and no path, so it passes the leak/reach gate, survives folder
@@ -391,11 +390,12 @@ moves and covers later brains too.
 ```
 <!-- BEGIN:SYNAPTIC-DISCOVERY -->
 ## Synaptic brains in session folders
-A folder of this session that holds `.synaptic/BRAIN.md` has its own Synaptic brain. When the task
-touches files in that folder, read that BRAIN.md and follow its capture contract for that work only;
-never write one folder's work into another folder's brain. If the task does not concern that brain,
-mention it once and continue. Its capture hooks run only when it is the session's primary folder;
-elsewhere capture by hand (journal breadcrumbs, /synaptic-consolidate).
+A touched file's brain is its nearest enclosing `.synaptic/BRAIN.md`; skip one with no `schema_version`
+or with `fixture: true`. Before working in that brain's tree, read its BRAIN.md and follow its capture
+contract for that tree's work only. Never write that work into another brain, nor other work into it.
+If the task does not concern that brain, mention it once and continue. Its capture hooks run only when
+its folder is the session's primary folder; elsewhere capture by hand (journal breadcrumbs,
+/synaptic-consolidate).
 <!-- END:SYNAPTIC-DISCOVERY -->
 ```
 

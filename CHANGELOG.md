@@ -9,29 +9,37 @@
 
 ### Added
 
-- **`references/multi-folder.md`** (loaded only when another session folder holds `.synaptic/`, or
-  the work touches one):
+- **`references/multi-folder.md`** (loaded only when the work touches files outside the CWD tree, or
+  another session folder holds `.synaptic/`):
   - the CWD brain resolves at load as before;
-  - a folder with its own brain is served only by that brain, which is read lazily and
-    COMPAT-checked;
-  - a folder without one is served as before, so a user-global brain keeps capturing there;
+  - a touched path's brain is its **nearest enclosing** valid `.synaptic/BRAIN.md`, found by the path
+    rather than the session's folder list;
+  - a project brain serves only its own tree;
+  - a user-global brain serves only paths with no valid enclosing brain;
+  - a lazily read brain is COMPAT-checked;
   - onboarding is offered only for the CWD;
+  - a node store is never treated as a brain;
   - the manual-capture limit is stated once.
 
-  `SKILL.md` carries a three-line pointer and a stronger description trigger, about 124 tokens per
+  `SKILL.md` carries a three-line pointer and a stronger description trigger, about 128 tokens per
   skill load.
+- **`fixture: true`** (`BRAIN.md`, `references/contract.md` §8) marks a test or benchmark brain. It
+  boots as usual as the CWD brain, but is never resolved or announced from another folder. The bench
+  fixture carries it.
 - **Optional discovery rule** (`references/init.md` §a5): a path-free `BEGIN:SYNAPTIC-DISCOVERY`
   block for the user-level carrier, installed only on explicit request and never offered unprompted.
-  It is recorded as `discovery: configured | not-configured`.
+  It is recorded as `discovery: configured | not-configured`, and works with or without a
+  user-global brain.
 - `research/multi-folder-workspaces.md`: host matrix, Claude Code probes and the design choice.
 
 ### Changed
 
+- Coexistence of a user-global brain and folder brains is partly defined: the folder brain owns its
+  tree and the global brain serves the rest. Full arbitration on the same path stays 2.0 (the
+  nesting warning).
 - Round 0.5 gains a multi-folder answer that states the primary-folder rule.
 - The nesting setup-check also reports brains in sibling session folders.
-- The global branch and `references/convert-to-global.md` plan the removal of an existing discovery
-  rule, because a global brain plus folder brains is the coexistence case deferred to 2.0.
-- `references/capture-hooks.md` documents that no capture layer runs for a brain in an additional
+- `references/capture-hooks.md` documents that no capture layer runs for a brain outside the primary
   folder, and what the rescue recovers later.
 
 ## [1.8.0] - 2026-11-26

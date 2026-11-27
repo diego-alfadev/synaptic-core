@@ -6,7 +6,7 @@ description: >
   Knowledge-graph memory layer for project work — a portable, file-based brain that turns
   daily work into structured, indexable, agent-usable knowledge. Two planes: wiki (what you
   know) + harness (deployable operating-rules source). Triggers: `.synaptic/` present in the
-  workspace or in any folder of the session (load before working in that folder), user wants
+  workspace, in a session folder or above a touched path (load before working there), user wants
   persistent project memory or an AI brain, or user invokes
   /synaptic-init /synaptic-consolidate /synaptic-ingest /synaptic-audit /synaptic-maintain
   /synaptic-handover (routine: /synaptic-upgrade; 1.6 aliases: /synaptic-weave /synaptic-synthesize).
@@ -103,13 +103,13 @@ modes. "Going global" = moving the bridge up to user level (the brain folder can
 user-level bridge points at the brain's **absolute** path, Detect-on-Load resolves it from **any**
 folder — that is what makes one brain serve every folder.
 
-**Multi-folder sessions.** When another folder of the session holds `.synaptic/`, or the work
-touches one, load `references/multi-folder.md` before acting there: a folder brain serves only its
-own folder's work, and capture in an added folder is manual.
+**Work outside the CWD.** When the work touches files outside the CWD tree, or another session
+folder holds `.synaptic/`, load `references/multi-folder.md` before acting there. Each brain serves
+only its own tree, and capture outside the primary folder is manual.
 
 ```
 Resolve brain: CWD .synaptic/BRAIN.md, else the BRAIN.md at the BEGIN:SYNAPTIC bridge's pointer.
-               Other session folders: references/multi-folder.md.
+               Paths outside the CWD tree: references/multi-folder.md.
 Does a brain resolve?
 ├── YES → Read BRAIN.md frontmatter schema/format version.
 │         Run COMPAT-CHECK (warn-not-gate — see below). Booting NEVER waits on it.
@@ -131,8 +131,8 @@ Does a brain resolve?
         ├── A BEGIN:SYNAPTIC bridge IS present (it names a brain path that is currently unreachable)
         │     → DO NOT offer onboarding. A bridge means a brain is intended; report the unreachable
         │       pointer instead ("bridge points at <path> but no brain is there — fix the path / restore it").
-        └── No bridge AND no brain dir → Offer onboarding (for the CWD only; another session folder
-              holding a brain: references/multi-folder.md first): "No brain found — start the setup interview? (y/n)"
+        └── No bridge AND no brain dir → Offer onboarding (for the CWD only; a brain elsewhere
+              in the session: references/multi-folder.md first): "No brain found — start the setup interview? (y/n)"
               (on yes: load references/init.md)
 ```
 

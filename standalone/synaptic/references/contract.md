@@ -302,6 +302,7 @@ another owner maintains in place, such as a shared library or a handbook. Adopti
 | `links` | brain or store | `wikilink` | `wikilink` \| `markdown` \| `both`: which link syntax makes edges and MOC membership; any other value is an ERROR |
 | `exclude` | brain or store | `[]` | path prefixes under the node root that are not nodes (payloads), matched on whole path segments |
 | `evidence_levels` | brain or store | absent | ordered list, weakest first; validates the optional `evidence` field (§1) |
+| `fixture` | brain | absent | `true` marks a test or benchmark brain. It boots as usual when its folder is the CWD, but is never resolved or announced for work that reaches it from another folder (`references/multi-folder.md`) |
 
 In a brain, nodes, edges and `exclude` are scoped to `knowledge/`; with `links: markdown` or `both`,
 Markdown-link existence is checked brain-wide (every `.md` outside `templates/`, `references/raw/`,
