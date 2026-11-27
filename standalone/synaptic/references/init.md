@@ -390,11 +390,13 @@ moves and covers later brains too.
 ```
 <!-- BEGIN:SYNAPTIC-DISCOVERY -->
 ## Synaptic brains in session folders
-A touched file's brain is its nearest enclosing `.synaptic/BRAIN.md`; skip one with no `schema_version`
-or with `fixture: true`. Before working in that brain's tree, read its BRAIN.md and follow its capture
-contract for that tree's work only. Never write that work into another brain, nor other work into it.
-If the task does not concern that brain, mention it once and continue. Its capture hooks run only when
-its folder is the session's primary folder; elsewhere capture by hand (journal breadcrumbs,
+For a file outside the working directory's tree, its brain is the nearest enclosing
+`.synaptic/BRAIN.md`. Skip one with no `schema_version` or with `fixture: true` and keep walking up.
+Before working in that brain's tree, read its BRAIN.md and follow its capture contract for that tree's
+work only. Never write that work into another brain, nor other work into it. With no enclosing brain,
+only a user-global brain may capture it; a project brain never does, so say once that nothing captured
+it. If the task does not concern a brain, mention it once and continue. A brain's capture hooks run only
+when its folder is the session's primary folder; elsewhere capture by hand (journal breadcrumbs,
 /synaptic-consolidate).
 <!-- END:SYNAPTIC-DISCOVERY -->
 ```

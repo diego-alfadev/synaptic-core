@@ -76,6 +76,6 @@ zero (`references/capture-hooks.md`).
 
 ## Optional discovery rule
 
-On request, a path-free user-level rule (`references/init.md` §a5) carries steps 2, 3 (without
-COMPAT-CHECK, which needs this skill), 5 and 6 into sessions where this skill is not loaded. It is
-never offered unprompted.
+On request, a path-free user-level rule (`references/init.md` §a5) carries steps 2–6 into sessions
+where this skill is not loaded, except COMPAT-CHECK, which needs this skill. It is never offered
+unprompted.
