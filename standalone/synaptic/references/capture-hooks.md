@@ -137,6 +137,10 @@ Follow `references/host-setup.md` for this transaction; a hook recipe alone is n
 > - **Accomplished** → the dated decisions / consolidation events → one **Log** line each.
 > - **Files-touched** → named inline in the relevant Resume-Anchor / Log line (a pointer, not a diff).
 >
+> **Only this brain's work.** In a session that also touched another brain's tree, the summary
+> (and any consolidation) carries only the work this brain serves (`references/multi-folder.md`). Leave
+> out what cannot be attributed safely; never copy another brain's decisions or paths into it.
+>
 > This is the **discipline** stolen from Engram's mandatory `mem_session_summary`
 > (Goal/Discoveries/Accomplished/Next-Steps/Files) — **not** its engine: no SQLite, no MCP, no runtime,
 > no Engram dependency. It is plain text an agent writes to a file the host already has. A future

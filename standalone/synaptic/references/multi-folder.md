@@ -2,9 +2,10 @@
 
 # Work outside the CWD (multi-folder sessions)
 
-Read this when the work touches files outside the CWD's folder tree: an added session folder, or
-any path reached directly. Also read it when another session folder holds `.synaptic/`. Evidence and
-host sources are in the repo: `research/multi-folder-workspaces.md`.
+Read this when the work touches files outside the CWD's folder tree (an added session folder, or
+any path reached directly), or under a nested `.synaptic/` inside it. Also read it when another
+session folder holds `.synaptic/`. Evidence and host sources are in the repo:
+`research/multi-folder-workspaces.md`.
 
 ## What hosts load from an added folder
 
@@ -29,17 +30,25 @@ when it is not, and from being confused with another brain.
 ## Which brain serves a touched path
 
 1. **The CWD brain resolves at load, unchanged:** CWD `.synaptic/BRAIN.md`, else the brain at the
-   `BEGIN:SYNAPTIC` bridge's pointer.
-2. **For a path outside the CWD tree, find its brain by the path, not by the session's folder list.**
-   Walk up from the touched path to the nearest enclosing `.synaptic/BRAIN.md`. Skip it silently, and
-   keep walking, when:
+   `BEGIN:SYNAPTIC` bridge's pointer. Its tree is the folder that holds that `.synaptic/` or, for a
+   project bridge, the folder of the carrier file, even when that folder is above the CWD.
+2. **For any other path, find its brain by the path, not by the session's folder list.** That covers
+   a path outside the CWD brain's tree, and a path under a nested `.synaptic/` inside it. Use
+   symlink-resolved paths, for the inside/outside test and for the walk; for a new file, resolve its
+   nearest existing parent. Walk up from the touched path to the nearest enclosing
+   `.synaptic/BRAIN.md`. Skip it silently, and keep walking, when:
    - its frontmatter has no `schema_version`;
    - its frontmatter declares `fixture: true` (a test or benchmark brain);
    - the `.synaptic/` folder has no `BRAIN.md` at all.
+
+   Stop the walk after checking a folder whose `.git` is a file (a linked worktree or submodule):
+   above it is another checkout. If a candidate `BRAIN.md`, or a folder on the walk, cannot be read,
+   ownership is unknown: do the task and capture nothing for that path.
 3. **A valid enclosing brain serves that path.** The first time the work touches its tree, read its
    `BRAIN.md` and run COMPAT-CHECK on it (`SKILL.md`, warn-not-gate). Then follow its capture
-   contract for that tree's work only.
-4. **A path with no enclosing brain:**
+   contract for that tree's work only. If that brain is the one the user-level bridge points at, it
+   is the user-global brain, not a project brain (a re-wired conversion leaves it in place).
+4. **A path with no enclosing brain, outside the CWD brain's tree:**
    - a **user-global** brain (resolved through a user-level bridge) serves it;
    - a **project** brain (CWD `.synaptic/`, or a bridge in a project carrier) never does, because it
      serves only its own folder tree;

@@ -49,7 +49,8 @@ Tailor framing to the answer (e.g. "your stack" for project, "your domains" for 
 > here creates two active bridges over the same location — behavior is undefined and both may fire.
 > Recommend: keep the one global brain, or convert deliberately."* This is **advisory** — proceed only on
 > explicit user confirmation; it never hard-fails (v2.0 coexistence is where arbitration lands).
-> When the host names other session folders, also check them for `.synaptic/BRAIN.md`. A brain in a
+> When the host names other session folders, also check them for `.synaptic/BRAIN.md`, with the same
+> eligibility as the resolver: skip one with no `schema_version` or with `fixture: true`. A brain in a
 > sibling folder is not nested, so it gets no warning. Report it once: both brains are present in this
 > session, and each one owns only its own folder's work (`references/multi-folder.md`).
 
@@ -391,13 +392,15 @@ moves and covers later brains too.
 <!-- BEGIN:SYNAPTIC-DISCOVERY -->
 ## Synaptic brains in session folders
 For a file outside the working directory's tree, its brain is the nearest enclosing
-`.synaptic/BRAIN.md`. Skip one with no `schema_version` or with `fixture: true` and keep walking up.
+`.synaptic/BRAIN.md`, walking symlink-resolved paths. Skip one with no `schema_version` or with
+`fixture: true` and keep walking up; stop at a folder whose `.git` is a file. If a candidate cannot be
+read, capture nothing for that file.
 Before working in that brain's tree, read its BRAIN.md and follow its capture contract for that tree's
 work only. Never write that work into another brain, nor other work into it. With no enclosing brain,
-only a user-global brain may capture it; a project brain never does, so say once that nothing captured
-it. If the task does not concern a brain, mention it once and continue. A brain's capture hooks run only
-when its folder is the session's primary folder; elsewhere capture by hand (journal breadcrumbs,
-/synaptic-consolidate).
+a user-global brain captures it if one is resolved; a project brain never does. With neither, say
+once that nothing captured it. If the task does not concern a brain, mention it once and continue.
+A brain's capture hooks run only when its folder is the session's primary folder; elsewhere capture
+by hand (journal breadcrumbs, /synaptic-consolidate).
 <!-- END:SYNAPTIC-DISCOVERY -->
 ```
 

@@ -103,9 +103,10 @@ modes. "Going global" = moving the bridge up to user level (the brain folder can
 user-level bridge points at the brain's **absolute** path, Detect-on-Load resolves it from **any**
 folder — that is what makes one brain serve every folder.
 
-**Work outside the CWD.** When the work touches files outside the CWD tree, or another session
-folder holds `.synaptic/`, load `references/multi-folder.md` before acting there. Each brain serves
-only its own tree, and capture outside the primary folder is manual.
+**Work outside the CWD.** When the work touches files outside the CWD tree, under a nested
+`.synaptic/` inside it, or another session folder holds `.synaptic/`, load
+`references/multi-folder.md` before acting there. Each brain serves only its own tree, and capture
+outside the primary folder is manual.
 
 ```
 Resolve brain: CWD .synaptic/BRAIN.md, else the BRAIN.md at the BEGIN:SYNAPTIC bridge's pointer.

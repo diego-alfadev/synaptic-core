@@ -9,11 +9,14 @@
 
 ### Added
 
-- **`references/multi-folder.md`** (loaded only when the work touches files outside the CWD tree, or
-  another session folder holds `.synaptic/`):
-  - the CWD brain resolves at load as before;
+- **`references/multi-folder.md`** (loaded only when the work touches files outside the CWD tree or
+  under a nested `.synaptic/` inside it, or another session folder holds `.synaptic/`):
+  - the CWD brain resolves at load as before; its tree is its `.synaptic/` folder or its project
+    carrier's folder;
   - a touched path's brain is its **nearest enclosing** valid `.synaptic/BRAIN.md`, found by the path
     rather than the session's folder list;
+  - the walk uses symlink-resolved paths, stops at a linked worktree or submodule, and captures
+    nothing when a candidate cannot be read;
   - a project brain serves only its own tree;
   - a user-global brain serves only paths with no valid enclosing brain;
   - a lazily read brain is COMPAT-checked;
@@ -21,7 +24,7 @@
   - a node store is never treated as a brain;
   - the manual-capture limit is stated once.
 
-  `SKILL.md` carries a three-line pointer and a stronger description trigger, about 128 tokens per
+  `SKILL.md` carries a four-line pointer and a stronger description trigger, about 138 tokens per
   skill load.
 - **`fixture: true`** (`BRAIN.md`, `references/contract.md` §8) marks a test or benchmark brain. It
   boots as usual as the CWD brain, but is never resolved or announced from another folder. The bench
@@ -38,9 +41,11 @@
   tree and the global brain serves the rest. Full arbitration on the same path stays 2.0 (the
   nesting warning).
 - Round 0.5 gains a multi-folder answer that states the primary-folder rule.
-- The nesting setup-check also reports brains in sibling session folders.
+- The nesting setup-check also reports eligible brains in sibling session folders (fixtures and
+  brains without `schema_version` are skipped).
 - `references/capture-hooks.md` documents that no capture layer runs for a brain outside the primary
   folder, and what the rescue recovers later.
+- The structured session summary carries only the work of the brain it is written into.
 
 ## [1.8.0] - 2026-11-26
 
