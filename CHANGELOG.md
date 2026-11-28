@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [1.8.1] - 2026-11-28
 
 > **Multi-folder sessions.** A project brain whose folder is only an additional folder of a session
 > (Claude Code `--add-dir` / desktop "add folders", Codex secondary folders, Cursor multi-root) is
