@@ -1,7 +1,7 @@
 # v1.8.1 — Multi-folder workspaces
 
-Engine version 1.8.1; brain schema stays 1.0, so no knowledge-format migration. Skill text only: no
-engine change, and no change to generated bridge wording.
+Engine version 1.8.1; brain schema stays 1.0, so no knowledge-format migration. Only the skill text
+changed: no tool or runtime change, and no change to generated bridge wording.
 
 **New in 1.8.1:** a brain whose folder is only an additional folder of a session is no longer
 mistaken for an active one, nor confused with another folder's brain. No host checked boots an added

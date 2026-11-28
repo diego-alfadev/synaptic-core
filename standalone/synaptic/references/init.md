@@ -391,10 +391,11 @@ moves and covers later brains too.
 ```
 <!-- BEGIN:SYNAPTIC-DISCOVERY -->
 ## Synaptic brains in session folders
-For a file outside the working directory's tree, its brain is the nearest enclosing
+The working directory's brain owns the folder of its `.synaptic/` or of its bridge file. For a file
+outside that tree, or under a nested `.synaptic/` inside it, its brain is the nearest enclosing
 `.synaptic/BRAIN.md`, walking symlink-resolved paths. Skip one with no `schema_version` or with
-`fixture: true` and keep walking up; stop at a folder whose `.git` is a file. If a candidate cannot be
-read, capture nothing for that file.
+`fixture: true` and keep walking up; stop after checking a folder whose `.git` is a file. If a
+candidate cannot be read, capture nothing for that file.
 Before working in that brain's tree, read its BRAIN.md and follow its capture contract for that tree's
 work only. Never write that work into another brain, nor other work into it. With no enclosing brain,
 a user-global brain captures it if one is resolved; a project brain never does. With neither, say

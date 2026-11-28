@@ -4,8 +4,8 @@
 
 > **Multi-folder sessions.** A project brain whose folder is only an additional folder of a session
 > (Claude Code `--add-dir` / desktop "add folders", Codex secondary folders, Cursor multi-root) is
-> not booted by any host checked, and its project hooks never run. Skill text only: no engine
-> change, no schema change, and no change to generated bridge wording.
+> not booted by any host checked, and its project hooks never run. Skill text only: no tool or
+> runtime change, no schema change, and no change to generated bridge wording.
 
 ### Added
 
