@@ -36,6 +36,11 @@ Tailor framing to the answer (e.g. "your stack" for project, "your domains" for 
   wired at **user level**.
 - **"One folder" →** the existing project-local flow (unchanged), plus a one-line note that they can
   convert to global later (`references/convert-to-global.md`).
+- **"Several folders in one session, with a brain of its own in this one"** (a multi-folder
+  workspace) → the project-local flow, plus one plain note: *"Hooks and the bridge of this folder load
+  only when it is the session's primary folder. As an extra folder, the brain is not booted and
+  capture there is manual."* Do not ask about the discovery rule (§a5). An optional question asked
+  without context gets answered blind and then goes stale; the rule is available on request.
 
 > **Nesting setup-check (warn, don't guard).** On any `/synaptic-init` inside a folder, first **check**
 > whether a higher / user-level `BEGIN:SYNAPTIC` bridge already resolves a brain that would cover this
@@ -44,6 +49,10 @@ Tailor framing to the answer (e.g. "your stack" for project, "your domains" for 
 > here creates two active bridges over the same location — behavior is undefined and both may fire.
 > Recommend: keep the one global brain, or convert deliberately."* This is **advisory** — proceed only on
 > explicit user confirmation; it never hard-fails (v2.0 coexistence is where arbitration lands).
+> When the host names other session folders, also check them for `.synaptic/BRAIN.md`, with the same
+> eligibility as the resolver: skip one with no `schema_version` or with `fixture: true`. A brain in a
+> sibling folder is not nested, so it gets no warning. Report it once: both brains are present in this
+> session, and each one owns only its own folder's work (`references/multi-folder.md`).
 
 **Global branch (guided — hide internals; ask only on genuine forks):**
 1. **Pick the global root.** Default-propose the home dir (`~/` / `C:/Users/<user>`); confirm; allow a
@@ -54,7 +63,8 @@ Tailor framing to the answer (e.g. "your stack" for project, "your domains" for 
    An unknown adapter stops at a leak-safe user-paste snippet; write no external files.
 4. **Plan the L1 bridge at user level** — for a supported adapter, list `BEGIN:SYNAPTIC` in the approved transaction for the effective user-level instruction
    context, both pointer lines rewritten to the brain's **absolute** path, **plus the skill's absolute
-   path** (grep-recoverable). Never into a foreign committed **or synced** repo.
+   path** (grep-recoverable). Never into a foreign committed **or synced** repo. An existing
+   `BEGIN:SYNAPTIC-DISCOVERY` block (§a5) stays: it is compatible with a global brain.
 5. **Select rule exposure separately** — preserve existing approved rules and selected profile.
    Deploy `BEGIN:SYNAPTIC-RULES` only if listed by this adapter and in the approved plan. Symlink `harness/` **only** on a POSIX local
    (non-synced) path where allowed; on **Windows or any OneDrive/DFS-synced location, symlinks are NOT
@@ -354,6 +364,50 @@ Documentation snapshot: **2026-11-07**. Sources:
    to test chosen carrier/override, fresh-chat nonce, command arguments and an optional hook recording only event/tool
    name. Record loaded/menu-rendered/hook-fired separately; no prompt, argument or result capture.
    Static fixtures and documentation do not establish a live-host support claim.
+
+### a5. Optional discovery rule (multi-folder sessions)
+
+Install this only on the user's explicit request; init never offers it unprompted. It works with or
+without a user-global brain. Coexistence is partly defined in 1.8.x: a user-global brain serves only
+paths with no valid enclosing brain, and a folder brain owns its own tree
+(`references/multi-folder.md`). Full arbitration between a global and a folder brain on the same
+path stays 2.0; that is the nesting warning above.
+
+The rule carries the core of `references/multi-folder.md` in always-loaded form, for sessions where the
+skill is not loaded. It names no brain and no path, so it passes the leak/reach gate, survives folder
+moves and covers later brains too.
+
+1. **Target:** the supported adapter's effective user-level, non-synced instruction carrier (Claude
+   Code user `CLAUDE.md`, Codex global guidance per §a3). Never a project carrier: an added folder's
+   carrier is exactly what hosts do not load. Unknown adapters get the block as user-paste text only.
+2. **Transaction:** the same contract as every external write (`references/host-setup.md`). That
+   means the exact target, a fresh byte-preserving preimage, the shown diff, approval and rollback.
+   Replace an existing block whole; touch nothing outside it.
+3. **Record** `discovery: configured` when the block is written, and `discovery: not-configured` when
+   it is absent or removed. A missing field means `not-configured`. There is no `declined`, because
+   nothing offers the rule: boot, init, upgrade and audit never propose it. The carrier block is
+   authoritative over the record.
+
+```
+<!-- BEGIN:SYNAPTIC-DISCOVERY -->
+## Synaptic brains in session folders
+The working directory's brain owns the folder of its `.synaptic/` or of its bridge file. For a file
+outside that tree, or under a nested `.synaptic/` inside it, its brain is the nearest enclosing
+`.synaptic/BRAIN.md`, walking symlink-resolved paths. Skip one with no `schema_version` or with
+`fixture: true` and keep walking up; stop after checking a folder whose `.git` is a file. If a
+candidate cannot be read, capture nothing for that file.
+Before working in that brain's tree, read its BRAIN.md and follow its capture contract for that tree's
+work only. Never write that work into another brain, nor other work into it. With no enclosing brain,
+a user-global brain captures it if one is resolved; a project brain never does. With neither, say
+once that nothing captured it. If the task does not concern a brain, mention it once and continue.
+A brain's capture hooks run only when its folder is the session's primary folder; elsewhere capture
+by hand (journal breadcrumbs, /synaptic-consolidate).
+<!-- END:SYNAPTIC-DISCOVERY -->
+```
+
+The rule is an instruction, like the bridge, not a guarantee. It also depends on the host telling the
+agent which folders the session has. Claude Code does; Codex and OpenCode are unverified (repo
+`research/multi-folder-workspaces.md`).
 
 ### b. Skill install
 

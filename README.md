@@ -10,7 +10,7 @@ Synaptic gives your agent a brain: a folder of linked Markdown files it reads fi
 when you ask. Decisions, lessons and playbooks stay in files you own, so a fresh session, a
 different agent or another person can pick the work up from them.
 
-> **v1.8.0, usable beta.** The file-based brain works with any agent that can read and write files.
+> **v1.8.1, usable beta.** The file-based brain works with any agent that can read and write files.
 > Extras are optional previews. [Details](#what-is-automatic-and-what-is-not).
 
 ## Quickstart
@@ -158,8 +158,8 @@ SHA-256 once (from `SHA256SUMS` on the release page), then on every run download
 the recorded value, extract and check. Node 18 or later is enough; nothing is installed.
 
 ```sh
-VERSION=1.8.0
-SHA256=<recorded sha256 of synaptic-1.8.0.tar.gz>
+VERSION=1.8.1
+SHA256=<recorded sha256 of synaptic-1.8.1.tar.gz>
 gh release download "v$VERSION" -R diego-alfadev/synaptic-core -p "synaptic-$VERSION.tar.gz" -p SHA256SUMS
 echo "$SHA256  synaptic-$VERSION.tar.gz" | shasum -a 256 -c -   # Linux: sha256sum -c -
 tar -xzf "synaptic-$VERSION.tar.gz"
@@ -167,7 +167,7 @@ node "synaptic-$VERSION/tools/check.js" path/to/.synaptic          # or a node s
 ```
 
 Without `gh`, fetch the same two assets from the release URL
-(`https://github.com/diego-alfadev/synaptic-core/releases/download/v1.8.0/…`). Check the recorded
+(`https://github.com/diego-alfadev/synaptic-core/releases/download/v1.8.1/…`). Check the recorded
 digest, not only the downloaded `SHA256SUMS`: that file proves consistency, not which release you chose.
 
 ## What is automatic and what is not

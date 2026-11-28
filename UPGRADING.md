@@ -3,9 +3,11 @@
 Guide for a prepared release package. Real host acceptance for the optional previews (VS Code,
 automatic curation) remains pending.
 
-The engine is **1.8.0 — Node stores**; its brain format remains **1.0**. This is not a knowledge-format migration.
-A brain that keeps the default wikilink mode sees no new `check.js` findings; `links`, `exclude` and
-`evidence_levels` in `BRAIN.md`, and `evidence` on a node, now carry meaning ([changelog](CHANGELOG.md)).
+The engine is **1.8.1 — Multi-folder workspaces**; its brain format remains **1.0**. This is not a knowledge-format migration.
+1.8.1 adds rules for brains in additional session folders; a single-folder session behaves as in
+1.8.0. A brain that keeps the default wikilink mode sees no new `check.js` findings; `links`,
+`exclude` and `evidence_levels` in `BRAIN.md`, and `evidence` on a node, carry meaning since 1.8.0
+([changelog](CHANGELOG.md)).
 
 The old engine installs the selected verified package and then reloads the new skill before host
 detection. A scope-safe bridge completes baseline setup; optional commands, hooks and MCP do not

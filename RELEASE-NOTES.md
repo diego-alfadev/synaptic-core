@@ -1,49 +1,51 @@
-# v1.8.0 — Node stores
+# v1.8.1 — Multi-folder workspaces
 
-Engine version 1.8.0; brain schema stays 1.0, so no knowledge-format migration.
+Engine version 1.8.1; brain schema stays 1.0, so no knowledge-format migration. Only the skill text
+changed: no tool or runtime change, and no change to generated bridge wording.
 
-**New in 1.8.0:** a folder of curated docs can be linted in place without becoming a brain. An
-`INDEX.md` whose frontmatter declares `synaptic: store` makes its folder a node store: every `.md`
-under it except MOC files is a node, and `tools/check.js <folder>` checks it. A store never boots and
-must not carry `BRAIN.md`. Brains and stores may choose `links: wikilink | markdown | both`, so
-relative Markdown links count as edges and hub membership. A brain without the new keys gets
-byte-identical `check.js` output.
+**New in 1.8.1:** a brain whose folder is only an additional folder of a session is no longer
+mistaken for an active one, nor confused with another folder's brain. No host checked boots an added
+folder's bridge or runs its project hooks (Claude Code `--add-dir` and desktop "add folders", Codex
+secondary folders; OpenCode has no added-folder concept). The skill now says which brain serves a
+touched path, and states the manual-capture limit once.
 
 ## What changes for you
 
-- **Markdown links are checked.** In `markdown` or `both` mode a relative link or typed-edge path to
-  a missing file is an error. A path whose case differs from the file on disk is an error too, on
-  every filesystem: macOS and Windows open it, Linux and GitHub do not. Wikilinks are unchanged.
-- **`exclude`** lists path prefixes under the node root that are payloads, not nodes.
-- **`evidence`** is an optional node field, separate from `confidence`, validated (WARN) against the
-  `evidence_levels` ladder the root declares. A compound claim is written as its weakest level. The
-  node template lists it.
-- **Promotion playbook.** `references/promote.md` moves a child brain's node into a parent's store:
-  parent first, git as transport, propose-then-approve with a confidentiality gate. `/synaptic-maintain`
-  points to it.
-- **Pin a release from another repository.** The README shows how a consumer records a version and
-  the tarball's SHA-256, then runs that release's `tools/check.js` on its brain or store.
+- **Each brain serves only its own tree.** A path's brain is its nearest enclosing valid
+  `.synaptic/BRAIN.md`, found by the path. A project brain never captures work outside its tree. A
+  user-global brain serves only paths with no brain of their own, and never takes work inside a
+  project brain's tree.
+- **No cross-brain leaks.** A session summary or consolidation carries only the work of the brain it
+  is written into.
+- **Safe edges.** The walk uses symlink-resolved paths, stops at a linked worktree or submodule, and
+  captures nothing when a candidate brain cannot be read.
+- **`fixture: true`** in `BRAIN.md` marks a test or benchmark brain. It still boots as the primary
+  folder's brain, but is never resolved or announced from another folder.
+- **Node stores are not brains.** An `INDEX.md` with `synaptic: store` never boots and never receives
+  capture.
+- **Optional discovery rule.** A path-free `BEGIN:SYNAPTIC-DISCOVERY` block for the user-level
+  carrier carries these rules into sessions where the skill is not loaded. It is installed only on
+  explicit request (`references/init.md` §a5), never offered unprompted.
 
-Read-only mounts of a store from a brain are planned, not part of this release.
+The guard lives in an on-demand reference, `references/multi-folder.md`. `SKILL.md` grows by about
+138 tokens per load.
 
 ## Upgrade
 
 Keep your existing brain and update the full skill bundle from the selected verified package
 ([Upgrade guide](UPGRADING.md)). From 1.7.2, the installed `/synaptic-upgrade` already installs the
 package and reloads it before host detection. An engine older than 1.7.2 starts from the package's
-[entry instruction](docs/UPGRADE-TO-1.7.2.AGENT.md) instead.
-
-- `links`, `exclude` and `evidence_levels` in `BRAIN.md`, and `evidence` on a node, now carry
-  meaning. A brain that already used one of these names for something else gets new warnings (or an
-  "invalid links value" error) until the key is renamed.
-- A brain that stays in the default wikilink mode sees no new findings.
+[entry instruction](docs/UPGRADE-TO-1.7.2.AGENT.md) instead. A single-folder session behaves as in
+1.8.0.
 
 ## Evidence and limits
 
-Local tool, package and synthetic checks cover this release; CI runs the tool suites on Linux, macOS
-and Windows with Node 18, 22 and 24. A real brain in wikilink mode gave byte-identical `check.js` output before and
-after. The Markdown parser does not read reference-style links or unencoded spaces in targets
-(`references/contract.md` §8). Real host acceptance for the optional previews (VS Code, automatic
-curation) remains pending, as in 1.7.2.
+Claude Code 2.1.327 was probed headless in a scratch directory, including end-to-end runs with and
+without this change ([spike](research/multi-folder-workspaces.md)). Codex and OpenCode rest on their
+official documentation, and Cursor on forum posts; none of them was probed live. Full automatic
+capture needs the brain's folder as the session's primary folder; elsewhere capture is manual
+(journal breadcrumbs, `/synaptic-consolidate`). A global brain and a folder brain on the same path
+stays the nesting case: init warns, and full arbitration is 2.0. Real host acceptance for the
+optional previews (VS Code, automatic curation) remains pending, as in 1.7.2.
 
 Detailed changes belong in the [changelog](CHANGELOG.md).

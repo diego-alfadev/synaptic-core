@@ -137,6 +137,10 @@ Follow `references/host-setup.md` for this transaction; a hook recipe alone is n
 > - **Accomplished** → the dated decisions / consolidation events → one **Log** line each.
 > - **Files-touched** → named inline in the relevant Resume-Anchor / Log line (a pointer, not a diff).
 >
+> **Only this brain's work.** In a session that also touched another brain's tree, the summary
+> (and any consolidation) carries only the work this brain serves (`references/multi-folder.md`). Leave
+> out what cannot be attributed safely; never copy another brain's decisions or paths into it.
+>
 > This is the **discipline** stolen from Engram's mandatory `mem_session_summary`
 > (Goal/Discoveries/Accomplished/Next-Steps/Files) — **not** its engine: no SQLite, no MCP, no runtime,
 > no Engram dependency. It is plain text an agent writes to a file the host already has. A future
@@ -207,6 +211,21 @@ Follow `references/host-setup.md` for this transaction; a hook recipe alone is n
      instruction-only breadcrumbs cover it.
    - **Gemini CLI** — Stop + SessionStart where exposed; anything not exposed →
      instruction-only breadcrumbs + manual `/synaptic-consolidate`.
+
+> **Brain in an additional session folder: no layer runs.** Project-scope hooks run only from the
+> session's primary folder:
+> - **Claude Code:** an added folder's settings are read only for plugin keys, and its hooks did not
+>   fire in a probe.
+> - **Codex:** hooks come only from trusted `.codex/` layers from the project root to the cwd.
+> - **OpenCode:** has no added-folder concept.
+> - **Cursor:** undocumented.
+>
+> So a brain whose folder is only an extra folder of the session gets no (a0) marker, no compaction
+> recovery and no rescue in that session. Capture there is the instruction layer alone: journal
+> breadcrumbs, playgrounds, a manual `/synaptic-consolidate`. What it wrote waits for the next session
+> that opens the folder as primary, whose SessionStart rescue offers to consolidate. Step 9b sees no
+> boots from such sessions: their yield is *unknown*, not zero. Full automation needs the brain's folder
+> as the primary folder (`references/multi-folder.md`; repo `research/multi-folder-workspaces.md`).
 
 > **No compaction recovery on this host? SessionStart-rescue is the net.** On any host without a
 > compaction source on SessionStart, the next-boot rescue detects the unconsolidated
